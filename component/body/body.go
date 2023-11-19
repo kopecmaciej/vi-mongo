@@ -1,4 +1,4 @@
-package component
+package body
 
 import (
 	"context"
@@ -7,6 +7,12 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
+
+type flexTuple struct {
+	label string
+	fixed int
+	prop  int
+}
 
 type Body struct {
 	*tview.Flex
@@ -17,6 +23,13 @@ type Body struct {
 	table   *tview.Table
 	mongo   *mongo.Dao
 }
+
+var (
+	flexTuples = []flexTuple{
+		{"sideBar", 0, 1},
+		{"content", 0, 4},
+	}
+)
 
 func NewBody(mongo *mongo.Dao) *Body {
 	return &Body{
@@ -43,7 +56,17 @@ func (b *Body) Init(ctx context.Context) *tview.Flex {
 	b.sideBar.RenderTree(ctx, b.content.RenderDocuments)
 	b.Flex.AddItem(b.content, 0, 4, false)
 
-	b.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	b.SetShortcuts()
+
+	return b.Flex
+}
+
+func (b *Body) SetStyle() {
+	b.Flex.SetBackgroundColor(tcell.ColorDefault)
+}
+
+func (b *Body) SetShortcuts() {
+	b.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyTab:
 			focus := b.app.GetFocus()
@@ -53,29 +76,40 @@ func (b *Body) Init(ctx context.Context) *tview.Flex {
 				b.app.SetFocus(b.sideBar.TreeView)
 			}
 		case tcell.KeyCtrlS:
-			// Toggle the side bar
 			if _, ok := b.Flex.GetItem(0).(*SideBar); ok {
 				b.Flex.RemoveItem(b.sideBar)
+				b.app.SetFocus(b.content.Table)
 			} else {
-				b.Flex.RemoveItem(b.content)
-				b.Flex.AddItem(b.sideBar, 0, 1, false) // Add side bar back at position 0
-				b.Flex.AddItem(b.content, 0, 4, false) // Add content back at position 1
+				b.Flex.Clear()
+				b.render()
 			}
 		case tcell.KeyCtrlD:
-			// Toggle the content
 			if b.Flex.GetItemCount() > 1 && b.Flex.GetItem(1) == b.content {
 				b.Flex.RemoveItem(b.content)
+				b.app.SetFocus(b.sideBar.TreeView)
 			} else {
-				b.Flex.AddItem(b.content, 1, 4, false) // Add content back at position 1
+				b.Flex.Clear()
+				b.render()
 			}
 		}
 
 		return event
 	})
-
-	return b.Flex
 }
 
-func (b *Body) SetStyle() {
-	b.Flex.SetBackgroundColor(tcell.ColorDefault)
+func (b *Body) render() {
+	for _, tuple := range flexTuples {
+		b.Flex.AddItem(b.GetPrimitiveByLabel(tuple.label), tuple.fixed, tuple.prop, false)
+	}
+}
+
+func (b *Body) GetPrimitiveByLabel(label string) tview.Primitive {
+	switch label {
+	case "sideBar":
+		return b.sideBar
+	case "content":
+		return b.content
+	}
+
+	return nil
 }

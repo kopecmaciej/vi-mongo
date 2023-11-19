@@ -1,4 +1,4 @@
-package component
+package body
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 type SideBar struct {
 	*tview.TreeView
 
+	label     string
 	app       *tview.Application
 	dao       *mongo.Dao
 	eventChan chan interface{}
@@ -18,7 +19,9 @@ type SideBar struct {
 
 func NewSideBar(dao *mongo.Dao) *SideBar {
 	return &SideBar{
-		TreeView:  tview.NewTreeView(),
+		TreeView: tview.NewTreeView(),
+
+		label:     "sideBar",
 		dao:       dao,
 		eventChan: make(chan interface{}, 1),
 	}
@@ -34,7 +37,7 @@ func (s *SideBar) Init(ctx context.Context) error {
 	return nil
 }
 
-func (s *SideBar) RenderTree(ctx context.Context, f func(a string, b string) error) error {
+func (s *SideBar) RenderTree(ctx context.Context, nodeSelectF func(ctx context.Context, a string, b string) error) error {
 	rootNode := s.rootNode()
 	s.SetRoot(rootNode)
 
@@ -52,7 +55,7 @@ func (s *SideBar) RenderTree(ctx context.Context, f func(a string, b string) err
 			parent.AddChild(child)
 
 			child.SetSelectedFunc(func() {
-				f(item.DB, child.GetText())
+				nodeSelectF(ctx, item.DB, child.GetText())
 			})
 		}
 	}

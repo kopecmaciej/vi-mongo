@@ -9,13 +9,14 @@ import (
 )
 
 const (
-	AppCtxKey = "app"
+	AppCtxKey  = "app"
+	RootCtxKey = "root"
 )
 
 type App struct {
 	*tview.Application
 
-	root *pages.Root
+	Root *pages.Root
 }
 
 func NewApp() App {
@@ -26,21 +27,23 @@ func NewApp() App {
 
 	app := App{
 		Application: tview.NewApplication(),
-		root:        pages.NewRoot(mongoDao),
+		Root:        pages.NewRoot(mongoDao),
 	}
 
 	return app
 }
 
 func (a *App) Init() error {
-  root := a.root.Init(a.setContext(context.Background()))
-  focus := a.GetFocus()
-  a.SetRoot(root, true).EnableMouse(true)
-  a.SetFocus(focus)
+	root := a.Root.Init(a.setContext(context.Background()))
+	focus := a.GetFocus()
+	a.SetRoot(root, true).EnableMouse(true)
+	a.SetFocus(focus)
 	return a.Run()
 }
 
 // set app into context and use it in other packages
 func (a *App) setContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, AppCtxKey, a.Application)
+	ctxWithValue := context.WithValue(ctx, AppCtxKey, a.Application)
+	ctxWithValue = context.WithValue(ctxWithValue, RootCtxKey, a.Root.Pages)
+	return ctxWithValue
 }

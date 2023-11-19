@@ -1,4 +1,4 @@
-package component
+package header
 
 import (
 	"context"
@@ -25,7 +25,6 @@ type Header struct {
 
 func NewHeader(dao *mongo.Dao) *Header {
 	h := Header{
-		Flex:  tview.NewFlex(),
 		Table: tview.NewTable(),
 		dao:   dao,
 	}
@@ -33,19 +32,14 @@ func NewHeader(dao *mongo.Dao) *Header {
 	return &h
 }
 
-func (h *Header) Init() *tview.Flex {
-  ctx := context.Background()
+func (h *Header) Init() error {
+	ctx := context.Background()
 	ss, err := h.dao.GetServerStatus(ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	h.Flex.SetBackgroundColor(tcell.ColorDefault)
-	h.Flex.SetDirection(tview.FlexColumn)
-
-	// add database information
-	h.Table.SetBackgroundColor(tcell.ColorDefault)
-	h.Table.SetBorders(false)
+  h.setStyle()
 
 	b := BaseInfo{
 		0: {"Host", "localhost"},
@@ -57,19 +51,32 @@ func (h *Header) Init() *tview.Flex {
 
 	h.SetBaseInfo(b)
 
-	h.Flex.AddItem(h.Table, 0, 1, false)
+	return nil
+}
 
-	return h.Flex
+func (h *Header) setStyle() {
+	h.Table.SetBackgroundColor(tcell.ColorDefault)
+	h.Table.SetBorders(false)
+
 }
 
 // set base information about database
 func (h *Header) SetBaseInfo(b BaseInfo) {
+	maxInRow := 3
+	currCol := 0
+	currRow := 0
 
 	for i := 0; i < len(b); i++ {
+		if i%maxInRow == 0 {
+			currCol += 2
+			currRow = 0
+		}
 		order := order(i)
-		h.Table.SetCell(i, 0, h.infoCell(b[order].label))
-		h.Table.SetCell(i, 1, h.valueCell(b[order].value))
+		h.Table.SetCell(currRow, currCol, h.infoCell(b[order].label))
+		h.Table.SetCell(currRow, currCol+1, h.valueCell(b[order].value))
+		currRow++
 	}
+
 }
 
 func (h *Header) infoCell(text string) *tview.TableCell {

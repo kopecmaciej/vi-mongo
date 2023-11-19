@@ -5,6 +5,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type ServerStatus struct {
@@ -90,13 +91,23 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context) ([]DBsWithCollections,
 	return dbCollMap, nil
 }
 
-func (d *Dao) ListDocuments(db string, collection string) ([]primitive.M, int64, error) {
-  count, err := d.client.Database(db).Collection(collection).CountDocuments(nil, primitive.M{})
-  if err != nil {
-    return nil, 0, err
-  }
+type Filter struct {
+	Key   string
+	Value string
+}
+
+func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, filter primitive.M, page, limit int64) ([]primitive.M, int64, error) {
+	count, err := d.client.Database(db).Collection(collection).CountDocuments(nil, primitive.M{})
+	if err != nil {
+		return nil, 0, err
+	}
 	coll := d.client.Database(db).Collection(collection)
-	cursor, err := coll.Find(nil, primitive.M{})
+
+	options := options.FindOptions{
+		Limit: &limit,
+		Skip:  &page,
+	}
+	cursor, err := coll.Find(ctx, filter, &options)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -115,6 +126,15 @@ func (d *Dao) ListDocuments(db string, collection string) ([]primitive.M, int64,
 		return nil, 0, err
 	}
 	return documents, count, nil
+}
+
+// save doc
+func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, id primitive.ObjectID, document primitive.M) error {
+	_, err := d.client.Database(db).Collection(collection).InsertOne(ctx, document)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d *Dao) runAdminCommand(ctx context.Context, key string, value interface{}) (primitive.M, error) {
