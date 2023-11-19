@@ -99,11 +99,11 @@ func (b *Body) SetShortcuts() {
 
 func (b *Body) render() {
 	for _, tuple := range flexTuples {
-		b.Flex.AddItem(b.GetPrimitiveByLabel(tuple.label), tuple.fixed, tuple.prop, false)
+		b.Flex.AddItem(b.getPrimitiveByLabel(tuple.label), tuple.fixed, tuple.prop, false)
 	}
 }
 
-func (b *Body) GetPrimitiveByLabel(label string) tview.Primitive {
+func (b *Body) getPrimitiveByLabel(label string) tview.Primitive {
 	switch label {
 	case "sideBar":
 		return b.sideBar

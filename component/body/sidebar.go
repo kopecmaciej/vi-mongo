@@ -37,7 +37,7 @@ func (s *SideBar) Init(ctx context.Context) error {
 	return nil
 }
 
-func (s *SideBar) RenderTree(ctx context.Context, nodeSelectF func(ctx context.Context, a string, b string) error) error {
+func (s *SideBar) RenderTree(ctx context.Context, nodeSelectF func(a string, b string) error) error {
 	rootNode := s.rootNode()
 	s.SetRoot(rootNode)
 
@@ -55,7 +55,7 @@ func (s *SideBar) RenderTree(ctx context.Context, nodeSelectF func(ctx context.C
 			parent.AddChild(child)
 
 			child.SetSelectedFunc(func() {
-				nodeSelectF(ctx, item.DB, child.GetText())
+				nodeSelectF(item.DB, child.GetText())
 			})
 		}
 	}

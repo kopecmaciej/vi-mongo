@@ -8,20 +8,47 @@ import (
 	"log"
 	"mongo-ui/mongo"
 	"mongo-ui/primitives"
+	"os"
+	"os/exec"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type docState struct {
+	state
+	rawDocument string
+}
+
 type DocView struct {
 	app *tview.Application
 
-	parent tview.Primitive
 	dao    *mongo.Dao
+	state  docState
+	parent tview.Primitive
+}
+
+func NewDocView(dao *mongo.Dao) *DocView {
+	return &DocView{
+		dao: dao,
+	}
+}
+
+func (d *DocView) Init(ctx context.Context, parent tview.Primitive) error {
+	d.app = ctx.Value("app").(*tview.Application)
+	d.parent = parent
+	return nil
 }
 
 func (d *DocView) DocView(ctx context.Context, db, coll string, rawDocument string) error {
+	d.state = docState{
+		state: state{
+			db:   db,
+			coll: coll,
+		},
+		rawDocument: rawDocument,
+	}
 	var prettyJson bytes.Buffer
 	err := json.Indent(&prettyJson, []byte(rawDocument), "", "  ")
 	if err != nil {
@@ -51,7 +78,7 @@ func (d *DocView) DocView(ctx context.Context, db, coll string, rawDocument stri
 	d.app.SetFocus(modal)
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Edit" {
-			d.editDocument(ctx, db, coll, rawDocument)
+			d.DocEdit(ctx, db, coll, rawDocument, d.refresh)
 		} else {
 			root.RemovePage("details")
 			d.app.SetFocus(d.parent)
@@ -60,43 +87,62 @@ func (d *DocView) DocView(ctx context.Context, db, coll string, rawDocument stri
 	return nil
 }
 
-func (d *DocView) editDocument(ctx context.Context, db, coll string, rawDocument string) error {
+func (d *DocView) refresh() {
+	d.DocView(context.Background(), d.state.db, d.state.coll, d.state.rawDocument)
+}
+
+func (d *DocView) DocEdit(ctx context.Context, db, coll string, rawDocument string, fun func()) error {
 	var prettyJson bytes.Buffer
 	err := json.Indent(&prettyJson, []byte(rawDocument), "", "  ")
 	if err != nil {
 		log.Printf("Error marshaling JSON: %v", err)
-		return nil
+		return err
 	}
-	text := string(prettyJson.Bytes())
 
-	id := string(prettyJson.Bytes()[8:40])
+	tmpFile, err := os.CreateTemp("", "doc-*.json")
+	if err != nil {
+		return fmt.Errorf("Error creating temp file: %v", err)
+	}
+	defer os.Remove(tmpFile.Name())
 
-	editor := tview.NewTextArea()
-	editor.SetBackgroundColor(tcell.ColorDefault)
-	editor.SetBorder(true)
-	editor.SetTitle(id)
-	editor.SetTitleAlign(tview.AlignLeft)
-	editor.SetTitleColor(tcell.ColorSteelBlue)
+	_, err = tmpFile.Write(prettyJson.Bytes())
+	if err != nil {
+		return fmt.Errorf("Error writing to temp file: %v", err)
+	}
 
-	editor.SetText(text, false)
+	if err := tmpFile.Close(); err != nil {
+		return fmt.Errorf("Error closing temp file: %v", err)
+	}
 
-	root := ctx.Value("root").(*tview.Pages)
-	root.AddPage("editor", editor, true, true)
-	d.app.SetFocus(editor)
-	editor.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyCtrlS:
-			err := d.saveDocument(ctx, db, coll, editor.GetText())
-			if err != nil {
-				log.Printf("Error saving document: %v", err)
-			}
-			root.RemovePage("editor")
-			d.app.SetFocus(d.parent)
-		case tcell.KeyCtrlC, tcell.KeyEsc:
-			root.RemovePage("editor")
-			d.app.SetFocus(d.parent)
+	editor, err := exec.LookPath(os.Getenv("EDITOR"))
+	if err != nil {
+		return fmt.Errorf("Error finding editor: %v", err)
+	}
+
+	d.app.Suspend(func() {
+		cmd := exec.Command(editor, tmpFile.Name())
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
+		if err != nil {
+			log.Printf("Error running editor: %v", err)
+			return
 		}
-		return event
+
+		editedBytes, err := os.ReadFile(tmpFile.Name())
+		if err != nil {
+			log.Printf("Error reading edited file: %v", err)
+			return
+		}
+
+		err = d.saveDocument(ctx, db, coll, string(editedBytes))
+		if err != nil {
+			log.Printf("Error saving edited document: %v", err)
+			return
+		} else {
+			fun()
+		}
 	})
 
 	return nil

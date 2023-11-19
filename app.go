@@ -47,3 +47,4 @@ func (a *App) setContext(ctx context.Context) context.Context {
 	ctxWithValue = context.WithValue(ctxWithValue, RootCtxKey, a.Root.Pages)
 	return ctxWithValue
 }
+

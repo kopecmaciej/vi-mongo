@@ -106,6 +106,7 @@ func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, f
 	options := options.FindOptions{
 		Limit: &limit,
 		Skip:  &page,
+		Sort:  primitive.D{{Key: "_id", Value: 1}},
 	}
 	cursor, err := coll.Find(ctx, filter, &options)
 	if err != nil {
