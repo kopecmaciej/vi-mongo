@@ -31,13 +31,13 @@ type ServerStatus struct {
 
 type Dao struct {
 	client *mongo.Client
-  Config *Config
+	Config *Config
 }
 
 func NewDao(client *mongo.Client, config *Config) *Dao {
 	return &Dao{
 		client: client,
-    Config: config,
+		Config: config,
 	}
 }
 
@@ -74,10 +74,15 @@ type DBsWithCollections struct {
 	Collections []string
 }
 
-func (d *Dao) ListDbsWithCollections(ctx context.Context) ([]DBsWithCollections, error) {
+func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]DBsWithCollections, error) {
 	dbCollMap := []DBsWithCollections{}
 
-	dbs, err := d.client.ListDatabaseNames(ctx, primitive.M{})
+	filter := primitive.M{}
+	if nameRegex != "" {
+		filter = primitive.M{"name": primitive.Regex{Pattern: nameRegex, Options: "i"}}
+	}
+
+	dbs, err := d.client.ListDatabaseNames(ctx, filter)
 	if err != nil {
 		return nil, err
 	}

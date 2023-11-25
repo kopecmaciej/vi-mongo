@@ -10,40 +10,30 @@ type Event string
 type SearchBar struct {
 	*tview.InputField
 
-	label         string
-	InputTextChan chan string
+	label   string
+	KeyChan chan tcell.Key
 }
 
-// NewSearchBar creates a new filterBar
 func NewSearchBar(label string) *SearchBar {
 	f := &SearchBar{
-		InputField:    tview.NewInputField(),
-		label:         "searchBar",
-		InputTextChan: make(chan string),
+		InputField: tview.NewInputField(),
+		label:      "searchBar",
+		KeyChan:    make(chan tcell.Key),
 	}
 
 	f.setStyle()
 
-	f.SetLabel(label)
+	f.SetLabel(label + ": ")
 	f.SetDoneFunc(func(key tcell.Key) {
-		if key == tcell.KeyEnter || key == tcell.KeyRune {
-			f.InputTextChan <- f.GetText()
-		}
-		if key == tcell.KeyEsc {
-			f.InputTextChan <- ""
-		}
+		f.KeyChan <- key
 	})
 
 	return f
 }
 
 func (f *SearchBar) setStyle() {
-	f.SetBackgroundColor(tcell.ColorDefault)
-	f.SetFieldBackgroundColor(tcell.ColorDefault)
+	f.SetBackgroundColor(tcell.ColorGray)
+	f.SetFieldBackgroundColor(tcell.ColorGray)
 	f.SetFieldTextColor(tcell.ColorDefault)
-	f.SetLabelColor(tcell.ColorDefault)
-}
-
-func (f *SearchBar) SendRune(r rune) {
-	f.InputTextChan <- f.GetText()
+	f.SetPlaceholderTextColor(tcell.ColorDefault)
 }

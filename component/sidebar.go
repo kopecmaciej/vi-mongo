@@ -35,23 +35,51 @@ func NewSideBar(dao *mongo.Dao) *SideBar {
 
 func (s *SideBar) Init(ctx context.Context) error {
 	s.setStyle()
+	s.setShortcuts(ctx)
+
 	s.app = GetApp(ctx)
 
 	rootNode := s.dbNode("Databases")
 	s.Tree.SetRoot(rootNode)
 
 	s.SetDirection(tview.FlexRow)
-	s.AddItem(s.Tree, 0, 1, true)
+
 	s.flexStack = []flexStack{
 		{s.searchBar.label, 1, 0, false, false},
 		{s.label, 0, 1, true, true},
 	}
 
-	s.setShortcuts(ctx)
+	s.render(ctx)
 
-	s.RenderTree(ctx)
+	s.renderTree(ctx, "")
+
+	go s.searchBarListener(ctx)
 
 	return nil
+}
+
+func (s *SideBar) setStyle() {
+	s.Tree.SetBackgroundColor(tcell.ColorDefault)
+	s.Tree.SetBorderPadding(1, 1, 1, 1)
+	s.Tree.SetBorder(true)
+	s.Tree.SetBorderColor(tcell.ColorDimGray)
+	s.Tree.SetTitle(" Databases ")
+
+	s.Flex.SetBackgroundColor(tcell.ColorDefault)
+}
+
+func (s *SideBar) setShortcuts(ctx context.Context) {
+	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyRune:
+			if event.Rune() == '/' {
+				s.seachBarToggle()
+				s.render(ctx)
+				go s.searchBar.SetText("")
+			}
+		}
+		return event
+	})
 }
 
 func (s *SideBar) render(ctx context.Context) error {
@@ -67,6 +95,28 @@ func (s *SideBar) render(ctx context.Context) error {
 	return nil
 }
 
+func (s *SideBar) searchBarListener(ctx context.Context) {
+	keyChan := s.searchBar.KeyChan
+
+	for {
+		key := <-keyChan
+		switch key {
+		case tcell.KeyEsc:
+			s.app.QueueUpdateDraw(func() {
+				s.Flex.RemoveItem(s.searchBar)
+				s.seachBarToggle()
+				s.renderTree(context.Background(), "")
+			})
+		case tcell.KeyEnter:
+			s.app.QueueUpdateDraw(func() {
+				s.Flex.RemoveItem(s.searchBar)
+				s.renderTree(context.Background(), s.searchBar.GetText())
+				s.seachBarToggle()
+			})
+		}
+	}
+}
+
 func (s *SideBar) getPrimitiveByLabel(label string) tview.Primitive {
 	switch label {
 	case "searchBar":
@@ -78,13 +128,22 @@ func (s *SideBar) getPrimitiveByLabel(label string) tview.Primitive {
 	}
 }
 
-func (s *SideBar) RenderTree(ctx context.Context) error {
+func (s *SideBar) renderTree(ctx context.Context, filter string) error {
 	rootNode := s.rootNode()
 	s.Tree.SetRoot(rootNode)
 
-	dbsWitColls, err := s.dao.ListDbsWithCollections(ctx)
+	dbsWitColls, err := s.dao.ListDbsWithCollections(ctx, filter)
 	if err != nil {
 		return err
+	}
+
+	if len(dbsWitColls) == 0 {
+		emptyNode := tview.NewTreeNode("No databases found")
+		emptyNode.SetColor(tcell.ColorRed)
+		emptyNode.SetSelectable(false)
+
+		rootNode.AddChild(emptyNode)
+		return nil
 	}
 
 	for _, item := range dbsWitColls {
@@ -106,19 +165,6 @@ func (s *SideBar) RenderTree(ctx context.Context) error {
 	return nil
 }
 
-func (s *SideBar) setShortcuts(ctx context.Context) {
-	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyRune:
-			if event.Rune() == '/' {
-				s.seachBarToggle()
-				s.render(ctx)
-			}
-		}
-		return event
-	})
-}
-
 func (s *SideBar) seachBarToggle() {
 	s.mutex.Lock()
 	if s.flexStack[0].enabled {
@@ -126,18 +172,9 @@ func (s *SideBar) seachBarToggle() {
 		s.app.SetFocus(s.Tree)
 	} else {
 		s.flexStack[0].enabled = true
-		s.searchBar.SetText("")
 		s.app.SetFocus(s.searchBar)
 	}
 	s.mutex.Unlock()
-}
-
-func (s *SideBar) setStyle() {
-	s.Tree.SetBackgroundColor(tcell.ColorDefault)
-	s.Tree.SetBorderPadding(1, 1, 1, 1)
-	s.Tree.SetBorder(true)
-	s.Tree.SetBorderColor(tcell.ColorDimGray)
-	s.Tree.SetTitle("Databases")
 }
 
 func (s *SideBar) rootNode() *tview.TreeNode {

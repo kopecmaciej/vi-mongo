@@ -62,6 +62,7 @@ func (h *Header) setStyle() {
 	h.Table.SetBorder(true)
 	h.Table.SetBorderColor(tcell.ColorGreen)
 	h.Table.SetBorderPadding(0, 0, 0, 0)
+  h.Table.SetTitle(" Database Info ")
 }
 
 // set base information about database

@@ -54,6 +54,17 @@ func (c *Content) Init(ctx context.Context) error {
 	return nil
 }
 
+func (c *Content) setStyle() {
+	c.SetBackgroundColor(tcell.NewRGBColor(0, 10, 19))
+	c.SetBorder(true)
+	c.SetTitle(" Content ")
+	c.SetTitleAlign(tview.AlignLeft)
+	c.SetTitleColor(tcell.ColorSteelBlue)
+	c.SetBorderColor(tcell.ColorSteelBlue)
+	c.SetFixed(1, 1)
+	c.SetSelectable(true, false)
+}
+
 func (c *Content) listDocuments(db, coll string) ([]string, int64, error) {
 	ctx := context.Background()
 	c.state.db = db
@@ -89,12 +100,12 @@ func (c *Content) RenderContent(db, coll string) error {
 	c.state.db = db
 	c.state.coll = coll
 
-  documents, count, err := c.listDocuments(db, coll)
-  if err != nil {
-    return err
-  }
+	documents, count, err := c.listDocuments(db, coll)
+	if err != nil {
+		return err
+	}
 
-  if count == 0 {
+	if count == 0 {
 		noDocCell := tview.NewTableCell("No documents found").
 			SetTextColor(tcell.ColorWhite).
 			SetAlign(tview.AlignLeft).
@@ -124,17 +135,6 @@ func (c *Content) RenderContent(db, coll string) error {
 
 func (c *Content) refresh() {
 	c.RenderContent(c.state.db, c.state.coll)
-}
-
-func (c *Content) setStyle() {
-	c.SetBackgroundColor(tcell.NewRGBColor(0, 10, 19))
-	c.SetBorder(true)
-	c.SetTitle("Content")
-	c.SetTitleAlign(tview.AlignLeft)
-	c.SetTitleColor(tcell.ColorSteelBlue)
-	c.SetBorderColor(tcell.ColorSteelBlue)
-	c.SetFixed(1, 1)
-	c.SetSelectable(true, false)
 }
 
 func (c *Content) Filter(ctx context.Context, db, coll, filter string, refresh func()) {
