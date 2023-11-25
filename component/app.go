@@ -18,10 +18,9 @@ type App struct {
 }
 
 func NewApp() App {
-	mongoConfig := mongo.NewConfig()
-	client := mongo.NewClient(mongoConfig)
+	client := mongo.NewClient()
 	client.Connect()
-	mongoDao := mongo.NewDao(client.Client, mongoConfig)
+	mongoDao := mongo.NewDao(client.Client, client.Config)
 
 	app := App{
 		Application: tview.NewApplication(),
