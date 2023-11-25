@@ -1,4 +1,4 @@
-package body
+package component
 
 import (
 	"bytes"
@@ -17,33 +17,32 @@ import (
 )
 
 type docState struct {
-	state
+	contentState
 	rawDocument string
 }
 
-type DocView struct {
-	app *tview.Application
-
+type DocViewer struct {
+	app    *App
 	dao    *mongo.Dao
 	state  docState
 	parent tview.Primitive
 }
 
-func NewDocView(dao *mongo.Dao) *DocView {
-	return &DocView{
+func NewDocView(dao *mongo.Dao) *DocViewer {
+	return &DocViewer{
 		dao: dao,
 	}
 }
 
-func (d *DocView) Init(ctx context.Context, parent tview.Primitive) error {
-	d.app = ctx.Value("app").(*tview.Application)
+func (d *DocViewer) Init(ctx context.Context, parent tview.Primitive) error {
+	d.app = GetApp(ctx)
 	d.parent = parent
 	return nil
 }
 
-func (d *DocView) DocView(ctx context.Context, db, coll string, rawDocument string) error {
+func (d *DocViewer) DocViewer(ctx context.Context, db, coll string, rawDocument string) error {
 	d.state = docState{
-		state: state{
+		contentState: contentState{
 			db:   db,
 			coll: coll,
 		},
@@ -73,7 +72,7 @@ func (d *DocView) DocView(ctx context.Context, db, coll string, rawDocument stri
 
 	modal.AddButtons([]string{"Edit", "Close"})
 
-	root := ctx.Value("root").(*tview.Pages)
+	root := GetApp(ctx).Root
 	root.AddPage("details", modal, true, true)
 	d.app.SetFocus(modal)
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
@@ -87,11 +86,11 @@ func (d *DocView) DocView(ctx context.Context, db, coll string, rawDocument stri
 	return nil
 }
 
-func (d *DocView) refresh() {
-	d.DocView(context.Background(), d.state.db, d.state.coll, d.state.rawDocument)
+func (d *DocViewer) refresh() {
+	d.DocViewer(context.Background(), d.state.db, d.state.coll, d.state.rawDocument)
 }
 
-func (d *DocView) DocEdit(ctx context.Context, db, coll string, rawDocument string, fun func()) error {
+func (d *DocViewer) DocEdit(ctx context.Context, db, coll string, rawDocument string, fun func()) error {
 	var prettyJson bytes.Buffer
 	err := json.Indent(&prettyJson, []byte(rawDocument), "", "  ")
 	if err != nil {
@@ -148,7 +147,7 @@ func (d *DocView) DocEdit(ctx context.Context, db, coll string, rawDocument stri
 	return nil
 }
 
-func (d *DocView) saveDocument(ctx context.Context, db, coll string, rawDocument string) error {
+func (d *DocViewer) saveDocument(ctx context.Context, db, coll string, rawDocument string) error {
 	var document map[string]interface{}
 	err := json.Unmarshal([]byte(rawDocument), &document)
 	if err != nil {

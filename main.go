@@ -2,13 +2,14 @@ package main
 
 import (
 	"log"
+	"mongo-ui/component"
 	"os"
 )
 
 func main() {
 	defer logging().Close()
 
-	app := NewApp()
+	app := component.NewApp()
 	err := app.Init()
 	if err != nil {
 		panic(err)

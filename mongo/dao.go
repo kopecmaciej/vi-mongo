@@ -31,11 +31,13 @@ type ServerStatus struct {
 
 type Dao struct {
 	client *mongo.Client
+  Config *Config
 }
 
-func NewDao(client *mongo.Client) *Dao {
+func NewDao(client *mongo.Client, config *Config) *Dao {
 	return &Dao{
 		client: client,
+    Config: config,
 	}
 }
 

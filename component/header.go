@@ -1,8 +1,9 @@
-package header
+package component
 
 import (
 	"context"
 	"mongo-ui/mongo"
+	"strconv"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -16,7 +17,6 @@ type BaseInfo map[order]struct {
 }
 
 type Header struct {
-	*tview.Flex
 	*tview.Table
 
 	dao      *mongo.Dao
@@ -39,13 +39,14 @@ func (h *Header) Init() error {
 		panic(err)
 	}
 
-  h.setStyle()
+	h.setStyle()
 
+  port := strconv.Itoa(h.dao.Config.Port)
 	b := BaseInfo{
-		0: {"Host", "localhost"},
-		1: {"Port", "27017"},
-		2: {"Database", "test"},
-		3: {"Collection", "restaurants"},
+		0: {"Host", h.dao.Config.Host},
+		1: {"Port", port},
+		2: {"Database", h.dao.Config.Database},
+		3: {"Collection", "-"},
 		4: {"Version", ss.Version},
 	}
 
@@ -56,8 +57,10 @@ func (h *Header) Init() error {
 
 func (h *Header) setStyle() {
 	h.Table.SetBackgroundColor(tcell.ColorDefault)
-	h.Table.SetBorders(false)
-
+  h.Table.SetSelectable(false, false)
+  h.Table.SetBorder(true)
+  h.Table.SetBorderColor(tcell.ColorGreen)
+  h.Table.SetBorderPadding(0, 0, 0, 0)
 }
 
 // set base information about database
@@ -72,14 +75,14 @@ func (h *Header) SetBaseInfo(b BaseInfo) {
 			currRow = 0
 		}
 		order := order(i)
-		h.Table.SetCell(currRow, currCol, h.infoCell(b[order].label))
+		h.Table.SetCell(currRow, currCol, h.keyCell(b[order].label))
 		h.Table.SetCell(currRow, currCol+1, h.valueCell(b[order].value))
 		currRow++
 	}
 
 }
 
-func (h *Header) infoCell(text string) *tview.TableCell {
+func (h *Header) keyCell(text string) *tview.TableCell {
 	cell := tview.NewTableCell(text + ":")
 	cell.SetBackgroundColor(tcell.ColorDefault)
 

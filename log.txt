@@ -1,0 +1,1 @@
+2023/11/19 19:57:44 doc_viewer.go:170: Error updating document: write exception: write errors: [E11000 duplicate key error collection: test.restaurants index: _id_ dup key: { _id: "655a390a6bed0e5382e9b6d6" }]

@@ -1,4 +1,4 @@
-package body
+package component
 
 import (
 	"context"
@@ -12,9 +12,8 @@ type SideBar struct {
 	*tview.TreeView
 
 	label     string
-	app       *tview.Application
+	app       *App
 	dao       *mongo.Dao
-	eventChan chan interface{}
 }
 
 func NewSideBar(dao *mongo.Dao) *SideBar {
@@ -23,13 +22,12 @@ func NewSideBar(dao *mongo.Dao) *SideBar {
 
 		label:     "sideBar",
 		dao:       dao,
-		eventChan: make(chan interface{}, 1),
 	}
 }
 
 func (s *SideBar) Init(ctx context.Context) error {
 	s.setStyle()
-	s.app = ctx.Value("app").(*tview.Application)
+	s.app = GetApp(ctx)
 
 	rootNode := s.dbNode("Databases")
 	s.SetRoot(rootNode)
@@ -67,8 +65,8 @@ func (s *SideBar) RenderTree(ctx context.Context, nodeSelectF func(a string, b s
 
 func (s *SideBar) setStyle() {
 	s.SetBackgroundColor(tcell.ColorDefault)
-	s.SetBorderPadding(0, 0, 3, 3)
-	s.SetBorder(true)
+	s.SetBorderPadding(1, 1, 1, 1)
+  s.SetBorder(true)
 	s.SetTitle("Databases")
 }
 

@@ -53,6 +53,7 @@ func NewModalView() *ModalView {
 	m.frame.SetBorder(true).
 		SetBackgroundColor(tview.Styles.ContrastBackgroundColor).
 		SetBorderPadding(1, 1, 1, 1)
+
 	return m
 }
 

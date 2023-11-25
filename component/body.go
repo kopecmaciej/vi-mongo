@@ -1,4 +1,4 @@
-package body
+package component
 
 import (
 	"context"
@@ -17,17 +17,16 @@ type flexTuple struct {
 type Body struct {
 	*tview.Flex
 
-	app     *tview.Application
+	app     *App
 	sideBar *SideBar
 	content *Content
-	table   *tview.Table
 	mongo   *mongo.Dao
 }
 
 var (
 	flexTuples = []flexTuple{
-		{"sideBar", 0, 1},
-		{"content", 0, 4},
+		{"sideBar", 30, 0},
+		{"content", 0, 1},
 	}
 )
 
@@ -36,29 +35,35 @@ func NewBody(mongo *mongo.Dao) *Body {
 		Flex:    tview.NewFlex(),
 		sideBar: NewSideBar(mongo),
 		content: NewContent(mongo),
-		table:   tview.NewTable(),
 		mongo:   mongo,
 	}
 }
 
-func (b *Body) Init(ctx context.Context) *tview.Flex {
-	b.app = ctx.Value("app").(*tview.Application)
+func (b *Body) Init(ctx context.Context) error {
+	b.app = GetApp(ctx)
 
 	b.SetStyle()
 
-	b.sideBar.Init(ctx)
-	b.Flex.AddItem(b.sideBar, 0, 1, false)
+	err := b.sideBar.Init(ctx)
+	if err != nil {
+		return err
+	}
+	err = b.content.Init(ctx)
+	if err != nil {
+		return err
+	}
 
-	b.content.Init(ctx)
+	b.render()
 
 	b.app.SetFocus(b.sideBar)
-
-	b.sideBar.RenderTree(ctx, b.content.RenderDocuments)
-	b.Flex.AddItem(b.content, 0, 4, false)
+	err = b.sideBar.RenderTree(ctx, b.content.RenderContent)
+	if err != nil {
+		return err
+	}
 
 	b.SetShortcuts()
 
-	return b.Flex
+	return nil
 }
 
 func (b *Body) SetStyle() {
