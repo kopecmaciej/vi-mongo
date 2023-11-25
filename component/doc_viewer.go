@@ -72,7 +72,7 @@ func (d *DocViewer) DocViewer(ctx context.Context, db, coll string, rawDocument 
 
 	modal.AddButtons([]string{"Edit", "Close"})
 
-	root := GetApp(ctx).Root
+	root := d.app.Root
 	root.AddPage("details", modal, true, true)
 	d.app.SetFocus(modal)
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
