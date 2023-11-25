@@ -19,6 +19,7 @@ type BaseInfo map[order]struct {
 type Header struct {
 	*tview.Table
 
+	label    string
 	dao      *mongo.Dao
 	baseInfo BaseInfo
 }
@@ -27,13 +28,13 @@ func NewHeader(dao *mongo.Dao) *Header {
 	h := Header{
 		Table: tview.NewTable(),
 		dao:   dao,
+		label: "header",
 	}
 
 	return &h
 }
 
-func (h *Header) Init() error {
-	ctx := context.Background()
+func (h *Header) Init(ctx context.Context) error {
 	ss, err := h.dao.GetServerStatus(ctx)
 	if err != nil {
 		panic(err)
@@ -41,7 +42,7 @@ func (h *Header) Init() error {
 
 	h.setStyle()
 
-  port := strconv.Itoa(h.dao.Config.Port)
+	port := strconv.Itoa(h.dao.Config.Port)
 	b := BaseInfo{
 		0: {"Host", h.dao.Config.Host},
 		1: {"Port", port},
@@ -57,10 +58,10 @@ func (h *Header) Init() error {
 
 func (h *Header) setStyle() {
 	h.Table.SetBackgroundColor(tcell.ColorDefault)
-  h.Table.SetSelectable(false, false)
-  h.Table.SetBorder(true)
-  h.Table.SetBorderColor(tcell.ColorGreen)
-  h.Table.SetBorderPadding(0, 0, 0, 0)
+	h.Table.SetSelectable(false, false)
+	h.Table.SetBorder(true)
+	h.Table.SetBorderColor(tcell.ColorGreen)
+	h.Table.SetBorderPadding(0, 0, 0, 0)
 }
 
 // set base information about database
