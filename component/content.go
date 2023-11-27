@@ -6,19 +6,24 @@ import (
 	"fmt"
 	"log"
 	"mongo-ui/mongo"
+	"sync"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Content struct {
-	*tview.Table
+	*tview.Flex
 
-	app     *App
-	dao     *mongo.Dao
-	docView *DocViewer
-	label   string
-	state   contentState
+	Table    *tview.Table
+	app      *App
+	dao      *mongo.Dao
+	queryBar *InputBar
+	docView  *DocViewer
+	label    string
+	mutex    sync.Mutex
+	state    contentState
 }
 
 type contentState struct {
@@ -33,44 +38,144 @@ func NewContent(dao *mongo.Dao) *Content {
 		page:  0,
 		limit: 50,
 	}
-	table := tview.NewTable()
 
+	flex := tview.NewFlex()
 	return &Content{
-		Table:   table,
-		dao:     dao,
-		docView: NewDocView(dao),
-		label:   "content",
-		state:   state,
+		Table:    tview.NewTable(),
+		Flex:     flex,
+		queryBar: NewInputBar("Query"),
+		dao:      dao,
+		docView:  NewDocView(dao),
+		mutex:    sync.Mutex{},
+		label:    "content",
+		state:    state,
 	}
 }
 
 func (c *Content) Init(ctx context.Context) error {
 	c.app = GetApp(ctx)
 	c.setStyle()
-	c.SetShortcuts(ctx)
+	c.setShortcuts(ctx)
 
-	c.docView.Init(ctx, c)
+	if err := c.docView.Init(ctx, c.Flex); err != nil {
+		return err
+	}
+	if err := c.queryBar.Init(ctx); err != nil {
+		return err
+	}
+
+	c.render(ctx)
+
+	go c.queryBarListener(ctx)
 
 	return nil
 }
 
 func (c *Content) setStyle() {
-	c.SetBackgroundColor(tcell.NewRGBColor(0, 10, 19))
-	c.SetBorder(true)
-	c.SetTitle(" Content ")
-	c.SetTitleAlign(tview.AlignLeft)
-	c.SetTitleColor(tcell.ColorSteelBlue)
-	c.SetBorderColor(tcell.ColorSteelBlue)
-	c.SetFixed(1, 1)
-	c.SetSelectable(true, false)
+	c.Table.SetBackgroundColor(tcell.NewRGBColor(0, 10, 19))
+	c.Table.SetBorder(true)
+	c.Table.SetTitle(" Content ")
+	c.Table.SetTitleAlign(tview.AlignLeft)
+	c.Table.SetTitleColor(tcell.ColorSteelBlue)
+	c.Table.SetBorderColor(tcell.ColorSteelBlue)
+	c.Table.SetBorderPadding(0, 0, 1, 1)
+	c.Table.SetFixed(1, 1)
+	c.Table.SetSelectable(true, false)
+
+	c.Flex.SetBackgroundColor(tcell.NewRGBColor(0, 10, 19))
+	c.Flex.SetDirection(tview.FlexRow)
 }
 
-func (c *Content) listDocuments(db, coll string) ([]string, int64, error) {
+func (c *Content) setShortcuts(ctx context.Context) {
+	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Rune() {
+		case 'v':
+			c.docView.DocViewer(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+		case 'e':
+			c.docView.DocEdit(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text, c.refresh)
+		case '/':
+			c.toggleQueryBar(ctx)
+			c.render(ctx)
+			// go c.queryBar.SetText("")
+		}
+		switch event.Key() {
+		case tcell.KeyCtrlN:
+			c.goToNextMongoPage(ctx)
+		case tcell.KeyCtrlP:
+			c.goToPrevMongoPage(ctx)
+		case tcell.KeyEnter:
+			c.docView.DocViewer(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+		}
+
+		return event
+	})
+}
+
+func (c *Content) render(ctx context.Context) {
+	c.Flex.Clear()
+
+	if c.queryBar.IsEnabled() {
+		c.Flex.AddItem(c.queryBar, 1, 0, false)
+		defer c.app.SetFocus(c.queryBar)
+	} else {
+		defer c.app.SetFocus(c.Table)
+	}
+
+	c.Flex.AddItem(c.Table, 0, 1, true)
+}
+
+func (c *Content) toggleQueryBar(ctx context.Context) {
+	c.queryBar.Toggle()
+	c.render(ctx)
+}
+
+func (c *Content) queryBarListener(ctx context.Context) {
+	eventChan := c.queryBar.EventChan
+
+	for {
+		key := <-eventChan
+		if _, ok := key.(tcell.Key); !ok {
+			continue
+		}
+		switch key {
+		case tcell.KeyEsc:
+			c.app.QueueUpdateDraw(func() {
+				c.toggleQueryBar(ctx)
+
+			})
+		case tcell.KeyEnter:
+			c.app.QueueUpdateDraw(func() {
+				c.toggleQueryBar(ctx)
+				filter := map[string]interface{}{}
+				text := c.queryBar.GetText()
+				if text != "" {
+					err := bson.UnmarshalExtJSON([]byte(text), true, &filter)
+					if err != nil {
+						log.Printf("Error parsing query: %v", err)
+					}
+				}
+				c.RenderContent(c.state.db, c.state.coll, filter)
+			})
+		}
+	}
+}
+
+func (c *Content) getPrimitiveByLabel(label string) tview.Primitive {
+	switch label {
+	case "query":
+		return c.queryBar
+	case "content":
+		return c.Table
+	default:
+		return nil
+	}
+}
+
+func (c *Content) listDocuments(db, coll string, filters map[string]interface{}) ([]string, int64, error) {
 	ctx := context.Background()
 	c.state.db = db
 	c.state.coll = coll
 
-	filters := map[string]interface{}{}
 	documents, count, err := c.dao.ListDocuments(ctx, db, coll, filters, c.state.page, c.state.limit)
 	if err != nil {
 		return nil, 0, err
@@ -93,14 +198,14 @@ func (c *Content) listDocuments(db, coll string) ([]string, int64, error) {
 	return docs, count, nil
 }
 
-func (c *Content) RenderContent(db, coll string) error {
-	c.Clear()
-	c.app.SetFocus(c)
+func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) error {
+	c.Table.Clear()
+	c.app.SetFocus(c.Table)
 
 	c.state.db = db
 	c.state.coll = coll
 
-	documents, count, err := c.listDocuments(db, coll)
+	documents, count, err := c.listDocuments(db, coll, filter)
 	if err != nil {
 		return err
 	}
@@ -111,7 +216,7 @@ func (c *Content) RenderContent(db, coll string) error {
 			SetAlign(tview.AlignLeft).
 			SetSelectable(false)
 
-		c.SetCell(1, 1, noDocCell)
+		c.Table.SetCell(1, 1, noDocCell)
 		return nil
 	}
 
@@ -121,83 +226,28 @@ func (c *Content) RenderContent(db, coll string) error {
 		SetAlign(tview.AlignLeft).
 		SetSelectable(false)
 
-	c.SetCell(0, 0, headerCell)
+	c.Table.SetCell(0, 0, headerCell)
 
 	for i, d := range documents {
 		dataCell := tview.NewTableCell(d).
 			SetTextColor(tcell.ColorWhite).
 			SetAlign(tview.AlignLeft)
 
-		c.SetCell(i+1, 0, dataCell)
+		c.Table.SetCell(i+1, 0, dataCell)
 	}
 	return nil
 }
 
 func (c *Content) refresh() {
-	c.RenderContent(c.state.db, c.state.coll)
-}
-
-func (c *Content) Filter(ctx context.Context, db, coll, filter string, refresh func()) {
-	c.state.page = 0
-	c.state.limit = 50
-	c.state.db = db
-	c.state.coll = coll
-
-	filters := map[string]interface{}{}
-
-	documents, count, err := c.dao.ListDocuments(ctx, db, coll, filters, c.state.page, c.state.limit)
-	if err != nil {
-		return
-	}
-
-	if len(documents) == 0 {
-		noDocCell := tview.NewTableCell("No documents found").
-			SetTextColor(tcell.ColorWhite).
-			SetAlign(tview.AlignLeft).
-			SetSelectable(false)
-
-		c.SetCell(1, 1, noDocCell)
-		return
-	}
-
-	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.page, c.state.limit)
-	headerCell := tview.NewTableCell(headerInfo).
-		SetTextColor(tcell.ColorWhite).
-		SetAlign(tview.AlignLeft).
-		SetSelectable(false)
-
-	c.SetCell(0, 0, headerCell)
-}
-
-func (c *Content) SetShortcuts(ctx context.Context) {
-	c.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Rune() {
-		case 'v':
-			c.docView.DocViewer(ctx, c.state.db, c.state.coll, c.GetCell(c.GetSelection()).Text)
-		case 'e':
-			c.docView.DocEdit(ctx, c.state.db, c.state.coll, c.GetCell(c.GetSelection()).Text, c.refresh)
-		case '/':
-			c.Filter(ctx, c.state.db, c.state.coll, c.GetCell(c.GetSelection()).Text, c.refresh)
-		}
-		switch event.Key() {
-		case tcell.KeyCtrlN:
-			c.goToNextMongoPage(ctx)
-		case tcell.KeyCtrlP:
-			c.goToPrevMongoPage(ctx)
-		case tcell.KeyEnter:
-			c.docView.DocViewer(ctx, c.state.db, c.state.coll, c.GetCell(c.GetSelection()).Text)
-		}
-
-		return event
-	})
+	c.RenderContent(c.state.db, c.state.coll, nil)
 }
 
 func (c *Content) goToNextMongoPage(ctx context.Context) {
 	c.state.page += c.state.limit
-	c.RenderContent(c.state.db, c.state.coll)
+	c.RenderContent(c.state.db, c.state.coll, nil)
 }
 
 func (c *Content) goToPrevMongoPage(ctx context.Context) {
 	c.state.page -= c.state.limit
-	c.RenderContent(c.state.db, c.state.coll)
+	c.RenderContent(c.state.db, c.state.coll, nil)
 }

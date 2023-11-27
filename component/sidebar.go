@@ -15,18 +15,18 @@ type SideBar struct {
 	app         *App
 	dao         *mongo.Dao
 	Tree        *tview.TreeView
-	searchBar   *SearchBar
-	nodeSelectF func(a string, b string) error
-	flexStack   []flexStack
+	filterBar   *InputBar
+	nodeSelectF func(a string, b string, filter map[string]interface{}) error
 	mutex       sync.Mutex
 	label       string
 }
 
 func NewSideBar(dao *mongo.Dao) *SideBar {
+	flex := tview.NewFlex()
 	return &SideBar{
-		Flex:      tview.NewFlex(),
+		Flex:      flex,
 		Tree:      tview.NewTreeView(),
-		searchBar: NewSearchBar("Search"),
+		filterBar: NewInputBar("Filter"),
 		label:     "sideBar",
 		dao:       dao,
 		mutex:     sync.Mutex{},
@@ -34,26 +34,24 @@ func NewSideBar(dao *mongo.Dao) *SideBar {
 }
 
 func (s *SideBar) Init(ctx context.Context) error {
+	s.app = GetApp(ctx)
+
 	s.setStyle()
 	s.setShortcuts(ctx)
-
-	s.app = GetApp(ctx)
 
 	rootNode := s.dbNode("Databases")
 	s.Tree.SetRoot(rootNode)
 
-	s.SetDirection(tview.FlexRow)
-
-	s.flexStack = []flexStack{
-		{s.searchBar.label, 1, 0, false, false},
-		{s.label, 0, 1, true, true},
+	if err := s.render(ctx); err != nil {
+		return err
 	}
-
-	s.render(ctx)
-
-	s.renderTree(ctx, "")
-
-	go s.searchBarListener(ctx)
+	if err := s.renderTree(ctx, ""); err != nil {
+		return err
+	}
+	if err := s.filterBar.Init(ctx); err != nil {
+		return err
+	}
+	go s.filterBarListener(ctx)
 
 	return nil
 }
@@ -64,7 +62,9 @@ func (s *SideBar) setStyle() {
 	s.Tree.SetBorder(true)
 	s.Tree.SetBorderColor(tcell.ColorDimGray)
 	s.Tree.SetTitle(" Databases ")
+	s.Tree.SetGraphicsColor(tcell.ColorDefault)
 
+	s.Flex.SetDirection(tview.FlexRow)
 	s.Flex.SetBackgroundColor(tcell.ColorDefault)
 }
 
@@ -73,9 +73,9 @@ func (s *SideBar) setShortcuts(ctx context.Context) {
 		switch event.Key() {
 		case tcell.KeyRune:
 			if event.Rune() == '/' {
-				s.seachBarToggle()
-				s.render(ctx)
-				go s.searchBar.SetText("")
+				s.toogleFilterBar(ctx)
+				go s.filterBar.SetText("")
+        return nil
 			}
 		}
 		return event
@@ -85,33 +85,36 @@ func (s *SideBar) setShortcuts(ctx context.Context) {
 func (s *SideBar) render(ctx context.Context) error {
 	s.Flex.Clear()
 
-	for _, item := range s.flexStack {
-		if item.enabled {
-			primitive := s.getPrimitiveByLabel(item.label)
-			s.AddItem(primitive, item.fixed, item.prop, item.focus)
-		}
+	if s.filterBar.IsEnabled() {
+		s.Flex.AddItem(s.filterBar, 1, 0, false)
+		defer s.app.SetFocus(s.filterBar)
+	} else {
+		defer s.app.SetFocus(s.Tree)
 	}
+
+	s.Flex.AddItem(s.Tree, 0, 1, true)
 
 	return nil
 }
 
-func (s *SideBar) searchBarListener(ctx context.Context) {
-	keyChan := s.searchBar.KeyChan
+func (s *SideBar) filterBarListener(ctx context.Context) {
+	eventChan := s.filterBar.EventChan
 
 	for {
-		key := <-keyChan
+		key := <-eventChan
+		if _, ok := key.(tcell.Key); !ok {
+			continue
+		}
 		switch key {
 		case tcell.KeyEsc:
 			s.app.QueueUpdateDraw(func() {
-				s.Flex.RemoveItem(s.searchBar)
-				s.seachBarToggle()
 				s.renderTree(context.Background(), "")
+				s.toogleFilterBar(ctx)
 			})
 		case tcell.KeyEnter:
 			s.app.QueueUpdateDraw(func() {
-				s.Flex.RemoveItem(s.searchBar)
-				s.renderTree(context.Background(), s.searchBar.GetText())
-				s.seachBarToggle()
+				s.renderTree(context.Background(), s.filterBar.GetText())
+				s.toogleFilterBar(ctx)
 			})
 		}
 	}
@@ -119,8 +122,8 @@ func (s *SideBar) searchBarListener(ctx context.Context) {
 
 func (s *SideBar) getPrimitiveByLabel(label string) tview.Primitive {
 	switch label {
-	case "searchBar":
-		return s.searchBar
+	case "filter":
+		return s.filterBar
 	case "sideBar":
 		return s.Tree
 	default:
@@ -139,7 +142,7 @@ func (s *SideBar) renderTree(ctx context.Context, filter string) error {
 
 	if len(dbsWitColls) == 0 {
 		emptyNode := tview.NewTreeNode("No databases found")
-		emptyNode.SetColor(tcell.ColorRed)
+		emptyNode.SetColor(tcell.ColorDefault)
 		emptyNode.SetSelectable(false)
 
 		rootNode.AddChild(emptyNode)
@@ -155,7 +158,7 @@ func (s *SideBar) renderTree(ctx context.Context, filter string) error {
 			parent.AddChild(child)
 
 			child.SetSelectedFunc(func() {
-				s.nodeSelectF(item.DB, child.GetText())
+				s.nodeSelectF(item.DB, child.GetText(), nil)
 			})
 		}
 	}
@@ -165,16 +168,9 @@ func (s *SideBar) renderTree(ctx context.Context, filter string) error {
 	return nil
 }
 
-func (s *SideBar) seachBarToggle() {
-	s.mutex.Lock()
-	if s.flexStack[0].enabled {
-		s.flexStack[0].enabled = false
-		s.app.SetFocus(s.Tree)
-	} else {
-		s.flexStack[0].enabled = true
-		s.app.SetFocus(s.searchBar)
-	}
-	s.mutex.Unlock()
+func (s *SideBar) toogleFilterBar(ctx context.Context) {
+	s.filterBar.Toggle()
+	s.render(ctx)
 }
 
 func (s *SideBar) rootNode() *tview.TreeNode {
@@ -183,12 +179,18 @@ func (s *SideBar) rootNode() *tview.TreeNode {
 	r.SetSelectable(false)
 	r.SetExpanded(true)
 
+	collNode := tview.NewTreeNode("Collections")
+	r.AddChild(collNode)
+	collNode.SetColor(tcell.ColorGreen)
+	collNode.SetSelectable(false)
+	collNode.SetExpanded(true)
+
 	return r
 }
 
 func (s *SideBar) dbNode(name string) *tview.TreeNode {
 	r := tview.NewTreeNode(name)
-	r.SetColor(tcell.ColorGreen)
+	r.SetColor(tcell.ColorIndianRed.TrueColor())
 	r.SetSelectable(true)
 	r.SetExpanded(false)
 
@@ -201,7 +203,7 @@ func (s *SideBar) dbNode(name string) *tview.TreeNode {
 
 func (s *SideBar) collNode(name string) *tview.TreeNode {
 	ch := tview.NewTreeNode(name)
-	ch.SetColor(tcell.ColorWhite)
+	ch.SetColor(tcell.ColorGreen.TrueColor())
 	ch.SetSelectable(true)
 	ch.SetExpanded(false)
 

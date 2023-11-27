@@ -104,7 +104,7 @@ type Filter struct {
 }
 
 func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, filter primitive.M, page, limit int64) ([]primitive.M, int64, error) {
-	count, err := d.client.Database(db).Collection(collection).CountDocuments(nil, primitive.M{})
+	count, err := d.client.Database(db).Collection(collection).CountDocuments(ctx, filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -115,6 +115,7 @@ func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, f
 		Skip:  &page,
 		Sort:  primitive.D{{Key: "_id", Value: 1}},
 	}
+
 	cursor, err := coll.Find(ctx, filter, &options)
 	if err != nil {
 		return nil, 0, err

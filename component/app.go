@@ -4,6 +4,7 @@ import (
 	"context"
 	"mongo-ui/mongo"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
@@ -21,6 +22,8 @@ func NewApp() App {
 	client := mongo.NewClient()
 	client.Connect()
 	mongoDao := mongo.NewDao(client.Client, client.Config)
+
+	loadStyles()
 
 	app := App{
 		Application: tview.NewApplication(),
@@ -40,6 +43,20 @@ func (a *App) Init() error {
 	a.SetRoot(a.Root.Pages, true).EnableMouse(true)
 	a.SetFocus(focus)
 	return a.Run()
+}
+
+func loadStyles() {
+	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
+	tview.Styles.ContrastBackgroundColor = tcell.ColorDefault
+	tview.Styles.MoreContrastBackgroundColor = tcell.ColorDefault
+	tview.Styles.PrimaryTextColor = tcell.ColorDefault
+	tview.Styles.SecondaryTextColor = tcell.ColorYellow
+	tview.Styles.TertiaryTextColor = tcell.ColorBlue
+	tview.Styles.InverseTextColor = tcell.ColorBlue
+	tview.Styles.ContrastSecondaryTextColor = tcell.ColorDarkCyan
+	tview.Styles.BorderColor = tcell.ColorBlue
+	tview.Styles.TitleColor = tcell.ColorBlue
+	tview.Styles.GraphicsColor = tcell.ColorBlue
 }
 
 func GetApp(ctx context.Context) *App {

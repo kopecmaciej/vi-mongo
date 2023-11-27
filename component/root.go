@@ -74,7 +74,7 @@ func (r *Root) render(ctx context.Context) error {
 	r.Flex.AddItem(r.sideBar.Flex, 30, 0, false)
 	r.Flex.AddItem(body, 0, 7, true)
 	body.AddItem(r.header.Table, 0, 1, false)
-	body.AddItem(r.content.Table, 0, 7, true)
+	body.AddItem(r.content.Flex, 0, 7, true)
 
 	r.app.SetFocus(r.sideBar.Flex)
 
