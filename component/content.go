@@ -1,6 +1,7 @@
 package component
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,14 +17,15 @@ import (
 type Content struct {
 	*tview.Flex
 
-	Table    *tview.Table
-	app      *App
-	dao      *mongo.Dao
-	queryBar *InputBar
-	docView  *DocViewer
-	label    string
-	mutex    sync.Mutex
-	state    contentState
+	Table      *tview.Table
+	View       *tview.TextView
+	app        *App
+	dao        *mongo.Dao
+	queryBar   *InputBar
+	textPeeker *TextPeeker
+	label      string
+	mutex      sync.Mutex
+	state      contentState
 }
 
 type contentState struct {
@@ -41,14 +43,15 @@ func NewContent(dao *mongo.Dao) *Content {
 
 	flex := tview.NewFlex()
 	return &Content{
-		Table:    tview.NewTable(),
-		Flex:     flex,
-		queryBar: NewInputBar("Query"),
-		dao:      dao,
-		docView:  NewDocView(dao),
-		mutex:    sync.Mutex{},
-		label:    "content",
-		state:    state,
+		Table:      tview.NewTable(),
+		Flex:       flex,
+		View:       tview.NewTextView(),
+		queryBar:   NewInputBar("Query"),
+		dao:        dao,
+		textPeeker: NewTextPeeker(dao),
+		mutex:      sync.Mutex{},
+		label:      "content",
+		state:      state,
 	}
 }
 
@@ -57,7 +60,7 @@ func (c *Content) Init(ctx context.Context) error {
 	c.setStyle()
 	c.setShortcuts(ctx)
 
-	if err := c.docView.Init(ctx, c.Flex); err != nil {
+	if err := c.textPeeker.Init(ctx, c.Flex); err != nil {
 		return err
 	}
 	if err := c.queryBar.Init(ctx); err != nil {
@@ -85,15 +88,19 @@ func (c *Content) setStyle() {
 
 	c.Flex.SetBackgroundColor(tcell.NewRGBColor(0, 10, 19))
 	c.Flex.SetDirection(tview.FlexRow)
+
+  c.View.SetBackgroundColor(tcell.ColorDefault)
 }
 
 func (c *Content) setShortcuts(ctx context.Context) {
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
-		case 'v':
-			c.docView.DocViewer(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+		case 'p':
+			c.textPeeker.PeekJson(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case 'e':
-			c.docView.DocEdit(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text, c.refresh)
+			c.textPeeker.EditJson(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text, c.refresh)
+		case 'v':
+			c.ViewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case '/':
 			c.toggleQueryBar(ctx)
 			c.render(ctx)
@@ -104,7 +111,7 @@ func (c *Content) setShortcuts(ctx context.Context) {
 		case tcell.KeyCtrlP:
 			c.goToPrevMongoPage(ctx)
 		case tcell.KeyEnter:
-			c.docView.DocViewer(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			c.textPeeker.PeekJson(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 		}
 
 		return event
@@ -258,4 +265,33 @@ func (c *Content) goToNextMongoPage(ctx context.Context) {
 func (c *Content) goToPrevMongoPage(ctx context.Context) {
 	c.state.page -= c.state.limit
 	c.RenderContent(c.state.db, c.state.coll, nil)
+}
+
+func (c *Content) ViewJson(ctx context.Context, jsonString string) error {
+	c.View.Clear()
+
+	c.app.Root.AddPage("json", c.View, true, true)
+
+	var prettyJson bytes.Buffer
+	err := json.Indent(&prettyJson, []byte(jsonString), "", "  ")
+	if err != nil {
+		log.Printf("Error marshaling JSON: %v", err)
+		return nil
+	}
+	text := string(prettyJson.Bytes())
+	c.View.SetText(text)
+	c.View.ScrollToBeginning()
+
+	c.app.SetFocus(c.View)
+
+	c.View.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEsc:
+			c.app.Root.RemovePage("json")
+			c.app.SetFocus(c.Table)
+		}
+		return event
+	})
+
+	return nil
 }

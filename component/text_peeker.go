@@ -21,35 +21,35 @@ type docState struct {
 	rawDocument string
 }
 
-type DocViewer struct {
+type TextPeeker struct {
 	app    *App
 	dao    *mongo.Dao
 	state  docState
 	parent tview.Primitive
 }
 
-func NewDocView(dao *mongo.Dao) *DocViewer {
-	return &DocViewer{
+func NewTextPeeker(dao *mongo.Dao) *TextPeeker {
+	return &TextPeeker{
 		dao: dao,
 	}
 }
 
-func (d *DocViewer) Init(ctx context.Context, parent tview.Primitive) error {
+func (d *TextPeeker) Init(ctx context.Context, parent tview.Primitive) error {
 	d.app = GetApp(ctx)
 	d.parent = parent
 	return nil
 }
 
-func (d *DocViewer) DocViewer(ctx context.Context, db, coll string, rawDocument string) error {
+func (d *TextPeeker) PeekJson(ctx context.Context, db, coll string, jsonString string) error {
 	d.state = docState{
 		contentState: contentState{
 			db:   db,
 			coll: coll,
 		},
-		rawDocument: rawDocument,
+		rawDocument: jsonString,
 	}
 	var prettyJson bytes.Buffer
-	err := json.Indent(&prettyJson, []byte(rawDocument), "", "  ")
+	err := json.Indent(&prettyJson, []byte(jsonString), "", "  ")
 	if err != nil {
 		log.Printf("Error marshaling JSON: %v", err)
 		return nil
@@ -77,7 +77,7 @@ func (d *DocViewer) DocViewer(ctx context.Context, db, coll string, rawDocument 
 	d.app.SetFocus(modal)
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Edit" {
-			d.DocEdit(ctx, db, coll, rawDocument, d.refresh)
+			d.EditJson(ctx, db, coll, jsonString, d.refresh)
 		} else {
 			root.RemovePage("details")
 			d.app.SetFocus(d.parent)
@@ -86,11 +86,11 @@ func (d *DocViewer) DocViewer(ctx context.Context, db, coll string, rawDocument 
 	return nil
 }
 
-func (d *DocViewer) refresh() {
-	d.DocViewer(context.Background(), d.state.db, d.state.coll, d.state.rawDocument)
+func (d *TextPeeker) refresh() {
+	d.PeekJson(context.Background(), d.state.db, d.state.coll, d.state.rawDocument)
 }
 
-func (d *DocViewer) DocEdit(ctx context.Context, db, coll string, rawDocument string, fun func()) error {
+func (d *TextPeeker) EditJson(ctx context.Context, db, coll string, rawDocument string, fun func()) error {
 	var prettyJson bytes.Buffer
 	err := json.Indent(&prettyJson, []byte(rawDocument), "", "  ")
 	if err != nil {
@@ -147,7 +147,7 @@ func (d *DocViewer) DocEdit(ctx context.Context, db, coll string, rawDocument st
 	return nil
 }
 
-func (d *DocViewer) saveDocument(ctx context.Context, db, coll string, rawDocument string) error {
+func (d *TextPeeker) saveDocument(ctx context.Context, db, coll string, rawDocument string) error {
 	var document map[string]interface{}
 	err := json.Unmarshal([]byte(rawDocument), &document)
 	if err != nil {

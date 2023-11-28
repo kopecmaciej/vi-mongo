@@ -42,7 +42,10 @@ func (h *Header) Init(ctx context.Context) error {
 
 	h.setStyle()
 
-	h.setBaseInfo(ctx)
+	err := h.setBaseInfo(ctx)
+	if err != nil {
+		return err
+	}
 	h.render()
 
 	go h.Refresh(ctx)
@@ -50,11 +53,10 @@ func (h *Header) Init(ctx context.Context) error {
 	return nil
 }
 
-func (h *Header) setBaseInfo(ctx context.Context) {
+func (h *Header) setBaseInfo(ctx context.Context) error {
 	ss, err := h.dao.GetServerStatus(ctx)
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 
 	port := strconv.Itoa(h.dao.Config.Port)
@@ -71,6 +73,8 @@ func (h *Header) setBaseInfo(ctx context.Context) {
 		8: {"Resident Memory", strconv.Itoa(int(ss.Mem.Resident))},
 		9: {"Virtual Memory", strconv.Itoa(int(ss.Mem.Virtual))},
 	}
+
+	return nil
 }
 
 func (h *Header) Refresh(ctx context.Context) {
@@ -79,7 +83,11 @@ func (h *Header) Refresh(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			h.setBaseInfo(ctx)
+			err := h.setBaseInfo(ctx)
+			if err != nil {
+				log.Println(err)
+				ctx.Done()
+			}
 			h.app.QueueUpdateDraw(func() {
 				h.render()
 			})

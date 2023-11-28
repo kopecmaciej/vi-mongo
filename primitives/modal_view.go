@@ -1,20 +1,22 @@
 package primitives
 
 import (
+	"strings"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
-// Doc is a centered message window used to inform the user or prompt them
-// for an immediate decision. It needs to have at least one button (added via
-// [Doc.AddButtons]) or it will never disappear.
-
+// Text is the text to be displayed in the modal.
 type Text struct {
 	Content string
 	Color   tcell.Color
 	Align   int
 }
 
+// ModalView is a centered message window used to inform the user or prompt them
+// for an immediate decision. It needs to have at least one button (added via
+// [ModalView.AddButtons]) or it will never disappear.
 type ModalView struct {
 	*tview.Box
 	// The frame embedded in the modal.
@@ -23,7 +25,17 @@ type ModalView struct {
 	// The form embedded in the modal's frame.
 	form *tview.Form
 
+	// The text to be displayed in the modal.
 	text Text
+
+	// Whether or not the modal is scrollable
+	scrollable bool
+
+	// The position of the scroll
+	scrollPosition int
+
+	// The end position of the scroll
+	endPosition int
 
 	// The optional callback for when the user clicked one of the buttons. It
 	// receives the index of the clicked button and the button's label.
@@ -38,6 +50,8 @@ func NewModalView() *ModalView {
 			Color: tview.Styles.PrimaryTextColor,
 			Align: tview.AlignLeft,
 		},
+		scrollable:     true,
+		scrollPosition: 0,
 	}
 	m.form = tview.NewForm().
 		SetButtonsAlign(tview.AlignCenter).
@@ -123,10 +137,10 @@ func (m *ModalView) AddButtons(labels []string) *ModalView {
 					case 'l':
 						return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
 					}
-				case tcell.KeyDown, tcell.KeyRight:
-					return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
-				case tcell.KeyUp, tcell.KeyLeft:
-					return tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone)
+					// case tcell.KeyDown, tcell.KeyRight:
+					// 	return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
+					// case tcell.KeyUp, tcell.KeyLeft:
+					// 	return tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone)
 				}
 				return event
 			})
@@ -157,7 +171,6 @@ func (m *ModalView) HasFocus() bool {
 	return m.form.HasFocus()
 }
 
-// Draw draws this primitive onto the screen.
 func (m *ModalView) Draw(screen tcell.Screen) {
 	// Calculate the width of this modal.
 	screenWidth, screenHeight := screen.Size()
@@ -166,12 +179,32 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 	// Reset the text and find out how wide it is.
 	m.frame.Clear()
 	lines := tview.WordWrap(m.text.Content, width)
-	for _, line := range lines {
-		m.frame.AddText(line, true, m.text.Align, m.text.Color)
+
+	// Variables for scrolling
+	maxLines := screenHeight - 12
+
+	m.endPosition = len(lines) - maxLines
+
+	// Calculate the total height and the starting line based on scroll position
+	totalHeight := len(lines)
+	startLine := m.scrollPosition
+	if startLine > totalHeight-maxLines {
+		startLine = totalHeight - maxLines
+	}
+	if startLine < 0 {
+		startLine = 0
+	}
+
+	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
+		if strings.Contains(lines[i], "{") || strings.Contains(lines[i], "}") {
+			lines[i] = strings.ReplaceAll(lines[i], "{", "[red]{")
+			lines[i] = strings.ReplaceAll(lines[i], "}", "[red]}"+"[white]")
+		}
+		m.frame.AddText(lines[i], true, m.text.Align, m.text.Color)
 	}
 
 	// Set the modal's position and size.
-	height := len(lines) + 6
+	height := maxLines + 6
 	width += 4
 	x := (screenWidth - width) / 2
 	y := (screenHeight - height) / 2
@@ -180,6 +213,18 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 	// Draw the frame.
 	m.frame.SetRect(x, y, width, height)
 	m.frame.Draw(screen)
+}
+
+// Additional methods to handle scrolling
+func (m *ModalView) ScrollUp() {
+	if m.scrollPosition == 0 {
+		return
+	}
+	m.scrollPosition--
+}
+
+func (m *ModalView) ScrollDown() {
+	m.scrollPosition++
 }
 
 // TextAlignment sets the text alignment within the modal. This must be one of
@@ -208,6 +253,26 @@ func (m *ModalView) MouseHandler() func(action tview.MouseAction, event *tcell.E
 // InputHandler returns the handler for this primitive.
 func (m *ModalView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return m.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+		key := event.Key()
+
+		switch key {
+		case tcell.KeyDown:
+			m.ScrollDown()
+		case tcell.KeyUp:
+			m.ScrollUp()
+		case tcell.KeyRune:
+			switch event.Rune() {
+			case 'j':
+				m.ScrollDown()
+			case 'k':
+				m.ScrollUp()
+			case 'g':
+				m.scrollPosition = 0
+			case 'G':
+				m.scrollPosition = m.endPosition
+			}
+		}
+
 		if m.frame.HasFocus() {
 			if handler := m.frame.InputHandler(); handler != nil {
 				handler(event, setFocus)
@@ -215,4 +280,9 @@ func (m *ModalView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 			}
 		}
 	})
+}
+
+func (m *ModalView) SetScrollable(scrollable bool) *ModalView {
+	m.scrollable = scrollable
+	return m
 }

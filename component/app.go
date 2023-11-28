@@ -47,9 +47,9 @@ func (a *App) Init() error {
 
 func loadStyles() {
 	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
-	tview.Styles.ContrastBackgroundColor = tcell.ColorDefault
+	tview.Styles.ContrastBackgroundColor = tcell.ColorGreen
 	tview.Styles.MoreContrastBackgroundColor = tcell.ColorDefault
-	tview.Styles.PrimaryTextColor = tcell.ColorDefault
+	tview.Styles.PrimaryTextColor = tcell.ColorWhite
 	tview.Styles.SecondaryTextColor = tcell.ColorYellow
 	tview.Styles.TertiaryTextColor = tcell.ColorBlue
 	tview.Styles.InverseTextColor = tcell.ColorBlue
