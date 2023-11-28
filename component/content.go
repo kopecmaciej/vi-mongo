@@ -63,6 +63,7 @@ func (c *Content) Init(ctx context.Context) error {
 	if err := c.queryBar.Init(ctx); err != nil {
 		return err
 	}
+	c.queryBar.AutocompleteOn = true
 
 	c.render(ctx)
 
@@ -96,7 +97,6 @@ func (c *Content) setShortcuts(ctx context.Context) {
 		case '/':
 			c.toggleQueryBar(ctx)
 			c.render(ctx)
-			// go c.queryBar.SetText("")
 		}
 		switch event.Key() {
 		case tcell.KeyCtrlN:
@@ -115,7 +115,7 @@ func (c *Content) render(ctx context.Context) {
 	c.Flex.Clear()
 
 	if c.queryBar.IsEnabled() {
-		c.Flex.AddItem(c.queryBar, 1, 0, false)
+		c.Flex.AddItem(c.queryBar, 3, 0, false)
 		defer c.app.SetFocus(c.queryBar)
 	} else {
 		defer c.app.SetFocus(c.Table)
@@ -154,7 +154,12 @@ func (c *Content) queryBarListener(ctx context.Context) {
 						log.Printf("Error parsing query: %v", err)
 					}
 				}
+				err := c.queryBar.SaveToHistory(text)
+				if err != nil {
+					log.Printf("Error saving to history: %v", err)
+				}
 				c.RenderContent(c.state.db, c.state.coll, filter)
+				c.Table.ScrollToBeginning()
 			})
 		}
 	}
@@ -235,6 +240,9 @@ func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) 
 
 		c.Table.SetCell(i+1, 0, dataCell)
 	}
+
+	c.Table.ScrollToBeginning()
+
 	return nil
 }
 

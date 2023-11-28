@@ -20,4 +20,5 @@
 # Go workspace file
 go.work
 log.txt
+history.txt
 ./log.txt

@@ -86,7 +86,7 @@ func (s *SideBar) render(ctx context.Context) error {
 	s.Flex.Clear()
 
 	if s.filterBar.IsEnabled() {
-		s.Flex.AddItem(s.filterBar, 1, 0, false)
+		s.Flex.AddItem(s.filterBar, 3, 0, false)
 		defer s.app.SetFocus(s.filterBar)
 	} else {
 		defer s.app.SetFocus(s.Tree)

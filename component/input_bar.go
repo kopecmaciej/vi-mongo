@@ -2,9 +2,8 @@ package component
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
@@ -16,19 +15,21 @@ type Event string
 type InputBar struct {
 	*tview.InputField
 
-	EventChan chan interface{}
-	mutex     sync.Mutex
-	label     string
-	enabled   bool
+	EventChan      chan interface{}
+	mutex          sync.Mutex
+	label          string
+	enabled        bool
+	AutocompleteOn bool
 }
 
 func NewInputBar(label string) *InputBar {
 	f := &InputBar{
-		InputField: tview.NewInputField(),
-		mutex:      sync.Mutex{},
-		label:      label,
-		EventChan:  make(chan interface{}),
-		enabled:    false,
+		InputField:   tview.NewInputField(),
+		mutex:        sync.Mutex{},
+		label:        label,
+		EventChan:    make(chan interface{}),
+		enabled:      false,
+		AutocompleteOn: false,
 	}
 
 	return f
@@ -40,7 +41,9 @@ func (i *InputBar) Init(ctx context.Context) error {
 
 	i.SetEventFunc()
 
-	i.AutocompleteHistory()
+	if i.AutocompleteOn {
+		i.Autocomplete()
+	}
 
 	return nil
 }
@@ -53,53 +56,80 @@ func (i *InputBar) SetEventFunc() {
 
 func (i *InputBar) setStyle() {
 	i.SetBackgroundColor(tcell.ColorDefault)
+	i.SetBorder(true)
+	i.SetBorderColor(tcell.ColorDefault)
 	i.SetFieldBackgroundColor(tcell.ColorDefault)
-	i.SetFieldTextColor(tcell.ColorDefault)
+	i.SetFieldTextColor(tcell.ColorYellow)
 	i.SetPlaceholderTextColor(tcell.ColorDefault)
+
+	autocompleteBg := tcell.ColorGreen.TrueColor()
+	autocompleteMainStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(autocompleteBg)
+	autocompleteSecondaryStyle := tcell.StyleDefault.Foreground(tcell.ColorBlue).Background(autocompleteBg)
+	i.SetAutocompleteStyles(autocompleteBg, autocompleteMainStyle, autocompleteSecondaryStyle)
 }
 
 const (
 	maxHistory = 20
 )
 
+func (i *InputBar) Autocomplete() {
+	history, err := i.LoadHistory()
+	if err != nil {
+		return
+	}
+
+	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
+		for _, entry := range history {
+			if entry == currentText {
+				continue
+			}
+			entries = append(entries, entry)
+		}
+		return entries
+	})
+}
+
 func (i *InputBar) SaveToHistory(text string) error {
 	file, err := os.OpenFile("history.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-    return err
+		return err
 	}
 	defer file.Close()
 
-	if _, err := file.WriteString(text + "\n"); err != nil {
-    return err
+	history, err := i.LoadHistory()
+	if err != nil {
+		return err
 	}
 
-  return nil
+	for _, entry := range history {
+		if entry == text {
+			return nil
+		}
+	}
+
+	if _, err := file.WriteString(text + "\n"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (i *InputBar) LoadHistory() ([]string, error) {
-	file, err := os.Open("history.txt")
+	file, err := os.ReadFile("history.txt")
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
-	defer file.Close()
 
-	var history []string
-	var line string
-	for {
-		_, err := fmt.Fscanf(file, "%s\n", &line)
-		if err != nil {
-			break
+	history := []string{}
+	lines := strings.Split(string(file), "\n")
+
+	for _, line := range lines {
+		if line != "" {
+			history = append(history, line)
 		}
-		history = append(history, line)
 	}
 
-  return history, nil
-}
-
-func (i *InputBar) AutocompleteHistory() {
-	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
-		return []string{"test", "test2"}
-	})
+	return history, nil
 }
 
 func (i *InputBar) IsEnabled() bool {

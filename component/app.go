@@ -53,9 +53,9 @@ func loadStyles() {
 	tview.Styles.SecondaryTextColor = tcell.ColorYellow
 	tview.Styles.TertiaryTextColor = tcell.ColorBlue
 	tview.Styles.InverseTextColor = tcell.ColorBlue
-	tview.Styles.ContrastSecondaryTextColor = tcell.ColorDarkCyan
+	tview.Styles.ContrastSecondaryTextColor = tcell.ColorYellow
 	tview.Styles.BorderColor = tcell.ColorBlue
-	tview.Styles.TitleColor = tcell.ColorBlue
+	tview.Styles.TitleColor = tcell.ColorDefault
 	tview.Styles.GraphicsColor = tcell.ColorBlue
 }
 
