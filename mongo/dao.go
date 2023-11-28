@@ -9,6 +9,7 @@ import (
 )
 
 type ServerStatus struct {
+	Ok             int32  `bson:"ok"`
 	Version        string `bson:"version"`
 	Uptime         int32  `bson:"uptime"`
 	CurrentConns   int32  `bson:"connections.current"`

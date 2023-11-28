@@ -42,13 +42,16 @@ func (h *Header) Init(ctx context.Context) error {
 
 	h.setStyle()
 
-	err := h.setBaseInfo(ctx)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	err := h.setBaseInfo(ctxWithTimeout)
 	if err != nil {
 		return err
 	}
 	h.render()
 
-	go h.Refresh(ctx)
+	go h.Refresh(ctxWithTimeout)
 
 	return nil
 }
@@ -61,17 +64,23 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 
 	port := strconv.Itoa(h.dao.Config.Port)
 
+	status := "○"
+	if ss.Ok == 1 {
+		status = "●"
+	}
+
 	h.baseInfo = BaseInfo{
-		0: {"Host", h.dao.Config.Host},
-		1: {"Port", port},
-		2: {"Database", h.dao.Config.Database},
-		3: {"Collection", "-"},
-		4: {"Version", ss.Version},
-		5: {"Uptime", strconv.Itoa(int(ss.Uptime))},
-		6: {"Connections", strconv.Itoa(int(ss.CurrentConns))},
-		7: {"Available Connections", strconv.Itoa(int(ss.AvailableConns))},
-		8: {"Resident Memory", strconv.Itoa(int(ss.Mem.Resident))},
-		9: {"Virtual Memory", strconv.Itoa(int(ss.Mem.Virtual))},
+		0:  {"Status", status},
+		1:  {"Host", h.dao.Config.Host},
+		2:  {"Port", port},
+		3:  {"Database", h.dao.Config.Database},
+		4:  {"Collection", "-"},
+		5:  {"Version", ss.Version},
+		6:  {"Uptime", strconv.Itoa(int(ss.Uptime))},
+		7:  {"Connections", strconv.Itoa(int(ss.CurrentConns))},
+		8:  {"Available Connections", strconv.Itoa(int(ss.AvailableConns))},
+		9:  {"Resident Memory", strconv.Itoa(int(ss.Mem.Resident))},
+		10: {"Virtual Memory", strconv.Itoa(int(ss.Mem.Virtual))},
 	}
 
 	return nil
