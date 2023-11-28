@@ -75,11 +75,30 @@ func (s *SideBar) setShortcuts(ctx context.Context) {
 			if event.Rune() == '/' {
 				s.toogleFilterBar(ctx)
 				go s.filterBar.SetText("")
-        return nil
+				return nil
 			}
 		}
 		return event
 	})
+
+	s.Tree.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyRune:
+			if event.Rune() == 'o' {
+				s.Tree.GetCurrentNode().SetExpanded(!s.Tree.GetCurrentNode().IsExpanded())
+				return nil
+			}
+			if event.Rune() == 'w' {
+				children := s.Tree.GetRoot().GetChildren()
+				for _, child := range children {
+					child.SetExpanded(false)
+				}
+				return nil
+			}
+		}
+		return event
+	})
+
 }
 
 func (s *SideBar) render(ctx context.Context) error {
@@ -158,7 +177,7 @@ func (s *SideBar) renderTree(ctx context.Context, filter string) error {
 			parent.AddChild(child)
 
 			child.SetSelectedFunc(func() {
-				s.nodeSelectF(item.DB, child.GetText(), nil)
+				s.nodeSelectF(parent.GetText(), child.GetText(), nil)
 			})
 		}
 	}

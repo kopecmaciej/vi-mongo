@@ -24,11 +24,11 @@ type InputBar struct {
 
 func NewInputBar(label string) *InputBar {
 	f := &InputBar{
-		InputField:   tview.NewInputField(),
-		mutex:        sync.Mutex{},
-		label:        label,
-		EventChan:    make(chan interface{}),
-		enabled:      false,
+		InputField:     tview.NewInputField(),
+		mutex:          sync.Mutex{},
+		label:          label,
+		EventChan:      make(chan interface{}),
+		enabled:        false,
 		AutocompleteOn: false,
 	}
 
@@ -68,6 +68,16 @@ func (i *InputBar) setStyle() {
 	i.SetAutocompleteStyles(autocompleteBg, autocompleteMainStyle, autocompleteSecondaryStyle)
 }
 
+func (i *InputBar) setShortcuts(ctx context.Context) {
+	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyCtrlSpace:
+			i.ToggleAutocomplete()
+		}
+		return event
+	})
+}
+
 const (
 	maxHistory = 20
 )
@@ -80,10 +90,9 @@ func (i *InputBar) Autocomplete() {
 
 	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
 		for _, entry := range history {
-			if entry == currentText {
-				continue
+			if strings.Contains(entry, currentText) {
+				entries = append(entries, entry)
 			}
-			entries = append(entries, entry)
 		}
 		return entries
 	})
@@ -152,5 +161,16 @@ func (i *InputBar) Toggle() {
 		i.Disable()
 	} else {
 		i.Enable()
+	}
+}
+
+func (i *InputBar) ToggleAutocomplete() {
+	i.mutex.Lock()
+	defer i.mutex.Unlock()
+
+	if i.AutocompleteOn {
+		i.AutocompleteOn = false
+	} else {
+		i.AutocompleteOn = true
 	}
 }

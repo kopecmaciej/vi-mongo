@@ -8,10 +8,10 @@ import (
 	"log"
 	"mongo-ui/mongo"
 	"sync"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Content struct {
@@ -33,6 +33,7 @@ type contentState struct {
 	limit int64
 	db    string
 	coll  string
+	count int64
 }
 
 func NewContent(dao *mongo.Dao) *Content {
@@ -63,10 +64,10 @@ func (c *Content) Init(ctx context.Context) error {
 	if err := c.textPeeker.Init(ctx, c.Flex); err != nil {
 		return err
 	}
+	c.queryBar.AutocompleteOn = true
 	if err := c.queryBar.Init(ctx); err != nil {
 		return err
 	}
-	c.queryBar.AutocompleteOn = true
 
 	c.render(ctx)
 
@@ -89,7 +90,7 @@ func (c *Content) setStyle() {
 	c.Flex.SetBackgroundColor(tcell.NewRGBColor(0, 10, 19))
 	c.Flex.SetDirection(tview.FlexRow)
 
-  c.View.SetBackgroundColor(tcell.ColorDefault)
+	c.View.SetBackgroundColor(tcell.ColorDefault)
 }
 
 func (c *Content) setShortcuts(ctx context.Context) {
@@ -153,18 +154,16 @@ func (c *Content) queryBarListener(ctx context.Context) {
 		case tcell.KeyEnter:
 			c.app.QueueUpdateDraw(func() {
 				c.toggleQueryBar(ctx)
-				filter := map[string]interface{}{}
 				text := c.queryBar.GetText()
-				if text != "" {
-					err := bson.UnmarshalExtJSON([]byte(text), true, &filter)
-					if err != nil {
-						log.Printf("Error parsing query: %v", err)
-					}
+				filter, err := mongo.ParseStringQuery(text)
+				if err != nil {
+					log.Printf("Error parsing query: %v", err)
 				}
-				err := c.queryBar.SaveToHistory(text)
+				err = c.queryBar.SaveToHistory(text)
 				if err != nil {
 					log.Printf("Error saving to history: %v", err)
 				}
+				log.Printf("filter: %v", filter)
 				c.RenderContent(c.state.db, c.state.coll, filter)
 				c.Table.ScrollToBeginning()
 			})
@@ -184,7 +183,8 @@ func (c *Content) getPrimitiveByLabel(label string) tview.Primitive {
 }
 
 func (c *Content) listDocuments(db, coll string, filters map[string]interface{}) ([]string, int64, error) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
 	c.state.db = db
 	c.state.coll = coll
 
@@ -192,6 +192,8 @@ func (c *Content) listDocuments(db, coll string, filters map[string]interface{})
 	if err != nil {
 		return nil, 0, err
 	}
+
+	c.state.count = count
 
 	if len(documents) == 0 {
 		return nil, 0, nil
@@ -214,11 +216,9 @@ func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) 
 	c.Table.Clear()
 	c.app.SetFocus(c.Table)
 
-	c.state.db = db
-	c.state.coll = coll
-
 	documents, count, err := c.listDocuments(db, coll, filter)
 	if err != nil {
+		log.Printf("Error listing documents: %v", err)
 		return err
 	}
 
@@ -233,6 +233,13 @@ func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) 
 	}
 
 	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.page, c.state.limit)
+	if filter != nil {
+		prettyFilter, err := json.Marshal(filter)
+		if err != nil {
+			log.Printf("Error marshaling JSON: %v", err)
+		}
+		headerInfo += fmt.Sprintf(", Filter: %v", string(prettyFilter))
+	}
 	headerCell := tview.NewTableCell(headerInfo).
 		SetTextColor(tcell.ColorWhite).
 		SetAlign(tview.AlignLeft).
@@ -245,7 +252,7 @@ func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) 
 			SetTextColor(tcell.ColorWhite).
 			SetAlign(tview.AlignLeft)
 
-		c.Table.SetCell(i+1, 0, dataCell)
+		c.Table.SetCell(i+2, 0, dataCell)
 	}
 
 	c.Table.ScrollToBeginning()
@@ -258,11 +265,17 @@ func (c *Content) refresh() {
 }
 
 func (c *Content) goToNextMongoPage(ctx context.Context) {
+	if c.state.page+c.state.limit >= c.state.count {
+		return
+	}
 	c.state.page += c.state.limit
 	c.RenderContent(c.state.db, c.state.coll, nil)
 }
 
 func (c *Content) goToPrevMongoPage(ctx context.Context) {
+	if c.state.page == 0 {
+		return
+	}
 	c.state.page -= c.state.limit
 	c.RenderContent(c.state.db, c.state.coll, nil)
 }
