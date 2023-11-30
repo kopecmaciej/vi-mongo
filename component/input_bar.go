@@ -41,9 +41,7 @@ func (i *InputBar) Init(ctx context.Context) error {
 
 	i.SetEventFunc()
 
-	if i.AutocompleteOn {
-		i.Autocomplete()
-	}
+	i.Autocomplete()
 
 	return nil
 }
@@ -85,6 +83,9 @@ func (i *InputBar) Autocomplete() {
 	}
 
 	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
+		if i.AutocompleteOn == false {
+			return
+		}
 		for _, entry := range history {
 			if strings.Contains(entry, currentText) {
 				entries = append(entries, entry)

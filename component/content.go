@@ -96,8 +96,9 @@ func (c *Content) setShortcuts(ctx context.Context) {
 		case 'e':
 			c.textPeeker.EditJson(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text, c.refresh)
 		case 'v':
-			c.ViewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+			c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case 'D':
+			c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case '/':
 			c.toggleQueryBar(ctx)
 			c.render(ctx, true)
@@ -161,23 +162,12 @@ func (c *Content) queryBarListener(ctx context.Context) {
 				}
 				err = c.queryBar.SaveToHistory(text)
 				if err != nil {
-          log.Error().Err(err).Msg("Error saving query to history")
+					log.Error().Err(err).Msg("Error saving query to history")
 				}
 				c.RenderContent(c.state.db, c.state.coll, filter)
 				c.Table.ScrollToBeginning()
 			})
 		}
-	}
-}
-
-func (c *Content) getPrimitiveByLabel(label string) tview.Primitive {
-	switch label {
-	case "query":
-		return c.queryBar
-	case "content":
-		return c.Table
-	default:
-		return nil
 	}
 }
 
@@ -235,7 +225,7 @@ func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) 
 		prettyFilter, err := json.Marshal(filter)
 		if err != nil {
 			log.Error().Err(err).Msg("Error marshaling filter")
-      return err
+			return err
 		}
 		headerInfo += fmt.Sprintf(", Filter: %v", string(prettyFilter))
 	}
@@ -277,7 +267,7 @@ func (c *Content) goToPrevMongoPage(ctx context.Context) {
 	c.RenderContent(c.state.db, c.state.coll, nil)
 }
 
-func (c *Content) ViewJson(ctx context.Context, jsonString string) error {
+func (c *Content) viewJson(ctx context.Context, jsonString string) error {
 	c.View.Clear()
 
 	c.app.Root.AddPage("json", c.View, true, true)
@@ -285,7 +275,7 @@ func (c *Content) ViewJson(ctx context.Context, jsonString string) error {
 	var prettyJson bytes.Buffer
 	err := json.Indent(&prettyJson, []byte(jsonString), "", "  ")
 	if err != nil {
-    log.Error().Err(err).Msg("Error marshaling JSON")
+		log.Error().Err(err).Msg("Error marshaling JSON")
 		return nil
 	}
 	text := string(prettyJson.Bytes())
@@ -310,42 +300,50 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 	var doc map[string]interface{}
 	err := json.Unmarshal([]byte(jsonString), &doc)
 	if err != nil {
-    log.Error().Err(err).Msg("Error unmarshaling JSON")
+		log.Error().Err(err).Msg("Error unmarshaling JSON")
 		return nil
 	}
 
 	objectID, err := primitive.ObjectIDFromHex(doc["_id"].(string))
 	if err != nil {
-    log.Error().Err(err).Msg("Error converting _id to ObjectID")
+		log.Error().Err(err).Msg("Error converting _id to ObjectID")
 		return nil
 	}
 
-	// show modal
 	text := "Are you sure you want to delete this document?"
 	modal := tview.NewModal().
 		SetText(text).
 		AddButtons([]string{"Yes", "No"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			if buttonLabel == "Yes" {
-				c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+				err = c.dao.DeleteDocument(ctx, c.state.db, c.state.coll, objectID)
+				if err != nil {
+					log.Error().Err(err).Msg("Error deleting document")
+				}
 			}
 			c.app.Root.RemovePage("modal")
 			c.app.SetFocus(c.Table)
+
+			c.RenderContent(c.state.db, c.state.coll, nil)
 		})
+
+	modal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEsc:
+			c.app.Root.RemovePage("modal")
+			c.app.SetFocus(c.Table)
+		}
+		switch event.Rune() {
+		case 'h':
+			return tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone)
+		case 'l':
+			return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
+		}
+		return event
+	})
 
 	c.app.Root.AddPage("modal", modal, true, true)
 	c.app.SetFocus(modal)
-
-	err = c.dao.DeleteDocument(ctx, c.state.db, c.state.coll, objectID)
-	if err != nil {
-		log.Printf("Error deleting document: %v", err)
-		return nil
-	}
-
-	c.app.Root.RemovePage("modal")
-	c.app.SetFocus(c.Table)
-
-	c.RenderContent(c.state.db, c.state.coll, nil)
 
 	return nil
 }

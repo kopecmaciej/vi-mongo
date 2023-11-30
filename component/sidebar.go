@@ -78,12 +78,14 @@ func (s *SideBar) setShortcuts(ctx context.Context) {
 func (s *SideBar) render(ctx context.Context) error {
 	s.Flex.Clear()
 
+	var primitive tview.Primitive
+	primitive = s.DBTree
+
 	if s.FilterBar.IsEnabled() {
 		s.Flex.AddItem(s.FilterBar, 3, 0, false)
-		defer s.app.SetFocus(s.FilterBar)
-	} else {
-		defer s.app.SetFocus(s.DBTree)
+		primitive = s.FilterBar
 	}
+	defer s.app.SetFocus(primitive)
 
 	s.Flex.AddItem(s.DBTree, 0, 1, true)
 
@@ -101,19 +103,6 @@ func (s *SideBar) filterBarListener(ctx context.Context) {
 		switch key {
 		case tcell.KeyEsc:
 			s.app.QueueUpdateDraw(func() {
-				dbsWitColls := s.dbsWithColls
-				text := s.FilterBar.GetText()
-				for _, item := range dbsWitColls {
-					re := regexp.MustCompile(`(?i)` + text)
-					if re.MatchString(item.DB) {
-						s.DBTree.NodeSelectF(item.DB, "", nil)
-					}
-					for _, child := range item.Collections {
-						if re.MatchString(child) {
-							s.DBTree.NodeSelectF(item.DB, child, nil)
-						}
-					}
-				}
 				s.toogleFilterBar(ctx)
 			})
 		case tcell.KeyEnter:
@@ -121,6 +110,10 @@ func (s *SideBar) filterBarListener(ctx context.Context) {
 				dbsWitColls := s.dbsWithColls
 				filtered := []mongo.DBsWithCollections{}
 				text := s.FilterBar.GetText()
+				if text == "" {
+					s.toogleFilterBar(ctx)
+					return
+				}
 				for _, item := range dbsWitColls {
 					re := regexp.MustCompile(`(?i)` + text)
 					if re.MatchString(item.DB) {
@@ -134,7 +127,6 @@ func (s *SideBar) filterBarListener(ctx context.Context) {
 				}
 				s.toogleFilterBar(ctx)
 				s.DBTree.RenderTree(ctx, filtered, text)
-				s.DBTree.SetCurrentNode(s.DBTree.GetRoot().GetChildren()[0])
 			})
 		}
 	}
