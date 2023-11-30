@@ -55,12 +55,8 @@ func (i *InputBar) SetEventFunc() {
 }
 
 func (i *InputBar) setStyle() {
-	i.SetBackgroundColor(tcell.ColorDefault)
 	i.SetBorder(true)
-	i.SetBorderColor(tcell.ColorDefault)
-	i.SetFieldBackgroundColor(tcell.ColorDefault)
 	i.SetFieldTextColor(tcell.ColorYellow)
-	i.SetPlaceholderTextColor(tcell.ColorDefault)
 
 	autocompleteBg := tcell.ColorGreen.TrueColor()
 	autocompleteMainStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(autocompleteBg)

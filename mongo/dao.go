@@ -138,12 +138,29 @@ func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, f
 	return documents, count, nil
 }
 
-// save doc
 func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, id primitive.ObjectID, document primitive.M) error {
-	_, err := d.client.Database(db).Collection(collection).InsertOne(ctx, document)
+	updated, err := d.client.Database(db).Collection(collection).UpdateOne(ctx, primitive.M{"_id": id}, primitive.M{"$set": document})
 	if err != nil {
 		return err
 	}
+
+	if updated.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+
+	return nil
+}
+
+func (d *Dao) DeleteDocument(ctx context.Context, db string, collection string, id primitive.ObjectID) error {
+	deleted, err := d.client.Database(db).Collection(collection).DeleteOne(ctx, primitive.M{"_id": id})
+	if err != nil {
+		return err
+	}
+
+	if deleted.DeletedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+
 	return nil
 }
 

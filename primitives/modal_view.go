@@ -1,6 +1,7 @@
 package primitives
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -196,10 +197,24 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 	}
 
 	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
+		// colorize curly braces
 		if strings.Contains(lines[i], "{") || strings.Contains(lines[i], "}") {
 			lines[i] = strings.ReplaceAll(lines[i], "{", "[red]{")
 			lines[i] = strings.ReplaceAll(lines[i], "}", "[red]}"+"[white]")
 		}
+		// colorize json keys
+		re := regexp.MustCompile(`"([^"]+)":`)
+		lines[i] = re.ReplaceAllStringFunc(lines[i], func(s string) string {
+			// Extract key
+			matches := re.FindStringSubmatch(s)
+			if len(matches) > 1 {
+				// Apply color to key only
+				key := matches[1]
+				return "[blue]\"" + key + "\"[white]:"
+			}
+			return s
+		})
+
 		m.frame.AddText(lines[i], true, m.text.Align, m.text.Color)
 	}
 

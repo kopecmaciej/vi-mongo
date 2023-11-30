@@ -2,6 +2,7 @@ package component
 
 import (
 	"context"
+	"log"
 	"mongo-ui/mongo"
 
 	"github.com/gdamore/tcell/v2"
@@ -46,17 +47,38 @@ func (r *Root) Init(ctx context.Context) error {
 	r.Pages.SetBackgroundColor(tcell.ColorDefault)
 	r.Flex.SetBackgroundColor(tcell.ColorDefault)
 
-	if err := r.header.Init(ctx); err != nil {
-		return err
-	}
-	if err := r.sideBar.Init(ctx); err != nil {
-		return err
-	}
-	if err := r.content.Init(ctx); err != nil {
-		return err
+	var e error
+
+	go func() {
+		r.app.QueueUpdateDraw(func() {
+			if err := r.header.Init(ctx); err != nil {
+				e = err
+				return
+			}
+		})
+	}()
+	go func() {
+		r.app.QueueUpdateDraw(func() {
+			if err := r.sideBar.Init(ctx); err != nil {
+				e = err
+				return
+			}
+		})
+	}()
+	go func() {
+		r.app.QueueUpdateDraw(func() {
+			if err := r.content.Init(ctx); err != nil {
+				e = err
+				return
+			}
+		})
+	}()
+
+	if e != nil {
+		log.Println(e)
 	}
 
-	r.sideBar.nodeSelectF = r.content.RenderContent
+	r.sideBar.DBTree.NodeSelectF = r.content.RenderContent
 
 	r.render(ctx)
 	r.SetShortcuts(ctx)
@@ -86,10 +108,10 @@ func (r *Root) SetShortcuts(ctx context.Context) {
 		switch event.Key() {
 		case tcell.KeyTab:
 			focus := r.app.GetFocus()
-			if focus == r.sideBar.Tree {
-				r.app.SetFocus(r.content.Table)
+			if focus == r.sideBar.DBTree {
+				r.app.SetFocus(r.content)
 			} else {
-				r.app.SetFocus(r.sideBar.Tree)
+				r.app.SetFocus(r.sideBar)
 			}
 		case tcell.KeyCtrlS:
 			if _, ok := r.Flex.GetItem(0).(*SideBar); ok {
@@ -102,7 +124,7 @@ func (r *Root) SetShortcuts(ctx context.Context) {
 		case tcell.KeyCtrlD:
 			if r.Flex.GetItemCount() > 1 && r.Flex.GetItem(1) == r.content {
 				r.Flex.RemoveItem(r.content)
-				r.app.SetFocus(r.sideBar.Tree)
+				r.app.SetFocus(r.sideBar)
 			} else {
 				r.Flex.Clear()
 				r.render(ctx)

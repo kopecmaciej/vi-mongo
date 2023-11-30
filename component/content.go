@@ -12,6 +12,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Content struct {
@@ -77,20 +78,14 @@ func (c *Content) Init(ctx context.Context) error {
 }
 
 func (c *Content) setStyle() {
-	c.Table.SetBackgroundColor(tcell.NewRGBColor(0, 10, 19))
 	c.Table.SetBorder(true)
 	c.Table.SetTitle(" Content ")
 	c.Table.SetTitleAlign(tview.AlignLeft)
-	c.Table.SetTitleColor(tcell.ColorSteelBlue)
-	c.Table.SetBorderColor(tcell.ColorSteelBlue)
 	c.Table.SetBorderPadding(0, 0, 1, 1)
 	c.Table.SetFixed(1, 1)
 	c.Table.SetSelectable(true, false)
 
-	c.Flex.SetBackgroundColor(tcell.NewRGBColor(0, 10, 19))
 	c.Flex.SetDirection(tview.FlexRow)
-
-	c.View.SetBackgroundColor(tcell.ColorDefault)
 }
 
 func (c *Content) setShortcuts(ctx context.Context) {
@@ -102,6 +97,7 @@ func (c *Content) setShortcuts(ctx context.Context) {
 			c.textPeeker.EditJson(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text, c.refresh)
 		case 'v':
 			c.ViewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+		case 'D':
 		case '/':
 			c.toggleQueryBar(ctx)
 			c.render(ctx)
@@ -224,7 +220,6 @@ func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) 
 
 	if count == 0 {
 		noDocCell := tview.NewTableCell("No documents found").
-			SetTextColor(tcell.ColorWhite).
 			SetAlign(tview.AlignLeft).
 			SetSelectable(false)
 
@@ -241,7 +236,6 @@ func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) 
 		headerInfo += fmt.Sprintf(", Filter: %v", string(prettyFilter))
 	}
 	headerCell := tview.NewTableCell(headerInfo).
-		SetTextColor(tcell.ColorWhite).
 		SetAlign(tview.AlignLeft).
 		SetSelectable(false)
 
@@ -249,7 +243,6 @@ func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) 
 
 	for i, d := range documents {
 		dataCell := tview.NewTableCell(d).
-			SetTextColor(tcell.ColorWhite).
 			SetAlign(tview.AlignLeft)
 
 		c.Table.SetCell(i+2, 0, dataCell)
@@ -305,6 +298,50 @@ func (c *Content) ViewJson(ctx context.Context, jsonString string) error {
 		}
 		return event
 	})
+
+	return nil
+}
+
+func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
+	var doc map[string]interface{}
+	err := json.Unmarshal([]byte(jsonString), &doc)
+	if err != nil {
+		log.Printf("Error unmarshaling JSON: %v", err)
+		return nil
+	}
+
+	objectID, err := primitive.ObjectIDFromHex(doc["_id"].(string))
+	if err != nil {
+		log.Printf("Error converting _id to ObjectID: %v", err)
+		return nil
+	}
+
+	// show modal
+	text := "Are you sure you want to delete this document?"
+	modal := tview.NewModal().
+		SetText(text).
+		AddButtons([]string{"Yes", "No"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			if buttonLabel == "Yes" {
+				c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+			}
+			c.app.Root.RemovePage("modal")
+			c.app.SetFocus(c.Table)
+		})
+
+	c.app.Root.AddPage("modal", modal, true, true)
+	c.app.SetFocus(modal)
+
+	err = c.dao.DeleteDocument(ctx, c.state.db, c.state.coll, objectID)
+	if err != nil {
+		log.Printf("Error deleting document: %v", err)
+		return nil
+	}
+
+	c.app.Root.RemovePage("modal")
+	c.app.SetFocus(c.Table)
+
+	c.RenderContent(c.state.db, c.state.coll, nil)
 
 	return nil
 }

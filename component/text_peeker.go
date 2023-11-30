@@ -134,6 +134,10 @@ func (d *TextPeeker) EditJson(ctx context.Context, db, coll string, rawDocument 
 			log.Printf("Error reading edited file: %v", err)
 			return
 		}
+		if !json.Valid(editedBytes) {
+			log.Printf("Edited JSON is not valid")
+			return
+		}
 
 		err = d.saveDocument(ctx, db, coll, string(editedBytes))
 		if err != nil {
@@ -142,12 +146,16 @@ func (d *TextPeeker) EditJson(ctx context.Context, db, coll string, rawDocument 
 		} else {
 			fun()
 		}
+
 	})
 
 	return nil
 }
 
 func (d *TextPeeker) saveDocument(ctx context.Context, db, coll string, rawDocument string) error {
+	if rawDocument == "" {
+		return fmt.Errorf("Document cannot be empty")
+	}
 	var document map[string]interface{}
 	err := json.Unmarshal([]byte(rawDocument), &document)
 	if err != nil {
@@ -155,6 +163,7 @@ func (d *TextPeeker) saveDocument(ctx context.Context, db, coll string, rawDocum
 		return nil
 	}
 	id := document["_id"].(string)
+	delete(document, "_id")
 
 	if id == "" {
 		return fmt.Errorf("Document must have an _id")

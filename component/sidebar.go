@@ -3,6 +3,7 @@ package component
 import (
 	"context"
 	"mongo-ui/mongo"
+	"regexp"
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
@@ -12,21 +13,21 @@ import (
 type SideBar struct {
 	*tview.Flex
 
-	app         *App
-	dao         *mongo.Dao
-	Tree        *tview.TreeView
-	filterBar   *InputBar
-	nodeSelectF func(a string, b string, filter map[string]interface{}) error
-	mutex       sync.Mutex
-	label       string
+	DBTree       *DBTree
+	FilterBar    *InputBar
+	app          *App
+	dao          *mongo.Dao
+	mutex        sync.Mutex
+	label        string
+	dbsWithColls []mongo.DBsWithCollections
 }
 
 func NewSideBar(dao *mongo.Dao) *SideBar {
 	flex := tview.NewFlex()
 	return &SideBar{
 		Flex:      flex,
-		Tree:      tview.NewTreeView(),
-		filterBar: NewInputBar("Filter"),
+		DBTree:    NewDBTree(),
+		FilterBar: NewInputBar("Filter"),
 		label:     "sideBar",
 		dao:       dao,
 		mutex:     sync.Mutex{},
@@ -39,16 +40,15 @@ func (s *SideBar) Init(ctx context.Context) error {
 	s.setStyle()
 	s.setShortcuts(ctx)
 
-	rootNode := s.dbNode("Databases")
-	s.Tree.SetRoot(rootNode)
+	s.DBTree.Init()
 
 	if err := s.render(ctx); err != nil {
 		return err
 	}
-	if err := s.renderTree(ctx, ""); err != nil {
+	if err := s.fetchAndRender(ctx, ""); err != nil {
 		return err
 	}
-	if err := s.filterBar.Init(ctx); err != nil {
+	if err := s.FilterBar.Init(ctx); err != nil {
 		return err
 	}
 	go s.filterBarListener(ctx)
@@ -57,13 +57,6 @@ func (s *SideBar) Init(ctx context.Context) error {
 }
 
 func (s *SideBar) setStyle() {
-	s.Tree.SetBackgroundColor(tcell.ColorDefault)
-	s.Tree.SetBorderPadding(1, 1, 1, 1)
-	s.Tree.SetBorder(true)
-	s.Tree.SetBorderColor(tcell.ColorDimGray)
-	s.Tree.SetTitle(" Databases ")
-	s.Tree.SetGraphicsColor(tcell.ColorDefault)
-
 	s.Flex.SetDirection(tview.FlexRow)
 	s.Flex.SetBackgroundColor(tcell.ColorDefault)
 }
@@ -74,50 +67,31 @@ func (s *SideBar) setShortcuts(ctx context.Context) {
 		case tcell.KeyRune:
 			if event.Rune() == '/' {
 				s.toogleFilterBar(ctx)
-				go s.filterBar.SetText("")
+				go s.FilterBar.SetText("")
 				return nil
 			}
 		}
 		return event
 	})
-
-	s.Tree.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyRune:
-			if event.Rune() == 'o' {
-				s.Tree.GetCurrentNode().SetExpanded(!s.Tree.GetCurrentNode().IsExpanded())
-				return nil
-			}
-			if event.Rune() == 'w' {
-				children := s.Tree.GetRoot().GetChildren()
-				for _, child := range children {
-					child.SetExpanded(false)
-				}
-				return nil
-			}
-		}
-		return event
-	})
-
 }
 
 func (s *SideBar) render(ctx context.Context) error {
 	s.Flex.Clear()
 
-	if s.filterBar.IsEnabled() {
-		s.Flex.AddItem(s.filterBar, 3, 0, false)
-		defer s.app.SetFocus(s.filterBar)
+	if s.FilterBar.IsEnabled() {
+		s.Flex.AddItem(s.FilterBar, 3, 0, false)
+		defer s.app.SetFocus(s.FilterBar)
 	} else {
-		defer s.app.SetFocus(s.Tree)
+		defer s.app.SetFocus(s.DBTree)
 	}
 
-	s.Flex.AddItem(s.Tree, 0, 1, true)
+	s.Flex.AddItem(s.DBTree, 0, 1, true)
 
 	return nil
 }
 
 func (s *SideBar) filterBarListener(ctx context.Context) {
-	eventChan := s.filterBar.EventChan
+	eventChan := s.FilterBar.EventChan
 
 	for {
 		key := <-eventChan
@@ -127,104 +101,65 @@ func (s *SideBar) filterBarListener(ctx context.Context) {
 		switch key {
 		case tcell.KeyEsc:
 			s.app.QueueUpdateDraw(func() {
-				s.renderTree(context.Background(), "")
+				dbsWitColls := s.dbsWithColls
+				text := s.FilterBar.GetText()
+				for _, item := range dbsWitColls {
+					re := regexp.MustCompile(`(?i)` + text)
+					if re.MatchString(item.DB) {
+						s.DBTree.NodeSelectF(item.DB, "", nil)
+					}
+					for _, child := range item.Collections {
+						if re.MatchString(child) {
+							s.DBTree.NodeSelectF(item.DB, child, nil)
+						}
+					}
+				}
 				s.toogleFilterBar(ctx)
 			})
 		case tcell.KeyEnter:
 			s.app.QueueUpdateDraw(func() {
-				s.renderTree(context.Background(), s.filterBar.GetText())
+				dbsWitColls := s.dbsWithColls
+				filtered := []mongo.DBsWithCollections{}
+				text := s.FilterBar.GetText()
+				for _, item := range dbsWitColls {
+					re := regexp.MustCompile(`(?i)` + text)
+					if re.MatchString(item.DB) {
+						filtered = append(filtered, item)
+					}
+					for _, child := range item.Collections {
+						if re.MatchString(child) {
+							filtered = append(filtered, item)
+						}
+					}
+				}
 				s.toogleFilterBar(ctx)
+				s.DBTree.RenderTree(ctx, filtered, text)
+				s.DBTree.SetCurrentNode(s.DBTree.GetRoot().GetChildren()[0])
 			})
 		}
 	}
 }
 
-func (s *SideBar) getPrimitiveByLabel(label string) tview.Primitive {
-	switch label {
-	case "filter":
-		return s.filterBar
-	case "sideBar":
-		return s.Tree
-	default:
-		return nil
+func (s *SideBar) fetchAndRender(ctx context.Context, filter string) error {
+	if err := s.fetchDbsWithCollections(ctx, filter); err != nil {
+		return err
 	}
+	s.DBTree.RenderTree(ctx, s.dbsWithColls, filter)
+
+	return nil
 }
 
-func (s *SideBar) renderTree(ctx context.Context, filter string) error {
-	rootNode := s.rootNode()
-	s.Tree.SetRoot(rootNode)
-
+func (s *SideBar) fetchDbsWithCollections(ctx context.Context, filter string) error {
 	dbsWitColls, err := s.dao.ListDbsWithCollections(ctx, filter)
 	if err != nil {
 		return err
 	}
-
-	if len(dbsWitColls) == 0 {
-		emptyNode := tview.NewTreeNode("No databases found")
-		emptyNode.SetColor(tcell.ColorDefault)
-		emptyNode.SetSelectable(false)
-
-		rootNode.AddChild(emptyNode)
-		return nil
-	}
-
-	for _, item := range dbsWitColls {
-		parent := s.dbNode(item.DB)
-		rootNode.AddChild(parent)
-
-		for _, child := range item.Collections {
-			child := s.collNode(child)
-			parent.AddChild(child)
-
-			child.SetSelectedFunc(func() {
-				s.nodeSelectF(parent.GetText(), child.GetText(), nil)
-			})
-		}
-	}
-
-	s.Tree.SetCurrentNode(rootNode.GetChildren()[0])
+	s.dbsWithColls = dbsWitColls
 
 	return nil
 }
 
 func (s *SideBar) toogleFilterBar(ctx context.Context) {
-	s.filterBar.Toggle()
+	s.FilterBar.Toggle()
 	s.render(ctx)
-}
-
-func (s *SideBar) rootNode() *tview.TreeNode {
-	r := tview.NewTreeNode("Databases")
-	r.SetColor(tcell.ColorRed)
-	r.SetSelectable(false)
-	r.SetExpanded(true)
-
-	collNode := tview.NewTreeNode("Collections")
-	r.AddChild(collNode)
-	collNode.SetColor(tcell.ColorGreen)
-	collNode.SetSelectable(false)
-	collNode.SetExpanded(true)
-
-	return r
-}
-
-func (s *SideBar) dbNode(name string) *tview.TreeNode {
-	r := tview.NewTreeNode(name)
-	r.SetColor(tcell.ColorIndianRed.TrueColor())
-	r.SetSelectable(true)
-	r.SetExpanded(false)
-
-	r.SetSelectedFunc(func() {
-		r.SetExpanded(!r.IsExpanded())
-	})
-
-	return r
-}
-
-func (s *SideBar) collNode(name string) *tview.TreeNode {
-	ch := tview.NewTreeNode(name)
-	ch.SetColor(tcell.ColorGreen.TrueColor())
-	ch.SetSelectable(true)
-	ch.SetExpanded(false)
-
-	return ch
 }
