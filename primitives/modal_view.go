@@ -210,7 +210,7 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 			if len(matches) > 1 {
 				// Apply color to key only
 				key := matches[1]
-				return "[blue]\"" + key + "\"[white]:"
+				return "[green]\"" + key + "\"[white]:"
 			}
 			return s
 		})

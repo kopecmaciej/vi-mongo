@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/rs/zerolog/log"
 	"mongo-ui/mongo"
 	"sync"
 	"time"
@@ -70,7 +70,7 @@ func (c *Content) Init(ctx context.Context) error {
 		return err
 	}
 
-	c.render(ctx)
+	c.render(ctx, false)
 
 	go c.queryBarListener(ctx)
 
@@ -100,7 +100,7 @@ func (c *Content) setShortcuts(ctx context.Context) {
 		case 'D':
 		case '/':
 			c.toggleQueryBar(ctx)
-			c.render(ctx)
+			c.render(ctx, true)
 		}
 		switch event.Key() {
 		case tcell.KeyCtrlN:
@@ -115,14 +115,18 @@ func (c *Content) setShortcuts(ctx context.Context) {
 	})
 }
 
-func (c *Content) render(ctx context.Context) {
+func (c *Content) render(ctx context.Context, setFocus bool) {
 	c.Flex.Clear()
+
+	var focusPrimitive tview.Primitive
+	focusPrimitive = c
 
 	if c.queryBar.IsEnabled() {
 		c.Flex.AddItem(c.queryBar, 3, 0, false)
-		defer c.app.SetFocus(c.queryBar)
-	} else {
-		defer c.app.SetFocus(c.Table)
+		focusPrimitive = c.queryBar
+	}
+	if setFocus {
+		defer c.app.SetFocus(focusPrimitive)
 	}
 
 	c.Flex.AddItem(c.Table, 0, 1, true)
@@ -130,7 +134,7 @@ func (c *Content) render(ctx context.Context) {
 
 func (c *Content) toggleQueryBar(ctx context.Context) {
 	c.queryBar.Toggle()
-	c.render(ctx)
+	c.render(ctx, true)
 }
 
 func (c *Content) queryBarListener(ctx context.Context) {
@@ -153,13 +157,12 @@ func (c *Content) queryBarListener(ctx context.Context) {
 				text := c.queryBar.GetText()
 				filter, err := mongo.ParseStringQuery(text)
 				if err != nil {
-					log.Printf("Error parsing query: %v", err)
+					log.Error().Err(err).Msg("Error parsing query")
 				}
 				err = c.queryBar.SaveToHistory(text)
 				if err != nil {
-					log.Printf("Error saving to history: %v", err)
+          log.Error().Err(err).Msg("Error saving query to history")
 				}
-				log.Printf("filter: %v", filter)
 				c.RenderContent(c.state.db, c.state.coll, filter)
 				c.Table.ScrollToBeginning()
 			})
@@ -199,7 +202,7 @@ func (c *Content) listDocuments(db, coll string, filters map[string]interface{})
 	for _, d := range documents {
 		jsonBytes, err := json.Marshal(d)
 		if err != nil {
-			log.Printf("Error marshaling JSON: %v", err)
+			log.Error().Err(err).Msg("Error marshaling JSON")
 			continue
 		}
 		docs = append(docs, string(jsonBytes))
@@ -214,7 +217,7 @@ func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) 
 
 	documents, count, err := c.listDocuments(db, coll, filter)
 	if err != nil {
-		log.Printf("Error listing documents: %v", err)
+		log.Error().Err(err).Msg("Error listing documents")
 		return err
 	}
 
@@ -231,7 +234,8 @@ func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) 
 	if filter != nil {
 		prettyFilter, err := json.Marshal(filter)
 		if err != nil {
-			log.Printf("Error marshaling JSON: %v", err)
+			log.Error().Err(err).Msg("Error marshaling filter")
+      return err
 		}
 		headerInfo += fmt.Sprintf(", Filter: %v", string(prettyFilter))
 	}
@@ -281,7 +285,7 @@ func (c *Content) ViewJson(ctx context.Context, jsonString string) error {
 	var prettyJson bytes.Buffer
 	err := json.Indent(&prettyJson, []byte(jsonString), "", "  ")
 	if err != nil {
-		log.Printf("Error marshaling JSON: %v", err)
+    log.Error().Err(err).Msg("Error marshaling JSON")
 		return nil
 	}
 	text := string(prettyJson.Bytes())
@@ -306,13 +310,13 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 	var doc map[string]interface{}
 	err := json.Unmarshal([]byte(jsonString), &doc)
 	if err != nil {
-		log.Printf("Error unmarshaling JSON: %v", err)
+    log.Error().Err(err).Msg("Error unmarshaling JSON")
 		return nil
 	}
 
 	objectID, err := primitive.ObjectIDFromHex(doc["_id"].(string))
 	if err != nil {
-		log.Printf("Error converting _id to ObjectID: %v", err)
+    log.Error().Err(err).Msg("Error converting _id to ObjectID")
 		return nil
 	}
 

@@ -57,12 +57,10 @@ func (d *TextPeeker) PeekJson(ctx context.Context, db, coll string, jsonString s
 	text := string(prettyJson.Bytes())
 
 	modal := primitives.NewModalView()
-	modal.SetBackgroundColor(tcell.ColorDefault)
 	modal.SetBorder(true)
 	modal.SetTitle("Document Details")
 	modal.SetTitleAlign(tview.AlignLeft)
 	modal.SetTitleColor(tcell.ColorSteelBlue)
-	modal.SetBorderColor(tcell.ColorSteelBlue)
 
 	modal.SetText(primitives.Text{
 		Content: text,
@@ -136,6 +134,9 @@ func (d *TextPeeker) EditJson(ctx context.Context, db, coll string, rawDocument 
 		}
 		if !json.Valid(editedBytes) {
 			log.Printf("Edited JSON is not valid")
+			return
+		}
+		if string(editedBytes) == string(prettyJson.Bytes()) {
 			return
 		}
 

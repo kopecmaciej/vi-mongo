@@ -1,32 +1,41 @@
 package main
 
 import (
-	"log"
+	"flag"
 	"mongo-ui/component"
 	"os"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	defer logging().Close()
+	debug := flag.Bool("debug", false, "sets app in debug mode")
+	flag.Parse()
+
+	logLevel := zerolog.InfoLevel
+	if *debug {
+		logLevel = zerolog.DebugLevel
+	}
+
+	defer logging(logLevel).Close()
 
 	app := component.NewApp()
 	err := app.Init()
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("Error initializing app")
 	}
 }
 
-func logging() *os.File {
+func logging(logLevel zerolog.Level) *os.File {
 	LOG_FILE := "./log.txt"
 
 	logFile, err := os.OpenFile(LOG_FILE, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal().Err(err).Msg("Error opening log file")
 	}
 
-	log.SetOutput(logFile)
-
-	log.SetFlags(log.Lshortfile | log.LstdFlags)
+	zerolog.SetGlobalLevel(logLevel)
 
 	return logFile
 }

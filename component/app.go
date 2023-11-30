@@ -2,6 +2,7 @@ package component
 
 import (
 	"context"
+	"github.com/rs/zerolog/log"
 	"mongo-ui/mongo"
 
 	"github.com/gdamore/tcell/v2"
@@ -47,7 +48,7 @@ func (a *App) Init() error {
 
 func loadStyles() {
 	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
-	tview.Styles.ContrastBackgroundColor = tcell.ColorGrey.TrueColor()
+	tview.Styles.ContrastBackgroundColor = tcell.ColorDefault
 	tview.Styles.MoreContrastBackgroundColor = tcell.ColorDefault
 	tview.Styles.PrimaryTextColor = tcell.ColorWhite
 	tview.Styles.SecondaryTextColor = tcell.ColorYellow
@@ -62,7 +63,8 @@ func loadStyles() {
 func GetApp(ctx context.Context) *App {
 	app, ok := ctx.Value(appCtxKey).(*App)
 	if !ok {
-		panic("App not found in context")
+		log.Error().Msg("Error getting app from context")
+    return nil
 	}
 	return app
 }
