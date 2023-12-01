@@ -26,7 +26,7 @@ func NewSideBar(dao *mongo.Dao) *SideBar {
 	flex := tview.NewFlex()
 	return &SideBar{
 		Flex:      flex,
-		DBTree:    NewDBTree(),
+		DBTree:    NewDBTree(dao),
 		FilterBar: NewInputBar("Filter"),
 		label:     "sideBar",
 		dao:       dao,
@@ -40,7 +40,7 @@ func (s *SideBar) Init(ctx context.Context) error {
 	s.setStyle()
 	s.setShortcuts(ctx)
 
-	s.DBTree.Init()
+	s.DBTree.Init(ctx)
 
 	if err := s.render(ctx); err != nil {
 		return err

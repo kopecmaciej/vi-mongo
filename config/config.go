@@ -25,21 +25,21 @@ type MongoConfig struct {
 }
 
 type LogConfig struct {
-	LogFile     string `yaml:"logFile"`
-	LogLevel    string `yaml:"logLevel"`
+	Path        string `yaml:"path"`
+	Level       string `yaml:"level"`
 	PrettyPrint bool   `yaml:"prettyPrint"`
 }
 
 func LoadAppConfig() (*MonguiConfig, error) {
 	data, err := os.ReadFile("config.yaml")
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
 
 	config := &Config{}
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
 
 	return &config.Mongui, nil

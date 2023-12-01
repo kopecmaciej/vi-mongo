@@ -170,6 +170,28 @@ func (d *Dao) DeleteDocument(ctx context.Context, db string, collection string, 
 	return nil
 }
 
+func (d *Dao) AddCollection(ctx context.Context, db string, collection string) error {
+	err := d.client.Database(db).CreateCollection(ctx, collection)
+	if err != nil {
+		return err
+	}
+
+  log.Debug().Msgf("Collection added, db: %v, collection: %v", db, collection)
+
+	return nil
+}
+
+func (d *Dao) DeleteCollection(ctx context.Context, db string, collection string) error {
+  err := d.client.Database(db).Collection(collection).Drop(ctx)
+  if err != nil {
+    return err
+  }
+
+  log.Debug().Msgf("Collection deleted, db: %v, collection: %v", db, collection)
+
+  return nil
+}
+
 func (d *Dao) runAdminCommand(ctx context.Context, key string, value interface{}) (primitive.M, error) {
 	results := primitive.M{}
 	command := primitive.D{{Key: key, Value: value}}

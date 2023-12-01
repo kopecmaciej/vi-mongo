@@ -20,7 +20,7 @@ func main() {
 		logLevel = zerolog.DebugLevel
 	}
 
-	file := logging(logLevel, false)
+	file := logging(config.Log.Path, logLevel, config.Log.PrettyPrint)
 	defer func() {
 		err := file.Close()
 		if err != nil {
@@ -28,19 +28,16 @@ func main() {
 		}
 	}()
 
+	log.Info().Msg("Mongo UI started")
 	app := component.NewApp(config)
 	err = app.Init()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error initializing app")
 	}
-
-	log.Info().Msg("Mongo UI started")
 }
 
-func logging(logLevel zerolog.Level, pretty bool) *os.File {
-	LOG_FILE := "mongo-ui.log"
-
-	logFile, err := os.OpenFile(LOG_FILE, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
+func logging(path string, logLevel zerolog.Level, pretty bool) *os.File {
+	logFile, err := os.OpenFile(path, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error opening log file")
 	}
