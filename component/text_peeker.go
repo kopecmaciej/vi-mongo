@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"mongo-ui/mongo"
 	"mongo-ui/primitives"
 	"os"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -137,6 +137,7 @@ func (d *TextPeeker) EditJson(ctx context.Context, db, coll string, rawDocument 
 			return
 		}
 		if string(editedBytes) == string(prettyJson.Bytes()) {
+      log.Debug().Msgf("Edited JSON is the same as original")
 			return
 		}
 
@@ -160,23 +161,23 @@ func (d *TextPeeker) saveDocument(ctx context.Context, db, coll string, rawDocum
 	var document map[string]interface{}
 	err := json.Unmarshal([]byte(rawDocument), &document)
 	if err != nil {
-		log.Printf("Error unmarshaling JSON: %v", err)
+		log.Error().Msgf("Error unmarshaling JSON: %v", err)
 		return nil
 	}
 	id := document["_id"].(string)
 	delete(document, "_id")
 
 	if id == "" {
-		return fmt.Errorf("Document must have an _id")
+		log.Error().Msgf("Document must have an _id")
 	}
 	mongoId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return fmt.Errorf("Invalid _id: %v", err)
+		log.Error().Msgf("Invalid _id: %v", err)
 	}
 
 	err = d.dao.UpdateDocument(ctx, db, coll, mongoId, document)
 	if err != nil {
-		log.Printf("Error updating document: %v", err)
+    log.Error().Msgf("Error updating document: %v", err)
 		return nil
 	}
 

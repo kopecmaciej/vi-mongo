@@ -107,29 +107,33 @@ func (s *SideBar) filterBarListener(ctx context.Context) {
 			})
 		case tcell.KeyEnter:
 			s.app.QueueUpdateDraw(func() {
-				dbsWitColls := s.dbsWithColls
-				filtered := []mongo.DBsWithCollections{}
-				text := s.FilterBar.GetText()
-				if text == "" {
-					s.toogleFilterBar(ctx)
-					return
-				}
-				for _, item := range dbsWitColls {
-					re := regexp.MustCompile(`(?i)` + text)
-					if re.MatchString(item.DB) {
-						filtered = append(filtered, item)
-					}
-					for _, child := range item.Collections {
-						if re.MatchString(child) {
-							filtered = append(filtered, item)
-						}
-					}
-				}
-				s.toogleFilterBar(ctx)
-				s.DBTree.RenderTree(ctx, filtered, text)
+				s.filter(ctx)
 			})
 		}
 	}
+}
+
+func (s *SideBar) filter(ctx context.Context) {
+	dbsWitColls := s.dbsWithColls
+	filtered := []mongo.DBsWithCollections{}
+	text := s.FilterBar.GetText()
+	if text == "" {
+		s.toogleFilterBar(ctx)
+		return
+	}
+	for _, item := range dbsWitColls {
+		re := regexp.MustCompile(`(?i)` + text)
+		if re.MatchString(item.DB) {
+			filtered = append(filtered, item)
+		}
+		for _, child := range item.Collections {
+			if re.MatchString(child) {
+				filtered = append(filtered, item)
+			}
+		}
+	}
+	s.toogleFilterBar(ctx)
+	s.DBTree.RenderTree(ctx, filtered, text)
 }
 
 func (s *SideBar) fetchAndRender(ctx context.Context, filter string) error {

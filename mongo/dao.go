@@ -2,7 +2,9 @@ package mongo
 
 import (
 	"context"
+	"mongo-ui/config"
 
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -32,10 +34,10 @@ type ServerStatus struct {
 
 type Dao struct {
 	client *mongo.Client
-	Config *Config
+	Config *config.MongoConfig
 }
 
-func NewDao(client *mongo.Client, config *Config) *Dao {
+func NewDao(client *mongo.Client, config *config.MongoConfig) *Dao {
 	return &Dao{
 		client: client,
 		Config: config,
@@ -130,6 +132,7 @@ func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, f
 		if err != nil {
 			return nil, 0, err
 		}
+
 		documents = append(documents, document)
 	}
 	if err := cursor.Err(); err != nil {
@@ -141,12 +144,15 @@ func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, f
 func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, id primitive.ObjectID, document primitive.M) error {
 	updated, err := d.client.Database(db).Collection(collection).UpdateOne(ctx, primitive.M{"_id": id}, primitive.M{"$set": document})
 	if err != nil {
+		log.Error().Msgf("Error updating document: %v", err)
 		return err
 	}
 
 	if updated.MatchedCount == 0 {
 		return mongo.ErrNoDocuments
 	}
+
+	log.Debug().Msgf("Document updated, id: %v, document: %v, db: %v, collection: %v", id, document, db, collection)
 
 	return nil
 }

@@ -5,10 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"mongo-ui/mongo"
 	"sync"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -189,8 +190,16 @@ func (c *Content) listDocuments(db, coll string, filters map[string]interface{})
 	}
 
 	var docs []string
-	for _, d := range documents {
-		jsonBytes, err := json.Marshal(d)
+	for _, document := range documents {
+		for key, value := range document {
+			if oid, ok := value.(primitive.ObjectID); ok {
+				obj := primitive.M{
+					"$oid": oid.Hex(),
+				}
+				document[key] = obj
+			}
+		}
+		jsonBytes, err := json.Marshal(document)
 		if err != nil {
 			log.Error().Err(err).Msg("Error marshaling JSON")
 			continue
@@ -279,6 +288,8 @@ func (c *Content) viewJson(ctx context.Context, jsonString string) error {
 		return nil
 	}
 	text := string(prettyJson.Bytes())
+	log.Info().Msg("text: " + text)
+
 	c.View.SetText(text)
 	c.View.ScrollToBeginning()
 

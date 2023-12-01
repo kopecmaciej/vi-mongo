@@ -20,8 +20,6 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 	re := regexp.MustCompile(`(\w+):`)
 	quotedKeysQuery := re.ReplaceAllString(query, `"$1":`)
 
-  fmt.Printf("quotedKeysQuery: %v\n", quotedKeysQuery)
-
 	filter := map[string]interface{}{}
 
 	err := bson.UnmarshalExtJSON([]byte(quotedKeysQuery), true, &filter)

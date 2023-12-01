@@ -1,0 +1,13 @@
+mongui:
+  debug: true
+  log: 
+    logfile: mongui.log
+    loglevel: info
+    prettyprint: true
+
+  mongo:
+    host: localhost
+    port: 27017
+    database:
+    username:
+    password:

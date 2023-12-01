@@ -2,8 +2,10 @@ package component
 
 import (
 	"context"
-	"github.com/rs/zerolog/log"
+	"mongo-ui/config"
 	"mongo-ui/mongo"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -19,8 +21,8 @@ type App struct {
 	Root *Root
 }
 
-func NewApp() App {
-	client := mongo.NewClient()
+func NewApp(config *config.MonguiConfig) App {
+	client := mongo.NewClient(&config.Mongo)
 	client.Connect()
 	mongoDao := mongo.NewDao(client.Client, client.Config)
 
@@ -64,7 +66,7 @@ func GetApp(ctx context.Context) *App {
 	app, ok := ctx.Value(appCtxKey).(*App)
 	if !ok {
 		log.Error().Msg("Error getting app from context")
-    return nil
+		return nil
 	}
 	return app
 }
