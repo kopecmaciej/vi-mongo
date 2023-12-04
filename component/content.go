@@ -5,15 +5,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"mongo-ui/mongo"
 	"sync"
-	"time"
-
-	"github.com/rs/zerolog/log"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/manager"
+	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+const (
+	ContentComponent manager.Component = "Content"
+	ViewComponent    manager.Component = "View"
 )
 
 type Content struct {
@@ -50,8 +54,8 @@ func NewContent(dao *mongo.Dao) *Content {
 		Flex:       flex,
 		View:       tview.NewTextView(),
 		queryBar:   NewInputBar("Query"),
-		dao:        dao,
 		textPeeker: NewTextPeeker(dao),
+		dao:        dao,
 		mutex:      sync.Mutex{},
 		label:      "content",
 		state:      state,
@@ -165,16 +169,14 @@ func (c *Content) queryBarListener(ctx context.Context) {
 				if err != nil {
 					log.Error().Err(err).Msg("Error saving query to history")
 				}
-				c.RenderContent(c.state.db, c.state.coll, filter)
+				c.RenderContent(ctx, c.state.db, c.state.coll, filter)
 				c.Table.ScrollToBeginning()
 			})
 		}
 	}
 }
 
-func (c *Content) listDocuments(db, coll string, filters map[string]interface{}) ([]string, int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+func (c *Content) listDocuments(ctx context.Context, db, coll string, filters map[string]interface{}) ([]string, int64, error) {
 	c.state.db = db
 	c.state.coll = coll
 
@@ -210,11 +212,11 @@ func (c *Content) listDocuments(db, coll string, filters map[string]interface{})
 	return docs, count, nil
 }
 
-func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) error {
+func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map[string]interface{}) error {
 	c.Table.Clear()
 	c.app.SetFocus(c.Table)
 
-	documents, count, err := c.listDocuments(db, coll, filter)
+	documents, count, err := c.listDocuments(ctx, db, coll, filter)
 	if err != nil {
 		log.Error().Err(err).Msg("Error listing documents")
 		return err
@@ -256,8 +258,8 @@ func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) 
 	return nil
 }
 
-func (c *Content) refresh() {
-	c.RenderContent(c.state.db, c.state.coll, nil)
+func (c *Content) refresh(ctx context.Context) error {
+	return c.RenderContent(ctx, c.state.db, c.state.coll, nil)
 }
 
 func (c *Content) goToNextMongoPage(ctx context.Context) {
@@ -265,7 +267,7 @@ func (c *Content) goToNextMongoPage(ctx context.Context) {
 		return
 	}
 	c.state.page += c.state.limit
-	c.RenderContent(c.state.db, c.state.coll, nil)
+	c.RenderContent(ctx, c.state.db, c.state.coll, nil)
 }
 
 func (c *Content) goToPrevMongoPage(ctx context.Context) {
@@ -273,7 +275,7 @@ func (c *Content) goToPrevMongoPage(ctx context.Context) {
 		return
 	}
 	c.state.page -= c.state.limit
-	c.RenderContent(c.state.db, c.state.coll, nil)
+	c.RenderContent(ctx, c.state.db, c.state.coll, nil)
 }
 
 func (c *Content) viewJson(ctx context.Context, jsonString string) error {
@@ -335,7 +337,7 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 			c.app.Root.RemovePage("modal")
 			c.app.SetFocus(c.Table)
 
-			c.RenderContent(c.state.db, c.state.coll, nil)
+			c.RenderContent(ctx, c.state.db, c.state.coll, nil)
 		})
 
 	modal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -350,7 +352,7 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 		case 'l':
 			return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
 		}
-		return event
+		return nil
 	})
 
 	c.app.Root.AddPage("modal", modal, true, true)

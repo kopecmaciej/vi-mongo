@@ -3,11 +3,11 @@ package component
 import (
 	"context"
 	"log"
-	"mongo-ui/mongo"
 	"strconv"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 )
 

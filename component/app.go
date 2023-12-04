@@ -2,13 +2,13 @@ package component
 
 import (
 	"context"
-	"mongo-ui/config"
-	"mongo-ui/mongo"
-
-	"github.com/rs/zerolog/log"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/manager"
+	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -18,7 +18,8 @@ const (
 type App struct {
 	*tview.Application
 
-	Root *Root
+	ComponentManager *manager.ComponentManager
+	Root             *Root
 }
 
 func NewApp(config *config.MonguiConfig) App {
@@ -29,8 +30,9 @@ func NewApp(config *config.MonguiConfig) App {
 	loadStyles()
 
 	app := App{
-		Application: tview.NewApplication(),
-		Root:        NewRoot(mongoDao),
+		Application:      tview.NewApplication(),
+		Root:             NewRoot(mongoDao),
+		ComponentManager: manager.NewComponentManager(),
 	}
 
 	return app
@@ -74,3 +76,4 @@ func GetApp(ctx context.Context) *App {
 func LoadApp(ctx context.Context, app *App) context.Context {
 	return context.WithValue(ctx, appCtxKey, app)
 }
+

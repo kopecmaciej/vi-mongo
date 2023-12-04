@@ -3,24 +3,28 @@ package component
 import (
 	"context"
 	"fmt"
-	"mongo-ui/mongo"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/mongo"
+	"github.com/kopecmaciej/mongui/primitives"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 )
 
 type DBTree struct {
 	*tview.TreeView
 
-	NodeSelectF func(a string, b string, filter map[string]interface{}) error
+	inputModal  *primitives.ModalInput
+	NodeSelectF func(ctx context.Context, a string, b string, filter map[string]interface{}) error
 	app         *App
 	mongo       *mongo.Dao
 }
 
 func NewDBTree(mongo *mongo.Dao) *DBTree {
 	return &DBTree{
-		TreeView: tview.NewTreeView(),
-		mongo:    mongo,
+		TreeView:   tview.NewTreeView(),
+		inputModal: primitives.NewModalInput(),
+		mongo:      mongo,
 	}
 }
 
@@ -93,7 +97,7 @@ func (t *DBTree) RenderTree(ctx context.Context, dbsWitColls []mongo.DBsWithColl
 			parent.AddChild(child)
 
 			child.SetSelectedFunc(func() {
-				t.NodeSelectF(parent.GetText(), child.GetText(), nil)
+				t.NodeSelectF(ctx, parent.GetText(), child.GetText(), nil)
 			})
 		}
 	}
@@ -115,49 +119,37 @@ func (t *DBTree) addCollection(ctx context.Context) error {
 	}
 	db := parent.GetText()
 
-	inputModal := tview.NewModal()
-	inputModal.SetButtonTextColor(tcell.ColorWhite)
-	text := fmt.Sprintf("Enter collection name for db %s", db)
-	collectionName := ""
-	inputModal.SetText(text).
-		AddButtons([]string{"OK", "Cancel"})
+	label := fmt.Sprintf("Add collection name for db %s", db)
+	t.inputModal.SetLabel(label)
+	t.inputModal.SetInputLabel("Collection name: ")
+	t.inputModal.SetFieldBackgroundColor(tcell.ColorBlack)
+	t.inputModal.SetBorder(true)
 
-	inputModal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyRune {
-			collectionName += string(event.Rune())
-			inputModal.SetText(fmt.Sprintf("%s\n%s", text, collectionName))
-		}
-		if event.Key() == tcell.KeyBackspace2 {
-			if len(collectionName) > 0 {
-				collectionName = collectionName[:len(collectionName)-1]
-				inputModal.SetText(fmt.Sprintf("%s\n%s", text, collectionName))
+	t.inputModal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEnter {
+			collectionName := t.inputModal.GetText()
+			if collectionName == "" {
+				return event
 			}
+			err := t.mongo.AddCollection(ctx, db, collectionName)
+			if err != nil {
+				log.Error().Err(err).Msg("Error adding collection")
+				return nil
+			}
+			collNode := t.collNode(collectionName)
+			parent.AddChild(collNode)
+			collNode.SetReference(parent)
+			t.app.Root.RemovePage("inputModal")
+		}
+		if event.Key() == tcell.KeyEscape {
+			t.app.Root.RemovePage("inputModal")
 		}
 
 		return event
 	})
 
-	inputModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		defer t.app.SetFocus(t)
-		if buttonLabel == "OK" {
-			if collectionName != "" {
-				err := t.mongo.AddCollection(ctx, db, collectionName)
-				if err != nil {
-					return
-				}
-				collNode := t.collNode(collectionName)
-				parent.AddChild(collNode)
-				collNode.SetReference(parent)
-				defer t.app.Root.RemovePage("inputModal")
-			}
-		} else if buttonLabel == "Cancel" || buttonLabel == "" {
-			t.app.Root.RemovePage("inputModal")
-		}
-		return
-	})
-
-	t.app.Root.AddPage("inputModal", inputModal, true, true)
-	t.app.SetFocus(inputModal)
+	t.app.Root.AddPage("inputModal", t.inputModal, true, true)
+	t.app.SetFocus(t.inputModal)
 
 	return nil
 }

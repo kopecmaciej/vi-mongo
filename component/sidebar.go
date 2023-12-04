@@ -2,12 +2,17 @@ package component
 
 import (
 	"context"
-	"mongo-ui/mongo"
 	"regexp"
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/manager"
+	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
+)
+
+const (
+	SideBarComponent manager.Component = "SideBar"
 )
 
 type SideBar struct {
