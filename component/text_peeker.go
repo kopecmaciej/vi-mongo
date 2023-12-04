@@ -177,7 +177,8 @@ func (tp *TextPeeker) saveDocument(ctx context.Context, db, coll string, rawDocu
 		log.Error().Msgf("Error unmarshaling JSON: %v", err)
 		return nil
 	}
-	id := document["_id"].(string)
+  // $oid is used by mongoexport
+	id := document["_id"].(map[string]interface{})["$oid"].(string)
 	delete(document, "_id")
 
 	if id == "" {

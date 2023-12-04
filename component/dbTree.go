@@ -5,10 +5,16 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/mongui/primitives"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
+)
+
+const (
+	InputModalComponent   manager.Component = "InputModal"
+	ConfirmModalComponent manager.Component = "ConfirmModal"
 )
 
 type DBTree struct {
@@ -139,17 +145,16 @@ func (t *DBTree) addCollection(ctx context.Context) error {
 			collNode := t.collNode(collectionName)
 			parent.AddChild(collNode)
 			collNode.SetReference(parent)
-			t.app.Root.RemovePage("inputModal")
+			t.app.Root.RemovePage(InputModalComponent)
 		}
 		if event.Key() == tcell.KeyEscape {
-			t.app.Root.RemovePage("inputModal")
+			t.app.Root.RemovePage(InputModalComponent)
 		}
 
 		return event
 	})
 
-	t.app.Root.AddPage("inputModal", t.inputModal, true, true)
-	t.app.SetFocus(t.inputModal)
+	t.app.Root.AddPage(InputModalComponent, t.inputModal, true, true)
 
 	return nil
 }
@@ -175,16 +180,15 @@ func (t *DBTree) deleteCollection(ctx context.Context) error {
 				return
 			}
 			parent.RemoveChild(t.GetCurrentNode())
-			t.app.Root.RemovePage("confirmModal")
+			t.app.Root.RemovePage(ConfirmModalComponent)
 			t.app.SetFocus(t)
 		} else if buttonLabel == "Cancel" || buttonLabel == "" {
-			t.app.Root.RemovePage("confirmModal")
+			t.app.Root.RemovePage(ConfirmModalComponent)
 			t.app.SetFocus(t)
 		}
 	})
 
-	t.app.Root.AddPage("confirmModal", confirmModal, true, true)
-	t.app.SetFocus(confirmModal)
+	t.app.Root.AddPage(ConfirmModalComponent, confirmModal, true, true)
 
 	return nil
 }

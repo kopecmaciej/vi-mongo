@@ -10,8 +10,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-type Event string
-
 type InputBar struct {
 	*tview.InputField
 

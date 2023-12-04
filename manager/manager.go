@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/rs/zerolog/log"
 )
 
 type Component string
@@ -48,6 +49,7 @@ func (eh *ComponentManager) CurrentComponent() Component {
 	if len(eh.componentStack) == 0 {
 		return ""
 	}
+  log.Debug().Msgf("Current component: %s", eh.componentStack[len(eh.componentStack)-1])
 	return eh.componentStack[len(eh.componentStack)-1]
 }
 
