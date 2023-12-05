@@ -15,8 +15,7 @@ const (
 type DeleteModal struct {
 	*tview.Modal
 
-	app     *App
-	manager *manager.ComponentManager
+	app *App
 }
 
 func NewDeleteModal() *DeleteModal {
@@ -31,7 +30,6 @@ func (d *DeleteModal) Init(ctx context.Context) error {
 		return err
 	}
 	d.app = app
-	d.manager = d.app.ComponentManager
 
 	d.setStyle()
 	d.setShortcuts()
@@ -47,10 +45,6 @@ func (d *DeleteModal) setStyle() {
 	d.SetBorderPadding(0, 0, 1, 1)
 }
 
-func (d *DeleteModal) SetText(text string) {
-	d.SetText(text)
-}
-
 func (d *DeleteModal) setShortcuts() {
 	d.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
@@ -63,8 +57,3 @@ func (d *DeleteModal) setShortcuts() {
 	})
 }
 
-func (d *DeleteModal) SetDoneFunc(handler func(buttonIndex int, buttonLabel string)) {
-	d.SetDoneFunc(handler)
-
-	d.app.Root.RemovePage(DeleteModalComponent)
-}

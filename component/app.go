@@ -9,6 +9,7 @@ import (
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -44,9 +45,7 @@ func (a *App) Init() error {
 	if err != nil {
 		return err
 	}
-	focus := a.GetFocus()
 	a.SetRoot(a.Root.Pages, true).EnableMouse(true)
-	a.SetFocus(focus)
 	return a.Run()
 }
 
@@ -67,6 +66,7 @@ func loadStyles() {
 func GetApp(ctx context.Context) (*App, error) {
 	app, ok := ctx.Value(appCtxKey).(*App)
 	if !ok {
+		log.Error().Msg("error getting app from context")
 		return nil, fmt.Errorf("error getting app from context")
 	}
 	return app, nil

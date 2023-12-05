@@ -163,7 +163,6 @@ func (c *Content) queryBarListener(ctx context.Context) {
 		case tcell.KeyEsc:
 			c.app.QueueUpdateDraw(func() {
 				c.toggleQueryBar(ctx)
-
 			})
 		case tcell.KeyEnter:
 			c.app.QueueUpdateDraw(func() {
@@ -327,22 +326,20 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 		return nil
 	}
 
-	text := "Are you sure you want to delete this document?"
-	deleteModal := tview.NewModal().
-		SetText(text).
-		AddButtons([]string{"Yes", "No"}).
-		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			if buttonLabel == "Yes" {
-				err = c.dao.DeleteDocument(ctx, c.state.db, c.state.coll, objectID)
-				if err != nil {
-					log.Error().Err(err).Msg("Error deleting document")
-				}
+	delMod := c.deleteModal
+	delMod.SetText("Are you sure you want to delete this document?")
+	delMod.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		if buttonLabel == "Yes" {
+			err = c.dao.DeleteDocument(ctx, c.state.db, c.state.coll, objectID)
+			if err != nil {
+				log.Error().Err(err).Msg("Error deleting document")
 			}
-			c.app.Root.RemovePage(DeleteModalComponent)
-			c.RenderContent(ctx, c.state.db, c.state.coll, nil)
-		})
+		}
+		c.app.Root.RemovePage(DeleteModalComponent)
+		c.RenderContent(ctx, c.state.db, c.state.coll, nil)
+	})
 
-	c.app.Root.AddPage(DeleteModalComponent, deleteModal, true, true)
+	c.app.Root.AddPage(DeleteModalComponent, delMod, true, true)
 
 	return nil
 }
