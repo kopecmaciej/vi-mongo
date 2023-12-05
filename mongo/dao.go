@@ -167,6 +167,8 @@ func (d *Dao) DeleteDocument(ctx context.Context, db string, collection string, 
 		return mongo.ErrNoDocuments
 	}
 
+	log.Debug().Msgf("Document deleted, id: %v, db: %v, collection: %v", id, db, collection)
+
 	return nil
 }
 
@@ -176,20 +178,20 @@ func (d *Dao) AddCollection(ctx context.Context, db string, collection string) e
 		return err
 	}
 
-  log.Debug().Msgf("Collection added, db: %v, collection: %v", db, collection)
+	log.Debug().Msgf("Collection added, db: %v, collection: %v", db, collection)
 
 	return nil
 }
 
 func (d *Dao) DeleteCollection(ctx context.Context, db string, collection string) error {
-  err := d.client.Database(db).Collection(collection).Drop(ctx)
-  if err != nil {
-    return err
-  }
+	err := d.client.Database(db).Collection(collection).Drop(ctx)
+	if err != nil {
+		return err
+	}
 
-  log.Debug().Msgf("Collection deleted, db: %v, collection: %v", db, collection)
+	log.Debug().Msgf("Collection deleted, db: %v, collection: %v", db, collection)
 
-  return nil
+	return nil
 }
 
 func (d *Dao) runAdminCommand(ctx context.Context, key string, value interface{}) (primitive.M, error) {

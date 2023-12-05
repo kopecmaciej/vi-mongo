@@ -1,18 +1,15 @@
 package component
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -30,7 +27,6 @@ type Content struct {
 	queryBar    *InputBar
 	textPeeker  *TextPeeker
 	deleteModal *DeleteModal
-	mutex       sync.Mutex
 	state       contentState
 }
 
@@ -57,7 +53,6 @@ func NewContent(dao *mongo.Dao) *Content {
 		textPeeker:  NewTextPeeker(dao),
 		deleteModal: NewDeleteModal(),
 		dao:         dao,
-		mutex:       sync.Mutex{},
 		state:       state,
 	}
 }
@@ -117,6 +112,10 @@ func (c *Content) setShortcuts(ctx context.Context) {
 		switch event.Key() {
 		case tcell.KeyCtrlD:
 			c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+		case tcell.KeyCtrlA:
+			// c.addDocument(ctx, c.state.db, c.state.coll, c.refresh)
+		case tcell.KeyCtrlS:
+			// c.duplicateDocument(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text, c.refresh)
 		case tcell.KeyCtrlN:
 			c.goToNextMongoPage(ctx)
 		case tcell.KeyCtrlP:
@@ -198,22 +197,9 @@ func (c *Content) listDocuments(ctx context.Context, db, coll string, filters ma
 		return nil, 0, nil
 	}
 
-	var docs []string
-	for _, document := range documents {
-		for key, value := range document {
-			if oid, ok := value.(primitive.ObjectID); ok {
-				obj := primitive.M{
-					"$oid": oid.Hex(),
-				}
-				document[key] = obj
-			}
-		}
-		jsonBytes, err := json.Marshal(document)
-		if err != nil {
-			log.Error().Err(err).Msg("Error marshaling JSON")
-			continue
-		}
-		docs = append(docs, string(jsonBytes))
+	docs, err := mongo.ConvertIDsToOIDs(documents)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	return docs, count, nil
@@ -238,7 +224,7 @@ func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map
 		return nil
 	}
 
-	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.page, c.state.limit)
+	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", c.state.count, c.state.page, c.state.limit)
 	if filter != nil {
 		prettyFilter, err := json.Marshal(filter)
 		if err != nil {
@@ -290,15 +276,12 @@ func (c *Content) viewJson(ctx context.Context, jsonString string) error {
 
 	c.app.Root.AddPage(JsonViewComponent, c.View, true, true)
 
-	var prettyJson bytes.Buffer
-	err := json.Indent(&prettyJson, []byte(jsonString), "", "  ")
-	if err != nil {
-		log.Error().Err(err).Msg("Error marshaling JSON")
-		return nil
-	}
-	text := string(prettyJson.Bytes())
+  indentedJson, err := mongo.IndientJSON(jsonString)
+  if err != nil {
+    return err
+  }
 
-	c.View.SetText(text)
+	c.View.SetText(indentedJson)
 	c.View.ScrollToBeginning()
 
 	c.View.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -313,23 +296,12 @@ func (c *Content) viewJson(ctx context.Context, jsonString string) error {
 }
 
 func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
-	var doc map[string]interface{}
-	err := json.Unmarshal([]byte(jsonString), &doc)
-	if err != nil {
-		log.Error().Err(err).Msg("Error unmarshaling JSON")
-		return nil
-	}
-
-	objectID, err := mongo.GetIDFromDocument(doc)
-	if err != nil {
-		log.Error().Err(err).Msg("Error converting _id to ObjectID")
-		return nil
-	}
+	objectID, err := mongo.GetIDFromJSON(jsonString)
 
 	delMod := c.deleteModal
 	delMod.SetText("Are you sure you want to delete this document?")
 	delMod.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		if buttonLabel == "Yes" {
+		if buttonLabel == "Delete" {
 			err = c.dao.DeleteDocument(ctx, c.state.db, c.state.coll, objectID)
 			if err != nil {
 				log.Error().Err(err).Msg("Error deleting document")

@@ -15,7 +15,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -182,19 +181,15 @@ func (tp *TextPeeker) saveDocument(ctx context.Context, db, coll string, rawDocu
 		log.Error().Msgf("Error unmarshaling JSON: %v", err)
 		return nil
 	}
-	
-	id := document["_id"].(map[string]interface{})["$oid"].(string)
+
+	id, err := mongo.GetIDFromDocument(document)
+	if err != nil {
+		log.Error().Msgf("Error getting _id from document: %v", err)
+		return nil
+	}
 	delete(document, "_id")
 
-	if id == "" {
-		log.Error().Msgf("Document must have an _id")
-	}
-	mongoId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		log.Error().Msgf("Invalid _id: %v", err)
-	}
-
-	err = tp.dao.UpdateDocument(ctx, db, coll, mongoId, document)
+	err = tp.dao.UpdateDocument(ctx, db, coll, id, document)
 	if err != nil {
 		log.Error().Msgf("Error updating document: %v", err)
 		return nil
