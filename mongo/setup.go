@@ -3,7 +3,7 @@ package mongo
 import (
 	"context"
 	"fmt"
-	"mongo-ui/config"
+	"github.com/kopecmaciej/mongui/config"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"

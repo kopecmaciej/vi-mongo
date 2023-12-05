@@ -1,6 +1,13 @@
 package component
 
-import "github.com/rivo/tview"
+import (
+	"github.com/kopecmaciej/mongui/manager"
+	"github.com/rivo/tview"
+)
+
+const (
+	ErrorComponent manager.Component = "Error"
+)
 
 type Error struct {
 	*tview.Modal
@@ -12,16 +19,14 @@ func NewError() *Error {
 	}
 }
 
-func (e *Error) ShowErrorModal(page *tview.Pages, message string) {
+func (e *Error) ShowErrorModal(page *Root, message string) {
 	modal := tview.NewModal().
 		SetText(message).
 		AddButtons([]string{"Ok"})
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
-			//remove modal from page
-			page.RemovePage("modal")
+			page.RemovePage(ErrorComponent)
 		}
 	})
-	page.AddPage("modal", modal, false, false)
-	page.ShowPage("modal")
+	page.AddPage(ErrorComponent, modal, true, true)
 }

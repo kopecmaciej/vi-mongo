@@ -10,8 +10,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-type Event string
-
 type InputBar struct {
 	*tview.InputField
 
@@ -76,7 +74,7 @@ const (
 	maxHistory = 20
 )
 
-func (i *InputBar) Autocomplete() {
+func (i *InputBar) AutocompleteHistory() {
 	history, err := i.LoadHistory()
 	if err != nil {
 		return
@@ -88,6 +86,28 @@ func (i *InputBar) Autocomplete() {
 				entries = append(entries, entry)
 			}
 		}
+		return entries
+	})
+}
+
+func (i *InputBar) Autocomplete() {
+	mongoKeywords := []string{"$exists", "$eq", "$nor", "$elemMatch" /* add other MongoDB keywords here */}
+
+	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
+		words := strings.Fields(currentText)
+		if len(words) > 0 {
+			lastWord := words[len(words)-1]
+			if strings.HasPrefix(lastWord, "$") {
+				for _, keyword := range mongoKeywords {
+					if strings.HasPrefix(keyword, lastWord) {
+						// Replace the last word with the keyword, maintaining the rest of the currentText
+						replacement := strings.Join(words[:len(words)-1], " ") + " " + keyword
+						entries = append(entries, replacement)
+					}
+				}
+			}
+		}
+
 		return entries
 	})
 }

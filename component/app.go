@@ -2,12 +2,12 @@ package component
 
 import (
 	"context"
-	"mongo-ui/config"
-	"mongo-ui/mongo"
-
-	"github.com/rs/zerolog/log"
+	"fmt"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/manager"
+	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 )
 
@@ -18,7 +18,8 @@ const (
 type App struct {
 	*tview.Application
 
-	Root *Root
+	ComponentManager *manager.ComponentManager
+	Root             *Root
 }
 
 func NewApp(config *config.MonguiConfig) App {
@@ -29,8 +30,9 @@ func NewApp(config *config.MonguiConfig) App {
 	loadStyles()
 
 	app := App{
-		Application: tview.NewApplication(),
-		Root:        NewRoot(mongoDao),
+		Application:      tview.NewApplication(),
+		Root:             NewRoot(mongoDao),
+		ComponentManager: manager.NewComponentManager(),
 	}
 
 	return app
@@ -62,13 +64,12 @@ func loadStyles() {
 	tview.Styles.GraphicsColor = tcell.ColorGray.TrueColor()
 }
 
-func GetApp(ctx context.Context) *App {
+func GetApp(ctx context.Context) (*App, error) {
 	app, ok := ctx.Value(appCtxKey).(*App)
 	if !ok {
-		log.Error().Msg("Error getting app from context")
-		return nil
+		return nil, fmt.Errorf("error getting app from context")
 	}
-	return app
+	return app, nil
 }
 
 func LoadApp(ctx context.Context, app *App) context.Context {

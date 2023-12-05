@@ -5,29 +5,33 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"mongo-ui/mongo"
 	"sync"
-	"time"
-
-	"github.com/rs/zerolog/log"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/manager"
+	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+const (
+	ContentComponent  manager.Component = "Content"
+	JsonViewComponent manager.Component = "JsonView"
 )
 
 type Content struct {
 	*tview.Flex
 
-	Table      *tview.Table
-	View       *tview.TextView
-	app        *App
-	dao        *mongo.Dao
-	queryBar   *InputBar
-	textPeeker *TextPeeker
-	label      string
-	mutex      sync.Mutex
-	state      contentState
+	Table       *tview.Table
+	View        *tview.TextView
+	app         *App
+	dao         *mongo.Dao
+	queryBar    *InputBar
+	textPeeker  *TextPeeker
+	deleteModal *DeleteModal
+	mutex       sync.Mutex
+	state       contentState
 }
 
 type contentState struct {
@@ -46,24 +50,32 @@ func NewContent(dao *mongo.Dao) *Content {
 
 	flex := tview.NewFlex()
 	return &Content{
-		Table:      tview.NewTable(),
-		Flex:       flex,
-		View:       tview.NewTextView(),
-		queryBar:   NewInputBar("Query"),
-		dao:        dao,
-		textPeeker: NewTextPeeker(dao),
-		mutex:      sync.Mutex{},
-		label:      "content",
-		state:      state,
+		Table:       tview.NewTable(),
+		Flex:        flex,
+		View:        tview.NewTextView(),
+		queryBar:    NewInputBar("Query"),
+		textPeeker:  NewTextPeeker(dao),
+		deleteModal: NewDeleteModal(),
+		dao:         dao,
+		mutex:       sync.Mutex{},
+		state:       state,
 	}
 }
 
 func (c *Content) Init(ctx context.Context) error {
-	c.app = GetApp(ctx)
+	app, err := GetApp(ctx)
+	if err != nil {
+		return err
+	}
+	c.app = app
+
 	c.setStyle()
 	c.setShortcuts(ctx)
 
 	if err := c.textPeeker.Init(ctx, c.Flex); err != nil {
+		return err
+	}
+	if err := c.deleteModal.Init(ctx); err != nil {
 		return err
 	}
 	c.queryBar.AutocompleteOn = true
@@ -98,13 +110,13 @@ func (c *Content) setShortcuts(ctx context.Context) {
 			c.textPeeker.EditJson(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text, c.refresh)
 		case 'v':
 			c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
-		case 'D':
-			c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case '/':
 			c.toggleQueryBar(ctx)
 			c.render(ctx, true)
 		}
 		switch event.Key() {
+		case tcell.KeyCtrlD:
+			c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case tcell.KeyCtrlN:
 			c.goToNextMongoPage(ctx)
 		case tcell.KeyCtrlP:
@@ -165,16 +177,14 @@ func (c *Content) queryBarListener(ctx context.Context) {
 				if err != nil {
 					log.Error().Err(err).Msg("Error saving query to history")
 				}
-				c.RenderContent(c.state.db, c.state.coll, filter)
+				c.RenderContent(ctx, c.state.db, c.state.coll, filter)
 				c.Table.ScrollToBeginning()
 			})
 		}
 	}
 }
 
-func (c *Content) listDocuments(db, coll string, filters map[string]interface{}) ([]string, int64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+func (c *Content) listDocuments(ctx context.Context, db, coll string, filters map[string]interface{}) ([]string, int64, error) {
 	c.state.db = db
 	c.state.coll = coll
 
@@ -210,11 +220,11 @@ func (c *Content) listDocuments(db, coll string, filters map[string]interface{})
 	return docs, count, nil
 }
 
-func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) error {
+func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map[string]interface{}) error {
 	c.Table.Clear()
 	c.app.SetFocus(c.Table)
 
-	documents, count, err := c.listDocuments(db, coll, filter)
+	documents, count, err := c.listDocuments(ctx, db, coll, filter)
 	if err != nil {
 		log.Error().Err(err).Msg("Error listing documents")
 		return err
@@ -256,8 +266,8 @@ func (c *Content) RenderContent(db, coll string, filter map[string]interface{}) 
 	return nil
 }
 
-func (c *Content) refresh() {
-	c.RenderContent(c.state.db, c.state.coll, nil)
+func (c *Content) refresh(ctx context.Context) error {
+	return c.RenderContent(ctx, c.state.db, c.state.coll, nil)
 }
 
 func (c *Content) goToNextMongoPage(ctx context.Context) {
@@ -265,7 +275,7 @@ func (c *Content) goToNextMongoPage(ctx context.Context) {
 		return
 	}
 	c.state.page += c.state.limit
-	c.RenderContent(c.state.db, c.state.coll, nil)
+	c.RenderContent(ctx, c.state.db, c.state.coll, nil)
 }
 
 func (c *Content) goToPrevMongoPage(ctx context.Context) {
@@ -273,13 +283,13 @@ func (c *Content) goToPrevMongoPage(ctx context.Context) {
 		return
 	}
 	c.state.page -= c.state.limit
-	c.RenderContent(c.state.db, c.state.coll, nil)
+	c.RenderContent(ctx, c.state.db, c.state.coll, nil)
 }
 
 func (c *Content) viewJson(ctx context.Context, jsonString string) error {
 	c.View.Clear()
 
-	c.app.Root.AddPage("json", c.View, true, true)
+	c.app.Root.AddPage(JsonViewComponent, c.View, true, true)
 
 	var prettyJson bytes.Buffer
 	err := json.Indent(&prettyJson, []byte(jsonString), "", "  ")
@@ -288,18 +298,14 @@ func (c *Content) viewJson(ctx context.Context, jsonString string) error {
 		return nil
 	}
 	text := string(prettyJson.Bytes())
-	log.Info().Msg("text: " + text)
 
 	c.View.SetText(text)
 	c.View.ScrollToBeginning()
 
-	c.app.SetFocus(c.View)
-
 	c.View.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEsc:
-			c.app.Root.RemovePage("json")
-			c.app.SetFocus(c.Table)
+			c.app.Root.RemovePage(JsonViewComponent)
 		}
 		return event
 	})
@@ -315,14 +321,14 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 		return nil
 	}
 
-	objectID, err := primitive.ObjectIDFromHex(doc["_id"].(string))
+	objectID, err := mongo.GetIDFromDocument(doc)
 	if err != nil {
 		log.Error().Err(err).Msg("Error converting _id to ObjectID")
 		return nil
 	}
 
 	text := "Are you sure you want to delete this document?"
-	modal := tview.NewModal().
+	deleteModal := tview.NewModal().
 		SetText(text).
 		AddButtons([]string{"Yes", "No"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
@@ -332,29 +338,11 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 					log.Error().Err(err).Msg("Error deleting document")
 				}
 			}
-			c.app.Root.RemovePage("modal")
-			c.app.SetFocus(c.Table)
-
-			c.RenderContent(c.state.db, c.state.coll, nil)
+			c.app.Root.RemovePage(DeleteModalComponent)
+			c.RenderContent(ctx, c.state.db, c.state.coll, nil)
 		})
 
-	modal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyEsc:
-			c.app.Root.RemovePage("modal")
-			c.app.SetFocus(c.Table)
-		}
-		switch event.Rune() {
-		case 'h':
-			return tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone)
-		case 'l':
-			return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
-		}
-		return event
-	})
-
-	c.app.Root.AddPage("modal", modal, true, true)
-	c.app.SetFocus(modal)
+	c.app.Root.AddPage(DeleteModalComponent, deleteModal, true, true)
 
 	return nil
 }

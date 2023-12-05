@@ -1,4 +1,4 @@
-module mongo-ui
+module github.com/kopecmaciej/mongui
 
 go 1.21.2
 

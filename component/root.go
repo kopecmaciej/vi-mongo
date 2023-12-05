@@ -2,47 +2,49 @@ package component
 
 import (
 	"context"
-	"log"
-	"mongo-ui/mongo"
+	"github.com/rs/zerolog/log"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/manager"
+	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 )
 
-type flexStack struct {
-	label   string
-	fixed   int
-	prop    int
-	focus   bool
-	enabled bool
-}
+const (
+	RootComponent manager.Component = "Root"
+)
 
 type Root struct {
 	*tview.Pages
 	*tview.Flex
 
-	mongoDao  *mongo.Dao
-	app       *App
-	header    *Header
-	sideBar   *SideBar
-	content   *Content
-	pageStack map[string]flexStack
+	mongoDao *mongo.Dao
+	app      *App
+	header   *Header
+	sideBar  *SideBar
+	content  *Content
+	manager  *manager.ComponentManager
 }
 
 func NewRoot(mongoDao *mongo.Dao) *Root {
 	root := &Root{
 		Pages:    tview.NewPages(),
 		Flex:     tview.NewFlex(),
+		mongoDao: mongoDao,
 		header:   NewHeader(mongoDao),
 		sideBar:  NewSideBar(mongoDao),
 		content:  NewContent(mongoDao),
-		mongoDao: mongoDao,
 	}
 
 	return root
 }
 func (r *Root) Init(ctx context.Context) error {
-	r.app = GetApp(ctx)
+	app, err := GetApp(ctx)
+	if err != nil {
+		return err
+	}
+	r.app = app
+	r.manager = r.app.ComponentManager
 
 	r.Pages.SetBackgroundColor(tcell.ColorDefault)
 	r.Flex.SetBackgroundColor(tcell.ColorDefault)
@@ -75,15 +77,17 @@ func (r *Root) Init(ctx context.Context) error {
 	}()
 
 	if e != nil {
-		log.Println(e)
+		log.Error().Err(e).Msg("Error initializing root")
+		return e
 	}
 
 	r.sideBar.DBTree.NodeSelectF = r.content.RenderContent
 
 	r.render(ctx)
-	r.SetShortcuts(ctx)
+	r.registerKeyHandlers(ctx)
+	r.setShortcuts(ctx)
 
-	r.AddPage("main", r.Flex, true, true)
+	r.AddPage(RootComponent, r.Flex, true, true)
 
 	return nil
 }
@@ -93,44 +97,52 @@ func (r *Root) render(ctx context.Context) error {
 	body.SetBackgroundColor(tcell.ColorDefault)
 	body.SetDirection(tview.FlexRow)
 
-	r.Flex.AddItem(r.sideBar.Flex, 30, 0, false)
+	r.Flex.AddItem(r.sideBar, 30, 0, false)
 	r.Flex.AddItem(body, 0, 7, true)
 	body.AddItem(r.header.Table, 0, 1, false)
 	body.AddItem(r.content.Flex, 0, 7, true)
 
 	r.app.SetFocus(r.sideBar.Flex)
 
+	r.manager.PushComponent(RootComponent)
+
 	return nil
 }
 
-func (r *Root) SetShortcuts(ctx context.Context) {
-	r.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyTab:
-			focus := r.app.GetFocus()
-			if focus == r.sideBar.DBTree {
-				r.app.SetFocus(r.content)
-			} else {
-				r.app.SetFocus(r.sideBar)
-			}
-		case tcell.KeyCtrlS:
-			if _, ok := r.Flex.GetItem(0).(*SideBar); ok {
-				r.Flex.RemoveItem(r.sideBar)
-				r.app.SetFocus(r.content.Table)
-			} else {
-				r.Flex.Clear()
-				r.render(ctx)
-			}
-		case tcell.KeyCtrlD:
-			if r.Flex.GetItemCount() > 1 && r.Flex.GetItem(1) == r.content {
-				r.Flex.RemoveItem(r.content)
-				r.app.SetFocus(r.sideBar)
-			} else {
-				r.Flex.Clear()
-				r.render(ctx)
-			}
+func (r *Root) registerKeyHandlers(ctx context.Context) {
+	rootManager := r.manager.SetKeyHandlerForComponent(RootComponent)
+	rootManager(tcell.KeyCtrlS, func() {
+		if _, ok := r.Flex.GetItem(0).(*SideBar); ok {
+			r.Flex.RemoveItem(r.sideBar)
+			r.app.SetFocus(r.content.Table)
+		} else {
+			r.Flex.Clear()
+			r.render(ctx)
 		}
+	})
+	rootManager(tcell.KeyTab, func() {
+		focus := r.app.GetFocus()
+		if focus == r.sideBar.DBTree {
+			r.app.SetFocus(r.content.Table)
+		} else {
+			r.app.SetFocus(r.sideBar.DBTree)
+		}
+	})
+}
 
+func (r *Root) setShortcuts(ctx context.Context) {
+	r.app.Root.Pages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		r.manager.HandleKey(event.Key())
 		return event
 	})
+}
+
+func (r *Root) AddPage(component manager.Component, page tview.Primitive, resize, visable bool) {
+	r.Pages.AddPage(string(component), page, resize, visable)
+	r.manager.PushComponent(component)
+}
+
+func (r *Root) RemovePage(component manager.Component) {
+	r.Pages.RemovePage(string(component))
+	r.manager.PopComponent()
 }

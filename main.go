@@ -1,10 +1,10 @@
 package main
 
 import (
-	"mongo-ui/component"
-	"mongo-ui/config"
 	"os"
 
+	"github.com/kopecmaciej/mongui/component"
+	"github.com/kopecmaciej/mongui/config"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )

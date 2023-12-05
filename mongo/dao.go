@@ -2,7 +2,7 @@ package mongo
 
 import (
 	"context"
-	"mongo-ui/config"
+	"github.com/kopecmaciej/mongui/config"
 
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"

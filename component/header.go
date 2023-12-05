@@ -3,11 +3,11 @@ package component
 import (
 	"context"
 	"log"
-	"mongo-ui/mongo"
 	"strconv"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 )
 
@@ -38,15 +38,18 @@ func NewHeader(dao *mongo.Dao) *Header {
 }
 
 func (h *Header) Init(ctx context.Context) error {
-	h.app = GetApp(ctx)
+	app, err := GetApp(ctx)
+	if err != nil {
+		return err
+	}
+	h.app = app
 
 	h.setStyle()
 
 	ctxWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	err := h.setBaseInfo(ctxWithTimeout)
-	if err != nil {
+	if err = h.setBaseInfo(ctxWithTimeout); err != nil {
 		return err
 	}
 	h.render()

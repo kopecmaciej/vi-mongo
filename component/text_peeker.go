@@ -5,15 +5,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"mongo-ui/mongo"
-	"mongo-ui/primitives"
 	"os"
 	"os/exec"
+
+	"github.com/kopecmaciej/mongui/manager"
+	"github.com/kopecmaciej/mongui/mongo"
+	"github.com/kopecmaciej/mongui/primitives"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+const (
+	TextPeekerComponent manager.Component = "TextPeeker"
 )
 
 type docState struct {
@@ -22,10 +28,11 @@ type docState struct {
 }
 
 type TextPeeker struct {
-	app    *App
-	dao    *mongo.Dao
-	state  docState
-	parent tview.Primitive
+	app     *App
+	dao     *mongo.Dao
+	state   docState
+	parent  tview.Primitive
+	manager *manager.ComponentManager
 }
 
 func NewTextPeeker(dao *mongo.Dao) *TextPeeker {
@@ -35,7 +42,13 @@ func NewTextPeeker(dao *mongo.Dao) *TextPeeker {
 }
 
 func (d *TextPeeker) Init(ctx context.Context, parent tview.Primitive) error {
-	d.app = GetApp(ctx)
+	app, err := GetApp(ctx)
+	if err != nil {
+		return err
+	}
+	d.app = app
+
+	d.manager = d.app.ComponentManager
 	d.parent = parent
 	return nil
 }
@@ -71,24 +84,23 @@ func (d *TextPeeker) PeekJson(ctx context.Context, db, coll string, jsonString s
 	modal.AddButtons([]string{"Edit", "Close"})
 
 	root := d.app.Root
-	root.AddPage("details", modal, true, true)
-	d.app.SetFocus(modal)
+	root.AddPage(TextPeekerComponent, modal, true, true)
 	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Edit" {
 			d.EditJson(ctx, db, coll, jsonString, d.refresh)
 		} else {
-			root.RemovePage("details")
-			d.app.SetFocus(d.parent)
+			root.RemovePage(TextPeekerComponent)
 		}
 	})
 	return nil
 }
 
-func (d *TextPeeker) refresh() {
-	d.PeekJson(context.Background(), d.state.db, d.state.coll, d.state.rawDocument)
+func (d *TextPeeker) refresh(ctx context.Context) error {
+	return d.PeekJson(ctx, d.state.db, d.state.coll, d.state.rawDocument)
 }
 
-func (d *TextPeeker) EditJson(ctx context.Context, db, coll string, rawDocument string, fun func()) error {
+// EditJson opens the editor with the document and saves it if it was changed
+func (tp *TextPeeker) EditJson(ctx context.Context, db, coll string, rawDocument string, render func(ctx context.Context) error) error {
 	var prettyJson bytes.Buffer
 	err := json.Indent(&prettyJson, []byte(rawDocument), "", "  ")
 	if err != nil {
@@ -116,7 +128,7 @@ func (d *TextPeeker) EditJson(ctx context.Context, db, coll string, rawDocument 
 		return fmt.Errorf("Error finding editor: %v", err)
 	}
 
-	d.app.Suspend(func() {
+	tp.app.Suspend(func() {
 		cmd := exec.Command(editor, tmpFile.Name())
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -137,16 +149,22 @@ func (d *TextPeeker) EditJson(ctx context.Context, db, coll string, rawDocument 
 			return
 		}
 		if string(editedBytes) == string(prettyJson.Bytes()) {
-      log.Debug().Msgf("Edited JSON is the same as original")
+			log.Debug().Msgf("Edited JSON is the same as original")
 			return
 		}
 
-		err = d.saveDocument(ctx, db, coll, string(editedBytes))
+		err = tp.saveDocument(ctx, db, coll, string(editedBytes))
 		if err != nil {
 			log.Printf("Error saving edited document: %v", err)
 			return
 		} else {
-			fun()
+			log.Debug().Msg("Document saved")
+			err := render(ctx)
+			if err != nil {
+				// TODO: show modal with error
+				log.Printf("Error rendering: %v", err)
+				return
+			}
 		}
 
 	})
@@ -154,7 +172,7 @@ func (d *TextPeeker) EditJson(ctx context.Context, db, coll string, rawDocument 
 	return nil
 }
 
-func (d *TextPeeker) saveDocument(ctx context.Context, db, coll string, rawDocument string) error {
+func (tp *TextPeeker) saveDocument(ctx context.Context, db, coll string, rawDocument string) error {
 	if rawDocument == "" {
 		return fmt.Errorf("Document cannot be empty")
 	}
@@ -164,7 +182,8 @@ func (d *TextPeeker) saveDocument(ctx context.Context, db, coll string, rawDocum
 		log.Error().Msgf("Error unmarshaling JSON: %v", err)
 		return nil
 	}
-	id := document["_id"].(string)
+	
+	id := document["_id"].(map[string]interface{})["$oid"].(string)
 	delete(document, "_id")
 
 	if id == "" {
@@ -175,9 +194,9 @@ func (d *TextPeeker) saveDocument(ctx context.Context, db, coll string, rawDocum
 		log.Error().Msgf("Invalid _id: %v", err)
 	}
 
-	err = d.dao.UpdateDocument(ctx, db, coll, mongoId, document)
+	err = tp.dao.UpdateDocument(ctx, db, coll, mongoId, document)
 	if err != nil {
-    log.Error().Msgf("Error updating document: %v", err)
+		log.Error().Msgf("Error updating document: %v", err)
 		return nil
 	}
 
