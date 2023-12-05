@@ -1,9 +1,12 @@
 package component
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/manager"
@@ -25,23 +28,16 @@ type Content struct {
 	app         *App
 	dao         *mongo.Dao
 	queryBar    *InputBar
-	textPeeker  *TextPeeker
+	jsonPeeker  *JsonPeeker
 	deleteModal *DeleteModal
-	state       contentState
-}
-
-type contentState struct {
-	page  int64
-	limit int64
-	db    string
-	coll  string
-	count int64
+	docModifier *DocModifier
+	state       mongo.CollectionState
 }
 
 func NewContent(dao *mongo.Dao) *Content {
-	state := contentState{
-		page:  0,
-		limit: 50,
+	state := mongo.CollectionState{
+		Page:  0,
+		Limit: 50,
 	}
 
 	flex := tview.NewFlex()
@@ -50,8 +46,9 @@ func NewContent(dao *mongo.Dao) *Content {
 		Flex:        flex,
 		View:        tview.NewTextView(),
 		queryBar:    NewInputBar("Query"),
-		textPeeker:  NewTextPeeker(dao),
+		jsonPeeker:  NewTextPeeker(dao),
 		deleteModal: NewDeleteModal(),
+		docModifier: NewDocModifier(dao),
 		dao:         dao,
 		state:       state,
 	}
@@ -67,7 +64,7 @@ func (c *Content) Init(ctx context.Context) error {
 	c.setStyle()
 	c.setShortcuts(ctx)
 
-	if err := c.textPeeker.Init(ctx, c.Flex); err != nil {
+	if err := c.jsonPeeker.Init(ctx, c.Flex); err != nil {
 		return err
 	}
 	if err := c.deleteModal.Init(ctx); err != nil {
@@ -76,6 +73,13 @@ func (c *Content) Init(ctx context.Context) error {
 	c.queryBar.AutocompleteOn = true
 	if err := c.queryBar.Init(ctx); err != nil {
 		return err
+	}
+	if err := c.docModifier.Init(ctx); err != nil {
+		return err
+	}
+	c.docModifier.Render = func() error {
+    // TODO: change to return from editJson
+		return c.refresh(ctx)
 	}
 
 	c.render(ctx, false)
@@ -100,9 +104,9 @@ func (c *Content) setShortcuts(ctx context.Context) {
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case 'p':
-			c.textPeeker.PeekJson(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			c.jsonPeeker.PeekJson(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case 'e':
-			c.textPeeker.EditJson(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text, c.refresh)
+			c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case 'v':
 			c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case '/':
@@ -121,7 +125,7 @@ func (c *Content) setShortcuts(ctx context.Context) {
 		case tcell.KeyCtrlP:
 			c.goToPrevMongoPage(ctx)
 		case tcell.KeyEnter:
-			c.textPeeker.PeekJson(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			c.jsonPeeker.PeekJson(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 		}
 
 		return event
@@ -175,7 +179,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 				if err != nil {
 					log.Error().Err(err).Msg("Error saving query to history")
 				}
-				c.RenderContent(ctx, c.state.db, c.state.coll, filter)
+				c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
 				c.Table.ScrollToBeginning()
 			})
 		}
@@ -183,26 +187,25 @@ func (c *Content) queryBarListener(ctx context.Context) {
 }
 
 func (c *Content) listDocuments(ctx context.Context, db, coll string, filters map[string]interface{}) ([]string, int64, error) {
-	c.state.db = db
-	c.state.coll = coll
+	c.state.Db = db
+	c.state.Coll = coll
 
-	documents, count, err := c.dao.ListDocuments(ctx, db, coll, filters, c.state.page, c.state.limit)
+	documents, count, err := c.dao.ListDocuments(ctx, db, coll, filters, c.state.Page, c.state.Limit)
 	if err != nil {
 		return nil, 0, err
 	}
-
-	c.state.count = count
-
 	if len(documents) == 0 {
 		return nil, 0, nil
 	}
 
-	docs, err := mongo.ConvertIDsToOIDs(documents)
+	c.state.Count = count
+
+	docsWithOid, err := mongo.ConvertIdsToOids(documents)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return docs, count, nil
+	return docsWithOid, count, nil
 }
 
 func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map[string]interface{}) error {
@@ -224,7 +227,7 @@ func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map
 		return nil
 	}
 
-	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", c.state.count, c.state.page, c.state.limit)
+	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", c.state.Count, c.state.Page, c.state.Limit)
 	if filter != nil {
 		prettyFilter, err := json.Marshal(filter)
 		if err != nil {
@@ -252,23 +255,23 @@ func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map
 }
 
 func (c *Content) refresh(ctx context.Context) error {
-	return c.RenderContent(ctx, c.state.db, c.state.coll, nil)
+	return c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
 }
 
 func (c *Content) goToNextMongoPage(ctx context.Context) {
-	if c.state.page+c.state.limit >= c.state.count {
+	if c.state.Page+c.state.Limit >= c.state.Count {
 		return
 	}
-	c.state.page += c.state.limit
-	c.RenderContent(ctx, c.state.db, c.state.coll, nil)
+	c.state.Page += c.state.Limit
+	c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
 }
 
 func (c *Content) goToPrevMongoPage(ctx context.Context) {
-	if c.state.page == 0 {
+	if c.state.Page == 0 {
 		return
 	}
-	c.state.page -= c.state.limit
-	c.RenderContent(ctx, c.state.db, c.state.coll, nil)
+	c.state.Page -= c.state.Limit
+	c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
 }
 
 func (c *Content) viewJson(ctx context.Context, jsonString string) error {
@@ -276,10 +279,10 @@ func (c *Content) viewJson(ctx context.Context, jsonString string) error {
 
 	c.app.Root.AddPage(JsonViewComponent, c.View, true, true)
 
-  indentedJson, err := mongo.IndientJSON(jsonString)
-  if err != nil {
-    return err
-  }
+	indentedJson, err := mongo.IndientJSON(jsonString)
+	if err != nil {
+		return err
+	}
 
 	c.View.SetText(indentedJson)
 	c.View.ScrollToBeginning()
@@ -302,16 +305,116 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 	delMod.SetText("Are you sure you want to delete this document?")
 	delMod.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Delete" {
-			err = c.dao.DeleteDocument(ctx, c.state.db, c.state.coll, objectID)
+			err = c.dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectID)
 			if err != nil {
 				log.Error().Err(err).Msg("Error deleting document")
 			}
 		}
 		c.app.Root.RemovePage(DeleteModalComponent)
-		c.RenderContent(ctx, c.state.db, c.state.coll, nil)
+		c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
 	})
 
 	c.app.Root.AddPage(DeleteModalComponent, delMod, true, true)
+
+	return nil
+}
+
+// EditJson opens the editor with the document and saves it if it was changed
+func (c *Content) EditJson(ctx context.Context, db, coll string, rawDocument string, render func() error) error {
+	var prettyJson bytes.Buffer
+	err := json.Indent(&prettyJson, []byte(rawDocument), "", "  ")
+	if err != nil {
+		log.Printf("Error marshaling JSON: %v", err)
+		return err
+	}
+
+	tmpFile, err := os.CreateTemp("", "doc-*.json")
+	if err != nil {
+		return fmt.Errorf("Error creating temp file: %v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	_, err = tmpFile.Write(prettyJson.Bytes())
+	if err != nil {
+		return fmt.Errorf("Error writing to temp file: %v", err)
+	}
+
+	if err := tmpFile.Close(); err != nil {
+		return fmt.Errorf("Error closing temp file: %v", err)
+	}
+
+	editor, err := exec.LookPath(os.Getenv("EDITOR"))
+	if err != nil {
+		return fmt.Errorf("Error finding editor: %v", err)
+	}
+
+	c.app.Suspend(func() {
+		cmd := exec.Command(editor, tmpFile.Name())
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
+		if err != nil {
+			log.Printf("Error running editor: %v", err)
+			return
+		}
+
+		editedBytes, err := os.ReadFile(tmpFile.Name())
+		if err != nil {
+			log.Printf("Error reading edited file: %v", err)
+			return
+		}
+		if !json.Valid(editedBytes) {
+			log.Printf("Edited JSON is not valid")
+			return
+		}
+		if string(editedBytes) == string(prettyJson.Bytes()) {
+			log.Debug().Msgf("Edited JSON is the same as original")
+			return
+		}
+
+		err = c.saveDocument(ctx, db, coll, string(editedBytes))
+		if err != nil {
+			log.Printf("Error saving edited document: %v", err)
+			return
+		} else {
+			log.Debug().Msg("Document saved")
+			err := render()
+			if err != nil {
+				// TODO: show modal with error
+				log.Printf("Error rendering: %v", err)
+				return
+			}
+		}
+
+	})
+
+	return nil
+}
+
+func (c *Content) saveDocument(ctx context.Context, db, coll string, rawDocument string) error {
+	if rawDocument == "" {
+		return fmt.Errorf("Document cannot be empty")
+	}
+	var document map[string]interface{}
+	err := json.Unmarshal([]byte(rawDocument), &document)
+	if err != nil {
+		log.Error().Msgf("Error unmarshaling JSON: %v", err)
+		return nil
+	}
+
+	id, err := mongo.GetIDFromDocument(document)
+	if err != nil {
+		log.Error().Msgf("Error getting _id from document: %v", err)
+		return nil
+	}
+	delete(document, "_id")
+
+	err = c.dao.UpdateDocument(ctx, db, coll, id, document)
+	if err != nil {
+		log.Error().Msgf("Error updating document: %v", err)
+		return nil
+	}
 
 	return nil
 }

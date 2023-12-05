@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/rs/zerolog/log"
 )
 
 type Component string
@@ -30,6 +31,9 @@ func NewComponentManager() *ComponentManager {
 func (eh *ComponentManager) PushComponent(component Component) {
 	eh.mutex.Lock()
 	defer eh.mutex.Unlock()
+	if len(eh.componentStack) > 0 && eh.componentStack[len(eh.componentStack)-1] == component {
+		return
+	}
 	eh.componentStack = append(eh.componentStack, component)
 }
 
@@ -49,6 +53,7 @@ func (eh *ComponentManager) CurrentComponent() Component {
 	if len(eh.componentStack) == 0 {
 		return ""
 	}
+	log.Debug().Msgf("Current component stack: %v", eh.componentStack)
 	return eh.componentStack[len(eh.componentStack)-1]
 }
 

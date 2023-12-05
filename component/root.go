@@ -104,8 +104,6 @@ func (r *Root) render(ctx context.Context) error {
 
 	r.app.SetFocus(r.sideBar.Flex)
 
-	r.manager.PushComponent(RootComponent)
-
 	return nil
 }
 

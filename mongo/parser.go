@@ -73,8 +73,8 @@ func GetIDFromDocument(document map[string]interface{}) (primitive.ObjectID, err
 	return primitive.ObjectIDFromHex(id)
 }
 
-// ConvertIDsToOIDs converts a slice of documents to a slice of strings with the _id field converted to an $oid
-func ConvertIDsToOIDs(documents []primitive.M) ([]string, error) {
+// ConvertIdsToOids converts a slice of documents to a slice of strings with the _id field converted to an $oid
+func ConvertIdsToOids(documents []primitive.M) ([]string, error) {
 	var docs []string
 	for _, document := range documents {
 		for key, value := range document {
@@ -105,5 +105,5 @@ func IndientJSON(jsonString string) (string, error) {
 	}
 	text := string(prettyJson.Bytes())
 
-  return text, nil
+	return text, nil
 }

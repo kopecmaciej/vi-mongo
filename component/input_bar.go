@@ -8,11 +8,13 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 )
 
 type InputBar struct {
 	*tview.InputField
 
+	app            *App
 	EventChan      chan interface{}
 	mutex          sync.Mutex
 	label          string
@@ -34,6 +36,11 @@ func NewInputBar(label string) *InputBar {
 }
 
 func (i *InputBar) Init(ctx context.Context) error {
+	app, err := GetApp(ctx)
+	if err != nil {
+		return err
+	}
+	i.app = app
 	i.setStyle()
 	i.SetLabel(" " + i.label + ": ")
 
@@ -167,6 +174,7 @@ func (i *InputBar) Disable() {
 	i.enabled = false
 }
 
+// Toggle enables/disables the input bar but does not force any redraws
 func (i *InputBar) Toggle() {
 	i.mutex.Lock()
 	defer i.mutex.Unlock()
@@ -178,6 +186,35 @@ func (i *InputBar) Toggle() {
 	}
 }
 
+// EventListener listens for events on the input bar
+func (i *InputBar) EventListener(accept func(), reject func()) {
+	for {
+		key := <-i.EventChan
+		if _, ok := key.(tcell.Key); !ok {
+			continue
+		}
+		switch key {
+		case tcell.KeyEsc:
+			i.app.QueueUpdateDraw(func() {
+				i.Toggle()
+				reject()
+			})
+		case tcell.KeyEnter:
+			i.app.QueueUpdateDraw(func() {
+				i.Toggle()
+				text := i.GetText()
+				err := i.SaveToHistory(text)
+				if err != nil {
+					log.Error().Err(err).Msg("Error saving query to history")
+				}
+				accept()
+				i.SetText("")
+			})
+		}
+	}
+}
+
+// ToggleAutocomplete toggles autocomplete on and off
 func (i *InputBar) ToggleAutocomplete() {
 	i.mutex.Lock()
 	defer i.mutex.Unlock()
