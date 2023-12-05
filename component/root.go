@@ -39,7 +39,11 @@ func NewRoot(mongoDao *mongo.Dao) *Root {
 	return root
 }
 func (r *Root) Init(ctx context.Context) error {
-	r.app = GetApp(ctx)
+	app, err := GetApp(ctx)
+	if err != nil {
+		return err
+	}
+	r.app = app
 	r.manager = r.app.ComponentManager
 
 	r.Pages.SetBackgroundColor(tcell.ColorDefault)

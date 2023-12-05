@@ -42,7 +42,12 @@ func NewTextPeeker(dao *mongo.Dao) *TextPeeker {
 }
 
 func (d *TextPeeker) Init(ctx context.Context, parent tview.Primitive) error {
-	d.app = GetApp(ctx)
+	app, err := GetApp(ctx)
+	if err != nil {
+		return err
+	}
+	d.app = app
+
 	d.manager = d.app.ComponentManager
 	d.parent = parent
 	return nil
@@ -177,7 +182,7 @@ func (tp *TextPeeker) saveDocument(ctx context.Context, db, coll string, rawDocu
 		log.Error().Msgf("Error unmarshaling JSON: %v", err)
 		return nil
 	}
-  // $oid is used by mongoexport
+	
 	id := document["_id"].(map[string]interface{})["$oid"].(string)
 	delete(document, "_id")
 

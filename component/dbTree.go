@@ -34,14 +34,20 @@ func NewDBTree(mongo *mongo.Dao) *DBTree {
 	}
 }
 
-func (t *DBTree) Init(ctx context.Context) {
-	t.app = GetApp(ctx)
+func (t *DBTree) Init(ctx context.Context) error {
+	app, err := GetApp(ctx)
+	if err != nil {
+		return err
+	}
+	t.app = app
+
 	t.setStyle()
 	t.setShortcuts(ctx)
 
 	rootNode := t.dbNode("Databases")
 	t.SetRoot(rootNode)
 
+	return nil
 }
 
 func (t *DBTree) setStyle() {

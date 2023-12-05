@@ -2,13 +2,13 @@ package component
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -64,16 +64,14 @@ func loadStyles() {
 	tview.Styles.GraphicsColor = tcell.ColorGray.TrueColor()
 }
 
-func GetApp(ctx context.Context) *App {
+func GetApp(ctx context.Context) (*App, error) {
 	app, ok := ctx.Value(appCtxKey).(*App)
 	if !ok {
-		log.Error().Msg("Error getting app from context")
-		return nil
+		return nil, fmt.Errorf("error getting app from context")
 	}
-	return app
+	return app, nil
 }
 
 func LoadApp(ctx context.Context, app *App) context.Context {
 	return context.WithValue(ctx, appCtxKey, app)
 }
-

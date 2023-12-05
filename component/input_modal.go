@@ -23,8 +23,14 @@ func NewInputModal(dao *mongo.Dao, label string) *InputModal {
 	}
 }
 
-func (i *InputModal) Init(ctx context.Context) {
-	i.app = GetApp(ctx)
+func (i *InputModal) Init(ctx context.Context) error {
+	app, err := GetApp(ctx)
+	if err != nil {
+		return err
+	}
+	i.app = app
 	i.SetTitle(i.label)
 	i.SetBorder(true)
+
+	return nil
 }

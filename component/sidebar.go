@@ -40,12 +40,18 @@ func NewSideBar(dao *mongo.Dao) *SideBar {
 }
 
 func (s *SideBar) Init(ctx context.Context) error {
-	s.app = GetApp(ctx)
+	app, err := GetApp(ctx)
+	if err != nil {
+		return err
+	}
+	s.app = app
 
 	s.setStyle()
 	s.setShortcuts(ctx)
 
-	s.DBTree.Init(ctx)
+	if err := s.DBTree.Init(ctx); err != nil {
+		return err
+	}
 
 	if err := s.render(ctx); err != nil {
 		return err

@@ -16,23 +16,22 @@ import (
 )
 
 const (
-	ContentComponent     manager.Component = "Content"
-	JsonViewComponent    manager.Component = "JsonView"
-	DeleteModalComponent manager.Component = "DeleteModal"
+	ContentComponent  manager.Component = "Content"
+	JsonViewComponent manager.Component = "JsonView"
 )
 
 type Content struct {
 	*tview.Flex
 
-	Table      *tview.Table
-	View       *tview.TextView
-	app        *App
-	dao        *mongo.Dao
-	queryBar   *InputBar
-	textPeeker *TextPeeker
-	label      string
-	mutex      sync.Mutex
-	state      contentState
+	Table       *tview.Table
+	View        *tview.TextView
+	app         *App
+	dao         *mongo.Dao
+	queryBar    *InputBar
+	textPeeker  *TextPeeker
+	deleteModal *DeleteModal
+	mutex       sync.Mutex
+	state       contentState
 }
 
 type contentState struct {
@@ -51,24 +50,32 @@ func NewContent(dao *mongo.Dao) *Content {
 
 	flex := tview.NewFlex()
 	return &Content{
-		Table:      tview.NewTable(),
-		Flex:       flex,
-		View:       tview.NewTextView(),
-		queryBar:   NewInputBar("Query"),
-		textPeeker: NewTextPeeker(dao),
-		dao:        dao,
-		mutex:      sync.Mutex{},
-		label:      "content",
-		state:      state,
+		Table:       tview.NewTable(),
+		Flex:        flex,
+		View:        tview.NewTextView(),
+		queryBar:    NewInputBar("Query"),
+		textPeeker:  NewTextPeeker(dao),
+		deleteModal: NewDeleteModal(),
+		dao:         dao,
+		mutex:       sync.Mutex{},
+		state:       state,
 	}
 }
 
 func (c *Content) Init(ctx context.Context) error {
-	c.app = GetApp(ctx)
+	app, err := GetApp(ctx)
+	if err != nil {
+		return err
+	}
+	c.app = app
+
 	c.setStyle()
 	c.setShortcuts(ctx)
 
 	if err := c.textPeeker.Init(ctx, c.Flex); err != nil {
+		return err
+	}
+	if err := c.deleteModal.Init(ctx); err != nil {
 		return err
 	}
 	c.queryBar.AutocompleteOn = true
@@ -334,16 +341,6 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 			c.app.Root.RemovePage(DeleteModalComponent)
 			c.RenderContent(ctx, c.state.db, c.state.coll, nil)
 		})
-
-	deleteModal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Rune() {
-		case 'h':
-			return tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone)
-		case 'l':
-			return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
-		}
-		return event
-	})
 
 	c.app.Root.AddPage(DeleteModalComponent, deleteModal, true, true)
 
