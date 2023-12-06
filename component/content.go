@@ -1,12 +1,9 @@
 package component
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"os/exec"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/manager"
@@ -78,13 +75,13 @@ func (c *Content) Init(ctx context.Context) error {
 		return err
 	}
 	c.docModifier.Render = func() error {
-    // TODO: change to return from editJson
+		// TODO: change to return from editJson
 		return c.refresh(ctx)
 	}
 
 	c.render(ctx, false)
 
-	go c.queryBarListener(ctx)
+	c.queryBarListener(ctx)
 
 	return nil
 }
@@ -120,6 +117,8 @@ func (c *Content) setShortcuts(ctx context.Context) {
 			// c.addDocument(ctx, c.state.db, c.state.coll, c.refresh)
 		case tcell.KeyCtrlS:
 			// c.duplicateDocument(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text, c.refresh)
+		case tcell.KeyCtrlR:
+			c.refresh(ctx)
 		case tcell.KeyCtrlN:
 			c.goToNextMongoPage(ctx)
 		case tcell.KeyCtrlP:
@@ -155,35 +154,20 @@ func (c *Content) toggleQueryBar(ctx context.Context) {
 }
 
 func (c *Content) queryBarListener(ctx context.Context) {
-	eventChan := c.queryBar.EventChan
-
-	for {
-		key := <-eventChan
-		if _, ok := key.(tcell.Key); !ok {
-			continue
+	accceptFunc := func() {
+		text := c.queryBar.GetText()
+		filter, err := mongo.ParseStringQuery(text)
+		if err != nil {
+			log.Error().Err(err).Msg("Error parsing query")
 		}
-		switch key {
-		case tcell.KeyEsc:
-			c.app.QueueUpdateDraw(func() {
-				c.toggleQueryBar(ctx)
-			})
-		case tcell.KeyEnter:
-			c.app.QueueUpdateDraw(func() {
-				c.toggleQueryBar(ctx)
-				text := c.queryBar.GetText()
-				filter, err := mongo.ParseStringQuery(text)
-				if err != nil {
-					log.Error().Err(err).Msg("Error parsing query")
-				}
-				err = c.queryBar.SaveToHistory(text)
-				if err != nil {
-					log.Error().Err(err).Msg("Error saving query to history")
-				}
-				c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
-				c.Table.ScrollToBeginning()
-			})
-		}
+		c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
+    c.Table.Select(2, 0)
 	}
+	rejectFunc := func() {
+		c.render(ctx, true)
+	}
+
+	go c.queryBar.EventListener(accceptFunc, rejectFunc)
 }
 
 func (c *Content) listDocuments(ctx context.Context, db, coll string, filters map[string]interface{}) ([]string, int64, error) {
@@ -319,102 +303,3 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 	return nil
 }
 
-// EditJson opens the editor with the document and saves it if it was changed
-func (c *Content) EditJson(ctx context.Context, db, coll string, rawDocument string, render func() error) error {
-	var prettyJson bytes.Buffer
-	err := json.Indent(&prettyJson, []byte(rawDocument), "", "  ")
-	if err != nil {
-		log.Printf("Error marshaling JSON: %v", err)
-		return err
-	}
-
-	tmpFile, err := os.CreateTemp("", "doc-*.json")
-	if err != nil {
-		return fmt.Errorf("Error creating temp file: %v", err)
-	}
-	defer os.Remove(tmpFile.Name())
-
-	_, err = tmpFile.Write(prettyJson.Bytes())
-	if err != nil {
-		return fmt.Errorf("Error writing to temp file: %v", err)
-	}
-
-	if err := tmpFile.Close(); err != nil {
-		return fmt.Errorf("Error closing temp file: %v", err)
-	}
-
-	editor, err := exec.LookPath(os.Getenv("EDITOR"))
-	if err != nil {
-		return fmt.Errorf("Error finding editor: %v", err)
-	}
-
-	c.app.Suspend(func() {
-		cmd := exec.Command(editor, tmpFile.Name())
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err = cmd.Run()
-		if err != nil {
-			log.Printf("Error running editor: %v", err)
-			return
-		}
-
-		editedBytes, err := os.ReadFile(tmpFile.Name())
-		if err != nil {
-			log.Printf("Error reading edited file: %v", err)
-			return
-		}
-		if !json.Valid(editedBytes) {
-			log.Printf("Edited JSON is not valid")
-			return
-		}
-		if string(editedBytes) == string(prettyJson.Bytes()) {
-			log.Debug().Msgf("Edited JSON is the same as original")
-			return
-		}
-
-		err = c.saveDocument(ctx, db, coll, string(editedBytes))
-		if err != nil {
-			log.Printf("Error saving edited document: %v", err)
-			return
-		} else {
-			log.Debug().Msg("Document saved")
-			err := render()
-			if err != nil {
-				// TODO: show modal with error
-				log.Printf("Error rendering: %v", err)
-				return
-			}
-		}
-
-	})
-
-	return nil
-}
-
-func (c *Content) saveDocument(ctx context.Context, db, coll string, rawDocument string) error {
-	if rawDocument == "" {
-		return fmt.Errorf("Document cannot be empty")
-	}
-	var document map[string]interface{}
-	err := json.Unmarshal([]byte(rawDocument), &document)
-	if err != nil {
-		log.Error().Msgf("Error unmarshaling JSON: %v", err)
-		return nil
-	}
-
-	id, err := mongo.GetIDFromDocument(document)
-	if err != nil {
-		log.Error().Msgf("Error getting _id from document: %v", err)
-		return nil
-	}
-	delete(document, "_id")
-
-	err = c.dao.UpdateDocument(ctx, db, coll, id, document)
-	if err != nil {
-		log.Error().Msgf("Error updating document: %v", err)
-		return nil
-	}
-
-	return nil
-}

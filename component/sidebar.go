@@ -20,7 +20,7 @@ type SideBar struct {
 	*tview.Flex
 
 	DBTree       *DBTree
-	FilterBar    *InputBar
+	filterBar    *InputBar
 	app          *App
 	dao          *mongo.Dao
 	mutex        sync.Mutex
@@ -33,7 +33,7 @@ func NewSideBar(dao *mongo.Dao) *SideBar {
 	return &SideBar{
 		Flex:      flex,
 		DBTree:    NewDBTree(dao),
-		FilterBar: NewInputBar("Filter"),
+		filterBar: NewInputBar("Filter"),
 		label:     "sideBar",
 		dao:       dao,
 		mutex:     sync.Mutex{},
@@ -60,7 +60,7 @@ func (s *SideBar) Init(ctx context.Context) error {
 	if err := s.fetchAndRender(ctx, ""); err != nil {
 		return err
 	}
-	if err := s.FilterBar.Init(ctx); err != nil {
+	if err := s.filterBar.Init(ctx); err != nil {
 		return err
 	}
 	s.filterBarListener(ctx)
@@ -78,7 +78,7 @@ func (s *SideBar) setShortcuts(ctx context.Context) {
 		switch event.Key() {
 		case tcell.KeyRune:
 			if event.Rune() == '/' {
-				s.FilterBar.Toggle()
+				s.filterBar.Toggle()
 				s.render(ctx)
 				return nil
 			}
@@ -93,9 +93,9 @@ func (s *SideBar) render(ctx context.Context) error {
 	var primitive tview.Primitive
 	primitive = s.DBTree
 
-	if s.FilterBar.IsEnabled() {
-		s.Flex.AddItem(s.FilterBar, 3, 0, false)
-		primitive = s.FilterBar
+	if s.filterBar.IsEnabled() {
+		s.Flex.AddItem(s.filterBar, 3, 0, false)
+		primitive = s.filterBar
 	}
 	defer s.app.SetFocus(primitive)
 
@@ -111,14 +111,14 @@ func (s *SideBar) filterBarListener(ctx context.Context) {
 	rejectFunc := func() {
 		s.render(ctx)
 	}
-	go s.FilterBar.EventListener(accceptFunc, rejectFunc)
+	go s.filterBar.EventListener(accceptFunc, rejectFunc)
 }
 
 func (s *SideBar) filter(ctx context.Context) {
 	defer s.render(ctx)
 	dbsWitColls := s.dbsWithColls
 	filtered := []mongo.DBsWithCollections{}
-	text := s.FilterBar.GetText()
+	text := s.filterBar.GetText()
 	if text == "" {
 		return
 	}
