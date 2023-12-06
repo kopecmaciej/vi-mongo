@@ -25,7 +25,7 @@ type Content struct {
 	app         *App
 	dao         *mongo.Dao
 	queryBar    *InputBar
-	jsonPeeker  *JsonPeeker
+	jsonPeeker  *DocPeeker
 	deleteModal *DeleteModal
 	docModifier *DocModifier
 	state       mongo.CollectionState
@@ -43,7 +43,7 @@ func NewContent(dao *mongo.Dao) *Content {
 		Flex:        flex,
 		View:        tview.NewTextView(),
 		queryBar:    NewInputBar("Query"),
-		jsonPeeker:  NewTextPeeker(dao),
+		jsonPeeker:  NewDocPeeker(dao),
 		deleteModal: NewDeleteModal(),
 		docModifier: NewDocModifier(dao),
 		dao:         dao,
@@ -61,7 +61,7 @@ func (c *Content) Init(ctx context.Context) error {
 	c.setStyle()
 	c.setShortcuts(ctx)
 
-	if err := c.jsonPeeker.Init(ctx, c.Flex); err != nil {
+	if err := c.jsonPeeker.Init(ctx); err != nil {
 		return err
 	}
 	if err := c.deleteModal.Init(ctx); err != nil {
@@ -101,13 +101,13 @@ func (c *Content) setShortcuts(ctx context.Context) {
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case 'p':
-			c.jsonPeeker.PeekJson(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case 'e':
 			c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case 'v':
 			c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case '/':
-			c.toggleQueryBar(ctx)
+			c.queryBar.Toggle()
 			c.render(ctx, true)
 		}
 		switch event.Key() {
@@ -124,7 +124,7 @@ func (c *Content) setShortcuts(ctx context.Context) {
 		case tcell.KeyCtrlP:
 			c.goToPrevMongoPage(ctx)
 		case tcell.KeyEnter:
-			c.jsonPeeker.PeekJson(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 		}
 
 		return event
@@ -148,11 +148,6 @@ func (c *Content) render(ctx context.Context, setFocus bool) {
 	c.Flex.AddItem(c.Table, 0, 1, true)
 }
 
-func (c *Content) toggleQueryBar(ctx context.Context) {
-	c.queryBar.Toggle()
-	c.render(ctx, true)
-}
-
 func (c *Content) queryBarListener(ctx context.Context) {
 	accceptFunc := func() {
 		text := c.queryBar.GetText()
@@ -161,7 +156,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 			log.Error().Err(err).Msg("Error parsing query")
 		}
 		c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
-    c.Table.Select(2, 0)
+		c.Table.Select(2, 0)
 	}
 	rejectFunc := func() {
 		c.render(ctx, true)
@@ -285,21 +280,21 @@ func (c *Content) viewJson(ctx context.Context, jsonString string) error {
 func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 	objectID, err := mongo.GetIDFromJSON(jsonString)
 
-	delMod := c.deleteModal
-	delMod.SetText("Are you sure you want to delete this document?")
-	delMod.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		if buttonLabel == "Delete" {
+	c.deleteModal.SetText("Are you sure you want to delete document of ID: [blue]" + objectID.Hex())
+	c.deleteModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		if buttonIndex == 0 {
 			err = c.dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectID)
 			if err != nil {
-				log.Error().Err(err).Msg("Error deleting document")
+				errMsg := fmt.Sprintf("Error deleting document: %v", err)
+				log.Error().Err(err).Msg(errMsg)
+				defer ShowErrorModal(c.app.Root, errMsg)
 			}
 		}
 		c.app.Root.RemovePage(DeleteModalComponent)
 		c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
 	})
 
-	c.app.Root.AddPage(DeleteModalComponent, delMod, true, true)
+	c.app.Root.AddPage(DeleteModalComponent, c.deleteModal, true, true)
 
 	return nil
 }
-

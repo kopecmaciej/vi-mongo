@@ -8,6 +8,7 @@ import (
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/mongui/primitives"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -21,28 +22,29 @@ const (
 type peekerState struct {
 	mongo.CollectionState
 	rawDocument string
+	id          primitive.ObjectID
 }
 
-type JsonPeeker struct {
+type DocPeeker struct {
 	*primitives.ModalView
 
+	eventChan   chan interface{}
 	docModifier *DocModifier
 	app         *App
 	dao         *mongo.Dao
 	state       peekerState
-	parent      tview.Primitive
 	manager     *manager.ComponentManager
 }
 
-func NewTextPeeker(dao *mongo.Dao) *JsonPeeker {
-	return &JsonPeeker{
+func NewDocPeeker(dao *mongo.Dao) *DocPeeker {
+	return &DocPeeker{
 		ModalView:   primitives.NewModalView(),
 		docModifier: NewDocModifier(dao),
 		dao:         dao,
 	}
 }
 
-func (jp *JsonPeeker) Init(ctx context.Context, parent tview.Primitive) error {
+func (jp *DocPeeker) Init(ctx context.Context) error {
 	app, err := GetApp(ctx)
 	if err != nil {
 		return err
@@ -50,21 +52,21 @@ func (jp *JsonPeeker) Init(ctx context.Context, parent tview.Primitive) error {
 	jp.app = app
 
 	jp.setStyle()
+	jp.setShortcuts(ctx)
 
 	jp.manager = jp.app.ComponentManager
-	jp.parent = parent
 
 	if err := jp.docModifier.Init(ctx); err != nil {
 		return err
 	}
 	jp.docModifier.Render = func() error {
-		return jp.refresh(ctx)
+		return jp.render(ctx)
 	}
 
 	return nil
 }
 
-func (jp *JsonPeeker) setStyle() {
+func (jp *DocPeeker) setStyle() {
 	jp.SetBorder(true)
 	jp.SetTitle("Document Details")
 	jp.SetTitleAlign(tview.AlignLeft)
@@ -73,7 +75,19 @@ func (jp *JsonPeeker) setStyle() {
 	jp.ModalView.AddButtons([]string{"Edit", "Close"})
 }
 
-func (jp *JsonPeeker) PeekJson(ctx context.Context, db, coll string, jsonString string) error {
+func (jp *DocPeeker) setShortcuts(ctx context.Context) {
+	jp.ModalView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyCtrlR {
+			if err := jp.render(ctx); err != nil {
+				log.Error().Err(err).Msg("Error refreshing document")
+			}
+			return nil
+		}
+		return event
+	})
+}
+
+func (jp *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString string) error {
 	jp.state = peekerState{
 		CollectionState: mongo.CollectionState{
 			Db:   db,
@@ -104,7 +118,7 @@ func (jp *JsonPeeker) PeekJson(ctx context.Context, db, coll string, jsonString 
 				log.Error().Err(err).Msg("Error editing document")
 			}
 			jp.state.rawDocument = updatedDoc
-			jp.refresh(ctx)
+			jp.render(ctx)
 		} else if buttonLabel == "Close" || buttonLabel == "" {
 			root.RemovePage(TextPeekerComponent)
 		}
@@ -112,6 +126,6 @@ func (jp *JsonPeeker) PeekJson(ctx context.Context, db, coll string, jsonString 
 	return nil
 }
 
-func (jp *JsonPeeker) refresh(ctx context.Context) error {
-	return jp.PeekJson(ctx, jp.state.Db, jp.state.Coll, jp.state.rawDocument)
+func (jp *DocPeeker) render(ctx context.Context) error {
+	return jp.Peek(ctx, jp.state.Db, jp.state.Coll, jp.state.rawDocument)
 }

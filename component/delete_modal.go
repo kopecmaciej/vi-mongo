@@ -34,7 +34,7 @@ func (d *DeleteModal) Init(ctx context.Context) error {
 	d.setStyle()
 	d.setShortcuts()
 
-	d.AddButtons([]string{"Delete", "Cancel"})
+	d.AddButtons([]string{"[red]Delete", "Cancel"})
 
 	return nil
 }

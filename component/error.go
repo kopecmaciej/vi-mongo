@@ -9,24 +9,18 @@ const (
 	ErrorComponent manager.Component = "Error"
 )
 
-type Error struct {
-	*tview.Modal
-}
+func ShowErrorModal(page *Root, message string) {
+	errModal := tview.NewModal()
+	errModal.SetTitle(" Error ")
+	errModal.SetBorderPadding(0, 0, 1, 1)
+	errModal.SetBackgroundColor(tview.Styles.ContrastBackgroundColor)
+	errModal.SetText(message)
+	errModal.AddButtons([]string{"Ok"})
 
-func NewError() *Error {
-	return &Error{
-		Modal: tview.NewModal(),
-	}
-}
-
-func (e *Error) ShowErrorModal(page *Root, message string) {
-	modal := tview.NewModal().
-		SetText(message).
-		AddButtons([]string{"Ok"})
-	modal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+	errModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
 			page.RemovePage(ErrorComponent)
 		}
 	})
-	page.AddPage(ErrorComponent, modal, true, true)
+	page.AddPage(ErrorComponent, errModal, true, true)
 }
