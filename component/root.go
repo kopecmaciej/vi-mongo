@@ -81,7 +81,7 @@ func (r *Root) Init(ctx context.Context) error {
 		return e
 	}
 
-	r.sideBar.DBTree.NodeSelectF = r.content.RenderContent
+	r.sideBar.DBTree.NodeSelectFunc = r.content.RenderContent
 
 	r.render(ctx)
 	r.registerKeyHandlers(ctx)

@@ -18,17 +18,28 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 		return map[string]interface{}{}, nil
 	}
 
+	if !strings.HasPrefix(query, "{") {
+		query = "{" + query
+	}
+	if !strings.HasSuffix(query, "}") {
+		query = query + "}"
+	}
+
 	query = strings.ReplaceAll(query, "ObjectId(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "\")", "\"}")
 
-	re := regexp.MustCompile(`(\w+):`)
-	quotedKeysQuery := re.ReplaceAllString(query, `"$1":`)
+	// if query has no key, add one, if key has dot, add quotes
+	// to whole key, example address.city -> "address.city"
+	re := regexp.MustCompile(`(\w+\.\w+)`)
+	query = re.ReplaceAllStringFunc(query, func(s string) string {
+		return `"` + s + `"`
+	})
 
 	filter := map[string]interface{}{}
 
-	err := bson.UnmarshalExtJSON([]byte(quotedKeysQuery), true, &filter)
+	err := bson.UnmarshalExtJSON([]byte(query), true, &filter)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing query: %v", err)
+		return nil, fmt.Errorf("error parsing query %s: %w", query, err)
 	}
 
 	return filter, nil

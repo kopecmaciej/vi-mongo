@@ -105,8 +105,8 @@ func (s *SideBar) render(ctx context.Context) error {
 }
 
 func (s *SideBar) filterBarListener(ctx context.Context) {
-	accceptFunc := func() {
-		s.filter(ctx)
+	accceptFunc := func(text string) {
+		s.filter(ctx, text)
 	}
 	rejectFunc := func() {
 		s.render(ctx)
@@ -114,11 +114,10 @@ func (s *SideBar) filterBarListener(ctx context.Context) {
 	go s.filterBar.EventListener(accceptFunc, rejectFunc)
 }
 
-func (s *SideBar) filter(ctx context.Context) {
+func (s *SideBar) filter(ctx context.Context, text string) {
 	defer s.render(ctx)
 	dbsWitColls := s.dbsWithColls
 	filtered := []mongo.DBsWithCollections{}
-	text := s.filterBar.GetText()
 	if text == "" {
 		return
 	}

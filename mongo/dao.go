@@ -119,6 +119,17 @@ func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, f
 	return documents, count, nil
 }
 
+func (d *Dao) InsetDocument(ctx context.Context, db string, collection string, document primitive.M) error {
+  _, err := d.client.Database(db).Collection(collection).InsertOne(ctx, document)
+  if err != nil {
+    return err
+  }
+
+  log.Debug().Msgf("Document inserted, document: %v, db: %v, collection: %v", document, db, collection)
+
+  return nil
+}
+
 func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, id primitive.ObjectID, document primitive.M) error {
 	updated, err := d.client.Database(db).Collection(collection).UpdateOne(ctx, primitive.M{"_id": id}, primitive.M{"$set": document})
 	if err != nil {

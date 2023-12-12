@@ -37,6 +37,31 @@ func (d *DocModifier) Init(ctx context.Context) error {
 	return nil
 }
 
+func (d *DocModifier) Add(ctx context.Context, db, coll string) error {
+	createdDoc, err := d.openEditor(ctx, "{}")
+	if err != nil {
+		log.Printf("Error editing document: %v", err)
+		return nil
+	}
+	if createdDoc == "" {
+		log.Debug().Msgf("Document not created")
+		return nil
+	}
+
+	var document map[string]interface{}
+	err = json.Unmarshal([]byte(createdDoc), &document)
+	if err != nil {
+		return fmt.Errorf("Error unmarshaling JSON: %v", err)
+	}
+
+	err = d.dao.InsetDocument(ctx, db, coll, document)
+	if err != nil {
+		return fmt.Errorf("Error inserting document: %v", err)
+	}
+
+	return nil
+}
+
 // Edit opens the editor with the document and saves it if it was changed
 func (d *DocModifier) Edit(ctx context.Context, db, coll string, rawDocument string) (string, error) {
 	if d.Render == nil {
@@ -107,6 +132,48 @@ func (d *DocModifier) Edit(ctx context.Context, db, coll string, rawDocument str
 	return updatedDocument, nil
 }
 
+func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocument string) error {
+  replacedDoc, err := removeField(rawDocument, "_id")
+
+	duplicateDoc, err := d.openEditor(ctx, replacedDoc)
+	if err != nil {
+		return fmt.Errorf("Error editing document: %v", err)
+	}
+	if duplicateDoc == "" {
+		log.Debug().Msgf("Document not duplicated")
+		return nil
+	}
+
+	var document map[string]interface{}
+	err = json.Unmarshal([]byte(duplicateDoc), &document)
+	if err != nil {
+		return fmt.Errorf("Error unmarshaling JSON: %v", err)
+	}
+
+	delete(document, "_id")
+
+	err = d.dao.InsetDocument(ctx, db, coll, document)
+	if err != nil {
+		return fmt.Errorf("Error inserting document: %v", err)
+	}
+
+	return nil
+}
+
+func (d *DocModifier) openEditor(ctx context.Context, rawDocument string) (string, error) {
+	updatedDocument, err := d.openEditor(ctx, rawDocument)
+	if err != nil {
+		return "", fmt.Errorf("Error editing document: %v", err)
+	}
+
+	if updatedDocument == rawDocument {
+		log.Debug().Msgf("Document not changed")
+		return "", nil
+	}
+
+	return updatedDocument, nil
+}
+
 // saveDocument saves the document to the database
 func (d *DocModifier) saveDocument(ctx context.Context, db, coll string, rawDocument string) error {
 	if rawDocument == "" {
@@ -133,4 +200,25 @@ func (d *DocModifier) saveDocument(ctx context.Context, db, coll string, rawDocu
 	}
 
 	return nil
+}
+
+// removeField removes the specified field from a JSON string.
+func removeField(jsonStr, fieldToRemove string) (string, error) {
+    // Unmarshal the JSON into a map
+    var data map[string]interface{}
+    err := json.Unmarshal([]byte(jsonStr), &data)
+    if err != nil {
+        return "", err
+    }
+
+    // Remove the specified field
+    delete(data, fieldToRemove)
+
+    // Marshal the map back into a JSON string
+    modifiedJSON, err := json.Marshal(data)
+    if err != nil {
+        return "", err
+    }
+
+    return string(modifiedJSON), nil
 }

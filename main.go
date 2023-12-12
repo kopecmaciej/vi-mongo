@@ -20,9 +20,9 @@ func main() {
 		logLevel = zerolog.DebugLevel
 	}
 
-	file := logging(config.Log.Path, logLevel, config.Log.PrettyPrint)
+	logFile := logging(config.Log.Path, logLevel, config.Log.PrettyPrint)
 	defer func() {
-		err := file.Close()
+		err := logFile.Close()
 		if err != nil {
 			log.Fatal().Err(err).Msg("Error closing log file")
 		}

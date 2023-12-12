@@ -10,6 +10,7 @@ import (
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -20,15 +21,16 @@ const (
 type Content struct {
 	*tview.Flex
 
-	Table       *tview.Table
-	View        *tview.TextView
-	app         *App
-	dao         *mongo.Dao
-	queryBar    *InputBar
-	jsonPeeker  *DocPeeker
-	deleteModal *DeleteModal
-	docModifier *DocModifier
-	state       mongo.CollectionState
+	Table            *tview.Table
+	View             *tview.TextView
+	app              *App
+	dao              *mongo.Dao
+	queryBar         *InputBar
+	jsonPeeker       *DocPeeker
+	deleteModal      *DeleteModal
+	docModifier      *DocModifier
+	state            mongo.CollectionState
+	autocompleteKeys []string
 }
 
 func NewContent(dao *mongo.Dao) *Content {
@@ -67,10 +69,10 @@ func (c *Content) Init(ctx context.Context) error {
 	if err := c.deleteModal.Init(ctx); err != nil {
 		return err
 	}
-	c.queryBar.AutocompleteOn = true
 	if err := c.queryBar.Init(ctx); err != nil {
 		return err
 	}
+	c.queryBar.EnableAutocomplete()
 	if err := c.docModifier.Init(ctx); err != nil {
 		return err
 	}
@@ -102,8 +104,12 @@ func (c *Content) setShortcuts(ctx context.Context) {
 		switch event.Rune() {
 		case 'p':
 			c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+    case 'a':
+      c.docModifier.Add(ctx, c.state.Db, c.state.Coll)
 		case 'e':
 			c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+    case 'd':
+      c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case 'v':
 			c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case '/':
@@ -113,10 +119,6 @@ func (c *Content) setShortcuts(ctx context.Context) {
 		switch event.Key() {
 		case tcell.KeyCtrlD:
 			c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
-		case tcell.KeyCtrlA:
-			// c.addDocument(ctx, c.state.db, c.state.coll, c.refresh)
-		case tcell.KeyCtrlS:
-			// c.duplicateDocument(ctx, c.state.db, c.state.coll, c.Table.GetCell(c.Table.GetSelection()).Text, c.refresh)
 		case tcell.KeyCtrlR:
 			c.refresh(ctx)
 		case tcell.KeyCtrlN:
@@ -149,8 +151,7 @@ func (c *Content) render(ctx context.Context, setFocus bool) {
 }
 
 func (c *Content) queryBarListener(ctx context.Context) {
-	accceptFunc := func() {
-		text := c.queryBar.GetText()
+	accceptFunc := func(text string) {
 		filter, err := mongo.ParseStringQuery(text)
 		if err != nil {
 			log.Error().Err(err).Msg("Error parsing query")
@@ -179,12 +180,59 @@ func (c *Content) listDocuments(ctx context.Context, db, coll string, filters ma
 
 	c.state.Count = count
 
+	c.loadAutocompleteKeys(documents)
+
 	docsWithOid, err := mongo.ConvertIdsToOids(documents)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	return docsWithOid, count, nil
+}
+
+func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
+	// Create a map to track unique keys
+	uniqueKeys := make(map[string]bool)
+
+	// Function to recursively add keys
+	var addKeys func(string, interface{})
+	addKeys = func(prefix string, value interface{}) {
+		switch v := value.(type) {
+		case map[string]interface{}:
+			for key, val := range v {
+				fullKey := key
+				if prefix != "" {
+					fullKey = prefix + "." + key
+				}
+				addKeys(fullKey, val)
+			}
+		default:
+			uniqueKeys[prefix] = true
+		}
+	}
+
+	// Iterate over the documents and add new keys
+	for _, doc := range documents {
+		for key, value := range doc {
+			if obj, ok := value.(primitive.M); ok {
+				addKeys(key, obj)
+				for k, v := range obj {
+					fullKey := key + "." + k
+					addKeys(fullKey, v)
+				}
+			} else {
+				addKeys(key, value)
+			}
+		}
+	}
+
+	// Convert the map keys back to a slice
+	autocompleteKeys := make([]string, 0, len(uniqueKeys))
+	for key := range uniqueKeys {
+		autocompleteKeys = append(autocompleteKeys, key)
+	}
+
+	c.queryBar.LoadNewKeys(autocompleteKeys)
 }
 
 func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map[string]interface{}) error {

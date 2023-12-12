@@ -20,17 +20,18 @@ const (
 type DBTree struct {
 	*tview.TreeView
 
-	inputModal  *primitives.ModalInput
-	NodeSelectF func(ctx context.Context, a string, b string, filter map[string]interface{}) error
-	app         *App
-	mongo       *mongo.Dao
+	inputModal *primitives.ModalInput
+	app        *App
+	dao        *mongo.Dao
+
+	NodeSelectFunc func(ctx context.Context, a string, b string, filter map[string]interface{}) error
 }
 
 func NewDBTree(mongo *mongo.Dao) *DBTree {
 	return &DBTree{
 		TreeView:   tview.NewTreeView(),
 		inputModal: primitives.NewModalInput(),
-		mongo:      mongo,
+		dao:        mongo,
 	}
 }
 
@@ -109,7 +110,7 @@ func (t *DBTree) RenderTree(ctx context.Context, dbsWitColls []mongo.DBsWithColl
 			parent.AddChild(child)
 
 			child.SetSelectedFunc(func() {
-				t.NodeSelectF(ctx, parent.GetText(), child.GetText(), nil)
+				t.NodeSelectFunc(ctx, parent.GetText(), child.GetText(), nil)
 			})
 		}
 	}
@@ -143,7 +144,7 @@ func (t *DBTree) addCollection(ctx context.Context) error {
 			if collectionName == "" {
 				return event
 			}
-			err := t.mongo.AddCollection(ctx, db, collectionName)
+			err := t.dao.AddCollection(ctx, db, collectionName)
 			if err != nil {
 				log.Error().Err(err).Msg("Error adding collection")
 				return nil
@@ -181,7 +182,7 @@ func (t *DBTree) deleteCollection(ctx context.Context) error {
 		AddButtons([]string{"OK", "Cancel"})
 	confirmModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "OK" {
-			err := t.mongo.DeleteCollection(ctx, db, collection)
+			err := t.dao.DeleteCollection(ctx, db, collection)
 			if err != nil {
 				return
 			}
