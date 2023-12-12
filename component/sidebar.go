@@ -9,6 +9,7 @@ import (
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -19,7 +20,7 @@ type SideBar struct {
 	*tview.Flex
 
 	DBTree       *DBTree
-	FilterBar    *InputBar
+	filterBar    *InputBar
 	app          *App
 	dao          *mongo.Dao
 	mutex        sync.Mutex
@@ -32,7 +33,7 @@ func NewSideBar(dao *mongo.Dao) *SideBar {
 	return &SideBar{
 		Flex:      flex,
 		DBTree:    NewDBTree(dao),
-		FilterBar: NewInputBar("Filter"),
+		filterBar: NewInputBar("Filter"),
 		label:     "sideBar",
 		dao:       dao,
 		mutex:     sync.Mutex{},
@@ -59,10 +60,10 @@ func (s *SideBar) Init(ctx context.Context) error {
 	if err := s.fetchAndRender(ctx, ""); err != nil {
 		return err
 	}
-	if err := s.FilterBar.Init(ctx); err != nil {
+	if err := s.filterBar.Init(ctx); err != nil {
 		return err
 	}
-	go s.filterBarListener(ctx)
+	s.filterBarListener(ctx)
 
 	return nil
 }
@@ -77,8 +78,8 @@ func (s *SideBar) setShortcuts(ctx context.Context) {
 		switch event.Key() {
 		case tcell.KeyRune:
 			if event.Rune() == '/' {
-				s.toogleFilterBar(ctx)
-				go s.FilterBar.SetText("")
+				s.filterBar.Toggle()
+				s.render(ctx)
 				return nil
 			}
 		}
@@ -92,9 +93,9 @@ func (s *SideBar) render(ctx context.Context) error {
 	var primitive tview.Primitive
 	primitive = s.DBTree
 
-	if s.FilterBar.IsEnabled() {
-		s.Flex.AddItem(s.FilterBar, 3, 0, false)
-		primitive = s.FilterBar
+	if s.filterBar.IsEnabled() {
+		s.Flex.AddItem(s.filterBar, 3, 0, false)
+		primitive = s.filterBar
 	}
 	defer s.app.SetFocus(primitive)
 
@@ -104,47 +105,37 @@ func (s *SideBar) render(ctx context.Context) error {
 }
 
 func (s *SideBar) filterBarListener(ctx context.Context) {
-	eventChan := s.FilterBar.EventChan
-
-	for {
-		key := <-eventChan
-		if _, ok := key.(tcell.Key); !ok {
-			continue
-		}
-		switch key {
-		case tcell.KeyEsc:
-			s.app.QueueUpdateDraw(func() {
-				s.toogleFilterBar(ctx)
-			})
-		case tcell.KeyEnter:
-			s.app.QueueUpdateDraw(func() {
-				s.filter(ctx)
-			})
-		}
+	accceptFunc := func(text string) {
+		s.filter(ctx, text)
 	}
+	rejectFunc := func() {
+		s.render(ctx)
+	}
+	go s.filterBar.EventListener(accceptFunc, rejectFunc)
 }
 
-func (s *SideBar) filter(ctx context.Context) {
+func (s *SideBar) filter(ctx context.Context, text string) {
+	defer s.render(ctx)
 	dbsWitColls := s.dbsWithColls
 	filtered := []mongo.DBsWithCollections{}
-	text := s.FilterBar.GetText()
 	if text == "" {
-		s.toogleFilterBar(ctx)
 		return
 	}
-	for _, item := range dbsWitColls {
+	for _, db := range dbsWitColls {
 		re := regexp.MustCompile(`(?i)` + text)
-		if re.MatchString(item.DB) {
-			filtered = append(filtered, item)
+		if re.MatchString(db.DB) {
+			filtered = append(filtered, db)
 		}
-		for _, child := range item.Collections {
-			if re.MatchString(child) {
-				filtered = append(filtered, item)
+		//TODO: tree should expand on found coll
+		for _, coll := range db.Collections {
+			if re.MatchString(coll) {
+				filtered = append(filtered, db)
 			}
 		}
 	}
-	s.toogleFilterBar(ctx)
 	s.DBTree.RenderTree(ctx, filtered, text)
+
+	log.Debug().Msgf("Filtered: %v", filtered)
 }
 
 func (s *SideBar) fetchAndRender(ctx context.Context, filter string) error {
@@ -164,9 +155,4 @@ func (s *SideBar) fetchDbsWithCollections(ctx context.Context, filter string) er
 	s.dbsWithColls = dbsWitColls
 
 	return nil
-}
-
-func (s *SideBar) toogleFilterBar(ctx context.Context) {
-	s.FilterBar.Toggle()
-	s.render(ctx)
 }

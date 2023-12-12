@@ -8,15 +8,16 @@ import (
 
 type Component string
 
-// ComponentManager is a helper to manage different ViewComponents
-// and being able to manage key handlers for each component
+// ComponentManager is a helper to manage different Components
+// and their key handlers, so that only the key handlers of the
+// current component are executed
 type ComponentManager struct {
 	componentStack []Component
 	keyHandlers    map[Component]map[tcell.Key]func()
 	mutex          sync.Mutex
 }
 
-// NewComponentManager creates a new EventKeyHandler
+// NewComponentManager creates a new ComponentManager
 func NewComponentManager() *ComponentManager {
 	return &ComponentManager{
 		componentStack: make([]Component, 0),
@@ -29,6 +30,9 @@ func NewComponentManager() *ComponentManager {
 func (eh *ComponentManager) PushComponent(component Component) {
 	eh.mutex.Lock()
 	defer eh.mutex.Unlock()
+	if len(eh.componentStack) > 0 && eh.componentStack[len(eh.componentStack)-1] == component {
+		return
+	}
 	eh.componentStack = append(eh.componentStack, component)
 }
 

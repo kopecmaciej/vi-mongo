@@ -10,3 +10,10 @@ build:
 
 run:
 	$(BUILD_DIR)/$(SVC_NAME)
+
+debug:
+	if [ -f /proc/sys/kernel/yama/ptrace_scope ]; then \
+		sudo sysctl kernel.yama.ptrace_scope=0; \
+	fi
+	go build -gcflags="all=-N -l" -o $(BUILD_DIR)/$(SVC_NAME) .
+	$(BUILD_DIR)/$(SVC_NAME)

@@ -81,7 +81,7 @@ func (r *Root) Init(ctx context.Context) error {
 		return e
 	}
 
-	r.sideBar.DBTree.NodeSelectF = r.content.RenderContent
+	r.sideBar.DBTree.NodeSelectFunc = r.content.RenderContent
 
 	r.render(ctx)
 	r.registerKeyHandlers(ctx)
@@ -103,8 +103,6 @@ func (r *Root) render(ctx context.Context) error {
 	body.AddItem(r.content.Flex, 0, 7, true)
 
 	r.app.SetFocus(r.sideBar.Flex)
-
-	r.manager.PushComponent(RootComponent)
 
 	return nil
 }

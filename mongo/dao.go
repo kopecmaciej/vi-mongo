@@ -10,28 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type ServerStatus struct {
-	Ok             int32  `bson:"ok"`
-	Version        string `bson:"version"`
-	Uptime         int32  `bson:"uptime"`
-	CurrentConns   int32  `bson:"connections.current"`
-	AvailableConns int32  `bson:"connections.available"`
-	OpCounters     struct {
-		Insert int32 `bson:"insert"`
-		Query  int32 `bson:"query"`
-		Update int32 `bson:"update"`
-		Delete int32 `bson:"delete"`
-	} `bson:"opcounters"`
-	Mem struct {
-		Resident int32 `bson:"resident"`
-		Virtual  int32 `bson:"virtual"`
-	} `bson:"mem"`
-	Repl struct {
-		ReadOnly bool `bson:"readOnly"`
-		IsMaster bool `bson:"ismaster"`
-	} `bson:"repl"`
-}
-
 type Dao struct {
 	client *mongo.Client
 	Config *config.MongoConfig
@@ -141,6 +119,17 @@ func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, f
 	return documents, count, nil
 }
 
+func (d *Dao) InsetDocument(ctx context.Context, db string, collection string, document primitive.M) error {
+  _, err := d.client.Database(db).Collection(collection).InsertOne(ctx, document)
+  if err != nil {
+    return err
+  }
+
+  log.Debug().Msgf("Document inserted, document: %v, db: %v, collection: %v", document, db, collection)
+
+  return nil
+}
+
 func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, id primitive.ObjectID, document primitive.M) error {
 	updated, err := d.client.Database(db).Collection(collection).UpdateOne(ctx, primitive.M{"_id": id}, primitive.M{"$set": document})
 	if err != nil {
@@ -167,6 +156,8 @@ func (d *Dao) DeleteDocument(ctx context.Context, db string, collection string, 
 		return mongo.ErrNoDocuments
 	}
 
+	log.Debug().Msgf("Document deleted, id: %v, db: %v, collection: %v", id, db, collection)
+
 	return nil
 }
 
@@ -176,20 +167,20 @@ func (d *Dao) AddCollection(ctx context.Context, db string, collection string) e
 		return err
 	}
 
-  log.Debug().Msgf("Collection added, db: %v, collection: %v", db, collection)
+	log.Debug().Msgf("Collection added, db: %v, collection: %v", db, collection)
 
 	return nil
 }
 
 func (d *Dao) DeleteCollection(ctx context.Context, db string, collection string) error {
-  err := d.client.Database(db).Collection(collection).Drop(ctx)
-  if err != nil {
-    return err
-  }
+	err := d.client.Database(db).Collection(collection).Drop(ctx)
+	if err != nil {
+		return err
+	}
 
-  log.Debug().Msgf("Collection deleted, db: %v, collection: %v", db, collection)
+	log.Debug().Msgf("Collection deleted, db: %v, collection: %v", db, collection)
 
-  return nil
+	return nil
 }
 
 func (d *Dao) runAdminCommand(ctx context.Context, key string, value interface{}) (primitive.M, error) {

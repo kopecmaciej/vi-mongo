@@ -7,17 +7,25 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
+)
+
+const (
+	InputBarComponent = "InputBar"
 )
 
 type InputBar struct {
 	*tview.InputField
 
-	EventChan      chan interface{}
+	app            *App
+	eventChan      chan interface{}
 	mutex          sync.Mutex
 	label          string
 	enabled        bool
-	AutocompleteOn bool
+	autocompleteOn bool
+	docKeys        []string
 }
 
 func NewInputBar(label string) *InputBar {
@@ -25,28 +33,31 @@ func NewInputBar(label string) *InputBar {
 		InputField:     tview.NewInputField(),
 		mutex:          sync.Mutex{},
 		label:          label,
-		EventChan:      make(chan interface{}),
+		eventChan:      make(chan interface{}),
 		enabled:        false,
-		AutocompleteOn: false,
+		autocompleteOn: false,
 	}
 
 	return f
 }
 
 func (i *InputBar) Init(ctx context.Context) error {
+	app, err := GetApp(ctx)
+	if err != nil {
+		return err
+	}
+	i.app = app
 	i.setStyle()
 	i.SetLabel(" " + i.label + ": ")
 
 	i.SetEventFunc()
-
-	i.Autocomplete()
 
 	return nil
 }
 
 func (i *InputBar) SetEventFunc() {
 	i.SetDoneFunc(func(key tcell.Key) {
-		i.EventChan <- key
+		i.eventChan <- key
 	})
 }
 
@@ -90,10 +101,17 @@ func (i *InputBar) AutocompleteHistory() {
 	})
 }
 
-func (i *InputBar) Autocomplete() {
-	mongoKeywords := []string{"$exists", "$eq", "$nor", "$elemMatch" /* add other MongoDB keywords here */}
+// EnableAutocomplete enables autocomplete
+func (i *InputBar) EnableAutocomplete() {
+	mongoAutocomplete := mongo.NewMongoAutocomplete()
+	mongoKeywords := mongoAutocomplete.Operators
 
 	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
+		// ommit quotes
+		if strings.HasPrefix(currentText, "\"") {
+			currentText = currentText[1:]
+		}
+
 		words := strings.Fields(currentText)
 		if len(words) > 0 {
 			lastWord := words[len(words)-1]
@@ -106,10 +124,38 @@ func (i *InputBar) Autocomplete() {
 					}
 				}
 			}
+			// support for objectID
+			if strings.HasPrefix(lastWord, "O") {
+				aliases := mongoAutocomplete.ObjectID.Aliases
+				for _, alias := range aliases {
+					if strings.HasPrefix(alias, lastWord) {
+						replacement := strings.Join(words[:len(words)-1], " ") + " " + mongoAutocomplete.ObjectID.Name
+						entries = append(entries, replacement)
+					}
+				}
+			}
+
+			if i.docKeys != nil {
+				for _, keyword := range i.docKeys {
+					if strings.HasPrefix(keyword, lastWord) {
+						replacement := strings.Join(words[:len(words)-1], " ") + " " + keyword
+						entries = append(entries, replacement)
+					}
+				}
+			}
 		}
 
 		return entries
 	})
+}
+
+func (i *InputBar) LoadNewKeys(keys []string) {
+	i.docKeys = keys
+}
+
+// DisableAutocomplete disables autocomplete
+func (i *InputBar) DisableAutocomplete() {
+	i.SetAutocompleteFunc(nil)
 }
 
 func (i *InputBar) SaveToHistory(text string) error {
@@ -161,12 +207,15 @@ func (i *InputBar) IsEnabled() bool {
 
 func (i *InputBar) Enable() {
 	i.enabled = true
+	i.app.ComponentManager.PushComponent(InputBarComponent)
 }
 
 func (i *InputBar) Disable() {
 	i.enabled = false
+	i.app.ComponentManager.PopComponent()
 }
 
+// Toggle enables/disables the input bar but does not force any redraws
 func (i *InputBar) Toggle() {
 	i.mutex.Lock()
 	defer i.mutex.Unlock()
@@ -178,13 +227,42 @@ func (i *InputBar) Toggle() {
 	}
 }
 
+// EventListener listens for events on the input bar
+func (i *InputBar) EventListener(accept func(string), reject func()) {
+	for {
+		key := <-i.eventChan
+		if _, ok := key.(tcell.Key); !ok {
+			continue
+		}
+		switch key {
+		case tcell.KeyEsc:
+			i.app.QueueUpdateDraw(func() {
+				i.Toggle()
+				reject()
+			})
+		case tcell.KeyEnter:
+			i.app.QueueUpdateDraw(func() {
+				i.Toggle()
+				text := i.GetText()
+				err := i.SaveToHistory(text)
+				if err != nil {
+					log.Error().Err(err).Msg("Error saving query to history")
+				}
+				accept(text)
+				i.SetText("")
+			})
+		}
+	}
+}
+
+// ToggleAutocomplete toggles autocomplete on and off
 func (i *InputBar) ToggleAutocomplete() {
 	i.mutex.Lock()
 	defer i.mutex.Unlock()
 
-	if i.AutocompleteOn {
-		i.AutocompleteOn = false
+	if i.autocompleteOn {
+		i.autocompleteOn = false
 	} else {
-		i.AutocompleteOn = true
+		i.autocompleteOn = true
 	}
 }
