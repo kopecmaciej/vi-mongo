@@ -20,7 +20,7 @@ const (
 type DBTree struct {
 	*tview.TreeView
 
-	inputModal *primitives.ModalInput
+	inputModal *primitives.InputModal
 	app        *App
 	dao        *mongo.Dao
 
@@ -30,7 +30,7 @@ type DBTree struct {
 func NewDBTree(mongo *mongo.Dao) *DBTree {
 	return &DBTree{
 		TreeView:   tview.NewTreeView(),
-		inputModal: primitives.NewModalInput(),
+		inputModal: primitives.NewInputModal(),
 		dao:        mongo,
 	}
 }

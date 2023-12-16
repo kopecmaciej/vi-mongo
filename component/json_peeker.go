@@ -59,9 +59,6 @@ func (jp *DocPeeker) Init(ctx context.Context) error {
 	if err := jp.docModifier.Init(ctx); err != nil {
 		return err
 	}
-	jp.docModifier.Render = func() error {
-		return jp.render(ctx)
-	}
 
 	return nil
 }
@@ -115,7 +112,8 @@ func (jp *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 		if buttonLabel == "Edit" {
 			updatedDoc, err := jp.docModifier.Edit(ctx, db, coll, jsonString)
 			if err != nil {
-				log.Error().Err(err).Msg("Error editing document")
+				log.Error().Err(err)
+        return
 			}
 			jp.state.rawDocument = updatedDoc
 			jp.render(ctx)

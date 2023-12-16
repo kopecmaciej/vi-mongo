@@ -118,9 +118,7 @@ func (i *InputBar) EnableAutocomplete() {
 			if strings.HasPrefix(lastWord, "$") {
 				for _, keyword := range mongoKeywords {
 					if strings.HasPrefix(keyword, lastWord) {
-						// Replace the last word with the keyword, maintaining the rest of the currentText
-						replacement := strings.Join(words[:len(words)-1], " ") + " " + keyword
-						entries = append(entries, replacement)
+						entries = append(entries, keyword)
 					}
 				}
 			}
@@ -129,8 +127,7 @@ func (i *InputBar) EnableAutocomplete() {
 				aliases := mongoAutocomplete.ObjectID.Aliases
 				for _, alias := range aliases {
 					if strings.HasPrefix(alias, lastWord) {
-						replacement := strings.Join(words[:len(words)-1], " ") + " " + mongoAutocomplete.ObjectID.Name
-						entries = append(entries, replacement)
+						entries = append(entries, mongoAutocomplete.ObjectID.Name)
 					}
 				}
 			}
@@ -138,8 +135,7 @@ func (i *InputBar) EnableAutocomplete() {
 			if i.docKeys != nil {
 				for _, keyword := range i.docKeys {
 					if strings.HasPrefix(keyword, lastWord) {
-						replacement := strings.Join(words[:len(words)-1], " ") + " " + keyword
-						entries = append(entries, replacement)
+						entries = append(entries, keyword)
 					}
 				}
 			}
@@ -147,6 +143,24 @@ func (i *InputBar) EnableAutocomplete() {
 
 		return entries
 	})
+
+  i.SetAutocompletedFunc(func(text string, index, source int) bool {
+    if source == 0 {
+      return false
+    }
+    if strings.HasPrefix(text, "\"") {
+      return false
+    }
+    currText := i.GetText()
+
+    lastWord := strings.Fields(currText)[len(strings.Fields(currText))-1]
+    // replace last word with autocompleted word
+    currText = strings.TrimSuffix(currText, lastWord)
+    currText += text
+    i.SetText(currText)
+
+    return true
+  })
 }
 
 func (i *InputBar) LoadNewKeys(keys []string) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/manager"
@@ -76,10 +77,6 @@ func (c *Content) Init(ctx context.Context) error {
 	if err := c.docModifier.Init(ctx); err != nil {
 		return err
 	}
-	c.docModifier.Render = func() error {
-		// TODO: change to return from editJson
-		return c.refresh(ctx)
-	}
 
 	c.render(ctx, false)
 
@@ -104,12 +101,19 @@ func (c *Content) setShortcuts(ctx context.Context) {
 		switch event.Rune() {
 		case 'p':
 			c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
-    case 'a':
-      c.docModifier.Add(ctx, c.state.Db, c.state.Coll)
+		case 'a':
+			c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
 		case 'e':
-			c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
-    case 'd':
-      c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+      row, col := c.Table.GetSelection()
+      updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+      if err != nil {
+        log.Error().Err(err)
+      }
+      trimed := strings.ReplaceAll(updated, "\n", "")
+      trimed = strings.ReplaceAll(trimed, " ", "")
+      c.Table.SetCell(row, col, tview.NewTableCell(trimed).SetAlign(tview.AlignLeft))
+		case 'd':
+			c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case 'v':
 			c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case '/':
@@ -311,7 +315,7 @@ func (c *Content) viewJson(ctx context.Context, jsonString string) error {
 		return err
 	}
 
-	c.View.SetText(indentedJson)
+	c.View.SetText(string(indentedJson.Bytes()))
 	c.View.ScrollToBeginning()
 
 	c.View.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {

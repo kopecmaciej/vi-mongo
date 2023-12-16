@@ -107,14 +107,14 @@ func ConvertIdsToOids(documents []primitive.M) ([]string, error) {
 	return docs, nil
 }
 
-func IndientJSON(jsonString string) (string, error) {
+// IndientJSON indents a JSON string and returns a a buffer
+func IndientJSON(jsonString string) (bytes.Buffer, error) {
 	var prettyJson bytes.Buffer
 	err := json.Indent(&prettyJson, []byte(jsonString), "", "  ")
 	if err != nil {
 		log.Error().Err(err).Msg("Error marshaling JSON")
-		return "", nil
+		return bytes.Buffer{}, err
 	}
-	text := string(prettyJson.Bytes())
 
-	return text, nil
+	return prettyJson, nil
 }

@@ -44,7 +44,7 @@ var (
 
 	objectID = MongoKeyword{
 		Name:        "ObjectId",
-		Description: "ObjectId is a 12-byte BSON type, constructed using:",
+		Description: "ObjectId is a 12-byte BSON type",
 		Aliases:     []string{"obj", "objectid", "Objectid"},
 	}
 )
