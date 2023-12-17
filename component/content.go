@@ -104,14 +104,11 @@ func (c *Content) setShortcuts(ctx context.Context) {
 		case 'a':
 			c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
 		case 'e':
-      row, col := c.Table.GetSelection()
-      updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
-      if err != nil {
-        log.Error().Err(err)
-      }
-      trimed := strings.ReplaceAll(updated, "\n", "")
-      trimed = strings.ReplaceAll(trimed, " ", "")
-      c.Table.SetCell(row, col, tview.NewTableCell(trimed).SetAlign(tview.AlignLeft))
+			updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			if err != nil {
+				log.Error().Err(err)
+			}
+			c.refreshCell(updated)
 		case 'd':
 			c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 		case 'v':
@@ -195,10 +192,8 @@ func (c *Content) listDocuments(ctx context.Context, db, coll string, filters ma
 }
 
 func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
-	// Create a map to track unique keys
 	uniqueKeys := make(map[string]bool)
 
-	// Function to recursively add keys
 	var addKeys func(string, interface{})
 	addKeys = func(prefix string, value interface{}) {
 		switch v := value.(type) {
@@ -215,7 +210,6 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 		}
 	}
 
-	// Iterate over the documents and add new keys
 	for _, doc := range documents {
 		for key, value := range doc {
 			if obj, ok := value.(primitive.M); ok {
@@ -230,7 +224,6 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 		}
 	}
 
-	// Convert the map keys back to a slice
 	autocompleteKeys := make([]string, 0, len(uniqueKeys))
 	for key := range uniqueKeys {
 		autocompleteKeys = append(autocompleteKeys, key)
@@ -287,6 +280,15 @@ func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map
 
 func (c *Content) refresh(ctx context.Context) error {
 	return c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
+}
+
+// refreshCell refreshes the cell with the new content
+func (c *Content) refreshCell(content string) {
+	// Trim the content, as in table we don't want to see new lines and spaces
+	content = strings.ReplaceAll(content, "\n", "")
+	content = strings.ReplaceAll(content, " ", "")
+	row, col := c.Table.GetSelection()
+	c.Table.SetCell(row, col, tview.NewTableCell(content).SetAlign(tview.AlignLeft))
 }
 
 func (c *Content) goToNextMongoPage(ctx context.Context) {
