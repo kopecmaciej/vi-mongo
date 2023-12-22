@@ -24,7 +24,6 @@ type SideBar struct {
 	app          *App
 	dao          *mongo.Dao
 	mutex        sync.Mutex
-	label        string
 	dbsWithColls []mongo.DBsWithCollections
 }
 
@@ -34,7 +33,6 @@ func NewSideBar(dao *mongo.Dao) *SideBar {
 		Flex:      flex,
 		DBTree:    NewDBTree(dao),
 		filterBar: NewInputBar("Filter"),
-		label:     "sideBar",
 		dao:       dao,
 		mutex:     sync.Mutex{},
 	}
@@ -118,22 +116,21 @@ func (s *SideBar) filter(ctx context.Context, text string) {
 	defer s.render(ctx)
 	dbsWitColls := s.dbsWithColls
 	filtered := []mongo.DBsWithCollections{}
-	if text == "" {
-		return
-	}
 	for _, db := range dbsWitColls {
 		re := regexp.MustCompile(`(?i)` + text)
 		if re.MatchString(db.DB) {
 			filtered = append(filtered, db)
+			continue
 		}
 		//TODO: tree should expand on found coll
 		for _, coll := range db.Collections {
 			if re.MatchString(coll) {
 				filtered = append(filtered, db)
+				continue
 			}
 		}
 	}
-	s.DBTree.RenderTree(ctx, filtered, text)
+	s.DBTree.RenderTree(ctx, filtered)
 
 	log.Debug().Msgf("Filtered: %v", filtered)
 }
@@ -142,7 +139,7 @@ func (s *SideBar) fetchAndRender(ctx context.Context, filter string) error {
 	if err := s.fetchDbsWithCollections(ctx, filter); err != nil {
 		return err
 	}
-	s.DBTree.RenderTree(ctx, s.dbsWithColls, filter)
+	s.DBTree.RenderTree(ctx, s.dbsWithColls)
 
 	return nil
 }

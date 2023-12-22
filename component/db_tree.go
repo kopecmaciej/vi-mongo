@@ -89,7 +89,7 @@ func (t *DBTree) setShortcuts(ctx context.Context) {
 	})
 }
 
-func (t *DBTree) RenderTree(ctx context.Context, dbsWitColls []mongo.DBsWithCollections, filter string) {
+func (t *DBTree) RenderTree(ctx context.Context, dbsWitColls []mongo.DBsWithCollections) {
 	rootNode := t.rootNode()
 	t.SetRoot(rootNode)
 

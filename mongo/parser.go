@@ -28,12 +28,11 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 	query = strings.ReplaceAll(query, "ObjectId(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "\")", "\"}")
 
-	// if query has no key, add one, if key has dot, add quotes
-	// to whole key, example address.city -> "address.city"
-	re := regexp.MustCompile(`(\w+\.\w+)`)
-	query = re.ReplaceAllStringFunc(query, func(s string) string {
-		return `"` + s + `"`
-	})
+	// add quotes if missing to keys and keys with dots
+	//  example city: -> "city":
+	// example address.city: -> "address.city":
+	re := regexp.MustCompile(`([a-zA-Z0-9_]+)(\.[a-zA-Z0-9_]+)*:`)
+	query = re.ReplaceAllString(query, `"$1$2":`)
 
 	filter := map[string]interface{}{}
 

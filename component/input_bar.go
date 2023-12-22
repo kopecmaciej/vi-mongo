@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
 )
@@ -17,7 +16,7 @@ const (
 )
 
 type InputBar struct {
-	*tview.InputField
+	*tview.TextArea
 
 	app            *App
 	eventChan      chan interface{}
@@ -30,7 +29,7 @@ type InputBar struct {
 
 func NewInputBar(label string) *InputBar {
 	f := &InputBar{
-		InputField:     tview.NewInputField(),
+		TextArea:       tview.NewTextArea(),
 		mutex:          sync.Mutex{},
 		label:          label,
 		eventChan:      make(chan interface{}),
@@ -48,34 +47,23 @@ func (i *InputBar) Init(ctx context.Context) error {
 	}
 	i.app = app
 	i.setStyle()
+	i.setShortcuts()
 	i.SetLabel(" " + i.label + ": ")
-
-	i.SetEventFunc()
 
 	return nil
 }
 
-func (i *InputBar) SetEventFunc() {
-	i.SetDoneFunc(func(key tcell.Key) {
-		i.eventChan <- key
-	})
-}
-
 func (i *InputBar) setStyle() {
 	i.SetBorder(true)
-	i.SetFieldTextColor(tcell.ColorYellow)
 
-	autocompleteBg := tcell.ColorGreen.TrueColor()
-	autocompleteMainStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(autocompleteBg)
-	autocompleteSecondaryStyle := tcell.StyleDefault.Foreground(tcell.ColorBlue).Background(autocompleteBg)
-	i.SetAutocompleteStyles(autocompleteBg, autocompleteMainStyle, autocompleteSecondaryStyle)
 }
 
-func (i *InputBar) setShortcuts(ctx context.Context) {
-	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+func (i *InputBar) setShortcuts() {
+	i.TextArea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyCtrlSpace:
-			i.ToggleAutocomplete()
+		case tcell.KeyEnter, tcell.KeyEsc:
+			i.eventChan <- event.Key()
+			return nil
 		}
 		return event
 	})
@@ -85,91 +73,10 @@ const (
 	maxHistory = 20
 )
 
-func (i *InputBar) AutocompleteHistory() {
-	history, err := i.LoadHistory()
-	if err != nil {
-		return
-	}
-
-	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
-		for _, entry := range history {
-			if strings.Contains(entry, currentText) {
-				entries = append(entries, entry)
-			}
-		}
-		return entries
-	})
-}
-
 // EnableAutocomplete enables autocomplete
-func (i *InputBar) EnableAutocomplete() {
-	mongoAutocomplete := mongo.NewMongoAutocomplete()
-	mongoKeywords := mongoAutocomplete.Operators
-
-	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
-		// ommit quotes
-		if strings.HasPrefix(currentText, "\"") {
-			currentText = currentText[1:]
-		}
-
-		words := strings.Fields(currentText)
-		if len(words) > 0 {
-			lastWord := words[len(words)-1]
-			if strings.HasPrefix(lastWord, "$") {
-				for _, keyword := range mongoKeywords {
-					if strings.HasPrefix(keyword, lastWord) {
-						entries = append(entries, keyword)
-					}
-				}
-			}
-			// support for objectID
-			if strings.HasPrefix(lastWord, "O") {
-				aliases := mongoAutocomplete.ObjectID.Aliases
-				for _, alias := range aliases {
-					if strings.HasPrefix(alias, lastWord) {
-						entries = append(entries, mongoAutocomplete.ObjectID.Name)
-					}
-				}
-			}
-
-			if i.docKeys != nil {
-				for _, keyword := range i.docKeys {
-					if strings.HasPrefix(keyword, lastWord) {
-						entries = append(entries, keyword)
-					}
-				}
-			}
-		}
-
-		return entries
-	})
-
-  i.SetAutocompletedFunc(func(text string, index, source int) bool {
-    if source == 0 {
-      return false
-    }
-    if strings.HasPrefix(text, "\"") {
-      return false
-    }
-    currText := i.GetText()
-
-    lastWord := strings.Fields(currText)[len(strings.Fields(currText))-1]
-    // replace last word with autocompleted word
-    currText = strings.TrimSuffix(currText, lastWord)
-    currText += text
-    i.SetText(currText)
-
-    return true
-  })
-}
 
 func (i *InputBar) LoadNewKeys(keys []string) {
 	i.docKeys = keys
-}
-
-// DisableAutocomplete disables autocomplete
-func (i *InputBar) DisableAutocomplete() {
-	i.SetAutocompleteFunc(nil)
 }
 
 func (i *InputBar) SaveToHistory(text string) error {
@@ -220,20 +127,23 @@ func (i *InputBar) IsEnabled() bool {
 }
 
 func (i *InputBar) Enable() {
+	i.mutex.Lock()
+	defer i.mutex.Unlock()
+
 	i.enabled = true
 	i.app.ComponentManager.PushComponent(InputBarComponent)
 }
 
 func (i *InputBar) Disable() {
+	i.mutex.Lock()
+	defer i.mutex.Unlock()
+
 	i.enabled = false
 	i.app.ComponentManager.PopComponent()
 }
 
 // Toggle enables/disables the input bar but does not force any redraws
 func (i *InputBar) Toggle() {
-	i.mutex.Lock()
-	defer i.mutex.Unlock()
-
 	if i.IsEnabled() {
 		i.Disable()
 	} else {
@@ -251,19 +161,18 @@ func (i *InputBar) EventListener(accept func(string), reject func()) {
 		switch key {
 		case tcell.KeyEsc:
 			i.app.QueueUpdateDraw(func() {
-				i.Toggle()
+				i.Disable()
 				reject()
 			})
 		case tcell.KeyEnter:
 			i.app.QueueUpdateDraw(func() {
-				i.Toggle()
+        i.Disable()
 				text := i.GetText()
 				err := i.SaveToHistory(text)
 				if err != nil {
 					log.Error().Err(err).Msg("Error saving query to history")
 				}
 				accept(text)
-				i.SetText("")
 			})
 		}
 	}

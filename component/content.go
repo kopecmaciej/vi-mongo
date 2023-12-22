@@ -73,7 +73,6 @@ func (c *Content) Init(ctx context.Context) error {
 	if err := c.queryBar.Init(ctx); err != nil {
 		return err
 	}
-	c.queryBar.EnableAutocomplete()
 	if err := c.docModifier.Init(ctx); err != nil {
 		return err
 	}
@@ -94,6 +93,8 @@ func (c *Content) setStyle() {
 	c.Table.SetSelectable(true, false)
 
 	c.Flex.SetDirection(tview.FlexRow)
+
+	c.queryBar.SetTextSurroudings("{", "}", 2)
 }
 
 func (c *Content) setShortcuts(ctx context.Context) {
