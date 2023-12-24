@@ -2,30 +2,39 @@ package component
 
 import (
 	"context"
-	"log"
 	"strconv"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 )
 
-type order int
+const (
+	statusOk    = "●"
+	statusNotOk = "○"
+)
 
-type BaseInfo map[order]struct {
-	label string
-	value string
-}
+type (
+	order int
 
-type Header struct {
-	*tview.Table
+	info struct {
+		label string
+		value string
+	}
 
-	app      *App
-	label    string
-	dao      *mongo.Dao
-	baseInfo BaseInfo
-}
+	BaseInfo map[order]info
+
+	Header struct {
+		*tview.Table
+
+		app      *App
+		label    string
+		dao      *mongo.Dao
+		baseInfo BaseInfo
+	}
+)
 
 func NewHeader(dao *mongo.Dao) *Header {
 	h := Header{
@@ -46,15 +55,12 @@ func (h *Header) Init(ctx context.Context) error {
 
 	h.setStyle()
 
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
-	if err = h.setBaseInfo(ctxWithTimeout); err != nil {
+	if err = h.setBaseInfo(ctx); err != nil {
 		return err
 	}
 	h.render()
 
-	go h.Refresh(ctxWithTimeout)
+	go h.Refresh()
 
 	return nil
 }
@@ -67,9 +73,9 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 
 	port := strconv.Itoa(h.dao.Config.Port)
 
-	status := "○"
+	status := statusNotOk
 	if ss.Ok == 1 {
-		status = "●"
+		status = statusOk
 	}
 
 	h.baseInfo = BaseInfo{
@@ -89,22 +95,19 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 	return nil
 }
 
-func (h *Header) Refresh(ctx context.Context) {
+func (h *Header) Refresh() {
 	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			err := h.setBaseInfo(ctx)
-			if err != nil {
-				log.Println(err)
-				ctx.Done()
-			}
-			h.app.QueueUpdateDraw(func() {
-				h.render()
-			})
-			time.Sleep(10 * time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		err := h.setBaseInfo(ctx)
+		if err != nil {
+			log.Error().Err(err).Msg("error while refreshing header")
+			h.baseInfo[0] = info{"Status", statusNotOk}
 		}
+		h.app.QueueUpdateDraw(func() {
+			h.render()
+		})
+		time.Sleep(10 * time.Second)
 	}
 }
 
@@ -121,7 +124,7 @@ func (h *Header) setStyle() {
 func (h *Header) render() {
 	b := h.baseInfo
 
-	maxInRow := 3
+	maxInRow := 2
 	currCol := 0
 	currRow := 0
 
@@ -135,7 +138,6 @@ func (h *Header) render() {
 		h.Table.SetCell(currRow, currCol+1, h.valueCell(b[order].value))
 		currRow++
 	}
-
 }
 
 func (h *Header) keyCell(text string) *tview.TableCell {
