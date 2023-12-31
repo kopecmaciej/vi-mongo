@@ -1,5 +1,7 @@
 package mongo
 
+import "github.com/rivo/tview"
+
 var (
 	comparisonOperators = []string{
 		"$eq", "$gt", "$gte", "$in", "$lt", "$lte", "$ne", "$nin",
@@ -42,22 +44,15 @@ var (
 		"$bit",
 	}
 
-	objectID = MongoKeyword{
-		Name:        "ObjectId",
+	objectID = tview.AutocompleteItem{
+		Value:       "ObjectId",
 		Description: "ObjectId is a 12-byte BSON type",
-		Aliases:     []string{"obj", "objectid", "Objectid"},
 	}
 )
 
-type MongoKeyword struct {
-	Name        string
-	Description string
-	Aliases     []string
-}
-
 type MongoAutocomplete struct {
 	Operators []string
-	ObjectID  MongoKeyword
+	ObjectID  tview.AutocompleteItem
 }
 
 func NewMongoAutocomplete() *MongoAutocomplete {

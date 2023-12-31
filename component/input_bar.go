@@ -16,7 +16,7 @@ const (
 )
 
 type InputBar struct {
-	*tview.TextArea
+	*tview.InputBar
 
 	app            *App
 	eventChan      chan interface{}
@@ -29,7 +29,7 @@ type InputBar struct {
 
 func NewInputBar(label string) *InputBar {
 	f := &InputBar{
-		TextArea:       tview.NewTextArea(),
+		InputBar:       tview.NewInputBar(),
 		mutex:          sync.Mutex{},
 		label:          label,
 		eventChan:      make(chan interface{}),
@@ -47,19 +47,24 @@ func (i *InputBar) Init(ctx context.Context) error {
 	}
 	i.app = app
 	i.setStyle()
-	i.setShortcuts()
+	// i.setShortcuts()
 	i.SetLabel(" " + i.label + ": ")
+
+	i.Autocomplete()
 
 	return nil
 }
 
 func (i *InputBar) setStyle() {
 	i.SetBorder(true)
-
 }
 
 func (i *InputBar) setShortcuts() {
-	i.TextArea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	i.InputBar.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// if autocomplete is on, don't capture any events
+		if i.IsAutocompleteVisible() {
+			return event
+		}
 		switch event.Key() {
 		case tcell.KeyEnter, tcell.KeyEsc:
 			i.eventChan <- event.Key()
@@ -68,6 +73,74 @@ func (i *InputBar) setShortcuts() {
 		return event
 	})
 }
+
+func (i *InputBar) Autocomplete() {
+	items := []tview.AutocompleteItem{
+		{Value: "Text", Description: "This is a text"},
+		{Value: "Number", Description: "This is a number"},
+		{Value: "Date", Description: "This is a date"},
+		{
+			Value:       "ObjectId(\" \")",
+			Description: "ObjectId is a 12-byte BSON type",
+		},
+		{
+			Value:       "Obj",
+			Description: "Obj",
+		},
+	}
+	i.SetAutocompleteFunc(func(text string, pos int) []tview.AutocompleteItem {
+		entries := []tview.AutocompleteItem{}
+		for _, item := range items {
+			if strings.HasPrefix(item.Value, text) {
+				entries = append(entries, item)
+			}
+		}
+		return entries
+	})
+}
+
+// func (i *InputBar) EnableAutocomplete() {
+// 	mongoAutocomplete := mongo.NewMongoAutocomplete()
+// 	mongoKeywords := mongoAutocomplete.Operators
+//
+// 	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
+// 		// ommit quotes
+// 		if strings.HasPrefix(currentText, "\"") {
+// 			currentText = currentText[1:]
+// 		}
+//
+// 		words := strings.Fields(currentText)
+// 		if len(words) > 0 {
+// 			lastWord := words[len(words)-1]
+// 			if strings.HasPrefix(lastWord, "$") {
+// 				for _, keyword := range mongoKeywords {
+// 					if strings.HasPrefix(keyword, lastWord) {
+// 						entries = append(entries, keyword)
+// 					}
+// 				}
+// 			}
+// 			// support for objectID
+// 			if strings.HasPrefix(lastWord, "O") {
+// 				aliases := mongoAutocomplete.ObjectID.Aliases
+// 				for _, alias := range aliases {
+// 					if strings.HasPrefix(alias, lastWord) {
+// 						entries = append(entries, mongoAutocomplete.ObjectID.Value)
+// 					}
+// 				}
+// 			}
+//
+// 			if i.docKeys != nil {
+// 				for _, keyword := range i.docKeys {
+// 					if strings.HasPrefix(keyword, lastWord) {
+// 						entries = append(entries, keyword)
+// 					}
+// 				}
+// 			}
+// 		}
+//
+// 		return entries
+// 	})
+// }
 
 const (
 	maxHistory = 20
@@ -166,7 +239,7 @@ func (i *InputBar) EventListener(accept func(string), reject func()) {
 			})
 		case tcell.KeyEnter:
 			i.app.QueueUpdateDraw(func() {
-        i.Disable()
+				i.Disable()
 				text := i.GetText()
 				err := i.SaveToHistory(text)
 				if err != nil {
