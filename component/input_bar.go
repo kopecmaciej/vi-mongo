@@ -64,6 +64,7 @@ func (i *InputBar) SetEventFunc() {
 func (i *InputBar) setStyle() {
 	i.SetBorder(true)
 	i.SetFieldTextColor(tcell.ColorYellow)
+	i.SetTextSurroudings("{", "}", 2)
 
 	autocompleteBg := tcell.ColorGreen.TrueColor()
 	autocompleteMainStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(autocompleteBg)
@@ -107,14 +108,13 @@ func (i *InputBar) EnableAutocomplete() {
 	mongoKeywords := mongoAutocomplete.Operators
 
 	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
-		// ommit quotes
 		if strings.HasPrefix(currentText, "\"") {
 			currentText = currentText[1:]
 		}
 
 		words := strings.Fields(currentText)
 		if len(words) > 0 {
-			lastWord := words[len(words)-1]
+			lastWord := i.GetWordUnderCursor()
 			if strings.HasPrefix(lastWord, "$") {
 				for _, keyword := range mongoKeywords {
 					if strings.HasPrefix(keyword, lastWord) {
@@ -144,23 +144,15 @@ func (i *InputBar) EnableAutocomplete() {
 		return entries
 	})
 
-  i.SetAutocompletedFunc(func(text string, index, source int) bool {
-    if source == 0 {
-      return false
-    }
-    if strings.HasPrefix(text, "\"") {
-      return false
-    }
-    currText := i.GetText()
+	i.SetAutocompletedFunc(func(text string, index, source int) bool {
+		if source == 0 {
+			return false
+		}
 
-    lastWord := strings.Fields(currText)[len(strings.Fields(currText))-1]
-    // replace last word with autocompleted word
-    currText = strings.TrimSuffix(currText, lastWord)
-    currText += text
-    i.SetText(currText)
+		i.SetWordAtCursor(text)
 
-    return true
-  })
+		return true
+	})
 }
 
 func (i *InputBar) LoadNewKeys(keys []string) {
