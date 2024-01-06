@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
@@ -25,6 +26,7 @@ type Content struct {
 	Table            *tview.Table
 	View             *tview.TextView
 	app              *App
+	style            *config.Content
 	dao              *mongo.Dao
 	queryBar         *InputBar
 	jsonPeeker       *DocPeeker
@@ -86,12 +88,15 @@ func (c *Content) Init(ctx context.Context) error {
 }
 
 func (c *Content) setStyle() {
+	c.style = &c.app.Styles.Content
 	c.Table.SetBorder(true)
 	c.Table.SetTitle(" Content ")
 	c.Table.SetTitleAlign(tview.AlignLeft)
 	c.Table.SetBorderPadding(0, 0, 1, 1)
 	c.Table.SetFixed(1, 1)
 	c.Table.SetSelectable(true, false)
+	c.Table.SetBackgroundColor(c.style.BackgroundColor.Color())
+	c.Table.SetBorderColor(c.style.BorderColor.Color())
 
 	c.Flex.SetDirection(tview.FlexRow)
 }
@@ -267,8 +272,8 @@ func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map
 	c.Table.SetCell(0, 0, headerCell)
 
 	for i, d := range documents {
-		dataCell := tview.NewTableCell(d).
-			SetAlign(tview.AlignLeft)
+		dataCell := tview.NewTableCell(d)
+		dataCell.SetAlign(tview.AlignLeft)
 
 		c.Table.SetCell(i+2, 0, dataCell)
 	}

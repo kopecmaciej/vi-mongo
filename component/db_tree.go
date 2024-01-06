@@ -59,9 +59,9 @@ func (t *DBTree) setStyle() {
 	t.SetTitle(" Databases ")
 	t.SetBorderPadding(0, 0, 1, 1)
 
-	t.TreeView.SetBackgroundColor(t.style.BackgroundColor.Get())
-	t.TreeView.SetBorderColor(t.style.BorderColor.Get())
-	t.TreeView.SetGraphicsColor(t.style.BranchColor.Get())
+	t.TreeView.SetBackgroundColor(t.style.BackgroundColor.Color())
+	t.TreeView.SetBorderColor(t.style.BorderColor.Color())
+	t.TreeView.SetGraphicsColor(t.style.BranchColor.Color())
 	t.SetSelectedFunc(func(node *tview.TreeNode) {
 		t.SetCurrentNode(node)
 	})
@@ -209,13 +209,13 @@ func (t *DBTree) deleteCollection(ctx context.Context) error {
 
 func (t *DBTree) rootNode() *tview.TreeNode {
 	r := tview.NewTreeNode("Databases")
-  r.SetColor(t.style.NodeColor.Get())
+  r.SetColor(t.style.NodeColor.Color())
 	// r.SetColor(tcell.NewRGBColor(56, 125, 68))
 	r.SetSelectable(false)
 	r.SetExpanded(true)
 
 	collNode := tview.NewTreeNode("Collections")
-	collNode.SetColor(t.style.LeafColor.Get())
+	collNode.SetColor(t.style.LeafColor.Color())
 	collNode.SetSelectable(false)
 	collNode.SetExpanded(true)
 

@@ -73,10 +73,11 @@ func (h *Header) Init(ctx context.Context) error {
 // setStyle sets the style of the header component
 func (h *Header) setStyle() {
 	h.style = &h.app.Styles.Header
-	h.Table.SetBackgroundColor(h.style.BackgroundColor.Get())
+	h.Table.SetBackgroundColor(h.style.BackgroundColor.Color())
+  h.Table.SetBorderColor(h.style.BorderColor.Color())
 	h.Table.SetSelectable(false, false)
 	h.Table.SetBorder(true)
-	h.Table.SetBorderPadding(0, 0, 0, 0)
+	h.Table.SetBorderPadding(0, 0, 1, 1)
 	h.Table.SetTitle(" Database Info ")
 }
 
@@ -88,9 +89,9 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 
 	port := strconv.Itoa(h.dao.Config.Port)
 
-	status := statusNotOk
+	status := h.style.InactiveSymbol.String()
 	if ss.Ok == 1 {
-		status = statusOk
+		status = h.style.ActiveSymbol.String()
 	}
 
 	h.baseInfo = BaseInfo{
@@ -135,7 +136,7 @@ func (h *Header) render() {
 	currRow := 0
 
 	for i := 0; i < len(b); i++ {
-		if i%maxInRow == 0 {
+		if i%maxInRow == 0 && i != 0 {
 			currCol += 2
 			currRow = 0
 		}
@@ -148,16 +149,16 @@ func (h *Header) render() {
 
 func (h *Header) keyCell(text string) *tview.TableCell {
 	cell := tview.NewTableCell(text + ":")
-	cell.SetTextColor(h.style.KeyColor.Get())
-	cell.SetBackgroundColor(h.style.BackgroundColor.Get())
+	cell.SetBackgroundColor(h.style.BackgroundColor.Color())
+	cell.SetTextColor(h.style.KeyColor.Color())
 
 	return cell
 }
 
 func (h *Header) valueCell(text string) *tview.TableCell {
 	cell := tview.NewTableCell(text)
-	cell.SetTextColor(h.style.ValueColor.Get())
-	cell.SetBackgroundColor(h.style.BackgroundColor.Get())
+	cell.SetBackgroundColor(h.style.BackgroundColor.Color())
+	cell.SetTextColor(h.style.ValueColor.Color())
 
 	return cell
 }

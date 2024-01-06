@@ -22,7 +22,7 @@ type Root struct {
 
 	mongoDao *mongo.Dao
 	app      *App
-  style    *config.Root
+	style    *config.Root
 	header   *Header
 	sideBar  *SideBar
 	content  *Content
@@ -49,10 +49,7 @@ func (r *Root) Init(ctx context.Context) error {
 	r.app = app
 	r.manager = r.app.ComponentManager
 
-  r.style = &r.app.Styles.Root
-
-	r.Pages.SetBackgroundColor(r.style.BackgroundColor.Get())
-	r.Flex.SetBackgroundColor(r.style.BackgroundColor.Get())
+  r.setStyle()
 
 	var e error
 
@@ -97,15 +94,22 @@ func (r *Root) Init(ctx context.Context) error {
 	return nil
 }
 
+func (r *Root) setStyle() {
+	r.style = &r.app.Styles.Root
+	r.Pages.SetBackgroundColor(r.style.BackgroundColor.Color())
+	r.Flex.SetBackgroundColor(r.style.BackgroundColor.Color())
+
+}
+
 func (r *Root) render(ctx context.Context) error {
 	body := tview.NewFlex()
-	body.SetBackgroundColor(r.style.BackgroundColor.Get())
+	body.SetBackgroundColor(r.style.BackgroundColor.Color())
 	body.SetDirection(tview.FlexRow)
 
 	r.Flex.AddItem(r.sideBar, 30, 0, false)
 	r.Flex.AddItem(body, 0, 7, true)
-	body.AddItem(r.header.Table, 0, 1, false)
-	body.AddItem(r.content.Flex, 0, 7, true)
+	body.AddItem(r.header, 0, 1, false)
+	body.AddItem(r.content, 0, 7, true)
 
 	r.app.SetFocus(r.sideBar.Flex)
 

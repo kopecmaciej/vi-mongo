@@ -16,13 +16,12 @@ type (
 	Style string
 
 	Styles struct {
-		Root       Root       `yaml:"main"`
-		Header     Header     `yaml:"header"`
-		Sidebar    Sidebar    `yaml:"sidebar"`
-		Content    Content    `yaml:"content"`
-		JsonPeeker JsonPeeker `yaml:"jsonPeeker"`
-		FilterBar  FilterBar  `yaml:"filterBar"`
-		QueryBar   QueryBar   `yaml:"queryBar"`
+		Root      Root      `yaml:"main"`
+		Header    Header    `yaml:"header"`
+		Sidebar   Sidebar   `yaml:"sidebar"`
+		Content   Content   `yaml:"content"`
+		DocPeeker DocPeeker `yaml:"docPeeker"`
+		InputBar  InputBar  `yaml:"filterBar"`
 	}
 
 	// Root is a struct that contains all the root styles for the application
@@ -39,6 +38,7 @@ type (
 	Header struct {
 		BackgroundColor Style `yaml:"backgroundColor"`
 		BorderColor     Style `yaml:"borderColor"`
+		TitleColor      Style `yaml:"titleColor"`
 		KeyColor        Style `yaml:"keyColor"`
 		ValueColor      Style `yaml:"valueColor"`
 		ActiveSymbol    Style `yaml:"activeSymbol"`
@@ -49,6 +49,7 @@ type (
 	Sidebar struct {
 		BackgroundColor Style `yaml:"backgroundColor"`
 		BorderColor     Style `yaml:"borderColor"`
+		TitleColor      Style `yaml:"titleColor"`
 		NodeColor       Style `yaml:"nodeColor"`
 		LeafColor       Style `yaml:"leafColor"`
 		BranchColor     Style `yaml:"branchColor"`
@@ -58,34 +59,38 @@ type (
 	Content struct {
 		BackgroundColor  Style `yaml:"backgroundColor"`
 		BorderColor      Style `yaml:"borderColor"`
-		RowColor         Style `yaml:"rowColor"`
+		TitleColor       Style `yaml:"titleColor"`
+		CellTextColor    Style `yaml:"cellTextColor"`
 		ActiveRowColor   Style `yaml:"activeRowColor"`
 		SelectedRowColor Style `yaml:"selectedRowColor"`
 	}
 
-	// JsonPeeker is a struct that contains all the styles for the json peeker
-	JsonPeeker struct {
+	// DocPeeker is a struct that contains all the styles for the json peeker
+	DocPeeker struct {
 		BackgroundColor Style `yaml:"backgroundColor"`
 		BorderColor     Style `yaml:"borderColor"`
+		TitleColor      Style `yaml:"titleColor"`
 		KeyColor        Style `yaml:"keyColor"`
 		ValueColor      Style `yaml:"valueColor"`
 		BracketColor    Style `yaml:"bracketColor"`
 	}
 
-	// FilterBar is a struct that contains all the styles for the filter bar
-	FilterBar struct {
-		BackgroundColor Style `yaml:"backgroundColor"`
-		BorderColor     Style `yaml:"borderColor"`
-		LabelColor      Style `yaml:"labelColor"`
-		InputColor      Style `yaml:"inputColor"`
+	// InputBar is a struct that contains all the styles for the filter bar
+	InputBar struct {
+		BackgroundColor Style        `yaml:"backgroundColor"`
+		BorderColor     Style        `yaml:"borderColor"`
+		TitleColor      Style        `yaml:"titleColor"`
+		LabelColor      Style        `yaml:"labelColor"`
+		InputColor      Style        `yaml:"inputColor"`
+		Autocomplete    Autocomplete `yaml:"autocomplete"`
 	}
 
-	// QueryBar is a struct that contains all the styles for the query bar
-	QueryBar struct {
-		BackgroundColor Style `yaml:"backgroundColor"`
-		BorderColor     Style `yaml:"borderColor"`
-		LabelColor      Style `yaml:"labelColor"`
-		InputColor      Style `yaml:"inputColor"`
+	Autocomplete struct {
+		BackgroundColor       Style `yaml:"backgroundColor"`
+		BorderColor           Style `yaml:"borderColor"`
+		TextColor             Style `yaml:"textColor"`
+		ActiveBackgroundColor Style `yaml:"activeBackgroundColor"`
+		ActiveTextColor       Style `yaml:"activeTextColor"`
 	}
 )
 
@@ -150,7 +155,7 @@ func (s *Styles) loadDefaultStyles() {
 
 	s.Header = Header{
 		BackgroundColor: "#0F172A",
-    BorderColor:     "#387D44",
+		BorderColor:     "#387D44",
 		KeyColor:        "#F1FA8C",
 		ValueColor:      "#387D44",
 		ActiveSymbol:    "●",
@@ -159,40 +164,42 @@ func (s *Styles) loadDefaultStyles() {
 
 	s.Sidebar = Sidebar{
 		BackgroundColor: "#0F172A",
-		BorderColor:     "#50FA7B",
+		BorderColor:     "#387D44",
 		NodeColor:       "#387D44",
 		LeafColor:       "#163694",
-    BranchColor:     "#387D44",
+		BranchColor:     "#387D44",
 	}
 
 	s.Content = Content{
 		BackgroundColor:  "#0F172A",
 		BorderColor:      "#50FA7B",
-		RowColor:         "#FFFFFF",
+		TitleColor:       "#163694",
+		CellTextColor:    "#387D44",
 		ActiveRowColor:   "#50FA7B",
 		SelectedRowColor: "#50FA7B",
 	}
 
-	s.JsonPeeker = JsonPeeker{
+	s.DocPeeker = DocPeeker{
 		BackgroundColor: "#0F172A",
 		BorderColor:     "#50FA7B",
+		TitleColor:      "#F1FA8C",
 		KeyColor:        "#F1FA8C",
 		ValueColor:      "#FFFFFF",
 		BracketColor:    "#FFFFFF",
 	}
 
-	s.FilterBar = FilterBar{
+	s.InputBar = InputBar{
 		BackgroundColor: "#0F172A",
 		BorderColor:     "#50FA7B",
 		LabelColor:      "#F1FA8C",
 		InputColor:      "#FFFFFF",
-	}
-
-	s.QueryBar = QueryBar{
-		BackgroundColor: "#0F172A",
-		BorderColor:     "#50FA7B",
-		LabelColor:      "#F1FA8C",
-		InputColor:      "#FFFFFF",
+		Autocomplete: Autocomplete{
+			BackgroundColor:       "#0F172A",
+			TextColor:             "#F1FA8C",
+			BorderColor:           "#50FA7B",
+			ActiveBackgroundColor: "#163694",
+			ActiveTextColor:       "#FFFFFF",
+		},
 	}
 }
 
@@ -209,9 +216,14 @@ func (s *Styles) loadColor(color Style) tcell.Color {
 	return c
 }
 
-// Get returns the tcell.Color of the style
-func (s *Style) Get() tcell.Color {
+// Color returns the tcell.Color of the style
+func (s *Style) Color() tcell.Color {
 	return tcell.GetColor(string(*s))
+}
+
+// String returns the string value of the style
+func (s *Style) String() string {
+	return string(*s)
 }
 
 func isHexColor(s string) bool {

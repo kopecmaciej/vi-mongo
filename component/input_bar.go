@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
@@ -20,6 +21,7 @@ type InputBar struct {
 	*tview.InputField
 
 	app            *App
+	style          *config.InputBar
 	eventChan      chan interface{}
 	mutex          sync.Mutex
 	label          string
@@ -62,14 +64,21 @@ func (i *InputBar) SetEventFunc() {
 }
 
 func (i *InputBar) setStyle() {
+	i.style = &i.app.Styles.InputBar
 	i.SetBorder(true)
-	i.SetFieldTextColor(tcell.ColorYellow)
+	i.SetFieldTextColor(i.style.InputColor.Color())
 	i.SetTextSurroudings("{", "}", 2)
 
-	autocompleteBg := tcell.ColorGreen.TrueColor()
-	autocompleteMainStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(autocompleteBg)
-	autocompleteSecondaryStyle := tcell.StyleDefault.Foreground(tcell.ColorBlue).Background(autocompleteBg)
-	i.SetAutocompleteStyles(autocompleteBg, autocompleteMainStyle, autocompleteSecondaryStyle)
+	// Autocomplete styles
+	a := i.style.Autocomplete
+	background := a.BackgroundColor.Color()
+	main := tcell.StyleDefault.
+		Background(a.BackgroundColor.Color()).
+		Foreground(a.TextColor.Color())
+	selected := tcell.StyleDefault.
+		Background(a.ActiveBackgroundColor.Color()).
+		Foreground(a.ActiveTextColor.Color())
+	i.SetAutocompleteStyles(background, main, selected)
 }
 
 func (i *InputBar) setShortcuts(ctx context.Context) {

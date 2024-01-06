@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/mongui/primitives"
@@ -28,9 +29,10 @@ type peekerState struct {
 type DocPeeker struct {
 	*primitives.ModalView
 
+	app         *App
+	style       *config.DocPeeker
 	eventChan   chan interface{}
 	docModifier *DocModifier
-	app         *App
 	dao         *mongo.Dao
 	state       peekerState
 	manager     *manager.ComponentManager
@@ -44,38 +46,39 @@ func NewDocPeeker(dao *mongo.Dao) *DocPeeker {
 	}
 }
 
-func (jp *DocPeeker) Init(ctx context.Context) error {
+func (dc *DocPeeker) Init(ctx context.Context) error {
 	app, err := GetApp(ctx)
 	if err != nil {
 		return err
 	}
-	jp.app = app
+	dc.app = app
 
-	jp.setStyle()
-	jp.setShortcuts(ctx)
+	dc.setStyle()
+	dc.setShortcuts(ctx)
 
-	jp.manager = jp.app.ComponentManager
+	dc.manager = dc.app.ComponentManager
 
-	if err := jp.docModifier.Init(ctx); err != nil {
+	if err := dc.docModifier.Init(ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (jp *DocPeeker) setStyle() {
-	jp.SetBorder(true)
-	jp.SetTitle("Document Details")
-	jp.SetTitleAlign(tview.AlignLeft)
-	jp.SetTitleColor(tcell.ColorSteelBlue)
+func (dc *DocPeeker) setStyle() {
+	dc.style = &dc.app.Styles.DocPeeker
+	dc.SetBorder(true)
+	dc.SetTitle("Document Details")
+	dc.SetTitleAlign(tview.AlignLeft)
+	dc.SetTitleColor(dc.style.TitleColor.Color())
 
-	jp.ModalView.AddButtons([]string{"Edit", "Close"})
+	dc.ModalView.AddButtons([]string{"Edit", "Close"})
 }
 
-func (jp *DocPeeker) setShortcuts(ctx context.Context) {
-	jp.ModalView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+func (dc *DocPeeker) setShortcuts(ctx context.Context) {
+	dc.ModalView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyCtrlR {
-			if err := jp.render(ctx); err != nil {
+			if err := dc.render(ctx); err != nil {
 				log.Error().Err(err).Msg("Error refreshing document")
 			}
 			return nil
@@ -84,8 +87,8 @@ func (jp *DocPeeker) setShortcuts(ctx context.Context) {
 	})
 }
 
-func (jp *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString string) error {
-	jp.state = peekerState{
+func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString string) error {
+	dc.state = peekerState{
 		CollectionState: mongo.CollectionState{
 			Db:   db,
 			Coll: coll,
@@ -100,23 +103,23 @@ func (jp *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 	}
 	text := string(prettyJson.Bytes())
 
-	jp.ModalView.SetText(primitives.Text{
+	dc.ModalView.SetText(primitives.Text{
 		Content: text,
-		Color:   tcell.ColorWhite,
+		Color:   dc.style.ValueColor.Color(),
 		Align:   tview.AlignLeft,
 	})
 
-	root := jp.app.Root
-	root.AddPage(TextPeekerComponent, jp.ModalView, true, true)
-	jp.ModalView.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+	root := dc.app.Root
+	root.AddPage(TextPeekerComponent, dc.ModalView, true, true)
+	dc.ModalView.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Edit" {
-			updatedDoc, err := jp.docModifier.Edit(ctx, db, coll, jsonString)
+			updatedDoc, err := dc.docModifier.Edit(ctx, db, coll, jsonString)
 			if err != nil {
 				log.Error().Err(err)
-        return
+				return
 			}
-			jp.state.rawDocument = updatedDoc
-			jp.render(ctx)
+			dc.state.rawDocument = updatedDoc
+			dc.render(ctx)
 		} else if buttonLabel == "Close" || buttonLabel == "" {
 			root.RemovePage(TextPeekerComponent)
 		}
@@ -124,6 +127,6 @@ func (jp *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 	return nil
 }
 
-func (jp *DocPeeker) render(ctx context.Context) error {
-	return jp.Peek(ctx, jp.state.Db, jp.state.Coll, jp.state.rawDocument)
+func (dc *DocPeeker) render(ctx context.Context) error {
+	return dc.Peek(ctx, dc.state.Db, dc.state.Coll, dc.state.rawDocument)
 }
