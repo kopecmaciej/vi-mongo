@@ -70,7 +70,6 @@ func (s *SideBar) Init(ctx context.Context) error {
 
 func (s *SideBar) setStyle() {
 	s.Flex.SetDirection(tview.FlexRow)
-	s.Flex.SetBackgroundColor(tcell.ColorDefault)
 }
 
 func (s *SideBar) setShortcuts(ctx context.Context) {

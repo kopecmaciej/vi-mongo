@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/mongui/primitives"
@@ -23,6 +24,7 @@ type DBTree struct {
 	inputModal *primitives.InputModal
 	app        *App
 	dao        *mongo.Dao
+	style      *config.Sidebar
 
 	NodeSelectFunc func(ctx context.Context, a string, b string, filter map[string]interface{}) error
 }
@@ -52,9 +54,14 @@ func (t *DBTree) Init(ctx context.Context) error {
 }
 
 func (t *DBTree) setStyle() {
+  t.style = &t.app.Styles.Sidebar
 	t.SetBorder(true)
 	t.SetTitle(" Databases ")
 	t.SetBorderPadding(0, 0, 1, 1)
+
+	t.TreeView.SetBackgroundColor(t.style.BackgroundColor.Get())
+	t.TreeView.SetBorderColor(t.style.BorderColor.Get())
+	t.TreeView.SetGraphicsColor(t.style.BranchColor.Get())
 	t.SetSelectedFunc(func(node *tview.TreeNode) {
 		t.SetCurrentNode(node)
 	})
@@ -202,12 +209,13 @@ func (t *DBTree) deleteCollection(ctx context.Context) error {
 
 func (t *DBTree) rootNode() *tview.TreeNode {
 	r := tview.NewTreeNode("Databases")
-	r.SetColor(tcell.NewRGBColor(56, 125, 68))
+  r.SetColor(t.style.NodeColor.Get())
+	// r.SetColor(tcell.NewRGBColor(56, 125, 68))
 	r.SetSelectable(false)
 	r.SetExpanded(true)
 
 	collNode := tview.NewTreeNode("Collections")
-	collNode.SetColor(tcell.NewRGBColor(22, 54, 148))
+	collNode.SetColor(t.style.LeafColor.Get())
 	collNode.SetSelectable(false)
 	collNode.SetExpanded(true)
 

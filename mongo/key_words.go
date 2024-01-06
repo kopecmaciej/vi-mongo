@@ -43,16 +43,20 @@ var (
 	}
 
 	objectID = MongoKeyword{
-		Name:        "ObjectId",
+		Display:     "ObjectId",
+		InsertText:  "ObjectId(\"<>\")",
 		Description: "ObjectId is a 12-byte BSON type",
-		Aliases:     []string{"obj", "objectid", "Objectid"},
 	}
 )
 
+// MongoKeyword represents single mongo keyword
+// Display is displayed in autocomplete
+// InsertText is inserted into input, if empty then Display is used
+// Description is displayed in autocomplete description
 type MongoKeyword struct {
-	Name        string
+	Display     string
+	InsertText  string
 	Description string
-	Aliases     []string
 }
 
 type MongoAutocomplete struct {

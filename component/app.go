@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
@@ -21,19 +20,21 @@ type App struct {
 
 	ComponentManager *manager.ComponentManager
 	Root             *Root
+	Styles           *config.Styles
 }
 
-func NewApp(config *config.MonguiConfig) App {
-	client := mongo.NewClient(&config.Mongo)
+func NewApp(appConfig *config.MonguiConfig) App {
+	client := mongo.NewClient(&appConfig.Mongo)
 	client.Connect()
 	mongoDao := mongo.NewDao(client.Client, client.Config)
 
-	loadStyles()
+	styles := config.NewStyles()
 
 	app := App{
 		Application:      tview.NewApplication(),
 		Root:             NewRoot(mongoDao),
 		ComponentManager: manager.NewComponentManager(),
+		Styles:           styles,
 	}
 
 	return app
@@ -47,20 +48,6 @@ func (a *App) Init() error {
 	}
 	a.SetRoot(a.Root.Pages, true).EnableMouse(true)
 	return a.Run()
-}
-
-func loadStyles() {
-	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
-	tview.Styles.ContrastBackgroundColor = tcell.ColorDefault
-	tview.Styles.MoreContrastBackgroundColor = tcell.ColorDefault
-	tview.Styles.PrimaryTextColor = tcell.ColorWhite
-	tview.Styles.SecondaryTextColor = tcell.ColorYellow
-	tview.Styles.TertiaryTextColor = tcell.ColorBlue
-	tview.Styles.InverseTextColor = tcell.ColorBlue
-	tview.Styles.ContrastSecondaryTextColor = tcell.ColorYellow
-	tview.Styles.BorderColor = tcell.ColorGray
-	tview.Styles.TitleColor = tcell.ColorDefault
-	tview.Styles.GraphicsColor = tcell.ColorGray.TrueColor()
 }
 
 func GetApp(ctx context.Context) (*App, error) {

@@ -2,9 +2,11 @@ package component
 
 import (
 	"context"
+
 	"github.com/rs/zerolog/log"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
@@ -20,6 +22,7 @@ type Root struct {
 
 	mongoDao *mongo.Dao
 	app      *App
+  style    *config.Root
 	header   *Header
 	sideBar  *SideBar
 	content  *Content
@@ -46,8 +49,10 @@ func (r *Root) Init(ctx context.Context) error {
 	r.app = app
 	r.manager = r.app.ComponentManager
 
-	r.Pages.SetBackgroundColor(tcell.ColorDefault)
-	r.Flex.SetBackgroundColor(tcell.ColorDefault)
+  r.style = &r.app.Styles.Root
+
+	r.Pages.SetBackgroundColor(r.style.BackgroundColor.Get())
+	r.Flex.SetBackgroundColor(r.style.BackgroundColor.Get())
 
 	var e error
 
@@ -94,7 +99,7 @@ func (r *Root) Init(ctx context.Context) error {
 
 func (r *Root) render(ctx context.Context) error {
 	body := tview.NewFlex()
-	body.SetBackgroundColor(tcell.ColorDefault)
+	body.SetBackgroundColor(r.style.BackgroundColor.Get())
 	body.SetDirection(tview.FlexRow)
 
 	r.Flex.AddItem(r.sideBar, 30, 0, false)

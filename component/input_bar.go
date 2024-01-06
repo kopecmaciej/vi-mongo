@@ -114,27 +114,33 @@ func (i *InputBar) EnableAutocomplete() {
 
 		words := strings.Fields(currentText)
 		if len(words) > 0 {
-			lastWord := i.GetWordUnderCursor()
-			if strings.HasPrefix(lastWord, "$") {
+			currentWord := i.GetWordUnderCursor()
+			if currentWord == "" {
+				return nil
+			}
+			// if word starts with { or [ then we are inside object or array
+			// and we should ommmit this character
+			if strings.HasPrefix(currentWord, "{") || strings.HasPrefix(currentWord, "[") {
+				currentWord = currentWord[1:]
+			}
+			if strings.HasPrefix(currentWord, "$") {
 				for _, keyword := range mongoKeywords {
-					if strings.HasPrefix(keyword, lastWord) {
+					if strings.HasPrefix(keyword, currentWord) {
 						entries = append(entries, keyword)
 					}
 				}
 			}
 			// support for objectID
-			if strings.HasPrefix(lastWord, "O") {
-				aliases := mongoAutocomplete.ObjectID.Aliases
-				for _, alias := range aliases {
-					if strings.HasPrefix(alias, lastWord) {
-						entries = append(entries, mongoAutocomplete.ObjectID.Name)
-					}
+			if strings.HasPrefix(currentWord, "O") {
+				objectId := mongoAutocomplete.ObjectID.InsertText
+				if strings.HasPrefix(objectId, currentWord) {
+					entries = append(entries, mongoAutocomplete.ObjectID.Display)
 				}
 			}
 
 			if i.docKeys != nil {
 				for _, keyword := range i.docKeys {
-					if strings.HasPrefix(keyword, lastWord) {
+					if strings.HasPrefix(keyword, currentWord) {
 						entries = append(entries, keyword)
 					}
 				}

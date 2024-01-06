@@ -31,13 +31,13 @@ type LogConfig struct {
 }
 
 func LoadAppConfig() (*MonguiConfig, error) {
-	data, err := os.ReadFile("config.yaml")
+	bytes, err := os.ReadFile("config.yaml")
 	if err != nil {
 		return nil, err
 	}
 
 	config := &Config{}
-	err = yaml.Unmarshal(data, &config)
+	err = yaml.Unmarshal(bytes, &config)
 	if err != nil {
 		return nil, err
 	}

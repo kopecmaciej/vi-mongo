@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
@@ -26,16 +26,20 @@ type (
 
 	BaseInfo map[order]info
 
+	// Header is a component that displays information about the database
+	// in the header of the application
 	Header struct {
 		*tview.Table
 
 		app      *App
+		style    *config.Header
 		label    string
 		dao      *mongo.Dao
 		baseInfo BaseInfo
 	}
 )
 
+// NewHeader creates a new header component
 func NewHeader(dao *mongo.Dao) *Header {
 	h := Header{
 		Table: tview.NewTable(),
@@ -46,6 +50,7 @@ func NewHeader(dao *mongo.Dao) *Header {
 	return &h
 }
 
+// Init initializes the header component, sets the style and renders the component
 func (h *Header) Init(ctx context.Context) error {
 	app, err := GetApp(ctx)
 	if err != nil {
@@ -63,6 +68,16 @@ func (h *Header) Init(ctx context.Context) error {
 	go h.Refresh()
 
 	return nil
+}
+
+// setStyle sets the style of the header component
+func (h *Header) setStyle() {
+	h.style = &h.app.Styles.Header
+	h.Table.SetBackgroundColor(h.style.BackgroundColor.Get())
+	h.Table.SetSelectable(false, false)
+	h.Table.SetBorder(true)
+	h.Table.SetBorderPadding(0, 0, 0, 0)
+	h.Table.SetTitle(" Database Info ")
 }
 
 func (h *Header) setBaseInfo(ctx context.Context) error {
@@ -111,15 +126,6 @@ func (h *Header) Refresh() {
 	}
 }
 
-func (h *Header) setStyle() {
-	h.Table.SetBackgroundColor(tcell.ColorDefault)
-	h.Table.SetSelectable(false, false)
-	h.Table.SetBorder(true)
-	h.Table.SetBorderColor(tcell.ColorGreen)
-	h.Table.SetBorderPadding(0, 0, 0, 0)
-	h.Table.SetTitle(" Database Info ")
-}
-
 // set base information about database
 func (h *Header) render() {
 	b := h.baseInfo
@@ -142,15 +148,16 @@ func (h *Header) render() {
 
 func (h *Header) keyCell(text string) *tview.TableCell {
 	cell := tview.NewTableCell(text + ":")
-	cell.SetBackgroundColor(tcell.ColorDefault)
+	cell.SetTextColor(h.style.KeyColor.Get())
+	cell.SetBackgroundColor(h.style.BackgroundColor.Get())
 
 	return cell
 }
 
 func (h *Header) valueCell(text string) *tview.TableCell {
 	cell := tview.NewTableCell(text)
-	cell.SetTextColor(tcell.ColorGreen)
-	cell.SetBackgroundColor(tcell.ColorDefault)
+	cell.SetTextColor(h.style.ValueColor.Get())
+	cell.SetBackgroundColor(h.style.BackgroundColor.Get())
 
 	return cell
 }
