@@ -49,7 +49,7 @@ func (r *Root) Init(ctx context.Context) error {
 	r.app = app
 	r.manager = r.app.ComponentManager
 
-  r.setStyle()
+	r.setStyle()
 
 	var e error
 
@@ -98,7 +98,6 @@ func (r *Root) setStyle() {
 	r.style = &r.app.Styles.Root
 	r.Pages.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.Flex.SetBackgroundColor(r.style.BackgroundColor.Color())
-
 }
 
 func (r *Root) render(ctx context.Context) error {

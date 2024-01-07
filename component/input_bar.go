@@ -3,6 +3,7 @@ package component
 import (
 	"context"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -113,8 +114,8 @@ func (i *InputBar) AutocompleteHistory() {
 
 // EnableAutocomplete enables autocomplete
 func (i *InputBar) EnableAutocomplete() {
-	mongoAutocomplete := mongo.NewMongoAutocomplete()
-	mongoKeywords := mongoAutocomplete.Operators
+	ma := mongo.NewMongoAutocomplete()
+	mongoKeywords := ma.Operators
 
 	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
 		if strings.HasPrefix(currentText, "\"") {
@@ -132,24 +133,19 @@ func (i *InputBar) EnableAutocomplete() {
 			if strings.HasPrefix(currentWord, "{") || strings.HasPrefix(currentWord, "[") {
 				currentWord = currentWord[1:]
 			}
-			if strings.HasPrefix(currentWord, "$") {
-				for _, keyword := range mongoKeywords {
-					if strings.HasPrefix(keyword, currentWord) {
-						entries = append(entries, keyword)
-					}
-				}
-			}
-			// support for objectID
-			if strings.HasPrefix(currentWord, "O") {
-				objectId := mongoAutocomplete.ObjectID.InsertText
-				if strings.HasPrefix(objectId, currentWord) {
-					entries = append(entries, mongoAutocomplete.ObjectID.Display)
+
+			// support for mongo keywords
+			for _, keyword := range mongoKeywords {
+				escaped := regexp.QuoteMeta(currentWord)
+				if matched, _ := regexp.MatchString("(?i)^"+escaped, keyword.Display); matched {
+					entries = append(entries, keyword.Display)
 				}
 			}
 
+			// support for document keys
 			if i.docKeys != nil {
 				for _, keyword := range i.docKeys {
-					if strings.HasPrefix(keyword, currentWord) {
+					if matched, _ := regexp.MatchString("(?i)^"+currentWord, keyword); matched {
 						entries = append(entries, keyword)
 					}
 				}
@@ -164,7 +160,8 @@ func (i *InputBar) EnableAutocomplete() {
 			return false
 		}
 
-		i.SetWordAtCursor(text)
+    key := ma.GetOperatorByDisplay(text)
+		i.SetWordAtCursor(key.InsertText)
 
 		return true
 	})
