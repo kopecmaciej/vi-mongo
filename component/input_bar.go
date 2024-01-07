@@ -68,7 +68,6 @@ func (i *InputBar) setStyle() {
 	i.style = &i.app.Styles.InputBar
 	i.SetBorder(true)
 	i.SetFieldTextColor(i.style.InputColor.Color())
-	i.SetTextSurroudings("{", "}", 2)
 
 	// Autocomplete styles
 	a := i.style.Autocomplete

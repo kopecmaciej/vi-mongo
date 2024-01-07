@@ -99,6 +99,8 @@ func (c *Content) setStyle() {
 	c.Table.SetBorderColor(c.style.BorderColor.Color())
 
 	c.Flex.SetDirection(tview.FlexRow)
+
+	c.queryBar.SetTextSurroudings("{", "}", 2)
 }
 
 func (c *Content) setShortcuts(ctx context.Context) {

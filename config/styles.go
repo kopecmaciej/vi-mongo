@@ -22,6 +22,7 @@ type (
 		Content   Content   `yaml:"content"`
 		DocPeeker DocPeeker `yaml:"docPeeker"`
 		InputBar  InputBar  `yaml:"filterBar"`
+		Others    Others    `yaml:"others"`
 	}
 
 	// Root is a struct that contains all the root styles for the application
@@ -30,6 +31,7 @@ type (
 		TextColor          Style `yaml:"textColor"`
 		SecondaryTextColor Style `yaml:"secondaryTextColor"`
 		BorderColor        Style `yaml:"borderColor"`
+		FocusColor         Style `yaml:"focusColor"`
 		TitleColor         Style `yaml:"titleColor"`
 		GraphicsColor      Style `yaml:"graphicsColor"`
 	}
@@ -92,6 +94,11 @@ type (
 		ActiveBackgroundColor Style `yaml:"activeBackgroundColor"`
 		ActiveTextColor       Style `yaml:"activeTextColor"`
 	}
+
+	Others struct {
+		ButtonsTextColor       Style `yaml:"buttonsTextColor"`
+		ButtonsBackgroundColor Style `yaml:"buttonsBackgroundColor"`
+	}
 )
 
 // NewStyles creates a new Styles struct with default values
@@ -139,6 +146,7 @@ func (s *Styles) loadMainStyles() {
 	tview.Styles.InverseTextColor = s.loadColor(s.Root.SecondaryTextColor)
 	tview.Styles.ContrastSecondaryTextColor = s.loadColor(s.Root.SecondaryTextColor)
 	tview.Styles.BorderColor = s.loadColor(s.Root.BorderColor)
+  tview.Styles.FocusColor = s.loadColor(s.Root.FocusColor)
 	tview.Styles.TitleColor = s.loadColor(s.Root.TitleColor)
 	tview.Styles.GraphicsColor = s.loadColor(s.Root.GraphicsColor)
 }
@@ -149,6 +157,7 @@ func (s *Styles) loadDefaultStyles() {
 		TextColor:          "#FFFFFF",
 		SecondaryTextColor: "#F1FA8C",
 		BorderColor:        "#387D44",
+		FocusColor:         "#50FA7B",
 		TitleColor:         "#387D44",
 		GraphicsColor:      "#387D44",
 	}
@@ -172,7 +181,7 @@ func (s *Styles) loadDefaultStyles() {
 
 	s.Content = Content{
 		BackgroundColor:  "#0F172A",
-		BorderColor:      "#50FA7B",
+		BorderColor:      "#387D44",
 		TitleColor:       "#163694",
 		CellTextColor:    "#387D44",
 		ActiveRowColor:   "#50FA7B",
@@ -200,6 +209,11 @@ func (s *Styles) loadDefaultStyles() {
 			ActiveBackgroundColor: "#163694",
 			ActiveTextColor:       "#FFFFFF",
 		},
+	}
+
+	s.Others = Others{
+		ButtonsTextColor:       "#F1FA8C",
+		ButtonsBackgroundColor: "#0F172A",
 	}
 }
 

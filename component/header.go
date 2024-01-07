@@ -11,11 +11,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	statusOk    = "●"
-	statusNotOk = "○"
-)
-
 type (
 	order int
 
@@ -74,7 +69,7 @@ func (h *Header) Init(ctx context.Context) error {
 func (h *Header) setStyle() {
 	h.style = &h.app.Styles.Header
 	h.Table.SetBackgroundColor(h.style.BackgroundColor.Color())
-  h.Table.SetBorderColor(h.style.BorderColor.Color())
+	h.Table.SetBorderColor(h.style.BorderColor.Color())
 	h.Table.SetSelectable(false, false)
 	h.Table.SetBorder(true)
 	h.Table.SetBorderPadding(0, 0, 1, 1)
@@ -118,7 +113,7 @@ func (h *Header) Refresh() {
 		err := h.setBaseInfo(ctx)
 		if err != nil {
 			log.Error().Err(err).Msg("error while refreshing header")
-			h.baseInfo[0] = info{"Status", statusNotOk}
+			h.baseInfo[0] = info{"Status", h.style.InactiveSymbol.String()}
 		}
 		h.app.QueueUpdateDraw(func() {
 			h.render()

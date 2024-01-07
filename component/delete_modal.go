@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/rivo/tview"
 )
@@ -16,6 +17,7 @@ type DeleteModal struct {
 	*tview.Modal
 
 	app   *App
+	style *config.Others
 }
 
 func NewDeleteModal() *DeleteModal {
@@ -40,9 +42,13 @@ func (d *DeleteModal) Init(ctx context.Context) error {
 }
 
 func (d *DeleteModal) setStyle() {
+	d.style = &d.app.Styles.Others
+
 	d.SetBorder(true)
 	d.SetTitle(" Delete ")
 	d.SetBorderPadding(0, 0, 1, 1)
+	d.SetButtonTextColor(d.style.ButtonsTextColor.Color())
+	d.SetButtonBackgroundColor(d.style.ButtonsBackgroundColor.Color())
 }
 
 func (d *DeleteModal) setShortcuts() {
