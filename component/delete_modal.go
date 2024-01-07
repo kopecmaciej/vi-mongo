@@ -15,7 +15,7 @@ const (
 type DeleteModal struct {
 	*tview.Modal
 
-	app *App
+	app   *App
 }
 
 func NewDeleteModal() *DeleteModal {
@@ -56,4 +56,3 @@ func (d *DeleteModal) setShortcuts() {
 		return event
 	})
 }
-

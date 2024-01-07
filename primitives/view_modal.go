@@ -138,10 +138,10 @@ func (m *ModalView) AddButtons(labels []string) *ModalView {
 					case 'l':
 						return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
 					}
-					case tcell.KeyDown, tcell.KeyRight:
-						return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
-					case tcell.KeyUp, tcell.KeyLeft:
-						return tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone)
+				case tcell.KeyDown, tcell.KeyRight:
+					return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
+				case tcell.KeyUp, tcell.KeyLeft:
+					return tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone)
 				}
 				return event
 			})
@@ -239,6 +239,9 @@ func (m *ModalView) ScrollUp() {
 }
 
 func (m *ModalView) ScrollDown() {
+	if m.scrollPosition == m.endPosition {
+		return
+	}
 	m.scrollPosition++
 }
 

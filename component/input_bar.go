@@ -160,8 +160,12 @@ func (i *InputBar) EnableAutocomplete() {
 			return false
 		}
 
-    key := ma.GetOperatorByDisplay(text)
-		i.SetWordAtCursor(key.InsertText)
+		key := ma.GetOperatorByDisplay(text)
+		if key != nil {
+			text = key.InsertText
+		}
+
+		i.SetWordAtCursor(text)
 
 		return true
 	})

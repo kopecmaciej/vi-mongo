@@ -161,6 +161,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 		filter, err := mongo.ParseStringQuery(text)
 		if err != nil {
 			log.Error().Err(err).Msg("Error parsing query")
+			defer ShowErrorModal(c.app.Root, err.Error())
 		}
 		c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
 		c.Table.Select(2, 0)

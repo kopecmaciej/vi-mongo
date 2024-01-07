@@ -12,11 +12,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// parseQuery transforms a query string with ObjectId into a filter map compatible with MongoDB's BSON.
+// ParseStringQuery transforms a query string with ObjectId into a filter map compatible with MongoDB's BSON.
+// If keys are not quoted, this function will quote them.
 func ParseStringQuery(query string) (map[string]interface{}, error) {
 	if query == "" {
 		return map[string]interface{}{}, nil
 	}
+	query = strings.ReplaceAll(query, " ", "")
 
 	if !strings.HasPrefix(query, "{") {
 		query = "{" + query
@@ -28,12 +30,8 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 	query = strings.ReplaceAll(query, "ObjectId(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "\")", "\"}")
 
-	// if query has no key, add one, if key has dot, add quotes
-	// to whole key, example address.city -> "address.city"
-	re := regexp.MustCompile(`(\w+\.\w+)`)
-	query = re.ReplaceAllStringFunc(query, func(s string) string {
-		return `"` + s + `"`
-	})
+	re := regexp.MustCompile(`(\{|\,)\s*([a-zA-Z0-9_]+)\s*:`)
+	query = re.ReplaceAllString(query, `$1 "$2":`)
 
 	filter := map[string]interface{}{}
 
