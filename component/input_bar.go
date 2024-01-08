@@ -2,7 +2,6 @@ package component
 
 import (
 	"context"
-	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -21,6 +20,7 @@ const (
 type InputBar struct {
 	*tview.InputField
 
+	historyModal   *HistoryModal
 	app            *App
 	style          *config.InputBar
 	eventChan      chan interface{}
@@ -34,6 +34,7 @@ type InputBar struct {
 func NewInputBar(label string) *InputBar {
 	f := &InputBar{
 		InputField:     tview.NewInputField(),
+		historyModal:   NewHistoryModal(),
 		mutex:          sync.Mutex{},
 		label:          label,
 		eventChan:      make(chan interface{}),
@@ -51,9 +52,13 @@ func (i *InputBar) Init(ctx context.Context) error {
 	}
 	i.app = app
 	i.setStyle()
-	i.SetLabel(" " + i.label + ": ")
+	i.setShortcuts(ctx)
 
 	i.SetEventFunc()
+
+	if err := i.historyModal.Init(ctx); err != nil {
+		log.Error().Err(err).Msg("Error initializing history modal")
+	}
 
 	return nil
 }
@@ -65,6 +70,8 @@ func (i *InputBar) SetEventFunc() {
 }
 
 func (i *InputBar) setStyle() {
+	i.SetLabel(" " + i.label + ": ")
+
 	i.style = &i.app.Styles.InputBar
 	i.SetBorder(true)
 	i.SetFieldTextColor(i.style.InputColor.Color())
@@ -83,31 +90,10 @@ func (i *InputBar) setStyle() {
 
 func (i *InputBar) setShortcuts(ctx context.Context) {
 	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyCtrlSpace:
-			i.ToggleAutocomplete()
+		if event.Key() == tcell.KeyCtrlH {
+			i.displayHistoryModal()
 		}
 		return event
-	})
-}
-
-const (
-	maxHistory = 20
-)
-
-func (i *InputBar) AutocompleteHistory() {
-	history, err := i.LoadHistory()
-	if err != nil {
-		return
-	}
-
-	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
-		for _, entry := range history {
-			if strings.Contains(entry, currentText) {
-				entries = append(entries, entry)
-			}
-		}
-		return entries
 	})
 }
 
@@ -170,73 +156,39 @@ func (i *InputBar) EnableAutocomplete() {
 	})
 }
 
+// LoadNewKeys loads new keys for autocomplete
+// It is used when switching databases or collections
 func (i *InputBar) LoadNewKeys(keys []string) {
 	i.docKeys = keys
 }
 
-// DisableAutocomplete disables autocomplete
-func (i *InputBar) DisableAutocomplete() {
-	i.SetAutocompleteFunc(nil)
+// Display HistoryModal on the screen
+func (i *InputBar) displayHistoryModal() {
+	err := i.historyModal.Render()
+	if err != nil {
+		log.Error().Err(err).Msg("Error rendering history modal")
+		ShowErrorModal(i.app.Root, err.Error())
+	}
 }
 
-func (i *InputBar) SaveToHistory(text string) error {
-	file, err := os.OpenFile("history.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	history, err := i.LoadHistory()
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range history {
-		if entry == text {
-			return nil
-		}
-	}
-
-	if _, err := file.WriteString(text + "\n"); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (i *InputBar) LoadHistory() ([]string, error) {
-	file, err := os.ReadFile("history.txt")
-	if err != nil {
-		return nil, err
-	}
-
-	history := []string{}
-	lines := strings.Split(string(file), "\n")
-
-	for _, line := range lines {
-		if line != "" {
-			history = append(history, line)
-		}
-	}
-
-	return history, nil
-}
-
+// IsEnabled returns true if the input bar is enabled
 func (i *InputBar) IsEnabled() bool {
 	return i.enabled
 }
 
+// Enable enables the input bar, adds component to the stack and forces a redraw
 func (i *InputBar) Enable() {
 	i.enabled = true
 	i.app.ComponentManager.PushComponent(InputBarComponent)
 }
 
+// Disable disables the input bar and removes it from the stack
 func (i *InputBar) Disable() {
 	i.enabled = false
 	i.app.ComponentManager.PopComponent()
 }
 
-// Toggle enables/disables the input bar but does not force any redraws
+// Toggle toggles the input bar
 func (i *InputBar) Toggle() {
 	i.mutex.Lock()
 	defer i.mutex.Unlock()
@@ -265,7 +217,7 @@ func (i *InputBar) EventListener(accept func(string), reject func()) {
 			i.app.QueueUpdateDraw(func() {
 				i.Toggle()
 				text := i.GetText()
-				err := i.SaveToHistory(text)
+				err := i.historyModal.SaveToHistory(text)
 				if err != nil {
 					log.Error().Err(err).Msg("Error saving query to history")
 				}
@@ -273,17 +225,5 @@ func (i *InputBar) EventListener(accept func(string), reject func()) {
 				i.SetText("")
 			})
 		}
-	}
-}
-
-// ToggleAutocomplete toggles autocomplete on and off
-func (i *InputBar) ToggleAutocomplete() {
-	i.mutex.Lock()
-	defer i.mutex.Unlock()
-
-	if i.autocompleteOn {
-		i.autocompleteOn = false
-	} else {
-		i.autocompleteOn = true
 	}
 }

@@ -15,6 +15,7 @@ const (
 	appCtxKey = "app"
 )
 
+// App is a main application struct
 type App struct {
 	*tview.Application
 
@@ -40,6 +41,7 @@ func NewApp(appConfig *config.MonguiConfig) App {
 	return app
 }
 
+// Init initializes app
 func (a *App) Init() error {
 	ctx := LoadApp(context.Background(), a)
 	err := a.Root.Init(ctx)
@@ -50,6 +52,7 @@ func (a *App) Init() error {
 	return a.Run()
 }
 
+// GetApp gets app from context
 func GetApp(ctx context.Context) (*App, error) {
 	app, ok := ctx.Value(appCtxKey).(*App)
 	if !ok {
@@ -59,6 +62,8 @@ func GetApp(ctx context.Context) (*App, error) {
 	return app, nil
 }
 
+// LoadApp loads app into context
 func LoadApp(ctx context.Context, app *App) context.Context {
 	return context.WithValue(ctx, appCtxKey, app)
 }
+
