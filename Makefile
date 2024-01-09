@@ -17,3 +17,6 @@ debug:
 	fi
 	go build -gcflags="all=-N -l" -o $(BUILD_DIR)/$(SVC_NAME) .
 	$(BUILD_DIR)/$(SVC_NAME)
+
+lint:
+	golangci-lint run

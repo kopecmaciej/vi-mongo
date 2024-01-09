@@ -31,6 +31,8 @@ databases.
 ## List of features to be implemented
 
 - [x] Query History
+- [ ] Switching between multiple Connections
+- [ ] Improve Content by adding other possibilities of viewing
 - [ ] Multiple styles
 - [ ] Managing Indexes
 - [ ] Aggregation Pipeline
@@ -39,4 +41,9 @@ databases.
 
 ## Issues
 
+- [ ] Searching collection on sidebar not expanding tree
+- [ ] No clearing history
+- [ ] Header not updated after changing database/collection
+- [ ] No view with shortcuts
+- [ ] Content not updated after editing from picker
 - [ ] Performance issue while loading large bson files
