@@ -16,8 +16,8 @@ func TestParseQueryEmptyInput(t *testing.T) {
 }
 
 func TestParseQueryValidInput(t *testing.T) {
-  objectID := primitive.NewObjectID()
-  query := fmt.Sprintf(`{_id: ObjectId("%s")}`, objectID.Hex())
+	objectID := primitive.NewObjectID()
+	query := fmt.Sprintf(`{_id: ObjectId("%s")}`, objectID.Hex())
 	expected := map[string]interface{}{"_id": objectID}
 
 	result, err := ParseStringQuery(query)
@@ -27,7 +27,7 @@ func TestParseQueryValidInput(t *testing.T) {
 }
 
 func TestParseQueryWithMultipleFields(t *testing.T) {
-  objectID := primitive.NewObjectID()
+	objectID := primitive.NewObjectID()
 	query := fmt.Sprintf(`{_id: ObjectId("%s"), name: "John"}`, objectID.Hex())
 	expected := map[string]interface{}{"_id": objectID, "name": "John"}
 
@@ -38,22 +38,44 @@ func TestParseQueryWithMultipleFields(t *testing.T) {
 }
 
 func TestParseQueryWithMultipleFieldsAndSpaces(t *testing.T) {
-  objectID := primitive.NewObjectID()
-  query := fmt.Sprintf(`{ _id: ObjectId("%s"), name: "John" }`, objectID.Hex())
-  expected := map[string]interface{}{"_id": objectID, "name": "John"}
+	objectID := primitive.NewObjectID()
+	query := fmt.Sprintf(`{ _id: ObjectId("%s"), name: "John" }`, objectID.Hex())
+	expected := map[string]interface{}{"_id": objectID, "name": "John"}
 
-  result, err := ParseStringQuery(query)
+	result, err := ParseStringQuery(query)
 
-  assert.NoError(t, err)
-  assert.Equal(t, expected, result)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, result)
+}
+
+func TestParseQueryWithMultipleNestedFieldsAndSpaces(t *testing.T) {
+	objectID := primitive.NewObjectID()
+	query := fmt.Sprintf(`{ _id: ObjectId("%s"), name.first: "John" }`, objectID.Hex())
+	expected := map[string]interface{}{"_id": objectID, "name.first": "John"}
+
+	result, err := ParseStringQuery(query)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, result)
+}
+
+func TestParseQueryWithOperator(t *testing.T) {
+	objectID := primitive.NewObjectID()
+  query := fmt.Sprintf(`{ _id: ObjectId("%s"), name: { $exists: "true" } }`, objectID.Hex())
+	expected := map[string]interface{}{"_id": objectID, "name": map[string]interface{}{"$exists": "true"}}
+
+	result, err := ParseStringQuery(query)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, result)
 }
 
 func TestParseQueryInvalidInput(t *testing.T) {
-  query := `{"_id": ObjectId("123")}`
+	query := `{"_id": ObjectId("123")}`
 
-  _, err := ParseStringQuery(query)
+	_, err := ParseStringQuery(query)
 
-  expected := fmt.Errorf("error parsing query")
-  assert.Error(t, err)
-  assert.Contains(t, err.Error(), expected.Error())
+	expected := fmt.Errorf("error parsing query")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), expected.Error())
 }

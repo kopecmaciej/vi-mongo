@@ -23,21 +23,18 @@ type InputBar struct {
 	historyModal   *HistoryModal
 	app            *App
 	style          *config.InputBar
-	eventChan      chan interface{}
+	listenerChan   chan EventMsg
 	mutex          sync.Mutex
-	label          string
 	enabled        bool
 	autocompleteOn bool
 	docKeys        []string
+	defaultText    string
 }
 
 func NewInputBar(label string) *InputBar {
 	f := &InputBar{
-		InputField:     tview.NewInputField(),
-		historyModal:   NewHistoryModal(),
-		mutex:          sync.Mutex{},
-		label:          label,
-		eventChan:      make(chan interface{}),
+		InputField: tview.NewInputField().
+			SetLabel(" " + label + ": "),
 		enabled:        false,
 		autocompleteOn: false,
 	}
@@ -54,24 +51,13 @@ func (i *InputBar) Init(ctx context.Context) error {
 	i.setStyle()
 	i.setShortcuts(ctx)
 
-	i.SetEventFunc()
-
-	if err := i.historyModal.Init(ctx); err != nil {
-		log.Error().Err(err).Msg("Error initializing history modal")
-	}
+	i.listenerChan = app.Broadcaster.Subscribe(InputBarComponent)
+	go i.AppEventLoop()
 
 	return nil
 }
 
-func (i *InputBar) SetEventFunc() {
-	i.SetDoneFunc(func(key tcell.Key) {
-		i.eventChan <- key
-	})
-}
-
 func (i *InputBar) setStyle() {
-	i.SetLabel(" " + i.label + ": ")
-
 	i.style = &i.app.Styles.InputBar
 	i.SetBorder(true)
 	i.SetFieldTextColor(i.style.InputColor.Color())
@@ -90,11 +76,45 @@ func (i *InputBar) setStyle() {
 
 func (i *InputBar) setShortcuts(ctx context.Context) {
 	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyCtrlH {
-			i.displayHistoryModal()
+		switch event.Key() {
+		case tcell.KeyCtrlH:
+			if i.historyModal != nil {
+				i.displayHistoryModal()
+			}
+		case tcell.KeyCtrlD:
+      i.SetText("")
+			i.SetWordAtCursor("{ <$1> }")
 		}
 		return event
 	})
+}
+
+func (i *InputBar) DoneFuncHandler(accept func(string), reject func()) {
+	i.SetDoneFunc(func(key tcell.Key) {
+		switch key {
+		case tcell.KeyEsc:
+			i.Toggle()
+			reject()
+		case tcell.KeyEnter:
+			i.Toggle()
+			text := i.GetText()
+			err := i.historyModal.SaveToHistory(text)
+			if err != nil {
+				log.Error().Err(err).Msg("Error saving query to history")
+			}
+			accept(text)
+		}
+	})
+}
+
+// EnableHistory enables history modal
+func (i *InputBar) EnableHistory(ctx context.Context) {
+	i.historyModal = NewHistoryModal()
+
+	if err := i.historyModal.Init(ctx); err != nil {
+		log.Error().Err(err).Msg("Error initializing history modal")
+	}
+
 }
 
 // EnableAutocomplete enables autocomplete
@@ -180,6 +200,11 @@ func (i *InputBar) IsEnabled() bool {
 func (i *InputBar) Enable() {
 	i.enabled = true
 	i.app.ComponentManager.PushComponent(InputBarComponent)
+	if i.GetText() == "" {
+		go i.app.QueueUpdateDraw(func() {
+			i.SetWordAtCursor("{ <$1> }")
+		})
+	}
 }
 
 // Disable disables the input bar and removes it from the stack
@@ -200,30 +225,24 @@ func (i *InputBar) Toggle() {
 	}
 }
 
-// EventListener listens for events on the input bar
-func (i *InputBar) EventListener(accept func(string), reject func()) {
+// AppEventLoop listens for events on the input bar
+func (i *InputBar) AppEventLoop() {
 	for {
-		key := <-i.eventChan
-		if _, ok := key.(tcell.Key); !ok {
-			continue
-		}
-		switch key {
-		case tcell.KeyEsc:
-			i.app.QueueUpdateDraw(func() {
-				i.Toggle()
-				reject()
-			})
-		case tcell.KeyEnter:
-			i.app.QueueUpdateDraw(func() {
-				i.Toggle()
-				text := i.GetText()
-				err := i.historyModal.SaveToHistory(text)
-				if err != nil {
-					log.Error().Err(err).Msg("Error saving query to history")
-				}
-				accept(text)
-				i.SetText("")
-			})
+		event := <-i.listenerChan
+		sender, eventKey := event.Sender, event.EventKey
+		switch sender {
+		case HistoryModalComponent:
+			switch eventKey.Key() {
+			case tcell.KeyEnter:
+				i.app.QueueUpdateDraw(func() {
+					i.SetText(i.historyModal.GetText())
+					i.app.SetFocus(i)
+				})
+			case tcell.KeyEsc:
+				i.app.QueueUpdateDraw(func() {
+					i.app.SetFocus(i)
+				})
+			}
 		}
 	}
 }

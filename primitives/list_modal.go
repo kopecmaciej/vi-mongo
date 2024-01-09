@@ -24,10 +24,12 @@ func NewListModal() *ListModal {
 func (lm *ListModal) Draw(screen tcell.Screen) {
 	screenWidth, screenHeight := screen.Size()
 
-	width, height := screenWidth/5, screenHeight/2
+	// Calculate the default width of the modal
+	width, height := screenWidth/2, screenHeight/2
 
 	// Calculate the position of the popup (centered)
-	x, y := (screenWidth-width)/2, (screenHeight-height)/2
+	x := (screenWidth-width)/2 + (screenWidth-width)/16
+	y := (screenHeight - height) / 2
 
 	lm.SetRect(x, y, width, height)
 
@@ -65,3 +67,10 @@ func (lm *ListModal) RemoveItem(index int) *ListModal {
 	lm.list.RemoveItem(index)
 	return lm
 }
+
+// Clear removes all items from the list
+func (lm *ListModal) Clear() *ListModal {
+  lm.list.Clear()
+  return lm
+}
+

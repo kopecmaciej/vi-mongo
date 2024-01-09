@@ -13,6 +13,7 @@ import (
 const (
 	HistoryModalComponent = "HistoryModal"
 	maxHistory            = 10
+	historyFilePath       = "history.txt"
 )
 
 // HistoryModal is a modal with history of queries
@@ -38,6 +39,7 @@ func (h *HistoryModal) Init(ctx context.Context) error {
 	h.app = app
 
 	h.setStyle()
+	h.setShortcuts()
 
 	return nil
 }
@@ -47,7 +49,6 @@ func (h *HistoryModal) setStyle() {
 
 	h.SetBorder(true)
 	h.SetTitle(" History ")
-	h.SetBorderPadding(0, 0, 1, 1)
 }
 
 func (h *HistoryModal) setShortcuts() {
@@ -59,8 +60,12 @@ func (h *HistoryModal) setShortcuts() {
 			return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
 		}
 		switch event.Key() {
+		case tcell.KeyEsc:
+			h.app.Root.RemovePage(HistoryModalComponent)
+			return nil
 		case tcell.KeyEnter:
-      // TODO: handle enter
+			eventKey := EventMsg{EventKey: event, Sender: HistoryModalComponent}
+			h.app.Broadcaster.Broadcast(eventKey)
 			h.app.Root.RemovePage(HistoryModalComponent)
 			return nil
 		}
@@ -75,9 +80,13 @@ func (h *HistoryModal) Render() error {
 		return err
 	}
 
-	for i, entry := range history {
-		i += 48
-		h.AddItem(entry, "", int32(i), nil)
+  h.Clear()
+
+	// load in reverse order
+	for i := len(history) - 1; i >= 0; i-- {
+    rune := 57 - i
+		entry := history[i]
+    h.AddItem(entry, "", int32(rune), nil)
 	}
 
 	h.app.Root.AddPage(HistoryModalComponent, h, true, true)
@@ -88,31 +97,27 @@ func (h *HistoryModal) Render() error {
 // SaveToHistory saves text to history file, if it's not already there.
 // It will overwrite oldest entry if history is full.
 func (h *HistoryModal) SaveToHistory(text string) error {
-	file, err := os.OpenFile("history.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
 	history, err := h.loadHistory()
-	if err != nil {
-		return err
-	}
 
-	for _, entry := range history {
-		if entry == text {
-			return nil
+	var updatedHistory []string
+	for _, line := range history {
+		if line != text {
+			updatedHistory = append(updatedHistory, line)
+			if len(updatedHistory) >= maxHistory {
+				updatedHistory = updatedHistory[1:]
+			}
 		}
 	}
+	updatedHistory = append(updatedHistory, text)
 
-	if len(history) >= maxHistory {
-		history = history[1:]
+	historyFile, err := os.OpenFile(historyFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
 	}
+	defer historyFile.Close()
 
-	history = append(history, text)
-
-	for _, entry := range history {
-		_, err = file.WriteString(entry + "\n")
+	for _, entry := range updatedHistory {
+		_, err = historyFile.WriteString(entry + "\n")
 		if err != nil {
 			return err
 		}
@@ -121,9 +126,16 @@ func (h *HistoryModal) SaveToHistory(text string) error {
 	return nil
 }
 
+// GetText returns text from selected item
+func (h *HistoryModal) GetText() string {
+	text := h.ListModal.GetText()
+
+	return strings.TrimSpace(text)
+}
+
 // loadHistory loads history from history file
 func (h *HistoryModal) loadHistory() ([]string, error) {
-	file, err := os.ReadFile("history.txt")
+	file, err := os.ReadFile(historyFilePath)
 	if err != nil {
 		return nil, err
 	}
