@@ -89,6 +89,9 @@ func (i *InputBar) setShortcuts(ctx context.Context) {
 	})
 }
 
+// DoneFuncHandler sets DoneFunc for the input bar
+// It accepts two functions: accept and reject which are called
+// when user accepts or rejects the input
 func (i *InputBar) DoneFuncHandler(accept func(string), reject func()) {
 	i.SetDoneFunc(func(key tcell.Key) {
 		switch key {
@@ -129,14 +132,14 @@ func (i *InputBar) EnableAutocomplete() {
 
 		words := strings.Fields(currentText)
 		if len(words) > 0 {
-			currentWord := i.GetWordUnderCursor()
-			if currentWord == "" {
-				return nil
-			}
+			currentWord := i.GetWordAtCursor()
 			// if word starts with { or [ then we are inside object or array
 			// and we should ommmit this character
 			if strings.HasPrefix(currentWord, "{") || strings.HasPrefix(currentWord, "[") {
 				currentWord = currentWord[1:]
+			}
+			if currentWord == "" {
+				return nil
 			}
 
 			// support for mongo keywords
