@@ -30,11 +30,12 @@ databases.
 
 ## List of features to be implemented
 
-- [ ] Query History
+- [x] Query History
 - [ ] Multiple styles
 - [ ] Managing Indexes
 - [ ] Aggregation Pipeline
 - [ ] Exporting/Importing Documents
+- [ ] Move autocomplete keys to json file, so that it can be easily modified
 
 ## Issues
 

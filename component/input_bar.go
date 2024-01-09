@@ -2,7 +2,6 @@ package component
 
 import (
 	"context"
-	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -21,22 +20,21 @@ const (
 type InputBar struct {
 	*tview.InputField
 
+	historyModal   *HistoryModal
 	app            *App
 	style          *config.InputBar
-	eventChan      chan interface{}
+	listenerChan   chan EventMsg
 	mutex          sync.Mutex
-	label          string
 	enabled        bool
 	autocompleteOn bool
 	docKeys        []string
+	defaultText    string
 }
 
 func NewInputBar(label string) *InputBar {
 	f := &InputBar{
-		InputField:     tview.NewInputField(),
-		mutex:          sync.Mutex{},
-		label:          label,
-		eventChan:      make(chan interface{}),
+		InputField: tview.NewInputField().
+			SetLabel(" " + label + ": "),
 		enabled:        false,
 		autocompleteOn: false,
 	}
@@ -51,17 +49,12 @@ func (i *InputBar) Init(ctx context.Context) error {
 	}
 	i.app = app
 	i.setStyle()
-	i.SetLabel(" " + i.label + ": ")
+	i.setShortcuts(ctx)
 
-	i.SetEventFunc()
+	i.listenerChan = app.Broadcaster.Subscribe(InputBarComponent)
+	go i.AppEventLoop()
 
 	return nil
-}
-
-func (i *InputBar) SetEventFunc() {
-	i.SetDoneFunc(func(key tcell.Key) {
-		i.eventChan <- key
-	})
 }
 
 func (i *InputBar) setStyle() {
@@ -84,31 +77,47 @@ func (i *InputBar) setStyle() {
 func (i *InputBar) setShortcuts(ctx context.Context) {
 	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyCtrlSpace:
-			i.ToggleAutocomplete()
+		case tcell.KeyCtrlH:
+			if i.historyModal != nil {
+				i.displayHistoryModal()
+			}
+		case tcell.KeyCtrlD:
+			i.SetText("")
+			i.SetWordAtCursor("{ <$1> }")
 		}
 		return event
 	})
 }
 
-const (
-	maxHistory = 20
-)
+// DoneFuncHandler sets DoneFunc for the input bar
+// It accepts two functions: accept and reject which are called
+// when user accepts or rejects the input
+func (i *InputBar) DoneFuncHandler(accept func(string), reject func()) {
+	i.SetDoneFunc(func(key tcell.Key) {
+		switch key {
+		case tcell.KeyEsc:
+			i.Toggle()
+			reject()
+		case tcell.KeyEnter:
+			i.Toggle()
+			text := i.GetText()
+			err := i.historyModal.SaveToHistory(text)
+			if err != nil {
+				log.Error().Err(err).Msg("Error saving query to history")
+			}
+			accept(text)
+		}
+	})
+}
 
-func (i *InputBar) AutocompleteHistory() {
-	history, err := i.LoadHistory()
-	if err != nil {
-		return
+// EnableHistory enables history modal
+func (i *InputBar) EnableHistory(ctx context.Context) {
+	i.historyModal = NewHistoryModal()
+
+	if err := i.historyModal.Init(ctx); err != nil {
+		log.Error().Err(err).Msg("Error initializing history modal")
 	}
 
-	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
-		for _, entry := range history {
-			if strings.Contains(entry, currentText) {
-				entries = append(entries, entry)
-			}
-		}
-		return entries
-	})
 }
 
 // EnableAutocomplete enables autocomplete
@@ -123,14 +132,14 @@ func (i *InputBar) EnableAutocomplete() {
 
 		words := strings.Fields(currentText)
 		if len(words) > 0 {
-			currentWord := i.GetWordUnderCursor()
-			if currentWord == "" {
-				return nil
-			}
+			currentWord := i.GetWordAtCursor()
 			// if word starts with { or [ then we are inside object or array
 			// and we should ommmit this character
 			if strings.HasPrefix(currentWord, "{") || strings.HasPrefix(currentWord, "[") {
 				currentWord = currentWord[1:]
+			}
+			if currentWord == "" {
+				return nil
 			}
 
 			// support for mongo keywords
@@ -170,73 +179,44 @@ func (i *InputBar) EnableAutocomplete() {
 	})
 }
 
+// LoadNewKeys loads new keys for autocomplete
+// It is used when switching databases or collections
 func (i *InputBar) LoadNewKeys(keys []string) {
 	i.docKeys = keys
 }
 
-// DisableAutocomplete disables autocomplete
-func (i *InputBar) DisableAutocomplete() {
-	i.SetAutocompleteFunc(nil)
+// Display HistoryModal on the screen
+func (i *InputBar) displayHistoryModal() {
+	err := i.historyModal.Render()
+	if err != nil {
+		log.Error().Err(err).Msg("Error rendering history modal")
+		ShowErrorModal(i.app.Root, err.Error())
+	}
 }
 
-func (i *InputBar) SaveToHistory(text string) error {
-	file, err := os.OpenFile("history.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	history, err := i.LoadHistory()
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range history {
-		if entry == text {
-			return nil
-		}
-	}
-
-	if _, err := file.WriteString(text + "\n"); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (i *InputBar) LoadHistory() ([]string, error) {
-	file, err := os.ReadFile("history.txt")
-	if err != nil {
-		return nil, err
-	}
-
-	history := []string{}
-	lines := strings.Split(string(file), "\n")
-
-	for _, line := range lines {
-		if line != "" {
-			history = append(history, line)
-		}
-	}
-
-	return history, nil
-}
-
+// IsEnabled returns true if the input bar is enabled
 func (i *InputBar) IsEnabled() bool {
 	return i.enabled
 }
 
+// Enable enables the input bar, adds component to the stack and forces a redraw
 func (i *InputBar) Enable() {
 	i.enabled = true
 	i.app.ComponentManager.PushComponent(InputBarComponent)
+	if i.GetText() == "" {
+		go i.app.QueueUpdateDraw(func() {
+			i.SetWordAtCursor("{ <$1> }")
+		})
+	}
 }
 
+// Disable disables the input bar and removes it from the stack
 func (i *InputBar) Disable() {
 	i.enabled = false
 	i.app.ComponentManager.PopComponent()
 }
 
-// Toggle enables/disables the input bar but does not force any redraws
+// Toggle toggles the input bar
 func (i *InputBar) Toggle() {
 	i.mutex.Lock()
 	defer i.mutex.Unlock()
@@ -248,42 +228,24 @@ func (i *InputBar) Toggle() {
 	}
 }
 
-// EventListener listens for events on the input bar
-func (i *InputBar) EventListener(accept func(string), reject func()) {
+// AppEventLoop listens for events on the input bar
+func (i *InputBar) AppEventLoop() {
 	for {
-		key := <-i.eventChan
-		if _, ok := key.(tcell.Key); !ok {
-			continue
+		event := <-i.listenerChan
+		sender, eventKey := event.Sender, event.EventKey
+		switch sender {
+		case HistoryModalComponent:
+			switch eventKey.Key() {
+			case tcell.KeyEnter:
+				i.app.QueueUpdateDraw(func() {
+					i.SetText(i.historyModal.GetText())
+					i.app.SetFocus(i)
+				})
+			case tcell.KeyEsc:
+				i.app.QueueUpdateDraw(func() {
+					i.app.SetFocus(i)
+				})
+			}
 		}
-		switch key {
-		case tcell.KeyEsc:
-			i.app.QueueUpdateDraw(func() {
-				i.Toggle()
-				reject()
-			})
-		case tcell.KeyEnter:
-			i.app.QueueUpdateDraw(func() {
-				i.Toggle()
-				text := i.GetText()
-				err := i.SaveToHistory(text)
-				if err != nil {
-					log.Error().Err(err).Msg("Error saving query to history")
-				}
-				accept(text)
-				i.SetText("")
-			})
-		}
-	}
-}
-
-// ToggleAutocomplete toggles autocomplete on and off
-func (i *InputBar) ToggleAutocomplete() {
-	i.mutex.Lock()
-	defer i.mutex.Unlock()
-
-	if i.autocompleteOn {
-		i.autocompleteOn = false
-	} else {
-		i.autocompleteOn = true
 	}
 }

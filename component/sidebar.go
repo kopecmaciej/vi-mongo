@@ -110,7 +110,7 @@ func (s *SideBar) filterBarListener(ctx context.Context) {
 	rejectFunc := func() {
 		s.render(ctx)
 	}
-	go s.filterBar.EventListener(accceptFunc, rejectFunc)
+	s.filterBar.DoneFuncHandler(accceptFunc, rejectFunc)
 }
 
 func (s *SideBar) filter(ctx context.Context, text string) {

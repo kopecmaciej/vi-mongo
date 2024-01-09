@@ -20,17 +20,15 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 	}
 	query = strings.ReplaceAll(query, " ", "")
 
-	if !strings.HasPrefix(query, "{") {
-		query = "{" + query
-	}
-	if !strings.HasSuffix(query, "}") {
-		query = query + "}"
+	if strings.Contains(query, "$") {
+		re := regexp.MustCompile(`(\{|\,)(\$[a-zA-Z0-9_.]+)`)
+		query = re.ReplaceAllString(query, `$1"$2"`)
 	}
 
 	query = strings.ReplaceAll(query, "ObjectId(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "\")", "\"}")
 
-	re := regexp.MustCompile(`(\{|\,)\s*([a-zA-Z0-9_]+)\s*:`)
+	re := regexp.MustCompile(`(\{|\,)\s*([a-zA-Z0-9_.]+)\s*:`)
 	query = re.ReplaceAllString(query, `$1 "$2":`)
 
 	filter := map[string]interface{}{}

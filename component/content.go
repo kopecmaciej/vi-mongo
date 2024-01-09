@@ -20,6 +20,7 @@ const (
 	JsonViewComponent manager.Component = "JsonView"
 )
 
+// Content is a component that displays documents in a table
 type Content struct {
 	*tview.Flex
 
@@ -36,16 +37,17 @@ type Content struct {
 	autocompleteKeys []string
 }
 
+// NewContent creates a new Content component
+// It also initializes all subcomponents
 func NewContent(dao *mongo.Dao) *Content {
 	state := mongo.CollectionState{
 		Page:  0,
 		Limit: 50,
 	}
 
-	flex := tview.NewFlex()
 	return &Content{
 		Table:       tview.NewTable(),
-		Flex:        flex,
+		Flex:        tview.NewFlex(),
 		View:        tview.NewTextView(),
 		queryBar:    NewInputBar("Query"),
 		jsonPeeker:  NewDocPeeker(dao),
@@ -76,6 +78,7 @@ func (c *Content) Init(ctx context.Context) error {
 		return err
 	}
 	c.queryBar.EnableAutocomplete()
+	c.queryBar.EnableHistory(ctx)
 	if err := c.docModifier.Init(ctx); err != nil {
 		return err
 	}
@@ -99,34 +102,49 @@ func (c *Content) setStyle() {
 	c.Table.SetBorderColor(c.style.BorderColor.Color())
 
 	c.Flex.SetDirection(tview.FlexRow)
-
-	c.queryBar.SetTextSurroudings("{", "}", 2)
 }
 
 func (c *Content) setShortcuts(ctx context.Context) {
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case 'p':
-			c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			if err != nil {
+				log.Error().Err(err)
+				defer ShowErrorModal(c.app.Root, err.Error())
+			}
 		case 'a':
 			c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
 		case 'e':
 			updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
 				log.Error().Err(err)
+				defer ShowErrorModal(c.app.Root, err.Error())
 			}
 			c.refreshCell(updated)
 		case 'd':
-			c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			if err != nil {
+				log.Error().Err(err)
+				defer ShowErrorModal(c.app.Root, err.Error())
+			}
 		case 'v':
-			c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+			err := c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+			if err != nil {
+				log.Error().Err(err)
+				defer ShowErrorModal(c.app.Root, err.Error())
+			}
 		case '/':
 			c.queryBar.Toggle()
 			c.render(ctx, true)
 		}
 		switch event.Key() {
 		case tcell.KeyCtrlD:
-			c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+			err := c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+			if err != nil {
+				log.Error().Err(err)
+				defer ShowErrorModal(c.app.Root, err.Error())
+			}
 		case tcell.KeyCtrlR:
 			c.refresh(ctx)
 		case tcell.KeyCtrlN:
@@ -134,7 +152,11 @@ func (c *Content) setShortcuts(ctx context.Context) {
 		case tcell.KeyCtrlP:
 			c.goToPrevMongoPage(ctx)
 		case tcell.KeyEnter:
-			c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			if err != nil {
+				log.Error().Err(err)
+				defer ShowErrorModal(c.app.Root, err.Error())
+			}
 		}
 
 		return event
@@ -148,6 +170,7 @@ func (c *Content) render(ctx context.Context, setFocus bool) {
 	focusPrimitive = c
 
 	if c.queryBar.IsEnabled() {
+		// defer c.queryBar.SetWordAtCursor("{ text <$1> text }")
 		c.Flex.AddItem(c.queryBar, 3, 0, false)
 		focusPrimitive = c.queryBar
 	}
@@ -160,6 +183,7 @@ func (c *Content) render(ctx context.Context, setFocus bool) {
 
 func (c *Content) queryBarListener(ctx context.Context) {
 	accceptFunc := func(text string) {
+		c.Flex.RemoveItem(c.queryBar)
 		filter, err := mongo.ParseStringQuery(text)
 		if err != nil {
 			log.Error().Err(err).Msg("Error parsing query")
@@ -172,7 +196,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 		c.render(ctx, true)
 	}
 
-	go c.queryBar.EventListener(accceptFunc, rejectFunc)
+	c.queryBar.DoneFuncHandler(accceptFunc, rejectFunc)
 }
 
 func (c *Content) listDocuments(ctx context.Context, db, coll string, filters map[string]interface{}) ([]string, int64, error) {
