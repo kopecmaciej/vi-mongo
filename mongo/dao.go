@@ -120,14 +120,14 @@ func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, f
 }
 
 func (d *Dao) InsetDocument(ctx context.Context, db string, collection string, document primitive.M) error {
-  _, err := d.client.Database(db).Collection(collection).InsertOne(ctx, document)
-  if err != nil {
-    return err
-  }
+	_, err := d.client.Database(db).Collection(collection).InsertOne(ctx, document)
+	if err != nil {
+		return err
+	}
 
-  log.Debug().Msgf("Document inserted, document: %v, db: %v, collection: %v", document, db, collection)
+	log.Debug().Msgf("Document inserted, document: %v, db: %v, collection: %v", document, db, collection)
 
-  return nil
+	return nil
 }
 
 func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, id primitive.ObjectID, document primitive.M) error {

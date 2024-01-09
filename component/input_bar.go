@@ -82,7 +82,7 @@ func (i *InputBar) setShortcuts(ctx context.Context) {
 				i.displayHistoryModal()
 			}
 		case tcell.KeyCtrlD:
-      i.SetText("")
+			i.SetText("")
 			i.SetWordAtCursor("{ <$1> }")
 		}
 		return event

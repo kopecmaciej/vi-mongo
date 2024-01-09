@@ -54,7 +54,7 @@ func (t *DBTree) Init(ctx context.Context) error {
 }
 
 func (t *DBTree) setStyle() {
-  t.style = &t.app.Styles.Sidebar
+	t.style = &t.app.Styles.Sidebar
 	t.SetBorder(true)
 	t.SetTitle(" Databases ")
 	t.SetBorderPadding(0, 0, 1, 1)
@@ -209,7 +209,7 @@ func (t *DBTree) deleteCollection(ctx context.Context) error {
 
 func (t *DBTree) rootNode() *tview.TreeNode {
 	r := tview.NewTreeNode("Databases")
-  r.SetColor(t.style.NodeColor.Color())
+	r.SetColor(t.style.NodeColor.Color())
 	// r.SetColor(tcell.NewRGBColor(56, 125, 68))
 	r.SetSelectable(false)
 	r.SetExpanded(true)

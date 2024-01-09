@@ -170,7 +170,7 @@ func (c *Content) render(ctx context.Context, setFocus bool) {
 	focusPrimitive = c
 
 	if c.queryBar.IsEnabled() {
-    // defer c.queryBar.SetWordAtCursor("{ text <$1> text }")
+		// defer c.queryBar.SetWordAtCursor("{ text <$1> text }")
 		c.Flex.AddItem(c.queryBar, 3, 0, false)
 		focusPrimitive = c.queryBar
 	}
@@ -183,7 +183,7 @@ func (c *Content) render(ctx context.Context, setFocus bool) {
 
 func (c *Content) queryBarListener(ctx context.Context) {
 	accceptFunc := func(text string) {
-    c.Flex.RemoveItem(c.queryBar)
+		c.Flex.RemoveItem(c.queryBar)
 		filter, err := mongo.ParseStringQuery(text)
 		if err != nil {
 			log.Error().Err(err).Msg("Error parsing query")

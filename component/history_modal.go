@@ -80,13 +80,13 @@ func (h *HistoryModal) Render() error {
 		return err
 	}
 
-  h.Clear()
+	h.Clear()
 
 	// load in reverse order
 	for i := len(history) - 1; i >= 0; i-- {
-    rune := 57 - i
+		rune := 57 - i
 		entry := history[i]
-    h.AddItem(entry, "", int32(rune), nil)
+		h.AddItem(entry, "", int32(rune), nil)
 	}
 
 	h.app.Root.AddPage(HistoryModalComponent, h, true, true)

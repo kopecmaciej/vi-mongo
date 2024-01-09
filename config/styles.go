@@ -146,7 +146,7 @@ func (s *Styles) loadMainStyles() {
 	tview.Styles.InverseTextColor = s.loadColor(s.Root.SecondaryTextColor)
 	tview.Styles.ContrastSecondaryTextColor = s.loadColor(s.Root.SecondaryTextColor)
 	tview.Styles.BorderColor = s.loadColor(s.Root.BorderColor)
-  tview.Styles.FocusColor = s.loadColor(s.Root.FocusColor)
+	tview.Styles.FocusColor = s.loadColor(s.Root.FocusColor)
 	tview.Styles.TitleColor = s.loadColor(s.Root.TitleColor)
 	tview.Styles.GraphicsColor = s.loadColor(s.Root.GraphicsColor)
 }

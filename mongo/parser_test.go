@@ -61,7 +61,7 @@ func TestParseQueryWithMultipleNestedFieldsAndSpaces(t *testing.T) {
 
 func TestParseQueryWithOperator(t *testing.T) {
 	objectID := primitive.NewObjectID()
-  query := fmt.Sprintf(`{ _id: ObjectId("%s"), name: { $exists: "true" } }`, objectID.Hex())
+	query := fmt.Sprintf(`{ _id: ObjectId("%s"), name: { $exists: "true" } }`, objectID.Hex())
 	expected := map[string]interface{}{"_id": objectID, "name": map[string]interface{}{"$exists": "true"}}
 
 	result, err := ParseStringQuery(query)

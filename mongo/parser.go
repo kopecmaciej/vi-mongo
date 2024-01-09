@@ -22,7 +22,7 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 
 	if strings.Contains(query, "$") {
 		re := regexp.MustCompile(`(\{|\,)(\$[a-zA-Z0-9_.]+)`)
-    query = re.ReplaceAllString(query, `$1"$2"`)
+		query = re.ReplaceAllString(query, `$1"$2"`)
 	}
 
 	query = strings.ReplaceAll(query, "ObjectId(\"", "{\"$oid\": \"")

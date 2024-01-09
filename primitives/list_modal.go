@@ -70,7 +70,6 @@ func (lm *ListModal) RemoveItem(index int) *ListModal {
 
 // Clear removes all items from the list
 func (lm *ListModal) Clear() *ListModal {
-  lm.list.Clear()
-  return lm
+	lm.list.Clear()
+	return lm
 }
-
