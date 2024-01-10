@@ -57,7 +57,7 @@ func (s *SideBar) Init(ctx context.Context) error {
 	if err := s.render(ctx); err != nil {
 		return err
 	}
-	if err := s.fetchAndRender(ctx, ""); err != nil {
+	if err := s.renderWithFilter(ctx, ""); err != nil {
 		return err
 	}
 	if err := s.filterBar.Init(ctx); err != nil {
@@ -137,7 +137,7 @@ func (s *SideBar) filter(ctx context.Context, text string) {
 	log.Debug().Msgf("Filtered: %v", filtered)
 }
 
-func (s *SideBar) fetchAndRender(ctx context.Context, filter string) error {
+func (s *SideBar) renderWithFilter(ctx context.Context, filter string) error {
 	if err := s.fetchDbsWithCollections(ctx, filter); err != nil {
 		return err
 	}

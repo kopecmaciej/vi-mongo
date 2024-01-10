@@ -3,6 +3,7 @@ package component
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
@@ -47,9 +48,6 @@ func (t *DBTree) Init(ctx context.Context) error {
 	t.setStyle()
 	t.setShortcuts(ctx)
 
-	rootNode := t.dbNode("Databases")
-	t.SetRoot(rootNode)
-
 	return nil
 }
 
@@ -58,10 +56,11 @@ func (t *DBTree) setStyle() {
 	t.SetBorder(true)
 	t.SetTitle(" Databases ")
 	t.SetBorderPadding(0, 0, 1, 1)
+	t.SetGraphics(false)
 
-	t.TreeView.SetBackgroundColor(t.style.BackgroundColor.Color())
-	t.TreeView.SetBorderColor(t.style.BorderColor.Color())
-	t.TreeView.SetGraphicsColor(t.style.BranchColor.Color())
+	t.SetBackgroundColor(t.style.BackgroundColor.Color())
+	t.SetBorderColor(t.style.BorderColor.Color())
+	t.SetGraphicsColor(t.style.BranchColor.Color())
 	t.SetSelectedFunc(func(node *tview.TreeNode) {
 		t.SetCurrentNode(node)
 	})
@@ -117,7 +116,8 @@ func (t *DBTree) RenderTree(ctx context.Context, dbsWitColls []mongo.DBsWithColl
 			parent.AddChild(child)
 
 			child.SetSelectedFunc(func() {
-				t.NodeSelectFunc(ctx, parent.GetText(), child.GetText(), nil)
+				db, coll := t.removeSymbols(parent.GetText(), child.GetText())
+				t.NodeSelectFunc(ctx, db, coll, nil)
 			})
 		}
 	}
@@ -179,17 +179,16 @@ func (t *DBTree) deleteCollection(ctx context.Context) error {
 		return fmt.Errorf("Cannot delete database")
 	}
 	parent := t.GetCurrentNode().GetReference().(*tview.TreeNode)
-	db := parent.GetText()
-	collection := t.GetCurrentNode().GetText()
+	db, coll := t.removeSymbols(parent.GetText(), t.GetCurrentNode().GetText())
 
 	confirmModal := tview.NewModal()
 	confirmModal.SetButtonTextColor(tcell.ColorWhite)
-	text := fmt.Sprintf("Are you sure you want to delete collection %s from db %s", collection, db)
+	text := fmt.Sprintf("Are you sure you want to delete collection %s from db %s", coll, db)
 	confirmModal.SetText(text).
 		AddButtons([]string{"OK", "Cancel"})
 	confirmModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "OK" {
-			err := t.dao.DeleteCollection(ctx, db, collection)
+			err := t.dao.DeleteCollection(ctx, db, coll)
 			if err != nil {
 				return
 			}
@@ -208,25 +207,18 @@ func (t *DBTree) deleteCollection(ctx context.Context) error {
 }
 
 func (t *DBTree) rootNode() *tview.TreeNode {
-	r := tview.NewTreeNode("Databases")
+	r := tview.NewTreeNode("")
 	r.SetColor(t.style.NodeColor.Color())
 	// r.SetColor(tcell.NewRGBColor(56, 125, 68))
 	r.SetSelectable(false)
 	r.SetExpanded(true)
 
-	collNode := tview.NewTreeNode("Collections")
-	collNode.SetColor(t.style.LeafColor.Color())
-	collNode.SetSelectable(false)
-	collNode.SetExpanded(true)
-
-	r.AddChild(collNode)
-
 	return r
 }
 
 func (t *DBTree) dbNode(name string) *tview.TreeNode {
-	r := tview.NewTreeNode(name)
-	r.SetColor(tcell.NewRGBColor(56, 125, 68))
+	r := tview.NewTreeNode(fmt.Sprintf("%s %s", t.style.NodeSymbol.String(), name))
+	r.SetColor(t.style.NodeColor.Color())
 	r.SetSelectable(true)
 	r.SetExpanded(false)
 
@@ -238,10 +230,16 @@ func (t *DBTree) dbNode(name string) *tview.TreeNode {
 }
 
 func (t *DBTree) collNode(name string) *tview.TreeNode {
-	ch := tview.NewTreeNode(name)
-	ch.SetColor(tcell.NewRGBColor(22, 54, 148))
+	ch := tview.NewTreeNode(fmt.Sprintf("%s %s", t.style.LeafSymbol.String(), name))
+	ch.SetColor(t.style.LeafColor.Color())
 	ch.SetSelectable(true)
 	ch.SetExpanded(false)
 
 	return ch
+}
+
+func (t *DBTree) removeSymbols(db, coll string) (string, string) {
+	db = strings.Replace(db, t.style.NodeSymbol.String(), "", 1)
+	coll = strings.Replace(coll, t.style.LeafSymbol.String(), "", 1)
+	return strings.TrimSpace(db), strings.TrimSpace(coll)
 }

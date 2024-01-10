@@ -53,7 +53,9 @@ type (
 		BorderColor     Style `yaml:"borderColor"`
 		TitleColor      Style `yaml:"titleColor"`
 		NodeColor       Style `yaml:"nodeColor"`
+		NodeSymbol      Style `yaml:"nodeSymbol"`
 		LeafColor       Style `yaml:"leafColor"`
+		LeafSymbol      Style `yaml:"leafSymbol"`
 		BranchColor     Style `yaml:"branchColor"`
 	}
 
@@ -175,7 +177,9 @@ func (s *Styles) loadDefaultStyles() {
 		BackgroundColor: "#0F172A",
 		BorderColor:     "#387D44",
 		NodeColor:       "#387D44",
+		NodeSymbol:      "📁",
 		LeafColor:       "#163694",
+		LeafSymbol:      "📄",
 		BranchColor:     "#387D44",
 	}
 
