@@ -11,33 +11,31 @@ import (
 )
 
 const (
-	HistoryModalComponent = "HistoryModal"
-	maxHistory            = 10
-	historyFilePath       = "history.txt"
+	maxHistory      = 10
+	historyFilePath = "history.txt"
 )
 
 // HistoryModal is a modal with history of queries
 type HistoryModal struct {
+	*Component
 	*primitives.ListModal
 
-	app   *App
 	style *config.Others
 }
 
 func NewHistoryModal() *HistoryModal {
-	return &HistoryModal{
+	h := &HistoryModal{
+		Component: NewComponent("HistoryModal"),
 		ListModal: primitives.NewListModal(),
 	}
+
+	h.SetAfterInitFunc(h.init)
+
+	return h
 }
 
 // Init initializes HistoryModal
-func (h *HistoryModal) Init(ctx context.Context) error {
-	app, err := GetApp(ctx)
-	if err != nil {
-		return err
-	}
-	h.app = app
-
+func (h *HistoryModal) init(ctx context.Context) error {
 	h.setStyle()
 	h.setShortcuts()
 
@@ -53,20 +51,11 @@ func (h *HistoryModal) setStyle() {
 
 func (h *HistoryModal) setShortcuts() {
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Rune() {
-		case 'h':
-			return tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone)
-		case 'l':
-			return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
-		}
 		switch event.Key() {
-		case tcell.KeyEsc:
-			h.app.Root.RemovePage(HistoryModalComponent)
-			return nil
-		case tcell.KeyEnter:
-			eventKey := EventMsg{EventKey: event, Sender: HistoryModalComponent}
+		case tcell.KeyEsc, tcell.KeyEnter:
+			eventKey := EventMsg{EventKey: event, Sender: h.GetIdentifier()}
+			h.app.Root.RemovePage(h.GetIdentifier())
 			h.app.Broadcaster.Broadcast(eventKey)
-			h.app.Root.RemovePage(HistoryModalComponent)
 			return nil
 		}
 		return event
@@ -89,7 +78,7 @@ func (h *HistoryModal) Render() error {
 		h.AddItem(entry, "", int32(rune), nil)
 	}
 
-	h.app.Root.AddPage(HistoryModalComponent, h, true, true)
+	h.app.Root.AddPage(h.GetIdentifier(), h, true, true)
 
 	return nil
 }

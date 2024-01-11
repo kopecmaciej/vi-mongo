@@ -167,7 +167,6 @@ func (c *Content) render(ctx context.Context, setFocus bool) {
 	focusPrimitive = c
 
 	if c.queryBar.IsEnabled() {
-		// defer c.queryBar.SetWordAtCursor("{ text <$1> text }")
 		c.Flex.AddItem(c.queryBar, 3, 0, false)
 		focusPrimitive = c.queryBar
 	}

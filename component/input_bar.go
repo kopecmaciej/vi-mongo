@@ -33,7 +33,7 @@ type InputBar struct {
 
 func NewInputBar(label string) *InputBar {
 	i := &InputBar{
-		Component: NewComponent(InputBarComponent),
+		Component: NewComponent("InputBar"),
 		InputField: tview.NewInputField().
 			SetLabel(" " + label + ": "),
 		enabled:        false,
@@ -46,19 +46,16 @@ func NewInputBar(label string) *InputBar {
 }
 
 func (i *InputBar) init(ctx context.Context) error {
-	app, err := GetApp(ctx)
-	if err != nil {
-		return err
-	}
-	i.app = app
+	i.setStyle()
+	i.setShortcuts(ctx)
 
-	i.listenerChan = app.Broadcaster.Subscribe(InputBarComponent)
+	i.listenerChan = i.app.Broadcaster.Subscribe(InputBarComponent)
 	go i.AppEventLoop()
 
 	return nil
 }
 
-func (i *InputBar) styleFunc() {
+func (i *InputBar) setStyle() {
 	i.style = &i.app.Styles.InputBar
 	i.SetBorder(true)
 	i.SetFieldTextColor(i.style.InputColor.Color())
@@ -75,8 +72,20 @@ func (i *InputBar) styleFunc() {
 	i.SetAutocompleteStyles(background, main, selected)
 }
 
-func (i *InputBar) shortcutsFunc(ctx context.Context) {
+func (i *InputBar) setShortcuts(ctx context.Context) {
 	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Rune() {
+		case '{':
+			if i.GetWordAtCursor() == "" {
+				i.SetWordAtCursor("{ <$0> }")
+				return nil
+			}
+		case '[':
+			if i.GetWordAtCursor() == "" {
+				i.SetWordAtCursor("[ <$0> ]")
+				return nil
+			}
+		}
 		switch event.Key() {
 		case tcell.KeyCtrlH:
 			if i.historyModal != nil {
@@ -84,7 +93,7 @@ func (i *InputBar) shortcutsFunc(ctx context.Context) {
 			}
 		case tcell.KeyCtrlD:
 			i.SetText("")
-			i.SetWordAtCursor("{ <$1> }")
+			i.SetWordAtCursor("{ <$0> }")
 		}
 		return event
 	})
@@ -203,10 +212,10 @@ func (i *InputBar) IsEnabled() bool {
 // Enable enables the input bar, adds component to the stack and forces a redraw
 func (i *InputBar) Enable() {
 	i.enabled = true
-	i.app.ComponentManager.PushComponent(InputBarComponent)
+	i.app.ComponentManager.PushComponent(i.GetIdentifier())
 	if i.GetText() == "" {
 		go i.app.QueueUpdateDraw(func() {
-			i.SetWordAtCursor("{ <$1> }")
+			i.SetWordAtCursor("{ <$0> }")
 		})
 	}
 }
@@ -235,7 +244,7 @@ func (i *InputBar) AppEventLoop() {
 		event := <-i.listenerChan
 		sender, eventKey := event.Sender, event.EventKey
 		switch sender {
-		case HistoryModalComponent:
+		case i.historyModal.GetIdentifier():
 			switch eventKey.Key() {
 			case tcell.KeyEnter:
 				i.app.QueueUpdateDraw(func() {
