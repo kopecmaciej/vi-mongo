@@ -22,6 +22,7 @@ type MongoConfig struct {
 	Database string `yaml:"database"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
+	Name     string `yaml:"name"`
 }
 
 type LogConfig struct {
