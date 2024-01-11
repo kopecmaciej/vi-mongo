@@ -16,10 +16,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	TextPeekerComponent manager.Component = "TextPeeker"
-)
-
 type peekerState struct {
 	mongo.CollectionState
 	rawDocument string
@@ -27,22 +23,21 @@ type peekerState struct {
 }
 
 type DocPeeker struct {
+	*Component
 	*primitives.ModalView
 
-	app         *App
 	style       *config.DocPeeker
 	eventChan   chan interface{}
 	docModifier *DocModifier
-	dao         *mongo.Dao
 	state       peekerState
 	manager     *manager.ComponentManager
 }
 
-func NewDocPeeker(dao *mongo.Dao) *DocPeeker {
+func NewDocPeeker() *DocPeeker {
 	return &DocPeeker{
+		Component:   NewComponent("DocPeeker"),
 		ModalView:   primitives.NewModalView(),
-		docModifier: NewDocModifier(dao),
-		dao:         dao,
+		docModifier: NewDocModifier(),
 	}
 }
 
@@ -110,7 +105,7 @@ func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 	})
 
 	root := dc.app.Root
-	root.AddPage(TextPeekerComponent, dc.ModalView, true, true)
+	root.AddPage(dc.identifier, dc.ModalView, true, true)
 	dc.ModalView.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Edit" {
 			updatedDoc, err := dc.docModifier.Edit(ctx, db, coll, jsonString)
@@ -121,7 +116,7 @@ func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 			dc.state.rawDocument = updatedDoc
 			dc.render(ctx)
 		} else if buttonLabel == "Close" || buttonLabel == "" {
-			root.RemovePage(TextPeekerComponent)
+			root.RemovePage(dc.identifier)
 		}
 	})
 	return nil

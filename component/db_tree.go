@@ -20,33 +20,30 @@ const (
 )
 
 type DBTree struct {
+	*Component
 	*tview.TreeView
 
 	inputModal *primitives.InputModal
-	app        *App
-	dao        *mongo.Dao
 	style      *config.Sidebar
 
 	NodeSelectFunc func(ctx context.Context, a string, b string, filter map[string]interface{}) error
 }
 
-func NewDBTree(mongo *mongo.Dao) *DBTree {
-	return &DBTree{
+func NewDBTree() *DBTree {
+	d := &DBTree{
+		Component:  NewComponent("DBTree"),
 		TreeView:   tview.NewTreeView(),
 		inputModal: primitives.NewInputModal(),
-		dao:        mongo,
 	}
+
+	d.SetAfterInitFunc(d.init)
+
+	return d
 }
 
-func (t *DBTree) Init(ctx context.Context) error {
-	app, err := GetApp(ctx)
-	if err != nil {
-		return err
-	}
-	t.app = app
-
+func (t *DBTree) init(ctx context.Context) error {
 	t.setStyle()
-	t.setShortcuts(ctx)
+	t.shortcutFunc(ctx)
 
 	return nil
 }
@@ -66,7 +63,7 @@ func (t *DBTree) setStyle() {
 	})
 }
 
-func (t *DBTree) setShortcuts(ctx context.Context) {
+func (t *DBTree) shortcutFunc(ctx context.Context) {
 	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyCtrlD:
@@ -209,7 +206,6 @@ func (t *DBTree) deleteCollection(ctx context.Context) error {
 func (t *DBTree) rootNode() *tview.TreeNode {
 	r := tview.NewTreeNode("")
 	r.SetColor(t.style.NodeColor.Color())
-	// r.SetColor(tcell.NewRGBColor(56, 125, 68))
 	r.SetSelectable(false)
 	r.SetExpanded(true)
 

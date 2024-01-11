@@ -18,10 +18,10 @@ const (
 )
 
 type InputBar struct {
+	*Component
 	*tview.InputField
 
 	historyModal   *HistoryModal
-	app            *App
 	style          *config.InputBar
 	listenerChan   chan EventMsg
 	mutex          sync.Mutex
@@ -32,24 +32,25 @@ type InputBar struct {
 }
 
 func NewInputBar(label string) *InputBar {
-	f := &InputBar{
+	i := &InputBar{
+		Component: NewComponent(InputBarComponent),
 		InputField: tview.NewInputField().
 			SetLabel(" " + label + ": "),
 		enabled:        false,
 		autocompleteOn: false,
 	}
 
-	return f
+	i.SetAfterInitFunc(i.init)
+
+	return i
 }
 
-func (i *InputBar) Init(ctx context.Context) error {
+func (i *InputBar) init(ctx context.Context) error {
 	app, err := GetApp(ctx)
 	if err != nil {
 		return err
 	}
 	i.app = app
-	i.setStyle()
-	i.setShortcuts(ctx)
 
 	i.listenerChan = app.Broadcaster.Subscribe(InputBarComponent)
 	go i.AppEventLoop()
@@ -57,7 +58,7 @@ func (i *InputBar) Init(ctx context.Context) error {
 	return nil
 }
 
-func (i *InputBar) setStyle() {
+func (i *InputBar) styleFunc() {
 	i.style = &i.app.Styles.InputBar
 	i.SetBorder(true)
 	i.SetFieldTextColor(i.style.InputColor.Color())
@@ -74,7 +75,7 @@ func (i *InputBar) setStyle() {
 	i.SetAutocompleteStyles(background, main, selected)
 }
 
-func (i *InputBar) setShortcuts(ctx context.Context) {
+func (i *InputBar) shortcutsFunc(ctx context.Context) {
 	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyCtrlH:

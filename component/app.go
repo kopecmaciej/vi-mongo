@@ -41,6 +41,7 @@ type (
 	App struct {
 		*tview.Application
 
+		Dao              *mongo.Dao
 		ComponentManager *manager.ComponentManager
 		Root             *Root
 		Styles           *config.Styles
@@ -57,7 +58,8 @@ func NewApp(appConfig *config.MonguiConfig) App {
 
 	app := App{
 		Application:      tview.NewApplication(),
-		Root:             NewRoot(mongoDao),
+		Dao:              mongoDao,
+		Root:             NewRoot(),
 		ComponentManager: manager.NewComponentManager(),
 		Styles:           styles,
 		Broadcaster:      &Broadcaster{listeners: make(map[manager.Component]chan EventMsg)},

@@ -8,52 +8,40 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
-	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
-)
-
-const (
-	RootComponent manager.Component = "Root"
 )
 
 // Root is a component that manages visaibility of other components
 type Root struct {
+	*Component
 	*tview.Pages
-	*tview.Flex
 
-	mongoDao *mongo.Dao
-	app      *App
-	style    *config.Root
-	header   *Header
-	sideBar  *SideBar
-	content  *Content
-	manager  *manager.ComponentManager
+	flex    *tview.Flex
+	style   *config.Root
+	header  *Header
+	sideBar *SideBar
+	content *Content
 }
 
-func NewRoot(mongoDao *mongo.Dao) *Root {
-	root := &Root{
-		Pages:    tview.NewPages(),
-		Flex:     tview.NewFlex(),
-		mongoDao: mongoDao,
-		header:   NewHeader(mongoDao),
-		sideBar:  NewSideBar(mongoDao),
-		content:  NewContent(mongoDao),
+func NewRoot() *Root {
+	r := &Root{
+		Component: NewComponent("Root"),
+		Pages:     tview.NewPages(),
+		flex:      tview.NewFlex(),
+		header:    NewHeader(),
+		sideBar:   NewSideBar(),
+		content:   NewContent(),
 	}
 
-	return root
+	r.SetAfterInitFunc(r.init)
+
+	return r
 }
 
 // Init initializes root component and
 // initializes all subcomponents asynchronically
-func (r *Root) Init(ctx context.Context) error {
-	app, err := GetApp(ctx)
-	if err != nil {
-		return err
-	}
-	r.app = app
-	r.manager = r.app.ComponentManager
-
-	r.setStyle()
+func (r *Root) init(ctx context.Context) error {
+	r.setStyles()
 
 	var e error
 
@@ -87,41 +75,42 @@ func (r *Root) Init(ctx context.Context) error {
 		return e
 	}
 
-	r.sideBar.DBTree.NodeSelectFunc = r.content.RenderContent
+	r.sideBar.dbTree.NodeSelectFunc = r.content.RenderContent
 
-	r.render(ctx)
+	r.Render(ctx)
 	r.registerKeyHandlers(ctx)
-	r.setShortcuts(ctx)
+	r.shortcuts(ctx)
 
-	r.AddPage(RootComponent, r.Flex, true, true)
+	r.AddPage(r.GetIdentifier(), r.flex, true, true)
 
 	return nil
 }
 
-func (r *Root) setStyle() {
+func (r *Root) setStyles() {
 	r.style = &r.app.Styles.Root
 	r.Pages.SetBackgroundColor(r.style.BackgroundColor.Color())
-	r.Flex.SetBackgroundColor(r.style.BackgroundColor.Color())
+	r.flex.SetBackgroundColor(r.style.BackgroundColor.Color())
 }
 
-func (r *Root) setShortcuts(ctx context.Context) {
+func (r *Root) shortcuts(ctx context.Context) {
 	r.app.Root.Pages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		r.manager.HandleKey(event.Key())
 		return event
 	})
 }
 
-func (r *Root) render(ctx context.Context) error {
+// Render renders the root component and all subcomponents
+func (r *Root) Render(ctx context.Context) error {
 	body := tview.NewFlex()
 	body.SetBackgroundColor(r.style.BackgroundColor.Color())
 	body.SetDirection(tview.FlexRow)
 
-	r.Flex.AddItem(r.sideBar, 30, 0, false)
-	r.Flex.AddItem(body, 0, 7, true)
+	r.flex.AddItem(r.sideBar, 30, 0, false)
+	r.flex.AddItem(body, 0, 7, true)
 	body.AddItem(r.header, 0, 1, false)
 	body.AddItem(r.content, 0, 7, true)
 
-	r.app.SetFocus(r.sideBar.Flex)
+	r.app.SetFocus(r.sideBar)
 
 	return nil
 }
@@ -129,22 +118,22 @@ func (r *Root) render(ctx context.Context) error {
 // registerKeyHandlers registers global key handlers
 // for every component
 func (r *Root) registerKeyHandlers(ctx context.Context) {
-	rootManager := r.manager.SetKeyHandlerForComponent(RootComponent)
+	rootManager := r.manager.SetKeyHandlerForComponent(r.GetIdentifier())
 	rootManager(tcell.KeyCtrlS, func() {
-		if _, ok := r.Flex.GetItem(0).(*SideBar); ok {
-			r.Flex.RemoveItem(r.sideBar)
+		if _, ok := r.flex.GetItem(0).(*SideBar); ok {
+			r.flex.RemoveItem(r.sideBar)
 			r.app.SetFocus(r.content.Table)
 		} else {
-			r.Flex.Clear()
-			r.render(ctx)
+			r.flex.Clear()
+			r.Render(ctx)
 		}
 	})
 	rootManager(tcell.KeyTab, func() {
 		focus := r.app.GetFocus()
-		if focus == r.sideBar.DBTree {
+		if focus == r.sideBar.dbTree {
 			r.app.SetFocus(r.content.Table)
 		} else {
-			r.app.SetFocus(r.sideBar.DBTree)
+			r.app.SetFocus(r.sideBar.dbTree)
 		}
 	})
 }

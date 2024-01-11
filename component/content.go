@@ -22,13 +22,12 @@ const (
 
 // Content is a component that displays documents in a table
 type Content struct {
+	*Component
 	*tview.Flex
 
 	Table            *tview.Table
 	View             *tview.TextView
-	app              *App
 	style            *config.Content
-	dao              *mongo.Dao
 	queryBar         *InputBar
 	jsonPeeker       *DocPeeker
 	deleteModal      *DeleteModal
@@ -39,32 +38,30 @@ type Content struct {
 
 // NewContent creates a new Content component
 // It also initializes all subcomponents
-func NewContent(dao *mongo.Dao) *Content {
+func NewContent() *Content {
 	state := mongo.CollectionState{
 		Page:  0,
 		Limit: 50,
 	}
 
-	return &Content{
+	c := &Content{
+		Component:   NewComponent("Content"),
 		Table:       tview.NewTable(),
 		Flex:        tview.NewFlex(),
 		View:        tview.NewTextView(),
 		queryBar:    NewInputBar("Query"),
-		jsonPeeker:  NewDocPeeker(dao),
+		jsonPeeker:  NewDocPeeker(),
 		deleteModal: NewDeleteModal(),
-		docModifier: NewDocModifier(dao),
-		dao:         dao,
+		docModifier: NewDocModifier(),
 		state:       state,
 	}
+
+	c.SetAfterInitFunc(c.init)
+
+	return c
 }
 
-func (c *Content) Init(ctx context.Context) error {
-	app, err := GetApp(ctx)
-	if err != nil {
-		return err
-	}
-	c.app = app
-
+func (c *Content) init(ctx context.Context) error {
 	c.setStyle()
 	c.setShortcuts(ctx)
 

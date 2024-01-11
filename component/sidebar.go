@@ -6,51 +6,40 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	SideBarComponent manager.Component = "SideBar"
-)
-
 type SideBar struct {
+	*Component
 	*tview.Flex
 
-	DBTree       *DBTree
+	dbTree       *DBTree
 	filterBar    *InputBar
-	app          *App
-	dao          *mongo.Dao
 	mutex        sync.Mutex
-	label        string
 	dbsWithColls []mongo.DBsWithCollections
 }
 
-func NewSideBar(dao *mongo.Dao) *SideBar {
-	flex := tview.NewFlex()
-	return &SideBar{
-		Flex:      flex,
-		DBTree:    NewDBTree(dao),
+func NewSideBar() *SideBar {
+	s := &SideBar{
+		Component: NewComponent("SideBar"),
+		Flex:      tview.NewFlex(),
+		dbTree:    NewDBTree(),
 		filterBar: NewInputBar("Filter"),
-		label:     "sideBar",
-		dao:       dao,
 		mutex:     sync.Mutex{},
 	}
+
+	s.SetAfterInitFunc(s.init)
+
+	return s
 }
 
-func (s *SideBar) Init(ctx context.Context) error {
-	app, err := GetApp(ctx)
-	if err != nil {
-		return err
-	}
-	s.app = app
-
+func (s *SideBar) init(ctx context.Context) error {
 	s.setStyle()
 	s.setShortcuts(ctx)
 
-	if err := s.DBTree.Init(ctx); err != nil {
+	if err := s.dbTree.Init(ctx); err != nil {
 		return err
 	}
 
@@ -90,7 +79,7 @@ func (s *SideBar) render(ctx context.Context) error {
 	s.Flex.Clear()
 
 	var primitive tview.Primitive
-	primitive = s.DBTree
+	primitive = s.dbTree
 
 	if s.filterBar.IsEnabled() {
 		s.Flex.AddItem(s.filterBar, 3, 0, false)
@@ -98,7 +87,7 @@ func (s *SideBar) render(ctx context.Context) error {
 	}
 	defer s.app.SetFocus(primitive)
 
-	s.Flex.AddItem(s.DBTree, 0, 1, true)
+	s.Flex.AddItem(s.dbTree, 0, 1, true)
 
 	return nil
 }
@@ -132,7 +121,7 @@ func (s *SideBar) filter(ctx context.Context, text string) {
 			}
 		}
 	}
-	s.DBTree.RenderTree(ctx, filtered, text)
+	s.dbTree.RenderTree(ctx, filtered, text)
 
 	log.Debug().Msgf("Filtered: %v", filtered)
 }
@@ -141,7 +130,7 @@ func (s *SideBar) renderWithFilter(ctx context.Context, filter string) error {
 	if err := s.fetchDbsWithCollections(ctx, filter); err != nil {
 		return err
 	}
-	s.DBTree.RenderTree(ctx, s.dbsWithColls, filter)
+	s.dbTree.RenderTree(ctx, s.dbsWithColls, filter)
 
 	return nil
 }

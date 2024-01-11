@@ -14,24 +14,13 @@ import (
 
 // DocModifier is a component that allows editing JSON documents
 type DocModifier struct {
-	dao *mongo.Dao
-
-	app *App
+	*Component
 }
 
-func NewDocModifier(dao *mongo.Dao) *DocModifier {
+func NewDocModifier() *DocModifier {
 	return &DocModifier{
-		dao: dao,
+		Component: NewComponent("DocModifier"),
 	}
-}
-
-func (d *DocModifier) Init(ctx context.Context) error {
-	app, err := GetApp(ctx)
-	if err != nil {
-		return err
-	}
-	d.app = app
-	return nil
 }
 
 func (d *DocModifier) Insert(ctx context.Context, db, coll string) error {
