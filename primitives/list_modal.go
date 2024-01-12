@@ -43,12 +43,6 @@ func (lm *ListModal) Draw(screen tcell.Screen) {
 	lm.list.Draw(screen)
 }
 
-func (lm *ListModal) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-	return lm.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-		lm.list.InputHandler()(event, setFocus)
-	})
-}
-
 // GetText returns text of the selected item
 func (lm *ListModal) GetText() string {
 	selected := lm.list.GetCurrentItem()
@@ -72,4 +66,29 @@ func (lm *ListModal) RemoveItem(index int) *ListModal {
 func (lm *ListModal) Clear() *ListModal {
 	lm.list.Clear()
 	return lm
+}
+
+// SetMainTextStyle sets the text style of main text.
+func (lm *ListModal) SetMainTextStyle(style tcell.Style) *ListModal {
+	lm.list.SetMainTextStyle(style)
+	return lm
+}
+
+// SetSecondaryTextStyle sets the text style of secondary text.
+func (lm *ListModal) SetSecondaryTextStyle(style tcell.Style) *ListModal {
+	lm.list.SetSecondaryTextStyle(style)
+	return lm
+}
+
+// SetSelectedTextColor sets the color of the selected item's text.
+func (lm *ListModal) SetSelectedStyle(style tcell.Style) *ListModal {
+	lm.list.SetSelectedStyle(style)
+	return lm
+}
+
+// InputHandler returns the handler for this primitive.
+func (lm *ListModal) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+	return lm.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+		lm.list.InputHandler()(event, setFocus)
+	})
 }

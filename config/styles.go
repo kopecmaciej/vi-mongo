@@ -22,6 +22,7 @@ type (
 		Content   Content   `yaml:"content"`
 		DocPeeker DocPeeker `yaml:"docPeeker"`
 		InputBar  InputBar  `yaml:"filterBar"`
+		History   History   `yaml:"history"`
 		Others    Others    `yaml:"others"`
 	}
 
@@ -95,6 +96,14 @@ type (
 		TextColor             Style `yaml:"textColor"`
 		ActiveBackgroundColor Style `yaml:"activeBackgroundColor"`
 		ActiveTextColor       Style `yaml:"activeTextColor"`
+		SecondaryTextColor    Style `yaml:"secondaryTextColor"`
+	}
+
+	History struct {
+		BackgroundColor         Style `yaml:"backgroundColor"`
+		TextColor               Style `yaml:"textColor"`
+		SelectedTextColor       Style `yaml:"selectedTextColor"`
+		SelectedBackgroundColor Style `yaml:"selectedBackgroundColor"`
 	}
 
 	Others struct {
@@ -177,10 +186,10 @@ func (s *Styles) loadDefaultStyles() {
 		BackgroundColor: "#0F172A",
 		BorderColor:     "#387D44",
 		NodeColor:       "#387D44",
-		NodeSymbol:      "📁",
 		LeafColor:       "#163694",
-		LeafSymbol:      "📄",
 		BranchColor:     "#387D44",
+		NodeSymbol:      "📁",
+		LeafSymbol:      "📄",
 	}
 
 	s.Content = Content{
@@ -207,12 +216,20 @@ func (s *Styles) loadDefaultStyles() {
 		LabelColor:      "#F1FA8C",
 		InputColor:      "#FFFFFF",
 		Autocomplete: Autocomplete{
-			BackgroundColor:       "#0F172A",
+			BackgroundColor:       "#163694",
 			TextColor:             "#F1FA8C",
 			BorderColor:           "#50FA7B",
-			ActiveBackgroundColor: "#163694",
+			ActiveBackgroundColor: "#A4A4A4",
 			ActiveTextColor:       "#FFFFFF",
+			SecondaryTextColor:    "#50D78E",
 		},
+	}
+
+	s.History = History{
+		BackgroundColor:         "#0F172A",
+		TextColor:               "#F1FA8C",
+		SelectedTextColor:       "#50FA7B",
+		SelectedBackgroundColor: "#163694",
 	}
 
 	s.Others = Others{

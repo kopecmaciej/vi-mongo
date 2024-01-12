@@ -69,7 +69,12 @@ func (i *InputBar) setStyle() {
 	selected := tcell.StyleDefault.
 		Background(a.ActiveBackgroundColor.Color()).
 		Foreground(a.ActiveTextColor.Color())
-	i.SetAutocompleteStyles(background, main, selected)
+	second := tcell.StyleDefault.
+		Background(a.BackgroundColor.Color()).
+		Foreground(a.SecondaryTextColor.Color()).
+		Italic(true)
+
+	i.SetAutocompleteStyles(background, main, selected, second, true)
 }
 
 func (i *InputBar) setShortcuts(ctx context.Context) {
@@ -135,7 +140,7 @@ func (i *InputBar) EnableAutocomplete() {
 	ma := mongo.NewMongoAutocomplete()
 	mongoKeywords := ma.Operators
 
-	i.SetAutocompleteFunc(func(currentText string) (entries []string) {
+	i.SetAutocompleteFunc(func(currentText string) (entries []tview.AutocompleteItem) {
 		if strings.HasPrefix(currentText, "\"") {
 			currentText = currentText[1:]
 		}
@@ -156,7 +161,8 @@ func (i *InputBar) EnableAutocomplete() {
 			for _, keyword := range mongoKeywords {
 				escaped := regexp.QuoteMeta(currentWord)
 				if matched, _ := regexp.MatchString("(?i)^"+escaped, keyword.Display); matched {
-					entries = append(entries, keyword.Display)
+					entry := tview.AutocompleteItem{Main: keyword.Display, Secondary: keyword.Description}
+					entries = append(entries, entry)
 				}
 			}
 
@@ -164,7 +170,7 @@ func (i *InputBar) EnableAutocomplete() {
 			if i.docKeys != nil {
 				for _, keyword := range i.docKeys {
 					if matched, _ := regexp.MatchString("(?i)^"+currentWord, keyword); matched {
-						entries = append(entries, keyword)
+						entries = append(entries, tview.AutocompleteItem{Main: keyword})
 					}
 				}
 			}

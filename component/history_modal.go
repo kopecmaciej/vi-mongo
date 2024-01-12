@@ -20,7 +20,7 @@ type HistoryModal struct {
 	*Component
 	*primitives.ListModal
 
-	style *config.Others
+	style *config.History
 }
 
 func NewHistoryModal() *HistoryModal {
@@ -43,10 +43,20 @@ func (h *HistoryModal) init(ctx context.Context) error {
 }
 
 func (h *HistoryModal) setStyle() {
-	h.style = &h.app.Styles.Others
+	h.style = &h.app.Styles.History
 
-	h.SetBorder(true)
 	h.SetTitle(" History ")
+	h.SetBorder(true)
+	h.SetBackgroundColor(h.style.BackgroundColor.Color())
+	mainStyle := tcell.StyleDefault.
+		Foreground(h.style.TextColor.Color()).
+		Background(h.style.BackgroundColor.Color())
+	h.SetMainTextStyle(mainStyle)
+
+	selectedStyle := tcell.StyleDefault.
+		Foreground(h.style.SelectedTextColor.Color()).
+		Background(h.style.SelectedBackgroundColor.Color())
+	h.SetSelectedStyle(selectedStyle)
 }
 
 func (h *HistoryModal) setShortcuts() {
