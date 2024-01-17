@@ -15,11 +15,12 @@ type Root struct {
 	*Component
 	*tview.Pages
 
-	flex    *tview.Flex
-	style   *config.Root
-	header  *Header
-	sideBar *SideBar
-	content *Content
+	flex      *tview.Flex
+	style     *config.Root
+	connector *Connector
+	header    *Header
+	sideBar   *SideBar
+	content   *Content
 }
 
 func NewRoot() *Root {
@@ -27,6 +28,7 @@ func NewRoot() *Root {
 		Component: NewComponent("Root"),
 		Pages:     tview.NewPages(),
 		flex:      tview.NewFlex(),
+		connector: NewConnector(),
 		header:    NewHeader(),
 		sideBar:   NewSideBar(),
 		content:   NewContent(),
@@ -37,14 +39,21 @@ func NewRoot() *Root {
 
 // Init initializes root component and
 // initializes all subcomponents asynchronically
-func (r *Root) Init(a *App) error {
-	r.app = a
+func (r *Root) Init() error {
 	r.setStyles()
+	r.registerKeyHandlers()
+	r.shortcuts()
 
-	currConn := a.Config.GetCurrentConnection()
-	if currConn == nil {
-		err := r.renderConnector()
-		if err != nil {
+	if err := r.connector.Init(r.app); err != nil {
+		return err
+	}
+	currConn := r.app.Config.GetCurrentConnection()
+	if currConn == nil || r.app.Config.ShowConnectionPage {
+		if err := r.renderConnector(); err != nil {
+			return err
+		}
+	} else {
+		if err := r.renderMainView(); err != nil {
 			return err
 		}
 	}
@@ -52,24 +61,25 @@ func (r *Root) Init(a *App) error {
 	return nil
 }
 
-func (r *Root) callback() {
-	r.RemovePage("Connector")
+func (r *Root) renderMainView() error {
 	currConn := r.app.Config.GetCurrentConnection()
 	client := mongo.NewClient(currConn)
-	client.Connect()
+	err := client.Connect()
+	if err != nil {
+		return err
+	}
+
 	r.app.Dao = mongo.NewDao(client.Client, client.Config)
 
 	if err := r.initSubcomponents(); err != nil {
-		log.Error().Err(err).Msg("Error initializing root")
+		return err
 	}
 
 	r.sideBar.dbTree.NodeSelectFunc = r.content.RenderContent
 
 	r.render()
-	r.registerKeyHandlers()
-	r.shortcuts()
 
-	r.AddPage(r.GetIdentifier(), r.flex, true, true)
+	return nil
 }
 
 func (r *Root) initSubcomponents() error {
@@ -107,25 +117,26 @@ func (r *Root) render() error {
 	body.SetBackgroundColor(r.style.BackgroundColor.Color())
 	body.SetDirection(tview.FlexRow)
 
-	r.flex.AddItem(r.sideBar, 30, 0, false)
-	r.flex.AddItem(body, 0, 7, true)
+	r.flex.AddItem(r.sideBar, 30, 0, true)
+	r.flex.AddItem(body, 0, 7, false)
 	body.AddItem(r.header, 0, 1, false)
 	body.AddItem(r.content, 0, 7, true)
 
-	r.app.SetFocus(r.sideBar)
+	r.AddPage(r.GetIdentifier(), r.flex, true, true)
 
 	return nil
 }
 
 // renderConnector renders connector component
 func (r *Root) renderConnector() error {
-	connector := NewConnector()
-	if err := connector.Init(r.app); err != nil {
-		log.Error().Err(err).Msg("Error initializing root")
-		return err
-	}
-	connector.SetCallback(r.callback)
-	r.AddPage(connector.GetIdentifier(), connector, true, true)
+	r.connector.SetCallback(func() {
+		err := r.renderMainView()
+		if err != nil {
+			ShowErrorModal(r, err.Error())
+		}
+	})
+
+	r.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
 	return nil
 }
 
@@ -149,6 +160,10 @@ func (r *Root) registerKeyHandlers() {
 		} else {
 			r.app.SetFocus(r.sideBar.dbTree)
 		}
+	})
+	rootManager(tcell.KeyCtrlA, func() {
+		r.flex.Clear()
+		r.renderConnector()
 	})
 }
 

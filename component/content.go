@@ -78,6 +78,7 @@ func (c *Content) init() error {
 	}
 	c.queryBar.EnableAutocomplete()
 	c.queryBar.EnableHistory()
+	c.queryBar.SetDefaultText("{ <$0> }")
 	if err := c.docModifier.Init(c.app); err != nil {
 		return err
 	}

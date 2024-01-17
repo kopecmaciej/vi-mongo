@@ -47,7 +47,7 @@ func (c *Connector) Init(app *App) error {
 	c.setStyle()
 	c.setKeybindings()
 
-	c.Render()
+	c.render()
 
 	return nil
 }
@@ -111,10 +111,11 @@ func (c *Connector) setKeybindings() {
 		case tcell.KeyEnter:
 			connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
 			err := c.app.Config.SetCurrentConnection(connName)
-      c.app.Config.CurrentConnection = connName
+			c.app.Config.CurrentConnection = connName
 			if err != nil {
 				log.Error().Err(err).Msg("failed to set current connection")
 			}
+			c.app.Root.RemovePage("Connector")
 			if c.callback != nil {
 				c.callback()
 			}
@@ -125,8 +126,8 @@ func (c *Connector) setKeybindings() {
 
 }
 
-// Render renders the Component
-func (c *Connector) Render() {
+// render renders the Component
+func (c *Connector) render() {
 	c.Clear()
 
 	// easy way to center the form
@@ -199,7 +200,7 @@ func (c *Connector) saveConnection(mongoCfg *config.MongoConfig) error {
 
 // saveButtonFunc is a function for saving new connection
 func (c *Connector) saveButtonFunc() {
-	defer c.Render()
+	defer c.render()
 	name := c.form.GetFormItemByLabel("Name").(*tview.InputField).GetText()
 	url := c.form.GetFormItemByLabel("Url").(*tview.InputField).GetText()
 	if url != "" {
@@ -233,7 +234,7 @@ func (c *Connector) saveButtonFunc() {
 // cancelButtonFunc is a function for canceling the form
 func (c *Connector) cancelButtonFunc() {
 	c.form.Clear(true)
-	c.Render()
+	c.render()
 }
 
 // SetCallback sets callback function

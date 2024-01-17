@@ -29,11 +29,11 @@ type LogConfig struct {
 }
 
 type Config struct {
-	Log                      LogConfig     `yaml:"log"`
-	Debug                    bool          `yaml:"debug"`
-	AlwaysShowConnectionPage bool          `yaml:"alwaysShowConnectionPage"`
-	CurrentConnection        string        `yaml:"currentConnection"`
-	Connections              []MongoConfig `yaml:"connections"`
+	Log                LogConfig     `yaml:"log"`
+	Debug              bool          `yaml:"debug"`
+	ShowConnectionPage bool          `yaml:"showConnectionPage"`
+	CurrentConnection  string        `yaml:"currentConnection"`
+	Connections        []MongoConfig `yaml:"connections"`
 }
 
 // LoadConfig loads the config file
@@ -92,9 +92,6 @@ func SaveMongoConfig(config *MongoConfig) error {
 func (c *Config) SetCurrentConnection(name string) error {
 	// If the user has set the alwaysShowConnectionPage setting to true,
 	// we don't want to save the current connection
-	if c.AlwaysShowConnectionPage {
-		return nil
-	}
 	c.CurrentConnection = name
 
 	updatedConfig, err := yaml.Marshal(c)

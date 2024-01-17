@@ -104,6 +104,11 @@ func (i *InputBar) setKeybindings() {
 	})
 }
 
+// SetDefaultText sets default text for the input bar
+func (i *InputBar) SetDefaultText(text string) {
+	i.defaultText = text
+}
+
 // DoneFuncHandler sets DoneFunc for the input bar
 // It accepts two functions: accept and reject which are called
 // when user accepts or rejects the input
@@ -221,7 +226,7 @@ func (i *InputBar) Enable() {
 	i.app.Manager.PushComponent(i.GetIdentifier())
 	if i.GetText() == "" {
 		go i.app.QueueUpdateDraw(func() {
-			i.SetWordAtCursor("{ <$0> }")
+			i.SetWordAtCursor(i.defaultText)
 		})
 	}
 }
