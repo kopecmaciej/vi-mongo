@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 
 	"github.com/kopecmaciej/mongui/config"
-	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/mongui/primitives"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -30,30 +29,27 @@ type DocPeeker struct {
 	eventChan   chan interface{}
 	docModifier *DocModifier
 	state       peekerState
-	manager     *manager.ComponentManager
 }
 
 func NewDocPeeker() *DocPeeker {
-	return &DocPeeker{
+	peekr := &DocPeeker{
 		Component:   NewComponent("DocPeeker"),
 		ModalView:   primitives.NewModalView(),
 		docModifier: NewDocModifier(),
 	}
+
+	peekr.SetAfterInitFunc(peekr.init)
+
+	return peekr
 }
 
-func (dc *DocPeeker) Init(ctx context.Context) error {
-	app, err := GetApp(ctx)
-	if err != nil {
-		return err
-	}
-	dc.app = app
+func (dc *DocPeeker) init() error {
+	ctx := context.Background()
 
 	dc.setStyle()
-	dc.setShortcuts(ctx)
+	dc.setKeybindings(ctx)
 
-	dc.manager = dc.app.ComponentManager
-
-	if err := dc.docModifier.Init(ctx); err != nil {
+	if err := dc.docModifier.Init(dc.app); err != nil {
 		return err
 	}
 
@@ -70,7 +66,7 @@ func (dc *DocPeeker) setStyle() {
 	dc.ModalView.AddButtons([]string{"Edit", "Close"})
 }
 
-func (dc *DocPeeker) setShortcuts(ctx context.Context) {
+func (dc *DocPeeker) setKeybindings(ctx context.Context) {
 	dc.ModalView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyCtrlR {
 			if err := dc.render(ctx); err != nil {

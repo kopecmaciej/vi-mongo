@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	config, err := config.LoadAppConfig()
+	config, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error loading config")
 	}
@@ -42,7 +42,14 @@ func main() {
 func logging(path string, logLevel zerolog.Level, pretty bool) *os.File {
 	logFile, err := os.OpenFile(path, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Error opening log file")
+		if os.IsNotExist(err) {
+			logFile, err = os.Create(path)
+			if err != nil {
+				log.Fatal().Err(err).Msg("Error creating log file")
+			}
+		} else {
+			log.Fatal().Err(err).Msg("Error opening log file")
+		}
 	}
 
 	zerolog.SetGlobalLevel(logLevel)

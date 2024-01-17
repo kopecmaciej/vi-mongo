@@ -26,7 +26,7 @@ type DBTree struct {
 	inputModal *primitives.InputModal
 	style      *config.Sidebar
 
-	NodeSelectFunc func(ctx context.Context, a string, b string, filter map[string]interface{}) error
+	NodeSelectFunc func(ctx context.Context, db string, coll string, filter map[string]interface{}) error
 }
 
 func NewDBTree() *DBTree {
@@ -41,9 +41,11 @@ func NewDBTree() *DBTree {
 	return d
 }
 
-func (t *DBTree) init(ctx context.Context) error {
+func (t *DBTree) init() error {
+	ctx := context.Background()
+
 	t.setStyle()
-	t.shortcutFunc(ctx)
+	t.setKeybindings(ctx)
 
 	return nil
 }
@@ -63,7 +65,7 @@ func (t *DBTree) setStyle() {
 	})
 }
 
-func (t *DBTree) shortcutFunc(ctx context.Context) {
+func (t *DBTree) setKeybindings(ctx context.Context) {
 	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyCtrlD:

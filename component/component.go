@@ -29,12 +29,9 @@ type Component struct {
 	// It's used mainly for managing avaliable keybindings.
 	identifier manager.Component
 
-	// manager is a pointer to the component manager.
-	manager *manager.ComponentManager
-
 	// initFunc is a function that is called when the component is initialized.
 	// It's main purpose is to run all the initialization functions of the subcomponents.
-	afterInitFunc func(ctx context.Context) error
+	afterInitFunc func() error
 }
 
 // NewComponent is a constructor for the Component struct.
@@ -45,24 +42,22 @@ func NewComponent(identifier string) *Component {
 }
 
 // Init is a function that is called when the component is initialized.
-func (c *Component) Init(ctx context.Context) error {
-	app, err := GetApp(ctx)
-	if err != nil {
-		return err
-	}
+// If custom initialization is needed, this function should be overriden.
+func (c *Component) Init(app *App) error {
 	c.app = app
-	c.dao = app.Dao
-	c.manager = c.app.ComponentManager
+	if app.Dao != nil {
+		c.dao = app.Dao
+	}
 
 	if c.afterInitFunc != nil {
-		return c.afterInitFunc(ctx)
+		return c.afterInitFunc()
 	}
 
 	return nil
 }
 
 // SetAfterInitFunc sets the optional function that will be run at the end of the Init function.
-func (c *Component) SetAfterInitFunc(afterInitFunc func(ctx context.Context) error) {
+func (c *Component) SetAfterInitFunc(afterInitFunc func() error) {
 	c.afterInitFunc = afterInitFunc
 }
 
@@ -74,4 +69,19 @@ func (c *Component) GetComponent() *Component {
 // GetIdentifier returns the identifier of the component.
 func (c *Component) GetIdentifier() manager.Component {
 	return c.identifier
+}
+
+// Subscribe subscribes the component to the global events.
+func (c *Component) Subscribe() {
+	c.app.Manager.Subscribe(c.identifier)
+}
+
+// SendEvent sends an event to the app.
+func (c *Component) BroadcastEvent(event manager.EventMsg) {
+	c.app.Manager.Broadcast(event)
+}
+
+// SendToComponent sends an event to the component.
+func (c *Component) SendToComponent(component manager.Component, event manager.EventMsg) {
+	c.app.Manager.SendTo(component, event)
 }

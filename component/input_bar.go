@@ -1,13 +1,13 @@
 package component
 
 import (
-	"context"
 	"regexp"
 	"strings"
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
@@ -23,7 +23,7 @@ type InputBar struct {
 
 	historyModal   *HistoryModal
 	style          *config.InputBar
-	listenerChan   chan EventMsg
+	listenerChan   chan manager.EventMsg
 	mutex          sync.Mutex
 	enabled        bool
 	autocompleteOn bool
@@ -45,11 +45,11 @@ func NewInputBar(label string) *InputBar {
 	return i
 }
 
-func (i *InputBar) init(ctx context.Context) error {
+func (i *InputBar) init() error {
 	i.setStyle()
-	i.setShortcuts(ctx)
+	i.setKeybindings()
 
-	i.listenerChan = i.app.Broadcaster.Subscribe(InputBarComponent)
+	i.listenerChan = i.app.Manager.Subscribe(InputBarComponent)
 	go i.AppEventLoop()
 
 	return nil
@@ -77,7 +77,7 @@ func (i *InputBar) setStyle() {
 	i.SetAutocompleteStyles(background, main, selected, second, true)
 }
 
-func (i *InputBar) setShortcuts(ctx context.Context) {
+func (i *InputBar) setKeybindings() {
 	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case '{':
@@ -104,6 +104,11 @@ func (i *InputBar) setShortcuts(ctx context.Context) {
 	})
 }
 
+// SetDefaultText sets default text for the input bar
+func (i *InputBar) SetDefaultText(text string) {
+	i.defaultText = text
+}
+
 // DoneFuncHandler sets DoneFunc for the input bar
 // It accepts two functions: accept and reject which are called
 // when user accepts or rejects the input
@@ -126,10 +131,10 @@ func (i *InputBar) DoneFuncHandler(accept func(string), reject func()) {
 }
 
 // EnableHistory enables history modal
-func (i *InputBar) EnableHistory(ctx context.Context) {
+func (i *InputBar) EnableHistory() {
 	i.historyModal = NewHistoryModal()
 
-	if err := i.historyModal.Init(ctx); err != nil {
+	if err := i.historyModal.Init(i.app); err != nil {
 		log.Error().Err(err).Msg("Error initializing history modal")
 	}
 
@@ -218,10 +223,10 @@ func (i *InputBar) IsEnabled() bool {
 // Enable enables the input bar, adds component to the stack and forces a redraw
 func (i *InputBar) Enable() {
 	i.enabled = true
-	i.app.ComponentManager.PushComponent(i.GetIdentifier())
+	i.app.Manager.PushComponent(i.GetIdentifier())
 	if i.GetText() == "" {
 		go i.app.QueueUpdateDraw(func() {
-			i.SetWordAtCursor("{ <$0> }")
+			i.SetWordAtCursor(i.defaultText)
 		})
 	}
 }
@@ -229,7 +234,7 @@ func (i *InputBar) Enable() {
 // Disable disables the input bar and removes it from the stack
 func (i *InputBar) Disable() {
 	i.enabled = false
-	i.app.ComponentManager.PopComponent()
+	i.app.Manager.PopComponent()
 }
 
 // Toggle toggles the input bar

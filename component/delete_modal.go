@@ -1,40 +1,32 @@
 package component
 
 import (
-	"context"
-
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
-	"github.com/kopecmaciej/mongui/manager"
 	"github.com/rivo/tview"
 )
 
-const (
-	DeleteModalComponent manager.Component = "DeleteModal"
-)
-
 type DeleteModal struct {
+	*Component
 	*tview.Modal
 
-	app   *App
 	style *config.Others
 }
 
 func NewDeleteModal() *DeleteModal {
-	return &DeleteModal{
-		Modal: tview.NewModal(),
+	dm := &DeleteModal{
+		Component: NewComponent("DeleteModal"),
+		Modal:     tview.NewModal(),
 	}
+
+	dm.SetAfterInitFunc(dm.init)
+
+	return dm
 }
 
-func (d *DeleteModal) Init(ctx context.Context) error {
-	app, err := GetApp(ctx)
-	if err != nil {
-		return err
-	}
-	d.app = app
-
+func (d *DeleteModal) init() error {
 	d.setStyle()
-	d.setShortcuts()
+	d.setKeybindings()
 
 	d.AddButtons([]string{"[red]Delete", "Cancel"})
 
@@ -51,7 +43,7 @@ func (d *DeleteModal) setStyle() {
 	d.SetButtonBackgroundColor(d.style.ButtonsBackgroundColor.Color())
 }
 
-func (d *DeleteModal) setShortcuts() {
+func (d *DeleteModal) setKeybindings() {
 	d.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case 'h':

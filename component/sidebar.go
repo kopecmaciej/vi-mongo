@@ -35,11 +35,12 @@ func NewSideBar() *SideBar {
 	return s
 }
 
-func (s *SideBar) init(ctx context.Context) error {
+func (s *SideBar) init() error {
+	ctx := context.Background()
 	s.setStyle()
-	s.setShortcuts(ctx)
+	s.setKeybindings(ctx)
 
-	if err := s.dbTree.Init(ctx); err != nil {
+	if err := s.dbTree.Init(s.app); err != nil {
 		return err
 	}
 
@@ -49,7 +50,7 @@ func (s *SideBar) init(ctx context.Context) error {
 	if err := s.renderWithFilter(ctx, ""); err != nil {
 		return err
 	}
-	if err := s.filterBar.Init(ctx); err != nil {
+	if err := s.filterBar.Init(s.app); err != nil {
 		return err
 	}
 	s.filterBarListener(ctx)
@@ -61,7 +62,7 @@ func (s *SideBar) setStyle() {
 	s.Flex.SetDirection(tview.FlexRow)
 }
 
-func (s *SideBar) setShortcuts(ctx context.Context) {
+func (s *SideBar) setKeybindings(ctx context.Context) {
 	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyRune:

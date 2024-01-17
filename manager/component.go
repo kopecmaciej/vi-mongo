@@ -6,16 +6,34 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-type Component string
+type (
+	// Component is a type for component names
+	Component string
 
-// ComponentManager is a helper to manage different Components
-// and their key handlers, so that only the key handlers of the
-// current component are executed
-type ComponentManager struct {
-	componentStack []Component
-	keyHandlers    map[Component]map[tcell.Key]func()
-	mutex          sync.Mutex
-}
+	// EventMsg is a wrapper for tcell.EventKey that also contains
+	// the sender of the event
+	EventMsg struct {
+		*tcell.EventKey
+		Sender Component
+	}
+
+	// Listener
+	Listener struct {
+		Component Component
+		Channel   chan EventMsg
+	}
+
+	// ComponentManager is a helper to manage different Components
+	// and their key handlers, so that only the key handlers of the
+	// current component are executed
+	ComponentManager struct {
+		componentStack []Component
+		keyHandlers    map[Component]map[tcell.Key]func()
+		mutex          sync.Mutex
+		listeners      map[Component]chan EventMsg
+		EventChan      chan EventMsg
+	}
+)
 
 // NewComponentManager creates a new ComponentManager
 func NewComponentManager() *ComponentManager {
@@ -23,6 +41,7 @@ func NewComponentManager() *ComponentManager {
 		componentStack: make([]Component, 0),
 		keyHandlers:    make(map[Component]map[tcell.Key]func()),
 		mutex:          sync.Mutex{},
+		listeners:      make(map[Component]chan EventMsg),
 	}
 }
 
@@ -65,6 +84,7 @@ func (eh *ComponentManager) SetKeyHandler(component Component, key tcell.Key, ha
 	eh.keyHandlers[component][key] = handler
 }
 
+// SetKeyHandlerForComponent is a helper function to set a key handler for a specific component
 func (eh *ComponentManager) SetKeyHandlerForComponent(component Component) func(key tcell.Key, handler func()) {
 	return func(key tcell.Key, handler func()) {
 		eh.SetKeyHandler(component, key, handler)
@@ -78,5 +98,39 @@ func (eh *ComponentManager) HandleKey(key tcell.Key) {
 		if handler, ok := handlers[key]; ok {
 			handler()
 		}
+	}
+}
+
+// Subscribe subscribes to events from a specific component
+func (eh *ComponentManager) Subscribe(component Component) chan EventMsg {
+	eh.mutex.Lock()
+	defer eh.mutex.Unlock()
+	listener := make(chan EventMsg, 1)
+	eh.listeners[component] = listener
+	return listener
+}
+
+// Unsubscribe unsubscribes from events from a specific component
+func (eh *ComponentManager) Unsubscribe(component Component, listener chan EventMsg) {
+	eh.mutex.Lock()
+	defer eh.mutex.Unlock()
+	delete(eh.listeners, component)
+}
+
+// Broadcast sends an event to a specific component
+func (eh *ComponentManager) Broadcast(event EventMsg) {
+	eh.mutex.Lock()
+	defer eh.mutex.Unlock()
+	for _, listener := range eh.listeners {
+		listener <- event
+	}
+}
+
+// BroadcastTo sends an event to a specific component
+func (eh *ComponentManager) SendTo(component Component, event EventMsg) {
+	eh.mutex.Lock()
+	defer eh.mutex.Unlock()
+	if listener, exists := eh.listeners[component]; exists {
+		listener <- event
 	}
 }

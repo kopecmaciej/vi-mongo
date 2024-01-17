@@ -2,9 +2,10 @@ package mongo
 
 import (
 	"context"
-	"fmt"
-	"github.com/kopecmaciej/mongui/config"
 	"time"
+
+	"github.com/kopecmaciej/mongui/config"
+	"github.com/rs/zerolog/log"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -27,22 +28,17 @@ func (m *Client) Connect() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	config, err := config.LoadAppConfig()
+	uri := m.Config.GetUri()
+	clientOptions := options.Client().ApplyURI(uri)
+	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		return err
 	}
-	c := config.Mongo
+	m.Client = client
 
-	var uri string
-	uri = fmt.Sprintf("mongodb://%s:%d/%s", c.Host, c.Port, c.Database)
-	if c.Username != "" && c.Password != "" {
-		uri = fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", c.Username, c.Password, c.Host, c.Port, c.Database)
-	}
+  log.Info().Msgf("Connected to %s", uri)
 
-	clientOptions := options.Client().ApplyURI(uri)
-	m.Client, err = mongo.Connect(ctx, clientOptions)
-
-	return err
+	return nil
 }
 
 func (m *Client) Close(ctx context.Context) {
