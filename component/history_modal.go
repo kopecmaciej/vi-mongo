@@ -1,12 +1,12 @@
 package component
 
 import (
-	"context"
 	"os"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/primitives"
 )
 
@@ -35,9 +35,9 @@ func NewHistoryModal() *HistoryModal {
 }
 
 // Init initializes HistoryModal
-func (h *HistoryModal) init(ctx context.Context) error {
+func (h *HistoryModal) init() error {
 	h.setStyle()
-	h.setShortcuts()
+	h.setKeybindings()
 
 	return nil
 }
@@ -59,13 +59,13 @@ func (h *HistoryModal) setStyle() {
 	h.SetSelectedStyle(selectedStyle)
 }
 
-func (h *HistoryModal) setShortcuts() {
+func (h *HistoryModal) setKeybindings() {
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEsc, tcell.KeyEnter:
-			eventKey := EventMsg{EventKey: event, Sender: h.GetIdentifier()}
+			eventKey := manager.EventMsg{EventKey: event, Sender: h.GetIdentifier()}
 			h.app.Root.RemovePage(h.GetIdentifier())
-			h.app.Broadcaster.Broadcast(eventKey)
+			h.app.Manager.Broadcast(eventKey)
 			return nil
 		}
 		return event

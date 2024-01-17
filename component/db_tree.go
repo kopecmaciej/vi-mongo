@@ -41,7 +41,9 @@ func NewDBTree() *DBTree {
 	return d
 }
 
-func (t *DBTree) init(ctx context.Context) error {
+func (t *DBTree) init() error {
+	ctx := context.Background()
+
 	t.setStyle()
 	t.shortcutFunc(ctx)
 

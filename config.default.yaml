@@ -1,0 +1,8 @@
+debug: true
+log: 
+  logfile: /var/log/mongui.log
+  loglevel: info
+  prettyprint: true
+connections:
+currentConnection: 
+alwaysShowConnectionPage: false

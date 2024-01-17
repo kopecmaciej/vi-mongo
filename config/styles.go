@@ -17,6 +17,7 @@ type (
 
 	Styles struct {
 		Root      Root      `yaml:"main"`
+		Connector Connector `yaml:"connector"`
 		Header    Header    `yaml:"header"`
 		Sidebar   Sidebar   `yaml:"sidebar"`
 		Content   Content   `yaml:"content"`
@@ -35,6 +36,22 @@ type (
 		FocusColor         Style `yaml:"focusColor"`
 		TitleColor         Style `yaml:"titleColor"`
 		GraphicsColor      Style `yaml:"graphicsColor"`
+	}
+
+	// Connector is a struct that contains all the styles for the connector
+	Connector struct {
+		BackgroundColor              Style `yaml:"backgroundColor"`
+		BorderColor                  Style `yaml:"borderColor"`
+		TitleColor                   Style `yaml:"titleColor"`
+		FormLabelColor               Style `yaml:"formLabelColor"`
+		FormInputBackgroundColor     Style `yaml:"formInputBackgroundColor"`
+		FormInputColor               Style `yaml:"formInputColor"`
+		FormButtonColor              Style `yaml:"formButtonColor"`
+		ListTextColor                Style `yaml:"listTextColor"`
+		ListSelectedTextColor        Style `yaml:"listSelectedTextColor"`
+		ListSelectedBackgroundColor  Style `yaml:"listSelectedBackgroundColor"`
+		ListSecondaryTextColor       Style `yaml:"listSecondaryTextColor"`
+		ListSecondaryBackgroundColor Style `yaml:"listSecondaryBackgroundColor"`
 	}
 
 	// Header is a struct that contains all the styles for the header
@@ -171,6 +188,20 @@ func (s *Styles) loadDefaultStyles() {
 		FocusColor:         "#50FA7B",
 		TitleColor:         "#387D44",
 		GraphicsColor:      "#387D44",
+	}
+
+	s.Connector = Connector{
+		BackgroundColor:              "#0F172A",
+		BorderColor:                  "#387D44",
+		TitleColor:                   "#F1FA8C",
+		FormLabelColor:               "#F1FA8C",
+		FormInputBackgroundColor:     "#163694",
+		FormInputColor:               "#F1FA8C",
+		FormButtonColor:              "#387D44",
+		ListTextColor:                "#F1FA8C",
+		ListSelectedTextColor:        "#50FA7B",
+		ListSelectedBackgroundColor:  "#163694",
+		ListSecondaryTextColor:       "#50FA7B",
 	}
 
 	s.Header = Header{

@@ -44,7 +44,8 @@ func NewHeader() *Header {
 }
 
 // init initializes the header component
-func (h *Header) init(ctx context.Context) error {
+func (h *Header) init() error {
+	ctx := context.Background()
 	h.setStyle()
 
 	if err := h.setBaseInfo(ctx); err != nil {

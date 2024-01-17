@@ -61,26 +61,28 @@ func NewContent() *Content {
 	return c
 }
 
-func (c *Content) init(ctx context.Context) error {
-	c.setStyle()
-	c.setShortcuts(ctx)
+func (c *Content) init() error {
+	ctx := context.Background()
 
-	if err := c.jsonPeeker.Init(ctx); err != nil {
+	c.setStyle()
+	c.setKeybindings(ctx)
+
+	if err := c.jsonPeeker.Init(c.app); err != nil {
 		return err
 	}
-	if err := c.deleteModal.Init(ctx); err != nil {
+	if err := c.deleteModal.Init(c.app); err != nil {
 		return err
 	}
-	if err := c.queryBar.Init(ctx); err != nil {
+	if err := c.queryBar.Init(c.app); err != nil {
 		return err
 	}
 	c.queryBar.EnableAutocomplete()
-	c.queryBar.EnableHistory(ctx)
-	if err := c.docModifier.Init(ctx); err != nil {
+	c.queryBar.EnableHistory()
+	if err := c.docModifier.Init(c.app); err != nil {
 		return err
 	}
 
-	c.render(ctx, false)
+	c.render(false)
 
 	c.queryBarListener(ctx)
 
@@ -101,7 +103,7 @@ func (c *Content) setStyle() {
 	c.Flex.SetDirection(tview.FlexRow)
 }
 
-func (c *Content) setShortcuts(ctx context.Context) {
+func (c *Content) setKeybindings(ctx context.Context) {
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case 'p':
@@ -133,7 +135,7 @@ func (c *Content) setShortcuts(ctx context.Context) {
 			}
 		case '/':
 			c.queryBar.Toggle()
-			c.render(ctx, true)
+			c.render(true)
 		}
 		switch event.Key() {
 		case tcell.KeyCtrlD:
@@ -160,7 +162,7 @@ func (c *Content) setShortcuts(ctx context.Context) {
 	})
 }
 
-func (c *Content) render(ctx context.Context, setFocus bool) {
+func (c *Content) render(setFocus bool) {
 	c.Flex.Clear()
 
 	var focusPrimitive tview.Primitive
@@ -175,6 +177,8 @@ func (c *Content) render(ctx context.Context, setFocus bool) {
 	}
 
 	c.Flex.AddItem(c.Table, 0, 1, true)
+	_, _, _, height := c.Flex.GetInnerRect()
+	c.state.Limit = int64(height) - 4
 }
 
 func (c *Content) queryBarListener(ctx context.Context) {
@@ -189,7 +193,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 		c.Table.Select(2, 0)
 	}
 	rejectFunc := func() {
-		c.render(ctx, true)
+		c.render(true)
 	}
 
 	c.queryBar.DoneFuncHandler(accceptFunc, rejectFunc)
@@ -372,11 +376,11 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 				defer ShowErrorModal(c.app.Root, errMsg)
 			}
 		}
-		c.app.Root.RemovePage(DeleteModalComponent)
+		c.app.Root.RemovePage(c.deleteModal.GetIdentifier())
 		c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
 	})
 
-	c.app.Root.AddPage(DeleteModalComponent, c.deleteModal, true, true)
+	c.app.Root.AddPage(c.deleteModal.GetIdentifier(), c.deleteModal, true, true)
 
 	return nil
 }
