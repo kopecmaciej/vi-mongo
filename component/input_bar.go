@@ -7,7 +7,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
-	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
@@ -23,7 +22,6 @@ type InputBar struct {
 
 	historyModal   *HistoryModal
 	style          *config.InputBar
-	listenerChan   chan manager.EventMsg
 	mutex          sync.Mutex
 	enabled        bool
 	autocompleteOn bool
@@ -33,7 +31,7 @@ type InputBar struct {
 
 func NewInputBar(label string) *InputBar {
 	i := &InputBar{
-		Component: NewComponent("InputBar"),
+		Component: NewComponent(InputBarComponent),
 		InputField: tview.NewInputField().
 			SetLabel(" " + label + ": "),
 		enabled:        false,
@@ -49,8 +47,8 @@ func (i *InputBar) init() error {
 	i.setStyle()
 	i.setKeybindings()
 
-	i.listenerChan = i.app.Manager.Subscribe(InputBarComponent)
-	go i.AppEventLoop()
+	i.Subscribe()
+	go i.handleEvents()
 
 	return nil
 }
@@ -137,7 +135,6 @@ func (i *InputBar) EnableHistory() {
 	if err := i.historyModal.Init(i.app); err != nil {
 		log.Error().Err(err).Msg("Error initializing history modal")
 	}
-
 }
 
 // EnableAutocomplete enables autocomplete
@@ -249,10 +246,8 @@ func (i *InputBar) Toggle() {
 	}
 }
 
-// AppEventLoop listens for events on the input bar
-func (i *InputBar) AppEventLoop() {
-	for {
-		event := <-i.listenerChan
+func (i *InputBar) handleEvents() {
+	for event := range i.listener {
 		sender, eventKey := event.Sender, event.EventKey
 		switch sender {
 		case i.historyModal.GetIdentifier():

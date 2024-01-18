@@ -1,8 +1,6 @@
 package component
 
 import (
-	"context"
-
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 )
@@ -11,7 +9,7 @@ import (
 // it's used for managing components in the app
 type ComponentRenderer interface {
 	// Render is a function that renders the component.
-	Render(ctx context.Context) error
+	Render() error
 }
 
 // Component is a base struct for all components.
@@ -32,6 +30,9 @@ type Component struct {
 	// initFunc is a function that is called when the component is initialized.
 	// It's main purpose is to run all the initialization functions of the subcomponents.
 	afterInitFunc func() error
+
+	// listener is a channel that is used to receive events from the app.
+	listener chan manager.EventMsg
 }
 
 // NewComponent is a constructor for the Component struct.
@@ -73,7 +74,7 @@ func (c *Component) GetIdentifier() manager.Component {
 
 // Subscribe subscribes the component to the global events.
 func (c *Component) Subscribe() {
-	c.app.Manager.Subscribe(c.identifier)
+	c.listener = c.app.Manager.Subscribe(c.identifier)
 }
 
 // SendEvent sends an event to the app.

@@ -47,6 +47,7 @@ func (h *HistoryModal) setStyle() {
 
 	h.SetTitle(" History ")
 	h.SetBorder(true)
+	h.ShowSecondaryText(false)
 	h.SetBackgroundColor(h.style.BackgroundColor.Color())
 	mainStyle := tcell.StyleDefault.
 		Foreground(h.style.TextColor.Color()).
@@ -65,7 +66,7 @@ func (h *HistoryModal) setKeybindings() {
 		case tcell.KeyEsc, tcell.KeyEnter:
 			eventKey := manager.EventMsg{EventKey: event, Sender: h.GetIdentifier()}
 			h.app.Root.RemovePage(h.GetIdentifier())
-			h.app.Manager.Broadcast(eventKey)
+			h.SendToComponent(InputBarComponent, eventKey)
 			return nil
 		}
 		return event

@@ -24,7 +24,7 @@ type Connector struct {
 	// list is a list of all available connections
 	list *tview.List
 
-	//callback func
+	// callback is a function that is called after connection is selected
 	callback func()
 }
 
@@ -108,6 +108,8 @@ func (c *Connector) setKeybindings() {
 	})
 	c.list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
+    case tcell.KeyEsc:
+      c.app.SetFocus(c.list)
 		case tcell.KeyEnter:
 			connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
 			err := c.app.Config.SetCurrentConnection(connName)

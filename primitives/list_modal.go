@@ -68,6 +68,12 @@ func (lm *ListModal) Clear() *ListModal {
 	return lm
 }
 
+// ShowSecondaryText sets whether or not secondary text is shown
+func (lm *ListModal) ShowSecondaryText(show bool) *ListModal {
+	lm.list.ShowSecondaryText(show)
+	return lm
+}
+
 // SetMainTextStyle sets the text style of main text.
 func (lm *ListModal) SetMainTextStyle(style tcell.Style) *ListModal {
 	lm.list.SetMainTextStyle(style)

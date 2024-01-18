@@ -173,13 +173,14 @@ func (c *Content) render(setFocus bool) {
 		c.Flex.AddItem(c.queryBar, 3, 0, false)
 		focusPrimitive = c.queryBar
 	}
-	if setFocus {
-		defer c.app.SetFocus(focusPrimitive)
-	}
 
 	c.Flex.AddItem(c.Table, 0, 1, true)
 	_, _, _, height := c.Flex.GetInnerRect()
 	c.state.Limit = int64(height) - 4
+
+	if setFocus {
+		c.app.SetFocus(focusPrimitive)
+	}
 }
 
 func (c *Content) queryBarListener(ctx context.Context) {
