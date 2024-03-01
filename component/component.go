@@ -1,6 +1,8 @@
 package component
 
 import (
+	"sync"
+
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 )
@@ -16,6 +18,9 @@ type ComponentRenderer interface {
 // It contains all the basic fields and functions that are used by all components.
 // It also implements the Component interface.
 type Component struct {
+	// enabled is a flag that indicates if the component is enabled.
+	enabled bool
+
 	// app is a pointer to the main app.
 	// It's used for accessing app focus, root page etc.
 	app *App
@@ -33,6 +38,9 @@ type Component struct {
 
 	// listener is a channel that is used to receive events from the app.
 	listener chan manager.EventMsg
+
+	// mutex is a mutex that is used to synchronize the component.
+	mutex sync.Mutex
 }
 
 // NewComponent is a constructor for the Component struct.
@@ -55,6 +63,38 @@ func (c *Component) Init(app *App) error {
 	}
 
 	return nil
+}
+
+// Enable sets the enabled flag.
+func (c *Component) Enable() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.enabled = true
+	c.app.Manager.PushComponent(c.identifier)
+}
+
+// Disable unsets the enabled flag.
+func (c *Component) Disable() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	c.enabled = false
+	c.app.Manager.PopComponent()
+}
+
+// Toggle toggles the enabled flag.
+func (c *Component) Toggle() {
+	if c.IsEnabled() {
+		c.Disable()
+	} else {
+		c.Enable()
+	}
+}
+
+// IsEnabled returns the enabled flag.
+func (c *Component) IsEnabled() bool {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	return c.enabled
 }
 
 // SetAfterInitFunc sets the optional function that will be run at the end of the Init function.

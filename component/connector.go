@@ -108,8 +108,8 @@ func (c *Connector) setKeybindings() {
 	})
 	c.list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-    case tcell.KeyEsc:
-      c.app.SetFocus(c.list)
+		case tcell.KeyEsc:
+			c.app.SetFocus(c.list)
 		case tcell.KeyEnter:
 			connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
 			err := c.app.Config.SetCurrentConnection(connName)
@@ -162,7 +162,7 @@ func (c *Connector) renderForm() *tview.Form {
 	c.form.AddButton("Save", c.saveButtonFunc)
 	c.form.AddButton("Cancel", c.cancelButtonFunc)
 
-	c.AddItem(c.form, 0, 1, true)
+	c.AddItem(c.form, 60, 0, true)
 
 	return c.form
 }

@@ -136,6 +136,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			}
 		case '/':
 			c.queryBar.Toggle()
+			c.queryBar.DrawDefaultText()
 			c.render(true)
 		}
 		switch event.Key() {

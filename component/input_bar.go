@@ -212,37 +212,12 @@ func (i *InputBar) displayHistoryModal() {
 	}
 }
 
-// IsEnabled returns true if the input bar is enabled
-func (i *InputBar) IsEnabled() bool {
-	return i.enabled
-}
-
-// Enable enables the input bar, adds component to the stack and forces a redraw
-func (i *InputBar) Enable() {
-	i.enabled = true
-	i.app.Manager.PushComponent(i.GetIdentifier())
+// Draws default text if input is empty
+func (i *InputBar) DrawDefaultText() {
 	if i.GetText() == "" {
 		go i.app.QueueUpdateDraw(func() {
 			i.SetWordAtCursor(i.defaultText)
 		})
-	}
-}
-
-// Disable disables the input bar and removes it from the stack
-func (i *InputBar) Disable() {
-	i.enabled = false
-	i.app.Manager.PopComponent()
-}
-
-// Toggle toggles the input bar
-func (i *InputBar) Toggle() {
-	i.mutex.Lock()
-	defer i.mutex.Unlock()
-
-	if i.IsEnabled() {
-		i.Disable()
-	} else {
-		i.Enable()
 	}
 }
 
