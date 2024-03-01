@@ -96,7 +96,7 @@ func (i *InputBar) setKeybindings() {
 			}
 		case tcell.KeyCtrlD:
 			i.SetText("")
-			i.SetWordAtCursor("{ <$0> }")
+			i.SetWordAtCursor(i.defaultText)
 		}
 		return event
 	})
@@ -213,7 +213,8 @@ func (i *InputBar) displayHistoryModal() {
 }
 
 // Draws default text if input is empty
-func (i *InputBar) DrawDefaultText() {
+func (i *InputBar) Toggle() {
+	i.Component.Toggle()
 	if i.GetText() == "" {
 		go i.app.QueueUpdateDraw(func() {
 			i.SetWordAtCursor(i.defaultText)
