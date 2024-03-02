@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
 
@@ -115,6 +116,7 @@ func (c *Config) GetCurrentConnection() *MongoConfig {
 
 // AddConnection adds a MongoDB connection to the config file
 func (c *Config) AddConnection(mongoConfig *MongoConfig) error {
+	log.Info().Msgf("Adding connection: %s", mongoConfig.Name)
 	if c.Connections == nil {
 		c.Connections = []MongoConfig{}
 	}
@@ -128,8 +130,9 @@ func (c *Config) AddConnection(mongoConfig *MongoConfig) error {
 	return os.WriteFile(pathToConfig, updatedConfig, 0644)
 }
 
-// DeleteMongoConfigByName deletes a config from the config file by name
-func (c *Config) DeleteMongoConfigByName(name string) error {
+// DeleteConnection deletes a config from the config file by name
+func (c *Config) DeleteConnection(name string) error {
+	log.Info().Msgf("Deleting connection: %s", name)
 	for i, connection := range c.Connections {
 		if connection.Name == name {
 			connection = MongoConfig{}

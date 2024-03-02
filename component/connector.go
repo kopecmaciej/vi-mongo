@@ -47,7 +47,7 @@ func (c *Connector) Init(app *App) error {
 	c.setStyle()
 	c.setKeybindings()
 
-	c.render()
+	c.render(0)
 
 	return nil
 }
@@ -83,7 +83,7 @@ func (c *Connector) setStyle() {
 }
 
 func (c *Connector) setKeybindings() {
-	c.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	c.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyDown:
 			if c.moveFormFocusDown() {
@@ -93,15 +93,11 @@ func (c *Connector) setKeybindings() {
 			if c.moveFormFocusUp() {
 				return nil
 			}
-		case tcell.KeyCtrlA:
-			if c.list.HasFocus() {
-				c.app.SetFocus(c.form)
-			}
+		case tcell.KeyCtrlS:
+			c.saveButtonFunc()
 			return nil
 		case tcell.KeyEsc:
-			if c.form.HasFocus() {
-				c.app.SetFocus(c.list)
-			}
+			c.app.SetFocus(c.list)
 			return nil
 		}
 		return event
@@ -110,13 +106,20 @@ func (c *Connector) setKeybindings() {
 		switch event.Key() {
 		case tcell.KeyEsc:
 			c.app.SetFocus(c.list)
+			return nil
+		case tcell.KeyCtrlA:
+			c.app.SetFocus(c.form)
+			return nil
+		case tcell.KeyCtrlD:
+			c.deleteCurrConnection()
+			return nil
 		case tcell.KeyEnter:
 			connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
 			err := c.app.Config.SetCurrentConnection(connName)
-			c.app.Config.CurrentConnection = connName
 			if err != nil {
 				log.Error().Err(err).Msg("failed to set current connection")
 			}
+			c.app.Config.CurrentConnection = connName
 			c.app.Root.RemovePage("Connector")
 			if c.callback != nil {
 				c.callback()
@@ -129,14 +132,14 @@ func (c *Connector) setKeybindings() {
 }
 
 // render renders the Component
-func (c *Connector) render() {
+func (c *Connector) render(currItem int) {
 	c.Clear()
 
 	// easy way to center the form
 	c.AddItem(tview.NewBox(), 0, 1, false)
 
 	if len(c.app.Config.Connections) > 0 {
-		c.renderList()
+		c.renderList(currItem)
 	}
 	c.renderForm()
 
@@ -168,7 +171,7 @@ func (c *Connector) renderForm() *tview.Form {
 }
 
 // renderList renders the list of all available connections
-func (c *Connector) renderList() {
+func (c *Connector) renderList(currItem int) {
 	c.list.Clear()
 	// let's add little padding to the list
 	c.list.SetDrawFunc(func(screen tcell.Screen, x, y, width, height int) (int, int, int, int) {
@@ -185,7 +188,7 @@ func (c *Connector) renderList() {
 		c.app.SetFocus(c.form)
 	})
 
-	c.list.SetCurrentItem(0)
+	c.list.SetCurrentItem(currItem)
 
 	c.AddItem(c.list, 50, 0, true)
 }
@@ -200,29 +203,44 @@ func (c *Connector) saveConnection(mongoCfg *config.MongoConfig) error {
 	return nil
 }
 
+// removeConnection removes connection from config file
+func (c *Connector) deleteCurrConnection() error {
+	currConn, _ := c.list.GetItemText(c.list.GetCurrentItem())
+	defer c.render(c.list.GetCurrentItem())
+	err := c.app.Config.DeleteConnection(currConn)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // saveButtonFunc is a function for saving new connection
 func (c *Connector) saveButtonFunc() {
-	defer c.render()
 	name := c.form.GetFormItemByLabel("Name").(*tview.InputField).GetText()
 	url := c.form.GetFormItemByLabel("Url").(*tview.InputField).GetText()
 	if url != "" {
-		c.saveConnection(&config.MongoConfig{
+		err := c.saveConnection(&config.MongoConfig{
 			Name: name,
 			Uri:  url,
 		})
-		return
+		if err != nil {
+			log.Error().Err(err).Msg("failed to save connection")
+			ShowErrorModal(c.app.Root, "Failed to save connection")
+		}
 	} else {
 		host := c.form.GetFormItemByLabel("Host").(*tview.InputField).GetText()
 		port := c.form.GetFormItemByLabel("Port").(*tview.InputField).GetText()
 		intPort, err := strconv.Atoi(port)
 		if err != nil {
-			return
+			log.Error().Err(err).Msg("Port must be a number")
+			ShowErrorModal(c.app.Root, "Port must be a number")
 		}
 		username := c.form.GetFormItemByLabel("Username").(*tview.InputField).GetText()
 		password := c.form.GetFormItemByLabel("Password").(*tview.InputField).GetText()
 		database := c.form.GetFormItemByLabel("Database").(*tview.InputField).GetText()
 
-		c.saveConnection(&config.MongoConfig{
+		err = c.saveConnection(&config.MongoConfig{
 			Name:     name,
 			Host:     host,
 			Port:     intPort,
@@ -230,13 +248,18 @@ func (c *Connector) saveButtonFunc() {
 			Password: password,
 			Database: database,
 		})
+		if err != nil {
+			log.Error().Err(err).Msg("failed to save connection")
+			ShowErrorModal(c.app.Root, "Failed to save connection")
+		}
 	}
+	c.render(c.list.GetItemCount())
 }
 
 // cancelButtonFunc is a function for canceling the form
 func (c *Connector) cancelButtonFunc() {
 	c.form.Clear(true)
-	c.render()
+	c.render(0)
 }
 
 // SetCallback sets callback function

@@ -132,6 +132,7 @@ func (r *Root) renderConnector() error {
 	r.connector.SetCallback(func() {
 		err := r.renderMainView()
 		if err != nil {
+			r.renderConnector()
 			ShowErrorModal(r, err.Error())
 		}
 	})
