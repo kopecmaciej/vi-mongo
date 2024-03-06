@@ -24,6 +24,7 @@ type (
 		DocPeeker DocPeeker `yaml:"docPeeker"`
 		InputBar  InputBar  `yaml:"filterBar"`
 		History   History   `yaml:"history"`
+		Help      Help      `yaml:"help"`
 		Others    Others    `yaml:"others"`
 	}
 
@@ -123,6 +124,14 @@ type (
 		SelectedBackgroundColor Style `yaml:"selectedBackgroundColor"`
 	}
 
+	Help struct {
+		BackgroundColor  Style `yaml:"backgroundColor"`
+		BorderColor      Style `yaml:"borderColor"`
+		TitleColor       Style `yaml:"titleColor"`
+		KeyColor         Style `yaml:"keyColor"`
+		DescriptionColor Style `yaml:"descriptionColor"`
+	}
+
 	Others struct {
 		ButtonsTextColor       Style `yaml:"buttonsTextColor"`
 		ButtonsBackgroundColor Style `yaml:"buttonsBackgroundColor"`
@@ -191,17 +200,17 @@ func (s *Styles) loadDefaultStyles() {
 	}
 
 	s.Connector = Connector{
-		BackgroundColor:              "#0F172A",
-		BorderColor:                  "#387D44",
-		TitleColor:                   "#F1FA8C",
-		FormLabelColor:               "#F1FA8C",
-		FormInputBackgroundColor:     "#163694",
-		FormInputColor:               "#F1FA8C",
-		FormButtonColor:              "#387D44",
-		ListTextColor:                "#F1FA8C",
-		ListSelectedTextColor:        "#50FA7B",
-		ListSelectedBackgroundColor:  "#163694",
-		ListSecondaryTextColor:       "#50FA7B",
+		BackgroundColor:             "#0F172A",
+		BorderColor:                 "#387D44",
+		TitleColor:                  "#F1FA8C",
+		FormLabelColor:              "#F1FA8C",
+		FormInputBackgroundColor:    "#163694",
+		FormInputColor:              "#F1FA8C",
+		FormButtonColor:             "#387D44",
+		ListTextColor:               "#F1FA8C",
+		ListSelectedTextColor:       "#50FA7B",
+		ListSelectedBackgroundColor: "#163694",
+		ListSecondaryTextColor:      "#50FA7B",
 	}
 
 	s.Header = Header{
@@ -261,6 +270,14 @@ func (s *Styles) loadDefaultStyles() {
 		TextColor:               "#F1FA8C",
 		SelectedTextColor:       "#50FA7B",
 		SelectedBackgroundColor: "#163694",
+	}
+
+	s.Help = Help{
+		BackgroundColor:  "#0F172A",
+		BorderColor:      "#50FA7B",
+		TitleColor:       "#F1FA8C",
+		KeyColor:         "#F1FA8C",
+		DescriptionColor: "#FFFFFF",
 	}
 
 	s.Others = Others{

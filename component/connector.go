@@ -114,16 +114,11 @@ func (c *Connector) setKeybindings() {
 			c.deleteCurrConnection()
 			return nil
 		case tcell.KeyEnter:
-			connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
-			err := c.app.Config.SetCurrentConnection(connName)
-			if err != nil {
-				log.Error().Err(err).Msg("failed to set current connection")
-			}
-			c.app.Config.CurrentConnection = connName
-			c.app.Root.RemovePage("Connector")
-			if c.callback != nil {
-				c.callback()
-			}
+			c.setConnections()
+			return nil
+		}
+		if event.Rune() == ' ' {
+			c.setConnections()
 			return nil
 		}
 		return event
@@ -191,6 +186,21 @@ func (c *Connector) renderList(currItem int) {
 	c.list.SetCurrentItem(currItem)
 
 	c.AddItem(c.list, 50, 0, true)
+}
+
+// setConnections sets connections from config file
+func (c *Connector) setConnections() {
+	connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
+	err := c.app.Config.SetCurrentConnection(connName)
+	if err != nil {
+		ShowErrorModal(c.app.Root, "Failed to set current connection")
+		log.Error().Err(err).Msg("failed to set current connection")
+	}
+	c.app.Config.CurrentConnection = connName
+	c.app.Root.RemovePage("Connector")
+	if c.callback != nil {
+		c.callback()
+	}
 }
 
 // saveConnection saves new connection to config file

@@ -358,6 +358,7 @@ func (c *Content) viewJson(ctx context.Context, jsonString string) error {
 		switch event.Key() {
 		case tcell.KeyEsc:
 			c.app.Root.RemovePage(JsonViewComponent)
+			c.app.SetFocus(c.Table)
 		}
 		return event
 	})

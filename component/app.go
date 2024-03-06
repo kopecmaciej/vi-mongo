@@ -1,6 +1,7 @@
 package component
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
@@ -42,5 +43,24 @@ func (a *App) Init() error {
 	}
 	a.SetRoot(a.Root.Pages, true).EnableMouse(true)
 
+	help := NewHelp()
+	err := help.Init(a)
+	if err != nil {
+		return err
+	}
+	a.setKeybindings(help)
+
 	return a.Run()
+}
+
+func (a *App) setKeybindings(help *Help) {
+	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Rune() == '?' {
+			help.Render()
+			a.Root.Pages.AddPage("help", help, true, true)
+			return nil
+		}
+
+		return event
+	})
 }
