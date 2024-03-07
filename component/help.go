@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	HelpComponent = "Help"
+	HelpComponent manager.Component = "Help"
 )
 
 // Help is a component that provides a help screen for keybindings
@@ -17,8 +17,7 @@ type Help struct {
 	*Component
 	*tview.Table
 
-	style      *config.Help
-	keyManager *manager.KeyManager
+	style *config.Help
 }
 
 // NewHelp creates a new Help component
@@ -26,8 +25,6 @@ func NewHelp() *Help {
 	h := &Help{
 		Component: NewComponent(HelpComponent),
 		Table:     tview.NewTable(),
-
-		keyManager: manager.NewKeyManager(),
 	}
 
 	h.SetAfterInitFunc(h.init)
@@ -47,8 +44,10 @@ func (h *Help) Render() {
 	currComponent := h.app.Manager.CurrentComponent()
 	log.Debug().Msgf("Current component: %s", currComponent)
 
-	keys := h.keyManager.GetKeysForComponent(currComponent)
-	for i, key := range keys {
+	cKeys := h.app.Manager.KeyManager.GetKeysForComponent(currComponent)
+	hKeys := h.app.Manager.KeyManager.GetKeysForComponent(HelpComponent)
+	cKeys = append(cKeys, hKeys...)
+	for i, key := range cKeys {
 		h.Table.SetCell(i, 0, tview.NewTableCell(key.Name).SetTextColor(h.style.KeyColor.Color()))
 		h.Table.SetCell(i, 1, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
 	}
@@ -68,13 +67,13 @@ func (h *Help) setStyle() {
 
 // setKeybindings sets a key binding for the help Component
 func (h *Help) setKeybindings() {
-	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEsc {
-			h.app.Root.Pages.RemovePage("help")
-			return nil
-		}
-
-		return event
+	helpManager := h.app.Manager.SetKeyHandlerForComponent(HelpComponent)
+	helpManager(tcell.KeyEsc, 0, "Close Help", func() *tcell.EventKey {
+		h.app.Root.RemovePage(HelpComponent)
+		return nil
 	})
 
+	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		return h.app.Manager.HandleKeyEvent(event)
+	})
 }

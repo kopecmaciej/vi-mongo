@@ -1,11 +1,14 @@
 package component
 
 import (
+	"context"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -37,6 +40,7 @@ func NewApp(appConfig *config.Config) App {
 
 // Init initializes app
 func (a *App) Init() error {
+	ctx := context.Background()
 	a.Root.app = a
 	if err := a.Root.Init(); err != nil {
 		return err
@@ -48,19 +52,31 @@ func (a *App) Init() error {
 	if err != nil {
 		return err
 	}
-	a.setKeybindings(help)
+	a.setKeybindings(ctx, help)
 
 	return a.Run()
 }
 
-func (a *App) setKeybindings(help *Help) {
-	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Rune() == '?' {
-			help.Render()
-			a.Root.Pages.AddPage("help", help, true, true)
+func (a *App) setKeybindings(ctx context.Context, help *Help) {
+	manager := a.Manager.SetKeyHandlerForComponent(manager.GlobalComponent)
+	manager(tcell.KeyCtrlC, 0, "Quit the application", func() *tcell.EventKey {
+		a.Dao.ForceClose(ctx)
+		a.Stop()
+		return nil
+	})
+	manager(tcell.KeyRune, '?', "Toggle help", func() *tcell.EventKey {
+		name, _ := a.Root.GetFrontPage()
+		log.Debug().Msgf("Root current pages: %v", name)
+		if a.Root.HasPage(string(HelpComponent)) {
+			a.Root.RemovePage(HelpComponent)
 			return nil
 		}
+		help.Render()
+		a.Root.AddPage(HelpComponent, help, true, true)
+		return nil
+	})
 
-		return event
+	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		return a.Manager.HandleKeyEvent(event)
 	})
 }

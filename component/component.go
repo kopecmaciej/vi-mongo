@@ -44,9 +44,9 @@ type Component struct {
 }
 
 // NewComponent is a constructor for the Component struct.
-func NewComponent(identifier string) *Component {
+func NewComponent(identifier manager.Component) *Component {
 	return &Component{
-		identifier: manager.Component(identifier),
+		identifier: identifier,
 	}
 }
 

@@ -28,10 +28,9 @@ type (
 	// current component are executed
 	ComponentManager struct {
 		componentStack []Component
-		keyHandlers    map[Component]map[tcell.Key]func()
 		mutex          sync.Mutex
 		listeners      map[Component]chan EventMsg
-		EventChan      chan EventMsg
+		KeyManager     *KeyManager
 	}
 )
 
@@ -39,9 +38,9 @@ type (
 func NewComponentManager() *ComponentManager {
 	return &ComponentManager{
 		componentStack: make([]Component, 0),
-		keyHandlers:    make(map[Component]map[tcell.Key]func()),
 		mutex:          sync.Mutex{},
 		listeners:      make(map[Component]chan EventMsg),
+		KeyManager:     NewKeyManager(),
 	}
 }
 
@@ -74,31 +73,38 @@ func (eh *ComponentManager) CurrentComponent() Component {
 	return eh.componentStack[len(eh.componentStack)-1]
 }
 
-// SetKeyHandler sets a key handler for a specific component
-func (eh *ComponentManager) SetKeyHandler(component Component, key tcell.Key, handler func()) {
-	eh.mutex.Lock()
-	defer eh.mutex.Unlock()
-	if _, exists := eh.keyHandlers[component]; !exists {
-		eh.keyHandlers[component] = make(map[tcell.Key]func())
-	}
-	eh.keyHandlers[component][key] = handler
-}
-
 // SetKeyHandlerForComponent is a helper function to set a key handler for a specific component
-func (eh *ComponentManager) SetKeyHandlerForComponent(component Component) func(key tcell.Key, handler func()) {
-	return func(key tcell.Key, handler func()) {
-		eh.SetKeyHandler(component, key, handler)
+func (eh *ComponentManager) SetKeyHandlerForComponent(component Component) func(key tcell.Key, r rune, description string, action KeyAction) {
+	return func(key tcell.Key, r rune, description string, action KeyAction) {
+		name := ""
+		if r != 0 {
+			name = string(r)
+		} else {
+			name = tcell.KeyNames[key]
+		}
+		eh.KeyManager.RegisterKeyBinding(component, key, r, name, description, action)
 	}
 }
 
-// HandleKey handles a key event based on the current component
-func (eh *ComponentManager) HandleKey(key tcell.Key) {
+// HandleKeyEvent handles a key event based on the current component
+func (eh *ComponentManager) HandleKeyEvent(e *tcell.EventKey) *tcell.EventKey {
 	component := eh.CurrentComponent()
-	if handlers, exists := eh.keyHandlers[component]; exists {
-		if handler, ok := handlers[key]; ok {
-			handler()
+	keys := eh.KeyManager.GetKeysForComponent(component)
+	for _, k := range keys {
+		if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {
+			return k.Action()
 		}
 	}
+
+	// If no key was found for the current component, check the global keys
+	globalKeys := eh.KeyManager.GetGlobalKeys()
+	for _, k := range globalKeys {
+		if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {
+			return k.Action()
+		}
+	}
+
+	return e
 }
 
 // Subscribe subscribes to events from a specific component

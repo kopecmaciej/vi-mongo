@@ -41,8 +41,7 @@ func NewRoot() *Root {
 // initializes all subcomponents asynchronically
 func (r *Root) Init() error {
 	r.setStyles()
-	r.registerKeyHandlers()
-	r.shortcuts()
+	r.setKeybindings()
 
 	if err := r.connector.Init(r.app); err != nil {
 		return err
@@ -104,10 +103,36 @@ func (r *Root) setStyles() {
 	r.flex.SetBackgroundColor(r.style.BackgroundColor.Color())
 }
 
-func (r *Root) shortcuts() {
+// setKeybindings sets a key binding for the root Component
+func (r *Root) setKeybindings() {
+	manager := r.app.Manager.SetKeyHandlerForComponent(r.GetIdentifier())
+	manager(tcell.KeyCtrlS, 0, "Remove SideBar", func() *tcell.EventKey {
+		if _, ok := r.flex.GetItem(0).(*SideBar); ok {
+			r.flex.RemoveItem(r.sideBar)
+			r.app.SetFocus(r.content.Table)
+		} else {
+			r.flex.Clear()
+			r.render()
+		}
+		return nil
+	})
+	manager(tcell.KeyTab, 0, "Focus next component", func() *tcell.EventKey {
+		focus := r.app.GetFocus()
+		if focus == r.sideBar.dbTree {
+			r.app.SetFocus(r.content.Table)
+		} else {
+			r.app.SetFocus(r.sideBar.dbTree)
+		}
+		return nil
+	})
+	manager(tcell.KeyCtrlA, 0, "Open Connector", func() *tcell.EventKey {
+		r.flex.Clear()
+		r.renderConnector()
+		return nil
+	})
+
 	r.app.Root.Pages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		r.app.Manager.HandleKey(event.Key())
-		return event
+		return r.app.Manager.HandleKeyEvent(event)
 	})
 }
 
@@ -141,35 +166,11 @@ func (r *Root) renderConnector() error {
 	return nil
 }
 
-// registerKeyHandlers registers global key handlers
-// for every component
-func (r *Root) registerKeyHandlers() {
-	rootManager := r.app.Manager.SetKeyHandlerForComponent(r.GetIdentifier())
-	rootManager(tcell.KeyCtrlS, func() {
-		if _, ok := r.flex.GetItem(0).(*SideBar); ok {
-			r.flex.RemoveItem(r.sideBar)
-			r.app.SetFocus(r.content.Table)
-		} else {
-			r.flex.Clear()
-			r.render()
-		}
-	})
-	rootManager(tcell.KeyTab, func() {
-		focus := r.app.GetFocus()
-		if focus == r.sideBar.dbTree {
-			r.app.SetFocus(r.content.Table)
-		} else {
-			r.app.SetFocus(r.sideBar.dbTree)
-		}
-	})
-	rootManager(tcell.KeyCtrlA, func() {
-		r.flex.Clear()
-		r.renderConnector()
-	})
-}
-
 // AddPage is a wrapper for tview.Pages.AddPage
 func (r *Root) AddPage(component manager.Component, page tview.Primitive, resize, visable bool) *tview.Pages {
+	if r.Pages.HasPage(string(component)) && r.app.Manager.CurrentComponent() == component {
+		return r.Pages
+	}
 	r.app.Manager.PushComponent(component)
 	return r.Pages.AddPage(string(component), page, resize, visable)
 }

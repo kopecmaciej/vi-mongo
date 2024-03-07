@@ -4,10 +4,17 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/rs/zerolog/log"
+)
+
+const (
+	// GlobalComponent is a special component that is used for key bindings that
+	// are not specific to any component.
+	GlobalComponent Component = "Global"
 )
 
 // KeyAction defines a function that will be executed when a key is pressed.
-type KeyAction func()
+type KeyAction func() *tcell.EventKey
 
 // KeyBinding represents a single key and its action.
 type KeyBinding struct {
@@ -44,23 +51,7 @@ func (km *KeyManager) RegisterKeyBinding(comp Component, key tcell.Key, rune run
 		Description: description,
 		Action:      action,
 	})
-}
-
-// This method integrates the key manager with your TUI components.
-func (km *KeyManager) SetInputCapture(comp Component) func(event *tcell.EventKey) *tcell.EventKey {
-	return func(event *tcell.EventKey) *tcell.EventKey {
-		km.mutex.RLock()
-		defer km.mutex.RUnlock()
-
-		for _, binding := range km.bindings[comp] {
-			if (event.Key() == binding.Key || (event.Key() == tcell.KeyRune && event.Rune() == binding.Rune)) && binding.Action != nil {
-				binding.Action()
-				return nil
-			}
-		}
-
-		return event
-	}
+	log.Info().Msgf("Key binding registered: %s %s %v %v", comp, name, key, rune)
 }
 
 // GetKeysForComponent returns all the key bindings for a specific component.
@@ -69,4 +60,12 @@ func (km *KeyManager) GetKeysForComponent(comp Component) []KeyBinding {
 	defer km.mutex.RUnlock()
 
 	return km.bindings[comp]
+}
+
+// GetGlobalKeys returns all the key bindings that are not specific to any component.
+func (km *KeyManager) GetGlobalKeys() []KeyBinding {
+	km.mutex.RLock()
+	defer km.mutex.RUnlock()
+
+	return km.bindings[GlobalComponent]
 }

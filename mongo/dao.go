@@ -183,6 +183,10 @@ func (d *Dao) DeleteCollection(ctx context.Context, db string, collection string
 	return nil
 }
 
+func (d *Dao) ForceClose(ctx context.Context) error {
+	return d.client.Disconnect(ctx)
+}
+
 func (d *Dao) runAdminCommand(ctx context.Context, key string, value interface{}) (primitive.M, error) {
 	results := primitive.M{}
 	command := primitive.D{{Key: key, Value: value}}
