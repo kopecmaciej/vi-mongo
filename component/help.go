@@ -45,7 +45,9 @@ func (h *Help) Render() {
 	log.Debug().Msgf("Current component: %s", currComponent)
 
 	cKeys := h.app.Manager.KeyManager.GetKeysForComponent(currComponent)
+	gKeys := h.app.Manager.KeyManager.GetKeysForComponent(manager.GlobalComponent)
 	hKeys := h.app.Manager.KeyManager.GetKeysForComponent(HelpComponent)
+	cKeys = append(cKeys, gKeys...)
 	cKeys = append(cKeys, hKeys...)
 	for i, key := range cKeys {
 		h.Table.SetCell(i, 0, tview.NewTableCell(key.Name).SetTextColor(h.style.KeyColor.Color()))
@@ -58,7 +60,7 @@ func (h *Help) setStyle() {
 	h.SetBorder(true)
 	h.SetTitle(" Help ")
 	h.Table.SetTitleAlign(tview.AlignLeft)
-	h.Table.SetBorderPadding(0, 0, 1, 1)
+	h.Table.SetBorderPadding(2, 2, 4, 4)
 	h.Table.SetFixed(1, 1)
 	h.Table.SetSelectable(false, false)
 	h.Table.SetBackgroundColor(h.style.BackgroundColor.Color())

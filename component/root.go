@@ -65,6 +65,12 @@ func (r *Root) renderMainView() error {
 	client := mongo.NewClient(currConn)
 	err := client.Connect()
 	if err != nil {
+		ShowErrorModal(r, err.Error())
+		return err
+	}
+	err = client.Ping()
+	if err != nil {
+		ShowErrorModal(r, err.Error())
 		return err
 	}
 

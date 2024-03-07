@@ -25,7 +25,7 @@ func NewClient(config *config.MongoConfig) *Client {
 }
 
 func (m *Client) Connect() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	uri := m.Config.GetUri()
@@ -36,7 +36,7 @@ func (m *Client) Connect() error {
 	}
 	m.Client = client
 
-  log.Info().Msgf("Connected to %s", uri)
+	log.Info().Msgf("Connected to %s", uri)
 
 	return nil
 }
@@ -45,6 +45,8 @@ func (m *Client) Close(ctx context.Context) {
 	m.Client.Disconnect(ctx)
 }
 
-func (m *Client) Ping(ctx context.Context) error {
+func (m *Client) Ping() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	return m.Client.Ping(ctx, nil)
 }

@@ -184,7 +184,13 @@ func (d *Dao) DeleteCollection(ctx context.Context, db string, collection string
 }
 
 func (d *Dao) ForceClose(ctx context.Context) error {
-	return d.client.Disconnect(ctx)
+	if err := d.client.Disconnect(ctx); err != nil {
+		log.Error().Err(err).Msg("Error disconnecting from the database")
+		return err
+	}
+
+	log.Debug().Msg("Connection closed")
+	return nil
 }
 
 func (d *Dao) runAdminCommand(ctx context.Context, key string, value interface{}) (primitive.M, error) {

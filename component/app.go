@@ -60,7 +60,9 @@ func (a *App) Init() error {
 func (a *App) setKeybindings(ctx context.Context, help *Help) {
 	manager := a.Manager.SetKeyHandlerForComponent(manager.GlobalComponent)
 	manager(tcell.KeyCtrlC, 0, "Quit the application", func() *tcell.EventKey {
-		a.Dao.ForceClose(ctx)
+		if a.Dao != nil {
+			a.Dao.ForceClose(ctx)
+		}
 		a.Stop()
 		return nil
 	})
