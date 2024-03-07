@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -51,7 +50,6 @@ func (km *KeyManager) RegisterKeyBinding(comp Component, key tcell.Key, rune run
 		Description: description,
 		Action:      action,
 	})
-	log.Info().Msgf("Key binding registered: %s %s %v %v", comp, name, key, rune)
 }
 
 // GetKeysForComponent returns all the key bindings for a specific component.

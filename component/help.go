@@ -5,7 +5,6 @@ import (
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/rivo/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -42,7 +41,6 @@ func (h *Help) init() error {
 func (h *Help) Render() {
 	h.Table.Clear()
 	currComponent := h.app.Manager.CurrentComponent()
-	log.Debug().Msgf("Current component: %s", currComponent)
 
 	cKeys := h.app.Manager.KeyManager.GetKeysForComponent(currComponent)
 	gKeys := h.app.Manager.KeyManager.GetKeysForComponent(manager.GlobalComponent)
@@ -51,7 +49,8 @@ func (h *Help) Render() {
 	cKeys = append(cKeys, hKeys...)
 	for i, key := range cKeys {
 		h.Table.SetCell(i, 0, tview.NewTableCell(key.Name).SetTextColor(h.style.KeyColor.Color()))
-		h.Table.SetCell(i, 1, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
+		h.Table.SetCell(i, 1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
+		h.Table.SetCell(i, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
 	}
 }
 
@@ -69,8 +68,8 @@ func (h *Help) setStyle() {
 
 // setKeybindings sets a key binding for the help Component
 func (h *Help) setKeybindings() {
-	helpManager := h.app.Manager.SetKeyHandlerForComponent(HelpComponent)
-	helpManager(tcell.KeyEsc, 0, "Close Help", func() *tcell.EventKey {
+	manager := h.app.Manager.SetKeyHandlerForComponent(HelpComponent)
+	manager(tcell.KeyEsc, 0, "Close Help", func() *tcell.EventKey {
 		h.app.Root.RemovePage(HelpComponent)
 		return nil
 	})

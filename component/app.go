@@ -8,7 +8,6 @@ import (
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
-	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -67,8 +66,6 @@ func (a *App) setKeybindings(ctx context.Context, help *Help) {
 		return nil
 	})
 	manager(tcell.KeyRune, '?', "Toggle help", func() *tcell.EventKey {
-		name, _ := a.Root.GetFrontPage()
-		log.Debug().Msgf("Root current pages: %v", name)
 		if a.Root.HasPage(string(HelpComponent)) {
 			a.Root.RemovePage(HelpComponent)
 			return nil
