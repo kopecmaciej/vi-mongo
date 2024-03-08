@@ -12,8 +12,10 @@ const (
 	GlobalComponent Component = "Global"
 )
 
+var ()
+
 // KeyAction defines a function that will be executed when a key is pressed.
-type KeyAction func() *tcell.EventKey
+type KeyAction func(e *tcell.EventKey) *tcell.EventKey
 
 // KeyBinding represents a single key and its action.
 type KeyBinding struct {

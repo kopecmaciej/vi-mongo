@@ -58,20 +58,20 @@ func (a *App) Init() error {
 
 func (a *App) setKeybindings(ctx context.Context, help *Help) {
 	manager := a.Manager.SetKeyHandlerForComponent(manager.GlobalComponent)
-	manager(tcell.KeyCtrlC, 0, "Quit the application", func() *tcell.EventKey {
-		if a.Dao != nil {
-			a.Dao.ForceClose(ctx)
-		}
-		a.Stop()
-		return nil
-	})
-	manager(tcell.KeyRune, '?', "Toggle help", func() *tcell.EventKey {
+	manager(tcell.KeyRune, '?', "Toggle help", func(e *tcell.EventKey) *tcell.EventKey {
 		if a.Root.HasPage(string(HelpComponent)) {
 			a.Root.RemovePage(HelpComponent)
 			return nil
 		}
 		help.Render()
 		a.Root.AddPage(HelpComponent, help, true, true)
+		return nil
+	})
+	manager(tcell.KeyCtrlC, 0, "Quit the application", func(e *tcell.EventKey) *tcell.EventKey {
+		if a.Dao != nil {
+			a.Dao.ForceClose(ctx)
+		}
+		a.Stop()
 		return nil
 	})
 

@@ -15,12 +15,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// peekerState is used to store the state of the document being peeked at
 type peekerState struct {
 	mongo.CollectionState
 	rawDocument string
 	id          primitive.ObjectID
 }
 
+// DocPeeker is a component that provides a modal view for peeking at a document
 type DocPeeker struct {
 	*Component
 	*primitives.ModalView
@@ -31,6 +33,7 @@ type DocPeeker struct {
 	state       peekerState
 }
 
+// NewDocPeeker creates a new DocPeeker component
 func NewDocPeeker() *DocPeeker {
 	peekr := &DocPeeker{
 		Component:   NewComponent("DocPeeker"),

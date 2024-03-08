@@ -66,31 +66,31 @@ func (t *DBTree) setStyle() {
 }
 
 func (t *DBTree) setKeybindings(ctx context.Context) {
-	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyCtrlD:
-			t.deleteCollection(ctx)
-			return nil
-		case tcell.KeyRune:
-			if event.Rune() == 'E' {
-				t.GetRoot().ExpandAll()
-				return nil
-			}
-			if event.Rune() == 'W' {
-				t.GetRoot().CollapseAll()
-				t.GetRoot().SetExpanded(true)
-				return nil
-			}
-			if event.Rune() == 'o' {
-				t.GetCurrentNode().SetExpanded(!t.GetCurrentNode().IsExpanded())
-				return nil
-			}
-			if event.Rune() == 'A' {
-				t.addCollection(ctx)
-				return nil
-			}
-		}
-		return event
+	manager := t.app.Manager.SetKeyHandlerForComponent("Root")
+	manager(tcell.KeyCtrlD, 0, "Delete collection", func(e *tcell.EventKey) *tcell.EventKey {
+		t.deleteCollection(ctx)
+		return nil
+	})
+	manager(tcell.KeyRune, 'E', "Expand all", func(e *tcell.EventKey) *tcell.EventKey {
+		t.GetRoot().ExpandAll()
+		return nil
+	})
+	manager(tcell.KeyRune, 'W', "Collapse all", func(e *tcell.EventKey) *tcell.EventKey {
+		t.GetRoot().CollapseAll()
+		t.GetRoot().SetExpanded(true)
+		return nil
+	})
+	manager(tcell.KeyRune, 'A', "Add collection", func(e *tcell.EventKey) *tcell.EventKey {
+		t.addCollection(ctx)
+		return nil
+	})
+	manager(tcell.KeyRune, 'o', "Expand/collapse", func(e *tcell.EventKey) *tcell.EventKey {
+		t.GetCurrentNode().SetExpanded(!t.GetCurrentNode().IsExpanded())
+		return nil
+	})
+
+	t.app.Root.Pages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		return t.app.Manager.HandleKeyEvent(event)
 	})
 }
 

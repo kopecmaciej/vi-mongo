@@ -92,7 +92,7 @@ func (eh *ComponentManager) HandleKeyEvent(e *tcell.EventKey) *tcell.EventKey {
 	keys := eh.KeyManager.GetKeysForComponent(component)
 	for _, k := range keys {
 		if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {
-			return k.Action()
+			return k.Action(e)
 		}
 	}
 
@@ -100,7 +100,7 @@ func (eh *ComponentManager) HandleKeyEvent(e *tcell.EventKey) *tcell.EventKey {
 	globalKeys := eh.KeyManager.GetGlobalKeys()
 	for _, k := range globalKeys {
 		if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {
-			return k.Action()
+			return k.Action(e)
 		}
 	}
 

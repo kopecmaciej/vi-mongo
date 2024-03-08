@@ -275,7 +275,7 @@ func (s *Styles) loadDefaultStyles() {
 	s.Help = Help{
 		BackgroundColor:  "#0F172A",
 		BorderColor:      "#50FA7B",
-		TitleColor:       "#F1FA8C",
+		TitleColor:       "#163694",
 		KeyColor:         "#F1FA8C",
 		DescriptionColor: "#FFFFFF",
 	}
