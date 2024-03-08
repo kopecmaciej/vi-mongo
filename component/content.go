@@ -105,61 +105,79 @@ func (c *Content) setStyle() {
 }
 
 func (c *Content) setKeybindings(ctx context.Context) {
+	manager := c.app.Manager.SetKeyHandlerForComponent(c.GetIdentifier())
+	manager(tcell.KeyRune, 'p', "Peek document", func(event *tcell.EventKey) *tcell.EventKey {
+		err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+		if err != nil {
+			defer ShowErrorModal(c.app.Root, "Error while peeking document", err)
+		}
+		return nil
+	})
+	manager(tcell.KeyRune, 'a', "Add document", func(event *tcell.EventKey) *tcell.EventKey {
+		err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
+		if err != nil {
+			defer ShowErrorModal(c.app.Root, "Error while adding document", err)
+		}
+		return nil
+	})
+	manager(tcell.KeyRune, 'e', "Edit document", func(event *tcell.EventKey) *tcell.EventKey {
+		updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+		if err != nil {
+			defer ShowErrorModal(c.app.Root, "Error while editing document", err)
+		}
+		c.refreshCell(updated)
+		return nil
+	})
+	manager(tcell.KeyRune, 'd', "Duplicate document", func(event *tcell.EventKey) *tcell.EventKey {
+		err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+		if err != nil {
+			defer ShowErrorModal(c.app.Root, "Error while duplicating document", err)
+		}
+		return nil
+	})
+	manager(tcell.KeyRune, 'v', "View document", func(event *tcell.EventKey) *tcell.EventKey {
+		err := c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+		if err != nil {
+			defer ShowErrorModal(c.app.Root, "Error while viewing document", err)
+		}
+		return nil
+	})
+	manager(tcell.KeyRune, '/', "Toggle query bar", func(event *tcell.EventKey) *tcell.EventKey {
+		c.queryBar.Toggle()
+		c.render(true)
+		return nil
+	})
+	manager(tcell.KeyCtrlD, 0, "Delete document", func(event *tcell.EventKey) *tcell.EventKey {
+		err := c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+		if err != nil {
+			defer ShowErrorModal(c.app.Root, "Error while deleting document", err)
+		}
+		return nil
+	})
+	manager(tcell.KeyCtrlR, 0, "Refresh", func(event *tcell.EventKey) *tcell.EventKey {
+		err := c.refresh(ctx)
+		if err != nil {
+			defer ShowErrorModal(c.app.Root, "Error while refreshing documents", err)
+		}
+		return nil
+	})
+	manager(tcell.KeyCtrlN, 0, "Next page", func(event *tcell.EventKey) *tcell.EventKey {
+		c.goToNextMongoPage(ctx)
+		return nil
+	})
+	manager(tcell.KeyCtrlP, 0, "Previous page", func(event *tcell.EventKey) *tcell.EventKey {
+		c.goToPrevMongoPage(ctx)
+		return nil
+	})
+	manager(tcell.KeyEnter, 0, "Peek document", func(event *tcell.EventKey) *tcell.EventKey {
+		err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+		if err != nil {
+			defer ShowErrorModal(c.app.Root, "Error while peeking document", err)
+		}
+		return nil
+	})
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Rune() {
-		case 'p':
-			err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
-			if err != nil {
-				log.Error().Err(err)
-				defer ShowErrorModal(c.app.Root, err.Error())
-			}
-		case 'a':
-			c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
-		case 'e':
-			updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
-			if err != nil {
-				log.Error().Err(err)
-				defer ShowErrorModal(c.app.Root, err.Error())
-			}
-			c.refreshCell(updated)
-		case 'd':
-			err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
-			if err != nil {
-				log.Error().Err(err)
-				defer ShowErrorModal(c.app.Root, err.Error())
-			}
-		case 'v':
-			err := c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
-			if err != nil {
-				log.Error().Err(err)
-				defer ShowErrorModal(c.app.Root, err.Error())
-			}
-		case '/':
-			c.queryBar.Toggle()
-			c.render(true)
-		}
-		switch event.Key() {
-		case tcell.KeyCtrlD:
-			err := c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
-			if err != nil {
-				log.Error().Err(err)
-				defer ShowErrorModal(c.app.Root, err.Error())
-			}
-		case tcell.KeyCtrlR:
-			c.refresh(ctx)
-		case tcell.KeyCtrlN:
-			c.goToNextMongoPage(ctx)
-		case tcell.KeyCtrlP:
-			c.goToPrevMongoPage(ctx)
-		case tcell.KeyEnter:
-			err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
-			if err != nil {
-				log.Error().Err(err)
-				defer ShowErrorModal(c.app.Root, err.Error())
-			}
-		}
-
-		return event
+		return c.app.Manager.HandleKeyEvent(event)
 	})
 }
 
@@ -188,8 +206,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 		c.Flex.RemoveItem(c.queryBar)
 		filter, err := mongo.ParseStringQuery(text)
 		if err != nil {
-			log.Error().Err(err).Msg("Error parsing query")
-			defer ShowErrorModal(c.app.Root, err.Error())
+			defer ShowErrorModal(c.app.Root, "Error parsing query", err)
 		}
 		c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
 		c.Table.Select(2, 0)
@@ -374,9 +391,7 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 		if buttonIndex == 0 {
 			err = c.dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectID)
 			if err != nil {
-				errMsg := fmt.Sprintf("Error deleting document: %v", err)
-				log.Error().Err(err).Msg(errMsg)
-				defer ShowErrorModal(c.app.Root, errMsg)
+				defer ShowErrorModal(c.app.Root, "Error deleting document", err)
 			}
 		}
 		c.app.Root.RemovePage(c.deleteModal.GetIdentifier())

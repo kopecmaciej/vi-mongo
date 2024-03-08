@@ -3,13 +3,22 @@ package component
 import (
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 )
 
 const (
 	ErrorComponent manager.Component = "Error"
 )
 
-func ShowErrorModal(page *Root, message string) {
+// ShowErrorModal shows a modal with an error message
+// and logs the error if it's passed
+func ShowErrorModal(page *Root, message string, err error) {
+	if err != nil {
+		log.Error().Err(err)
+	}
+
+	message = message + "\n\n" + "For more information check the logs"
+
 	errModal := tview.NewModal()
 	errModal.SetTitle(" Error ")
 	errModal.SetBorderPadding(0, 0, 1, 1)

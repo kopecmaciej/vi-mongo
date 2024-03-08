@@ -64,8 +64,8 @@ func (s *SideBar) setStyle() {
 
 func (s *SideBar) setKeybindings(ctx context.Context) {
 	manager := s.app.Manager.SetKeyHandlerForComponent(s.GetIdentifier())
-	manager(tcell.KeyRune, '/', "Toggle filter", func(event *tcell.EventKey) *tcell.EventKey {
-		s.filterBar.Toggle()
+	manager(tcell.KeyRune, '/', "Enable filter bar", func(event *tcell.EventKey) *tcell.EventKey {
+		s.filterBar.Enable()
 		s.render(ctx)
 		return nil
 	})

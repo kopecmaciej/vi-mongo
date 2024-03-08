@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -125,7 +124,6 @@ func (eh *ComponentManager) HandleKeyEvent(e *tcell.EventKey) *tcell.EventKey {
 	// handle subcomponents
 	subcomponents, _ := eh.GetSubcomponents(component)
 	for _, subcomponent := range subcomponents {
-		log.Debug().Msgf("subKeys: %v", subcomponent)
 		subKeys := eh.KeyManager.GetKeysForComponent(subcomponent)
 		for _, k := range subKeys {
 			if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {
