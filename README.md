@@ -31,7 +31,8 @@ databases.
 ## List of features to be implemented
 
 - [x] Query History
-- [ ] Switching between multiple Connections
+- [x] Switching between multiple Connections
+- [x] Help page
 - [ ] Improve Content by adding other possibilities of viewing
 - [ ] Multiple styles
 - [ ] Managing Indexes

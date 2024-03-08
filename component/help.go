@@ -41,7 +41,6 @@ func (h *Help) init() error {
 func (h *Help) Render() {
 	h.Table.Clear()
 	currComponent := h.app.Manager.CurrentComponent()
-
 	cKeys := h.app.Manager.KeyManager.GetKeysForComponent(currComponent)
 	gKeys := h.app.Manager.KeyManager.GetKeysForComponent(manager.GlobalComponent)
 	hKeys := h.app.Manager.KeyManager.GetKeysForComponent(HelpComponent)
@@ -55,6 +54,22 @@ func (h *Help) Render() {
 		h.Table.SetCell(pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
 		pos += 1
 	}
+
+	subComponents, ok := h.app.Manager.GetSubcomponents(currComponent)
+	if ok {
+		for _, subComponent := range subComponents {
+			h.addSectionHeader(string(subComponent), pos)
+			pos += 3
+			subKeys := h.app.Manager.KeyManager.GetKeysForComponent(subComponent)
+			for _, key := range subKeys {
+				h.Table.SetCell(pos, 0, tview.NewTableCell(key.Name).SetTextColor(h.style.KeyColor.Color()))
+				h.Table.SetCell(pos, 1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
+				h.Table.SetCell(pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
+				pos += 1
+			}
+		}
+	}
+
 	h.addSectionHeader("Global Keys", pos)
 	pos += 3
 	for _, key := range gKeys {

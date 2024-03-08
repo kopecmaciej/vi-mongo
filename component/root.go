@@ -57,6 +57,12 @@ func (r *Root) Init() error {
 		}
 	}
 
+	r.app.Manager.AddSubcomponents(r.GetIdentifier(), []manager.Component{
+		r.header.GetIdentifier(),
+		r.sideBar.GetIdentifier(),
+		r.content.GetIdentifier(),
+	})
+
 	return nil
 }
 
