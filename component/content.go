@@ -66,6 +66,7 @@ func (c *Content) init() error {
 
 	c.setStyle()
 	c.setKeybindings(ctx)
+	c.SetCheckFocusFunc(c.HasFocus)
 
 	if err := c.jsonPeeker.Init(c.app); err != nil {
 		return err

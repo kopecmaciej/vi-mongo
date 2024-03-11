@@ -32,23 +32,19 @@ type (
 		// componentStack is responsible for keeping track of the current component
 		// that is being rendered
 		componentStack []Component
-		// subcomponentsMap is a map that contains all the subcomponents of a component
-		// it's used mainly for managing keybindings
-		subcomponentsMap map[Component][]Component
-		mutex            sync.Mutex
-		listeners        map[Component]chan EventMsg
-		KeyManager       *KeyManager
+		mutex          sync.Mutex
+		listeners      map[Component]chan EventMsg
+		KeyManager     *KeyManager
 	}
 )
 
 // NewComponentManager creates a new ComponentManager
 func NewComponentManager() *ComponentManager {
 	return &ComponentManager{
-		componentStack:   make([]Component, 0),
-		subcomponentsMap: make(map[Component][]Component),
-		mutex:            sync.Mutex{},
-		listeners:        make(map[Component]chan EventMsg),
-		KeyManager:       NewKeyManager(),
+		componentStack: make([]Component, 0),
+		mutex:          sync.Mutex{},
+		listeners:      make(map[Component]chan EventMsg),
+		KeyManager:     NewKeyManager(),
 	}
 }
 
@@ -79,25 +75,6 @@ func (eh *ComponentManager) CurrentComponent() Component {
 		return ""
 	}
 	return eh.componentStack[len(eh.componentStack)-1]
-}
-
-// AddSubcomponents adds subcomponents to a component
-func (eh *ComponentManager) AddSubcomponents(component Component, subcomponents []Component) {
-	eh.mutex.Lock()
-	defer eh.mutex.Unlock()
-
-	eh.subcomponentsMap[component] = append(eh.subcomponentsMap[component], subcomponents...)
-}
-
-// GetSubcomponents returns the subcomponents of a component
-func (eh *ComponentManager) GetSubcomponents(component Component) ([]Component, bool) {
-	eh.mutex.Lock()
-	defer eh.mutex.Unlock()
-
-	if subcomponents, exists := eh.subcomponentsMap[component]; exists {
-		return subcomponents, true
-	}
-	return nil, false
 }
 
 // SetKeyHandlerForComponent is a helper function to set a key handler for a specific component
@@ -131,17 +108,6 @@ func (eh *ComponentManager) HandleKeyEvent(e *tcell.EventKey, component Componen
 	for _, k := range keys {
 		if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {
 			return k.Action(e)
-		}
-	}
-
-	// handle subcomponents
-	subcomponents, _ := eh.GetSubcomponents(component)
-	for _, subcomponent := range subcomponents {
-		subKeys := eh.KeyManager.GetKeysForComponent(subcomponent)
-		for _, k := range subKeys {
-			if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {
-				return k.Action(e)
-			}
 		}
 	}
 

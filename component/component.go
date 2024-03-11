@@ -41,6 +41,9 @@ type Component struct {
 
 	// mutex is a mutex that is used to synchronize the component.
 	mutex sync.Mutex
+
+	// checkFocusFunc is a function that checks if the component has focus.
+	checkFocusFunc func() bool
 }
 
 // NewComponent is a constructor for the Component struct.
@@ -100,6 +103,19 @@ func (c *Component) IsEnabled() bool {
 // SetAfterInitFunc sets the optional function that will be run at the end of the Init function.
 func (c *Component) SetAfterInitFunc(afterInitFunc func() error) {
 	c.afterInitFunc = afterInitFunc
+}
+
+// SetCheckFocusFunc sets the optional function that checks if the component has focus.
+func (c *Component) SetCheckFocusFunc(checkFocusFunc func() bool) {
+	c.checkFocusFunc = checkFocusFunc
+}
+
+// CheckFocus checks if the component has focus.
+func (c *Component) CheckFocus() bool {
+	if c.checkFocusFunc != nil {
+		return c.checkFocusFunc()
+	}
+	return false
 }
 
 // GetComponent returns the component.
