@@ -207,8 +207,7 @@ func (i *InputBar) LoadNewKeys(keys []string) {
 func (i *InputBar) displayHistoryModal() {
 	err := i.historyModal.Render()
 	if err != nil {
-		log.Error().Err(err).Msg("Error rendering history modal")
-		ShowErrorModal(i.app.Root, err.Error())
+		ShowErrorModal(i.app.Root, "Error rendering history modal", err)
 	}
 }
 

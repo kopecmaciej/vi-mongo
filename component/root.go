@@ -57,6 +57,12 @@ func (r *Root) Init() error {
 		}
 	}
 
+	r.app.Manager.AddSubcomponents(r.GetIdentifier(), []manager.Component{
+		r.header.GetIdentifier(),
+		r.sideBar.GetIdentifier(),
+		r.content.GetIdentifier(),
+	})
+
 	return nil
 }
 
@@ -65,12 +71,12 @@ func (r *Root) renderMainView() error {
 	client := mongo.NewClient(currConn)
 	err := client.Connect()
 	if err != nil {
-		ShowErrorModal(r, err.Error())
+		ShowErrorModal(r, "Error connecting to database", err)
 		return err
 	}
 	err = client.Ping()
 	if err != nil {
-		ShowErrorModal(r, err.Error())
+		ShowErrorModal(r, "Error pinging database", err)
 		return err
 	}
 
@@ -163,8 +169,7 @@ func (r *Root) renderConnector() error {
 	r.connector.SetCallback(func() {
 		err := r.renderMainView()
 		if err != nil {
-			r.renderConnector()
-			ShowErrorModal(r, err.Error())
+			ShowErrorModal(r, "Error connecting to database", err)
 		}
 	})
 

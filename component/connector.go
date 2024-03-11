@@ -6,7 +6,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/rivo/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -193,8 +192,7 @@ func (c *Connector) setConnections() {
 	connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
 	err := c.app.Config.SetCurrentConnection(connName)
 	if err != nil {
-		ShowErrorModal(c.app.Root, "Failed to set current connection")
-		log.Error().Err(err).Msg("failed to set current connection")
+		ShowErrorModal(c.app.Root, "Failed to set current connection", err)
 	}
 	c.app.Config.CurrentConnection = connName
 	c.app.Root.RemovePage("Connector")
@@ -235,16 +233,14 @@ func (c *Connector) saveButtonFunc() {
 			Uri:  url,
 		})
 		if err != nil {
-			log.Error().Err(err).Msg("failed to save connection")
-			ShowErrorModal(c.app.Root, "Failed to save connection")
+			ShowErrorModal(c.app.Root, "Failed to save connection", err)
 		}
 	} else {
 		host := c.form.GetFormItemByLabel("Host").(*tview.InputField).GetText()
 		port := c.form.GetFormItemByLabel("Port").(*tview.InputField).GetText()
 		intPort, err := strconv.Atoi(port)
 		if err != nil {
-			log.Error().Err(err).Msg("Port must be a number")
-			ShowErrorModal(c.app.Root, "Port must be a number")
+			ShowErrorModal(c.app.Root, "Port must be a number", err)
 		}
 		username := c.form.GetFormItemByLabel("Username").(*tview.InputField).GetText()
 		password := c.form.GetFormItemByLabel("Password").(*tview.InputField).GetText()
@@ -259,8 +255,7 @@ func (c *Connector) saveButtonFunc() {
 			Database: database,
 		})
 		if err != nil {
-			log.Error().Err(err).Msg("failed to save connection")
-			ShowErrorModal(c.app.Root, "Failed to save connection")
+			ShowErrorModal(c.app.Root, "Failed to save connection", err)
 		}
 	}
 	c.render(c.list.GetItemCount())

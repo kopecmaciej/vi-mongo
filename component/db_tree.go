@@ -66,7 +66,7 @@ func (t *DBTree) setStyle() {
 }
 
 func (t *DBTree) setKeybindings(ctx context.Context) {
-	manager := t.app.Manager.SetKeyHandlerForComponent("Root")
+	manager := t.app.Manager.SetKeyHandlerForComponent(t.GetIdentifier())
 	manager(tcell.KeyCtrlD, 0, "Delete collection", func(e *tcell.EventKey) *tcell.EventKey {
 		t.deleteCollection(ctx)
 		return nil
