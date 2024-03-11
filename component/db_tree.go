@@ -90,7 +90,7 @@ func (t *DBTree) setKeybindings(ctx context.Context) {
 	})
 
 	t.app.Root.Pages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return t.app.Manager.HandleKeyEvent(event)
+		return t.app.Manager.HandleKeyEvent(event, t.GetIdentifier())
 	})
 }
 

@@ -57,8 +57,8 @@ func (a *App) Init() error {
 }
 
 func (a *App) setKeybindings(ctx context.Context, help *Help) {
-	manager := a.Manager.SetKeyHandlerForComponent(manager.GlobalComponent)
-	manager(tcell.KeyRune, '?', "Toggle help", func(e *tcell.EventKey) *tcell.EventKey {
+	m := a.Manager.SetKeyHandlerForComponent(manager.GlobalComponent)
+	m(tcell.KeyRune, '?', "Toggle help", func(e *tcell.EventKey) *tcell.EventKey {
 		if a.Root.HasPage(string(HelpComponent)) {
 			a.Root.RemovePage(HelpComponent)
 			return nil
@@ -67,7 +67,7 @@ func (a *App) setKeybindings(ctx context.Context, help *Help) {
 		a.Root.AddPage(HelpComponent, help, true, true)
 		return nil
 	})
-	manager(tcell.KeyCtrlC, 0, "Quit the application", func(e *tcell.EventKey) *tcell.EventKey {
+	m(tcell.KeyCtrlC, 0, "Quit the application", func(e *tcell.EventKey) *tcell.EventKey {
 		if a.Dao != nil {
 			a.Dao.ForceClose(ctx)
 		}
@@ -76,6 +76,6 @@ func (a *App) setKeybindings(ctx context.Context, help *Help) {
 	})
 
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return a.Manager.HandleKeyEvent(event)
+		return a.Manager.HandleKeyEvent(event, manager.GlobalComponent)
 	})
 }

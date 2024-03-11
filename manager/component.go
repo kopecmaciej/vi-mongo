@@ -4,6 +4,8 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -111,9 +113,20 @@ func (eh *ComponentManager) SetKeyHandlerForComponent(component Component) func(
 	}
 }
 
+type Primitive interface {
+	SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey) *tview.Box
+}
+
+// SetInputCapture sets the input capture for the current component
+func (eh *ComponentManager) SetInputCapture(p Primitive, c Component) {
+	p.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		return eh.HandleKeyEvent(event, c)
+	})
+}
+
 // HandleKeyEvent handles a key event based on the current component
-func (eh *ComponentManager) HandleKeyEvent(e *tcell.EventKey) *tcell.EventKey {
-	component := eh.CurrentComponent()
+func (eh *ComponentManager) HandleKeyEvent(e *tcell.EventKey, component Component) *tcell.EventKey {
+	log.Debug().Msgf("Handling key event: %v for component: %v", e, component)
 	keys := eh.KeyManager.GetKeysForComponent(component)
 	for _, k := range keys {
 		if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {

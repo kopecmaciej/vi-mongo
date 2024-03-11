@@ -115,6 +115,6 @@ func (h *Help) setKeybindings() {
 	})
 
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return h.app.Manager.HandleKeyEvent(event)
+		return h.app.Manager.HandleKeyEvent(event, HelpComponent)
 	})
 }

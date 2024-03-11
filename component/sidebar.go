@@ -70,7 +70,7 @@ func (s *SideBar) setKeybindings(ctx context.Context) {
 		return nil
 	})
 	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return s.app.Manager.HandleKeyEvent(event)
+		return s.app.Manager.HandleKeyEvent(event, s.GetIdentifier())
 	})
 }
 

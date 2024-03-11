@@ -143,8 +143,8 @@ func (r *Root) setKeybindings() {
 		return nil
 	})
 
-	r.app.Root.Pages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return r.app.Manager.HandleKeyEvent(event)
+	r.app.Root.flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		return r.app.Manager.HandleKeyEvent(event, r.GetIdentifier())
 	})
 }
 

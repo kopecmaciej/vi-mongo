@@ -5,11 +5,15 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/rivo/tview"
 )
 
 const (
 	pathToConfig = "config.json"
+
+	ConnectorForm manager.Component = "ConnectorForm"
+	ConnectorList manager.Component = "ConnectorList"
 )
 
 // Connector is a view for connecting to mongodb using tview package
@@ -82,47 +86,51 @@ func (c *Connector) setStyle() {
 }
 
 func (c *Connector) setKeybindings() {
-	c.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyDown:
-			if c.moveFormFocusDown() {
-				return nil
-			}
-		case tcell.KeyUp:
-			if c.moveFormFocusUp() {
-				return nil
-			}
-		case tcell.KeyCtrlS:
-			c.saveButtonFunc()
-			return nil
-		case tcell.KeyEsc:
-			c.app.SetFocus(c.list)
+	mf := c.app.Manager.SetKeyHandlerForComponent(ConnectorForm)
+	mf(tcell.KeyUp, 0, "Move focus up", func(event *tcell.EventKey) *tcell.EventKey {
+		if c.moveFormFocusUp() {
 			return nil
 		}
 		return event
 	})
-	c.list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyEsc:
-			c.app.SetFocus(c.list)
-			return nil
-		case tcell.KeyCtrlA:
-			c.app.SetFocus(c.form)
-			return nil
-		case tcell.KeyCtrlD:
-			c.deleteCurrConnection()
-			return nil
-		case tcell.KeyEnter:
-			c.setConnections()
-			return nil
-		}
-		if event.Rune() == ' ' {
-			c.setConnections()
+	mf(tcell.KeyDown, 0, "Move focus down", func(event *tcell.EventKey) *tcell.EventKey {
+		if c.moveFormFocusDown() {
 			return nil
 		}
 		return event
+	})
+	mf(tcell.KeyCtrlS, 0, "Save connection", func(event *tcell.EventKey) *tcell.EventKey {
+		c.saveButtonFunc()
+		return nil
+	})
+	mf(tcell.KeyEsc, 0, "Close connector", func(event *tcell.EventKey) *tcell.EventKey {
+		c.app.SetFocus(c.list)
+		return nil
+	})
+	ml := c.app.Manager.SetKeyHandlerForComponent(ConnectorList)
+	ml(tcell.KeyCtrlA, 0, "Move focus to form", func(event *tcell.EventKey) *tcell.EventKey {
+		c.app.SetFocus(c.form)
+		return nil
+	})
+	ml(tcell.KeyCtrlD, 0, "Delete current connection", func(event *tcell.EventKey) *tcell.EventKey {
+		c.deleteCurrConnection()
+		return nil
+	})
+	ml(tcell.KeyEnter, 0, "Set connection", func(event *tcell.EventKey) *tcell.EventKey {
+		c.setConnections()
+		return nil
+	})
+	ml(tcell.KeyRune, ' ', "(space) Set connection", func(event *tcell.EventKey) *tcell.EventKey {
+		c.setConnections()
+		return nil
 	})
 
+	c.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		return c.app.Manager.HandleKeyEvent(event, ConnectorForm)
+	})
+	c.list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		return c.app.Manager.HandleKeyEvent(event, ConnectorList)
+	})
 }
 
 // render renders the Component
@@ -148,6 +156,7 @@ func (c *Connector) renderForm() *tview.Form {
 	c.form.Clear(true)
 
 	c.form.AddInputField("Name", "", 40, nil, nil)
+	c.form.AddTextView("Info", "Name is optional but it's recommended", 40, 1, true, false)
 	c.form.AddInputField("Url", "", 40, nil, nil)
 	c.form.AddTextView("Info", "You can either provide a connection string or fill the form below", 40, 2, true, false)
 	c.form.AddInputField("Host", "", 40, nil, nil)
@@ -228,6 +237,9 @@ func (c *Connector) saveButtonFunc() {
 	name := c.form.GetFormItemByLabel("Name").(*tview.InputField).GetText()
 	url := c.form.GetFormItemByLabel("Url").(*tview.InputField).GetText()
 	if url != "" {
+		if name == "" {
+			name = url
+		}
 		err := c.saveConnection(&config.MongoConfig{
 			Name: name,
 			Uri:  url,
@@ -241,10 +253,15 @@ func (c *Connector) saveButtonFunc() {
 		intPort, err := strconv.Atoi(port)
 		if err != nil {
 			ShowErrorModal(c.app.Root, "Port must be a number", err)
+			return
 		}
 		username := c.form.GetFormItemByLabel("Username").(*tview.InputField).GetText()
 		password := c.form.GetFormItemByLabel("Password").(*tview.InputField).GetText()
 		database := c.form.GetFormItemByLabel("Database").(*tview.InputField).GetText()
+
+		if name == "" {
+			name = host + ":" + port
+		}
 
 		err = c.saveConnection(&config.MongoConfig{
 			Name:     name,
@@ -256,6 +273,7 @@ func (c *Connector) saveButtonFunc() {
 		})
 		if err != nil {
 			ShowErrorModal(c.app.Root, "Failed to save connection", err)
+			return
 		}
 	}
 	c.render(c.list.GetItemCount())

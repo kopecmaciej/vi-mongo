@@ -177,7 +177,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		return nil
 	})
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return c.app.Manager.HandleKeyEvent(event)
+		return c.app.Manager.HandleKeyEvent(event, c.GetIdentifier())
 	})
 }
 
