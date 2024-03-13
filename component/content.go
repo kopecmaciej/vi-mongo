@@ -8,7 +8,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
-	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
@@ -16,8 +15,8 @@ import (
 )
 
 const (
-	ContentComponent  manager.Component = "Content"
-	JsonViewComponent manager.Component = "JsonView"
+	ContentComponent  = "Content"
+	JsonViewComponent = "JsonView"
 )
 
 // Content is a component that displays documents in a table
@@ -66,7 +65,6 @@ func (c *Content) init() error {
 
 	c.setStyle()
 	c.setKeybindings(ctx)
-	c.SetCheckFocusFunc(c.HasFocus)
 
 	if err := c.jsonPeeker.Init(c.app); err != nil {
 		return err

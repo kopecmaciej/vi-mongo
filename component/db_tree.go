@@ -7,7 +7,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
-	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/mongui/primitives"
 	"github.com/rivo/tview"
@@ -15,8 +14,8 @@ import (
 )
 
 const (
-	InputModalComponent   manager.Component = "InputModal"
-	ConfirmModalComponent manager.Component = "ConfirmModal"
+	InputModalComponent   = "InputModal"
+	ConfirmModalComponent = "ConfirmModal"
 )
 
 type DBTree struct {

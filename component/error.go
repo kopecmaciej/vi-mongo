@@ -1,13 +1,12 @@
 package component
 
 import (
-	"github.com/kopecmaciej/mongui/manager"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
 )
 
 const (
-	ErrorComponent manager.Component = "Error"
+	ErrorComponent = "Error"
 )
 
 // ShowErrorModal shows a modal with an error message

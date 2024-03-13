@@ -3,12 +3,12 @@ package component
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
-	"github.com/kopecmaciej/mongui/manager"
 	"github.com/rivo/tview"
+	"github.com/rs/zerolog/log"
 )
 
 const (
-	HelpComponent manager.Component = "Help"
+	HelpComponent tview.Identifier = "Help"
 )
 
 // Help is a component that provides a help screen for keybindings
@@ -26,6 +26,8 @@ func NewHelp() *Help {
 		Table:     tview.NewTable(),
 	}
 
+	h.SetIdentifier(HelpComponent)
+
 	h.SetAfterInitFunc(h.init)
 
 	return h
@@ -40,13 +42,21 @@ func (h *Help) init() error {
 
 func (h *Help) Render() {
 	h.Table.Clear()
-	currComponent := h.app.Manager.CurrentComponent()
-	cKeys := h.app.Manager.KeyManager.GetKeysForComponent(currComponent)
-	gKeys := h.app.Manager.KeyManager.GetKeysForComponent(manager.GlobalComponent)
+
+	// Keys in tview package passed from top to bottom, so we need to show
+	// to user keys for current component, global keys and help keys
+	focused := h.app.GetFocus().GetIdentifier()
+	log.Debug().Msgf("Focused: %v", focused)
+	log.Debug().Msgf("Focused: %v", h.app.GetFocus())
+	if focused == HelpComponent {
+		return
+	}
+	cKeys := h.app.Manager.KeyManager.GetKeysForComponent(focused)
+	gKeys := h.app.Manager.KeyManager.GetKeysForComponent(AppComponent)
 	hKeys := h.app.Manager.KeyManager.GetKeysForComponent(HelpComponent)
 
 	pos := 0
-	h.addSectionHeader(string(currComponent), pos)
+	h.addSectionHeader(string(focused), pos)
 	pos += 3
 	for _, key := range cKeys {
 		h.Table.SetCell(pos, 0, tview.NewTableCell(key.Name).SetTextColor(h.style.KeyColor.Color()))

@@ -10,6 +10,10 @@ import (
 	"github.com/rivo/tview"
 )
 
+const (
+	AppComponent = "App"
+)
+
 type (
 	// App is a main application struct
 	App struct {
@@ -20,11 +24,13 @@ type (
 		Root    *Root
 		Styles  *config.Styles
 		Config  *config.Config
+		Keys    *config.KeyBindings
 	}
 )
 
 func NewApp(appConfig *config.Config) App {
 	styles := config.NewStyles()
+	keyBindings := config.NewKeyBindings()
 
 	app := App{
 		Application: tview.NewApplication(),
@@ -32,6 +38,7 @@ func NewApp(appConfig *config.Config) App {
 		Manager:     manager.NewComponentManager(),
 		Styles:      styles,
 		Config:      appConfig,
+		Keys:        &keyBindings,
 	}
 
 	return app

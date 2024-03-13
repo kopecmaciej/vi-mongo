@@ -5,6 +5,7 @@ import (
 
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
+	"github.com/rivo/tview"
 )
 
 // every component should implement this interface
@@ -28,10 +29,6 @@ type Component struct {
 	// dao is a pointer to the mongo dao.
 	dao *mongo.Dao
 
-	// name is the name of the component.
-	// It's used mainly for managing avaliable keybindings.
-	identifier manager.Component
-
 	// initFunc is a function that is called when the component is initialized.
 	// It's main purpose is to run all the initialization functions of the subcomponents.
 	afterInitFunc func() error
@@ -42,12 +39,12 @@ type Component struct {
 	// mutex is a mutex that is used to synchronize the component.
 	mutex sync.Mutex
 
-	// checkFocusFunc is a function that checks if the component has focus.
-	checkFocusFunc func() bool
+	// identifier is a unique name of the component.
+	identifier tview.Identifier
 }
 
 // NewComponent is a constructor for the Component struct.
-func NewComponent(identifier manager.Component) *Component {
+func NewComponent(identifier tview.Identifier) *Component {
 	return &Component{
 		identifier: identifier,
 	}
@@ -105,27 +102,9 @@ func (c *Component) SetAfterInitFunc(afterInitFunc func() error) {
 	c.afterInitFunc = afterInitFunc
 }
 
-// SetCheckFocusFunc sets the optional function that checks if the component has focus.
-func (c *Component) SetCheckFocusFunc(checkFocusFunc func() bool) {
-	c.checkFocusFunc = checkFocusFunc
-}
-
-// CheckFocus checks if the component has focus.
-func (c *Component) CheckFocus() bool {
-	if c.checkFocusFunc != nil {
-		return c.checkFocusFunc()
-	}
-	return false
-}
-
 // GetComponent returns the component.
 func (c *Component) GetComponent() *Component {
 	return c
-}
-
-// GetIdentifier returns the identifier of the component.
-func (c *Component) GetIdentifier() manager.Component {
-	return c.identifier
 }
 
 // Subscribe subscribes the component to the global events.
@@ -139,6 +118,6 @@ func (c *Component) BroadcastEvent(event manager.EventMsg) {
 }
 
 // SendToComponent sends an event to the component.
-func (c *Component) SendToComponent(component manager.Component, event manager.EventMsg) {
+func (c *Component) SendToComponent(component tview.Identifier, event manager.EventMsg) {
 	c.app.Manager.SendTo(component, event)
 }

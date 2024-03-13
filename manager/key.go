@@ -4,15 +4,8 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
 )
-
-const (
-	// GlobalComponent is a special component that is used for key bindings that
-	// are not specific to any component.
-	GlobalComponent Component = "Global"
-)
-
-var ()
 
 // KeyAction defines a function that will be executed when a key is pressed.
 type KeyAction func(e *tcell.EventKey) *tcell.EventKey
@@ -29,18 +22,18 @@ type KeyBinding struct {
 // KeyManager holds the key bindings for each component.
 type KeyManager struct {
 	mutex    sync.RWMutex
-	bindings map[Component][]KeyBinding
+	bindings map[tview.Identifier][]KeyBinding
 }
 
 // NewKeys creates a new KeyManager.
 func NewKeyManager() *KeyManager {
 	return &KeyManager{
-		bindings: make(map[Component][]KeyBinding),
+		bindings: make(map[tview.Identifier][]KeyBinding),
 	}
 }
 
 // RegisterKeyBinding assigns a key binding to a component.
-func (km *KeyManager) RegisterKeyBinding(comp Component, key tcell.Key, rune rune, name, description string, action KeyAction) {
+func (km *KeyManager) RegisterKeyBinding(comp tview.Identifier, key tcell.Key, rune rune, name, description string, action KeyAction) {
 	km.mutex.Lock()
 	defer km.mutex.Unlock()
 
@@ -55,7 +48,7 @@ func (km *KeyManager) RegisterKeyBinding(comp Component, key tcell.Key, rune run
 }
 
 // GetKeysForComponent returns all the key bindings for a specific component.
-func (km *KeyManager) GetKeysForComponent(comp Component) []KeyBinding {
+func (km *KeyManager) GetKeysForComponent(comp tview.Identifier) []KeyBinding {
 	km.mutex.RLock()
 	defer km.mutex.RUnlock()
 
