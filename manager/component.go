@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	GlobalComponent = "global"
+	GlobalComponent = "Global"
 )
 
 type (
@@ -34,7 +34,6 @@ type (
 		componentStack []tview.Identifier
 		mutex          sync.Mutex
 		listeners      map[tview.Identifier]chan EventMsg
-		KeyManager     *KeyManager
 	}
 )
 
@@ -44,7 +43,6 @@ func NewComponentManager() *ComponentManager {
 		componentStack: make([]tview.Identifier, 0),
 		mutex:          sync.Mutex{},
 		listeners:      make(map[tview.Identifier]chan EventMsg),
-		KeyManager:     NewKeyManager(),
 	}
 }
 
@@ -75,50 +73,6 @@ func (eh *ComponentManager) CurrentComponent() tview.Identifier {
 		return ""
 	}
 	return eh.componentStack[len(eh.componentStack)-1]
-}
-
-// SetKeyHandlerForComponent is a helper function to set a key handler for a specific component
-func (eh *ComponentManager) SetKeyHandlerForComponent(component tview.Identifier) func(key tcell.Key, r rune, description string, action KeyAction) {
-	return func(key tcell.Key, r rune, description string, action KeyAction) {
-		name := ""
-		if r != 0 {
-			name = string(r)
-		} else {
-			name = tcell.KeyNames[key]
-		}
-		eh.KeyManager.RegisterKeyBinding(component, key, r, name, description, action)
-	}
-}
-
-type Primitive interface {
-	SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey) *tview.Box
-}
-
-// SetInputCapture sets the input capture for the current component
-func (eh *ComponentManager) SetInputCapture(p Primitive, c tview.Identifier) {
-	p.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return eh.HandleKeyEvent(event, c)
-	})
-}
-
-// HandleKeyEvent handles a key event based on the current component
-func (eh *ComponentManager) HandleKeyEvent(e *tcell.EventKey, component tview.Identifier) *tcell.EventKey {
-	keys := eh.KeyManager.GetKeysForComponent(component)
-	for _, k := range keys {
-		if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {
-			return k.Action(e)
-		}
-	}
-
-	// If no key was found for the current component, check the global keys
-	globalKeys := eh.KeyManager.GetGlobalKeys()
-	for _, k := range globalKeys {
-		if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {
-			return k.Action(e)
-		}
-	}
-
-	return e
 }
 
 // Subscribe subscribes to events from a specific component

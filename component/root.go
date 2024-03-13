@@ -111,34 +111,32 @@ func (r *Root) setStyles() {
 
 // setKeybindings sets a key binding for the root Component
 func (r *Root) setKeybindings() {
-	manager := r.app.Manager.SetKeyHandlerForComponent(r.GetIdentifier())
-	manager(tcell.KeyTab, 0, "Focus next component", func(e *tcell.EventKey) *tcell.EventKey {
-		focus := r.app.GetFocus()
-		if focus == r.sideBar.dbTree {
-			r.app.SetFocus(r.content.Table)
-		} else {
-			r.app.SetFocus(r.sideBar.dbTree)
-		}
-		return nil
-	})
-	manager(tcell.KeyCtrlS, 0, "Remove SideBar", func(e *tcell.EventKey) *tcell.EventKey {
-		if _, ok := r.flex.GetItem(0).(*SideBar); ok {
-			r.flex.RemoveItem(r.sideBar)
-			r.app.SetFocus(r.content.Table)
-		} else {
-			r.flex.Clear()
-			r.render()
-		}
-		return nil
-	})
-	manager(tcell.KeyCtrlA, 0, "Open Connector", func(e *tcell.EventKey) *tcell.EventKey {
-		r.flex.Clear()
-		r.renderConnector()
-		return nil
-	})
-
+	k := r.app.Keys
 	r.app.Root.flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return r.app.Manager.HandleKeyEvent(event, r.GetIdentifier())
+		switch {
+		case k.Contains(k.RootKeys.FocusNext, event.Name()):
+			focus := r.app.GetFocus()
+			if focus == r.sideBar.dbTree {
+				r.app.SetFocus(r.content.Table)
+			} else {
+				r.app.SetFocus(r.sideBar.dbTree)
+			}
+			return nil
+		case k.Contains(k.RootKeys.HideSidebar, event.Name()):
+			if _, ok := r.flex.GetItem(0).(*SideBar); ok {
+				r.flex.RemoveItem(r.sideBar)
+				r.app.SetFocus(r.content.Table)
+			} else {
+				r.flex.Clear()
+				r.render()
+			}
+			return nil
+		case k.Contains(k.RootKeys.OpenConnector, event.Name()):
+			r.flex.Clear()
+			r.renderConnector()
+			return nil
+		}
+		return event
 	})
 }
 

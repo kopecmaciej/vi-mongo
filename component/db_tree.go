@@ -65,31 +65,28 @@ func (t *DBTree) setStyle() {
 }
 
 func (t *DBTree) setKeybindings(ctx context.Context) {
-	manager := t.app.Manager.SetKeyHandlerForComponent(t.GetIdentifier())
-	manager(tcell.KeyCtrlD, 0, "Delete collection", func(e *tcell.EventKey) *tcell.EventKey {
-		t.deleteCollection(ctx)
-		return nil
-	})
-	manager(tcell.KeyRune, 'E', "Expand all", func(e *tcell.EventKey) *tcell.EventKey {
-		t.GetRoot().ExpandAll()
-		return nil
-	})
-	manager(tcell.KeyRune, 'W', "Collapse all", func(e *tcell.EventKey) *tcell.EventKey {
-		t.GetRoot().CollapseAll()
-		t.GetRoot().SetExpanded(true)
-		return nil
-	})
-	manager(tcell.KeyRune, 'A', "Add collection", func(e *tcell.EventKey) *tcell.EventKey {
-		t.addCollection(ctx)
-		return nil
-	})
-	manager(tcell.KeyRune, 'o', "Expand/collapse", func(e *tcell.EventKey) *tcell.EventKey {
-		t.GetCurrentNode().SetExpanded(!t.GetCurrentNode().IsExpanded())
-		return nil
-	})
-
+	k := t.app.Keys
 	t.app.Root.Pages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return t.app.Manager.HandleKeyEvent(event, t.GetIdentifier())
+		switch {
+		case k.Contains(k.DBTree.ExpandAll, event.Name()):
+			t.GetRoot().ExpandAll()
+			return nil
+		case k.Contains(k.DBTree.CollapseAll, event.Name()):
+			t.GetRoot().CollapseAll()
+			t.GetRoot().SetExpanded(true)
+			return nil
+		case k.Contains(k.DBTree.AddCollection, event.Name()):
+			t.addCollection(ctx)
+			return nil
+		case k.Contains(k.DBTree.DeleteCollection, event.Name()):
+			t.deleteCollection(ctx)
+			return nil
+		case k.Contains(k.DBTree.ToggleExpand, event.Name()):
+			t.GetCurrentNode().SetExpanded(!t.GetCurrentNode().IsExpanded())
+			return nil
+		}
+
+		return event
 	})
 }
 

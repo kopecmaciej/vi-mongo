@@ -6,7 +6,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/rivo/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -112,7 +111,6 @@ func (c *Connector) setKeybindings() {
 	})
 
 	c.list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		log.Info().Msgf("event: %s", event.Name())
 		switch {
 		case k.Contains(k.ConnectorList.FocusForm, event.Name()):
 			c.app.SetFocus(c.form)
