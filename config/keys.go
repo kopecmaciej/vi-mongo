@@ -60,16 +60,22 @@ type (
 	}
 
 	ContentKeys struct {
-		PeekDocument      Key `json:"peekDocument"`
-		ViewDocument      Key `json:"viewDocument"`
-		AddDocument       Key `json:"addDocument"`
-		EditDocument      Key `json:"editDocument"`
-		DuplicateDocument Key `json:"duplicateDocument"`
-		DeleteDocument    Key `json:"deleteDocument"`
-		Refresh           Key `json:"refresh"`
-		ToggleQuery       Key `json:"toggleQuery"`
-		NextPage          Key `json:"nextPage"`
-		PreviousPage      Key `json:"previousPage"`
+		PeekDocument      Key          `json:"peekDocument"`
+		ViewDocument      Key          `json:"viewDocument"`
+		AddDocument       Key          `json:"addDocument"`
+		EditDocument      Key          `json:"editDocument"`
+		DuplicateDocument Key          `json:"duplicateDocument"`
+		DeleteDocument    Key          `json:"deleteDocument"`
+		Refresh           Key          `json:"refresh"`
+		ToggleQuery       Key          `json:"toggleQuery"`
+		NextPage          Key          `json:"nextPage"`
+		PreviousPage      Key          `json:"previousPage"`
+		InputBar          InputBarKeys `json:"inputBar"`
+	}
+
+	InputBarKeys struct {
+		ShowHistory Key `json:"showHistory"`
+		ClearInput  Key `json:"clearInput"`
 	}
 
 	ConnectorKeys struct {
@@ -185,6 +191,16 @@ func NewKeyBindings() KeyBindings {
 				PreviousPage: Key{
 					Keys:        []string{"Ctrl+B"},
 					Description: "Previous page",
+				},
+				InputBar: InputBarKeys{
+					ShowHistory: Key{
+						Keys:        []string{"Ctrl+H"},
+						Description: "Show history",
+					},
+					ClearInput: Key{
+						Keys:        []string{"Ctrl+L"},
+						Description: "Clear input",
+					},
 				},
 			},
 		},

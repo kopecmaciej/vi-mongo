@@ -12,6 +12,9 @@ import (
 type ComponentRenderer interface {
 	// Render is a function that renders the component.
 	Render() error
+
+	// setStyle is a function that sets the style of the component.
+	SetStyle(style string)
 }
 
 // Component is a base struct for all components.

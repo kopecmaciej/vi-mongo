@@ -89,15 +89,18 @@ func (i *InputBar) setKeybindings() {
 				return nil
 			}
 		}
-		switch event.Key() {
-		case tcell.KeyCtrlH:
+
+		k := i.app.Keys
+		switch {
+		case k.Contains(k.Root.Content.InputBar.ShowHistory, event.Name()):
 			if i.historyModal != nil {
 				i.displayHistoryModal()
 			}
-		case tcell.KeyCtrlD:
+		case k.Contains(k.Root.Content.InputBar.ClearInput, event.Name()):
 			i.SetText("")
 			i.SetWordAtCursor(i.defaultText)
 		}
+
 		return event
 	})
 }

@@ -26,7 +26,7 @@ type Connector struct {
 	// list is a list of all available connections
 	list *tview.List
 
-	// callback is a function that is called after connection is selected
+	// function that is called when connection is set
 	callback func()
 }
 
@@ -42,14 +42,14 @@ func NewConnector() *Connector {
 	return c
 }
 
-// Init initializes the Component
+// Init overrides the Init function from the Component struct
 func (c *Connector) Init(app *App) error {
 	c.app = app
 
 	c.setStyle()
 	c.setKeybindings()
 
-	c.render(0)
+	c.Render(0)
 
 	return nil
 }
@@ -64,7 +64,7 @@ func (c *Connector) setStyle() {
 	c.form.SetBorder(true)
 	c.list.SetBorder(true)
 	c.form.SetTitle(" New connection ")
-	c.list.SetTitle(" Recent connections ")
+	c.list.SetTitle(" Saved connections ")
 
 	c.list.ShowSecondaryText(true)
 	c.list.SetWrapText(true)
@@ -123,8 +123,8 @@ func (c *Connector) setKeybindings() {
 	})
 }
 
-// render renders the Component
-func (c *Connector) render(currItem int) {
+// Render renders the Component
+func (c *Connector) Render(currItem int) {
 	c.Clear()
 
 	// easy way to center the form
@@ -213,7 +213,7 @@ func (c *Connector) saveConnection(mongoCfg *config.MongoConfig) error {
 // removeConnection removes connection from config file
 func (c *Connector) deleteCurrConnection() error {
 	currConn, _ := c.list.GetItemText(c.list.GetCurrentItem())
-	defer c.render(c.list.GetCurrentItem())
+	defer c.Render(c.list.GetCurrentItem())
 	err := c.app.Config.DeleteConnection(currConn)
 	if err != nil {
 		return err
@@ -266,13 +266,13 @@ func (c *Connector) saveButtonFunc() {
 			return
 		}
 	}
-	c.render(c.list.GetItemCount())
+	c.Render(c.list.GetItemCount())
 }
 
 // cancelButtonFunc is a function for canceling the form
 func (c *Connector) cancelButtonFunc() {
 	c.form.Clear(true)
-	c.render(0)
+	c.Render(0)
 }
 
 // SetCallback sets callback function
