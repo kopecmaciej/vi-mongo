@@ -294,12 +294,17 @@ func (kb *KeyBindings) LoadCustomKeyBindings(path string) (keyBindings *KeyBindi
 	return customKeyBindings, nil
 }
 
+type OrderedKeys struct {
+	Component string
+	Keys      []Key
+}
+
 // GetKeysForComponent returns keys for component
-func (kb KeyBindings) GetKeysForComponent(component string) (map[string][]Key, error) {
+func (kb KeyBindings) GetKeysForComponent(component string) ([]OrderedKeys, error) {
+	keys := make([]OrderedKeys, 0)
 	if component == "" {
 		return nil, fmt.Errorf("component is empty")
 	}
-	keys := make(map[string][]Key)
 
 	v := reflect.ValueOf(kb)
 	field := v.FieldByName(component)
@@ -310,10 +315,12 @@ func (kb KeyBindings) GetKeysForComponent(component string) (map[string][]Key, e
 
 	var iterateOverField func(field reflect.Value, c string)
 	iterateOverField = func(field reflect.Value, c string) {
+		key := OrderedKeys{Component: c, Keys: make([]Key, 0)}
+		keys = append(keys, key)
 		for i := 0; i < field.NumField(); i++ {
 			keyField := field.Field(i)
 			if keyField.Type() == reflect.TypeOf(Key{}) {
-				keys[c] = append(keys[c], keyField.Interface().(Key))
+				keys[len(keys)-1].Keys = append(keys[len(keys)-1].Keys, keyField.Interface().(Key))
 			} else {
 				iterateOverField(keyField, field.Type().Field(i).Name)
 			}

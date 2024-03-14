@@ -51,24 +51,24 @@ func (h *Help) Render() error {
 	}
 
 	pos := 0
-	for component, keys := range cKeys {
-		h.addHeaderSection(component, pos)
+	for _, keys := range cKeys {
+		h.addHeaderSection(keys.Component, pos)
 		pos += 3
-		h.AddKeySection(component, keys, &pos)
+		h.AddKeySection(keys.Component, keys.Keys, &pos)
 	}
 
 	gKeys, err := h.app.Keys.GetKeysForComponent("Global")
-	for component, keys := range gKeys {
-		h.addHeaderSection(component, pos)
+	for _, keys := range gKeys {
+		h.addHeaderSection(keys.Component, pos)
 		pos += 3
-		h.AddKeySection(component, keys, &pos)
+		h.AddKeySection(keys.Component, keys.Keys, &pos)
 	}
 
 	hKeys, err := h.app.Keys.GetKeysForComponent("Help")
-	for component, keys := range hKeys {
-		h.addHeaderSection(component, pos)
+	for _, keys := range hKeys {
+		h.addHeaderSection(keys.Component, pos)
 		pos += 3
-		h.AddKeySection(component, keys, &pos)
+		h.AddKeySection(keys.Component, keys.Keys, &pos)
 	}
 
 	return nil
