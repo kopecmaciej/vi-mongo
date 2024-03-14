@@ -12,8 +12,7 @@ import (
 const (
 	pathToConfig = "config.json"
 
-	ConnectorForm manager.Component = "ConnectorForm"
-	ConnectorList manager.Component = "ConnectorList"
+	ConnectorComponent = manager.Component("Connector")
 )
 
 // Connector is a view for connecting to mongodb using tview package
@@ -34,7 +33,7 @@ type Connector struct {
 // NewConnector creates a new connection view
 func NewConnector() *Connector {
 	c := &Connector{
-		Component: NewComponent("Connector"),
+		Component: NewComponent(ConnectorComponent),
 		Flex:      tview.NewFlex(),
 		form:      tview.NewForm(),
 		list:      tview.NewList(),
@@ -86,50 +85,41 @@ func (c *Connector) setStyle() {
 }
 
 func (c *Connector) setKeybindings() {
-	mf := c.app.Manager.SetKeyHandlerForComponent(ConnectorForm)
-	mf(tcell.KeyUp, 0, "Move focus up", func(event *tcell.EventKey) *tcell.EventKey {
-		if c.moveFormFocusUp() {
+	k := c.app.Keys
+	c.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch {
+		case k.Contains(k.Connector.ConnectorForm.FormFocusUp, event.Name()):
+			if c.moveFormFocusUp() {
+				return nil
+			}
+		case k.Contains(k.Connector.ConnectorForm.FormFocusDown, event.Name()):
+			if c.moveFormFocusDown() {
+				return nil
+			}
+		case k.Contains(k.Connector.ConnectorForm.SaveConnection, event.Name()):
+			c.saveButtonFunc()
+			return nil
+		case k.Contains(k.Connector.ConnectorForm.FocusList, event.Name()):
+			c.app.SetFocus(c.list)
 			return nil
 		}
+
 		return event
-	})
-	mf(tcell.KeyDown, 0, "Move focus down", func(event *tcell.EventKey) *tcell.EventKey {
-		if c.moveFormFocusDown() {
-			return nil
-		}
-		return event
-	})
-	mf(tcell.KeyCtrlS, 0, "Save connection", func(event *tcell.EventKey) *tcell.EventKey {
-		c.saveButtonFunc()
-		return nil
-	})
-	mf(tcell.KeyEsc, 0, "Close connector", func(event *tcell.EventKey) *tcell.EventKey {
-		c.app.SetFocus(c.list)
-		return nil
-	})
-	ml := c.app.Manager.SetKeyHandlerForComponent(ConnectorList)
-	ml(tcell.KeyCtrlA, 0, "Move focus to form", func(event *tcell.EventKey) *tcell.EventKey {
-		c.app.SetFocus(c.form)
-		return nil
-	})
-	ml(tcell.KeyCtrlD, 0, "Delete current connection", func(event *tcell.EventKey) *tcell.EventKey {
-		c.deleteCurrConnection()
-		return nil
-	})
-	ml(tcell.KeyEnter, 0, "Set connection", func(event *tcell.EventKey) *tcell.EventKey {
-		c.setConnections()
-		return nil
-	})
-	ml(tcell.KeyRune, ' ', "(space) Set connection", func(event *tcell.EventKey) *tcell.EventKey {
-		c.setConnections()
-		return nil
 	})
 
-	c.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return c.app.Manager.HandleKeyEvent(event, ConnectorForm)
-	})
 	c.list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return c.app.Manager.HandleKeyEvent(event, ConnectorList)
+		switch {
+		case k.Contains(k.Connector.ConnectorList.FocusForm, event.Name()):
+			c.app.SetFocus(c.form)
+			return nil
+		case k.Contains(k.Connector.ConnectorList.DeleteConnection, event.Name()):
+			c.deleteCurrConnection()
+			return nil
+		case k.Contains(k.Connector.ConnectorList.SetConnection, event.Name()):
+			c.setConnections()
+			return nil
+		}
+		return event
 	})
 }
 

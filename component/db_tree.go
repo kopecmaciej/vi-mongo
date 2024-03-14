@@ -7,7 +7,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
-	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/mongui/primitives"
 	"github.com/rivo/tview"
@@ -15,8 +14,8 @@ import (
 )
 
 const (
-	InputModalComponent   manager.Component = "InputModal"
-	ConfirmModalComponent manager.Component = "ConfirmModal"
+	InputModalComponent   = "InputModal"
+	ConfirmModalComponent = "ConfirmModal"
 )
 
 type DBTree struct {
@@ -24,7 +23,7 @@ type DBTree struct {
 	*tview.TreeView
 
 	inputModal *primitives.InputModal
-	style      *config.Sidebar
+	style      *config.SidebarStyle
 
 	NodeSelectFunc func(ctx context.Context, db string, coll string, filter map[string]interface{}) error
 }
@@ -66,31 +65,28 @@ func (t *DBTree) setStyle() {
 }
 
 func (t *DBTree) setKeybindings(ctx context.Context) {
-	manager := t.app.Manager.SetKeyHandlerForComponent(t.GetIdentifier())
-	manager(tcell.KeyCtrlD, 0, "Delete collection", func(e *tcell.EventKey) *tcell.EventKey {
-		t.deleteCollection(ctx)
-		return nil
-	})
-	manager(tcell.KeyRune, 'E', "Expand all", func(e *tcell.EventKey) *tcell.EventKey {
-		t.GetRoot().ExpandAll()
-		return nil
-	})
-	manager(tcell.KeyRune, 'W', "Collapse all", func(e *tcell.EventKey) *tcell.EventKey {
-		t.GetRoot().CollapseAll()
-		t.GetRoot().SetExpanded(true)
-		return nil
-	})
-	manager(tcell.KeyRune, 'A', "Add collection", func(e *tcell.EventKey) *tcell.EventKey {
-		t.addCollection(ctx)
-		return nil
-	})
-	manager(tcell.KeyRune, 'o', "Expand/collapse", func(e *tcell.EventKey) *tcell.EventKey {
-		t.GetCurrentNode().SetExpanded(!t.GetCurrentNode().IsExpanded())
-		return nil
-	})
-
+	k := t.app.Keys
 	t.app.Root.Pages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return t.app.Manager.HandleKeyEvent(event, t.GetIdentifier())
+		switch {
+		case k.Contains(k.Sidebar.DBTree.ExpandAll, event.Name()):
+			t.GetRoot().ExpandAll()
+			return nil
+		case k.Contains(k.Sidebar.DBTree.CollapseAll, event.Name()):
+			t.GetRoot().CollapseAll()
+			t.GetRoot().SetExpanded(true)
+			return nil
+		case k.Contains(k.Sidebar.DBTree.AddCollection, event.Name()):
+			t.addCollection(ctx)
+			return nil
+		case k.Contains(k.Sidebar.DBTree.DeleteCollection, event.Name()):
+			t.deleteCollection(ctx)
+			return nil
+		case k.Contains(k.Sidebar.DBTree.ToggleExpand, event.Name()):
+			t.GetCurrentNode().SetExpanded(!t.GetCurrentNode().IsExpanded())
+			return nil
+		}
+
+		return event
 	})
 }
 

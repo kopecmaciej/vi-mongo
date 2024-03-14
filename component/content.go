@@ -8,7 +8,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
-	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
@@ -16,8 +15,8 @@ import (
 )
 
 const (
-	ContentComponent  manager.Component = "Content"
-	JsonViewComponent manager.Component = "JsonView"
+	ContentComponent  = "Content"
+	JsonViewComponent = "JsonView"
 )
 
 // Content is a component that displays documents in a table
@@ -27,7 +26,7 @@ type Content struct {
 
 	Table            *tview.Table
 	View             *tview.TextView
-	style            *config.Content
+	style            *config.ContentStyle
 	queryBar         *InputBar
 	jsonPeeker       *DocPeeker
 	deleteModal      *DeleteModal
@@ -104,80 +103,68 @@ func (c *Content) setStyle() {
 	c.Flex.SetDirection(tview.FlexRow)
 }
 
+// SetKeybindings sets keybindings for the component
 func (c *Content) setKeybindings(ctx context.Context) {
-	manager := c.app.Manager.SetKeyHandlerForComponent(c.GetIdentifier())
-	manager(tcell.KeyRune, 'p', "Peek document", func(event *tcell.EventKey) *tcell.EventKey {
-		err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
-		if err != nil {
-			defer ShowErrorModal(c.app.Root, "Error while peeking document", err)
-		}
-		return nil
-	})
-	manager(tcell.KeyRune, 'a', "Add document", func(event *tcell.EventKey) *tcell.EventKey {
-		err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
-		if err != nil {
-			defer ShowErrorModal(c.app.Root, "Error while adding document", err)
-		}
-		return nil
-	})
-	manager(tcell.KeyRune, 'e', "Edit document", func(event *tcell.EventKey) *tcell.EventKey {
-		updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
-		if err != nil {
-			defer ShowErrorModal(c.app.Root, "Error while editing document", err)
-		}
-		c.refreshCell(updated)
-		return nil
-	})
-	manager(tcell.KeyRune, 'd', "Duplicate document", func(event *tcell.EventKey) *tcell.EventKey {
-		err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
-		if err != nil {
-			defer ShowErrorModal(c.app.Root, "Error while duplicating document", err)
-		}
-		return nil
-	})
-	manager(tcell.KeyRune, 'v', "View document", func(event *tcell.EventKey) *tcell.EventKey {
-		err := c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
-		if err != nil {
-			defer ShowErrorModal(c.app.Root, "Error while viewing document", err)
-		}
-		return nil
-	})
-	manager(tcell.KeyRune, '/', "Toggle query bar", func(event *tcell.EventKey) *tcell.EventKey {
-		c.queryBar.Toggle()
-		c.render(true)
-		return nil
-	})
-	manager(tcell.KeyCtrlD, 0, "Delete document", func(event *tcell.EventKey) *tcell.EventKey {
-		err := c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
-		if err != nil {
-			defer ShowErrorModal(c.app.Root, "Error while deleting document", err)
-		}
-		return nil
-	})
-	manager(tcell.KeyCtrlR, 0, "Refresh", func(event *tcell.EventKey) *tcell.EventKey {
-		err := c.refresh(ctx)
-		if err != nil {
-			defer ShowErrorModal(c.app.Root, "Error while refreshing documents", err)
-		}
-		return nil
-	})
-	manager(tcell.KeyCtrlN, 0, "Next page", func(event *tcell.EventKey) *tcell.EventKey {
-		c.goToNextMongoPage(ctx)
-		return nil
-	})
-	manager(tcell.KeyCtrlP, 0, "Previous page", func(event *tcell.EventKey) *tcell.EventKey {
-		c.goToPrevMongoPage(ctx)
-		return nil
-	})
-	manager(tcell.KeyEnter, 0, "Peek document", func(event *tcell.EventKey) *tcell.EventKey {
-		err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
-		if err != nil {
-			defer ShowErrorModal(c.app.Root, "Error while peeking document", err)
-		}
-		return nil
-	})
+	k := c.app.Keys
+
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return c.app.Manager.HandleKeyEvent(event, c.GetIdentifier())
+		switch {
+		case k.Contains(k.Root.Content.PeekDocument, event.Name()):
+			err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			if err != nil {
+				defer ShowErrorModal(c.app.Root, "Error while peeking document", err)
+			}
+			return nil
+		case k.Contains(k.Root.Content.ViewDocument, event.Name()):
+			err := c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+			if err != nil {
+				defer ShowErrorModal(c.app.Root, "Error while viewing document", err)
+			}
+			return nil
+		case k.Contains(k.Root.Content.AddDocument, event.Name()):
+			err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
+			if err != nil {
+				defer ShowErrorModal(c.app.Root, "Error while adding document", err)
+			}
+			return nil
+		case k.Contains(k.Root.Content.EditDocument, event.Name()):
+			updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			if err != nil {
+				defer ShowErrorModal(c.app.Root, "Error while editing document", err)
+			}
+			c.refreshCell(updated)
+			return nil
+		case k.Contains(k.Root.Content.DuplicateDocument, event.Name()):
+			err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			if err != nil {
+				defer ShowErrorModal(c.app.Root, "Error while duplicating document", err)
+			}
+			return nil
+		case k.Contains(k.Root.Content.ToggleQuery, event.Name()):
+			c.queryBar.Toggle()
+			c.render(true)
+			return nil
+		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
+			err := c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+			if err != nil {
+				defer ShowErrorModal(c.app.Root, "Error while deleting document", err)
+			}
+			return nil
+		case k.Contains(k.Root.Content.Refresh, event.Name()):
+			err := c.refresh(ctx)
+			if err != nil {
+				defer ShowErrorModal(c.app.Root, "Error while refreshing documents", err)
+			}
+			return nil
+		case k.Contains(k.Root.Content.NextPage, event.Name()):
+			c.goToNextMongoPage(ctx)
+			return nil
+		case k.Contains(k.Root.Content.PreviousPage, event.Name()):
+			c.goToPrevMongoPage(ctx)
+			return nil
+		}
+
+		return event
 	})
 }
 

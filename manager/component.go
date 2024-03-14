@@ -4,14 +4,15 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
 )
 
-type (
-	// Component is a type for component names
-	Component string
+const (
+	GlobalComponent = "Global"
+)
 
+type (
+	Component string
 	// EventMsg is a wrapper for tcell.EventKey that also contains
 	// the sender of the event
 	EventMsg struct {
@@ -32,23 +33,17 @@ type (
 		// componentStack is responsible for keeping track of the current component
 		// that is being rendered
 		componentStack []Component
-		// subcomponentsMap is a map that contains all the subcomponents of a component
-		// it's used mainly for managing keybindings
-		subcomponentsMap map[Component][]Component
-		mutex            sync.Mutex
-		listeners        map[Component]chan EventMsg
-		KeyManager       *KeyManager
+		mutex          sync.Mutex
+		listeners      map[Component]chan EventMsg
 	}
 )
 
 // NewComponentManager creates a new ComponentManager
 func NewComponentManager() *ComponentManager {
 	return &ComponentManager{
-		componentStack:   make([]Component, 0),
-		subcomponentsMap: make(map[Component][]Component),
-		mutex:            sync.Mutex{},
-		listeners:        make(map[Component]chan EventMsg),
-		KeyManager:       NewKeyManager(),
+		componentStack: make([]Component, 0),
+		mutex:          sync.Mutex{},
+		listeners:      make(map[Component]chan EventMsg),
 	}
 }
 
@@ -73,87 +68,13 @@ func (eh *ComponentManager) PopComponent() {
 
 // CurrentComponent returns the current component
 func (eh *ComponentManager) CurrentComponent() Component {
+	log.Info().Msgf("Current Component: %v", eh.componentStack)
 	eh.mutex.Lock()
 	defer eh.mutex.Unlock()
 	if len(eh.componentStack) == 0 {
 		return ""
 	}
 	return eh.componentStack[len(eh.componentStack)-1]
-}
-
-// AddSubcomponents adds subcomponents to a component
-func (eh *ComponentManager) AddSubcomponents(component Component, subcomponents []Component) {
-	eh.mutex.Lock()
-	defer eh.mutex.Unlock()
-
-	eh.subcomponentsMap[component] = append(eh.subcomponentsMap[component], subcomponents...)
-}
-
-// GetSubcomponents returns the subcomponents of a component
-func (eh *ComponentManager) GetSubcomponents(component Component) ([]Component, bool) {
-	eh.mutex.Lock()
-	defer eh.mutex.Unlock()
-
-	if subcomponents, exists := eh.subcomponentsMap[component]; exists {
-		return subcomponents, true
-	}
-	return nil, false
-}
-
-// SetKeyHandlerForComponent is a helper function to set a key handler for a specific component
-func (eh *ComponentManager) SetKeyHandlerForComponent(component Component) func(key tcell.Key, r rune, description string, action KeyAction) {
-	return func(key tcell.Key, r rune, description string, action KeyAction) {
-		name := ""
-		if r != 0 {
-			name = string(r)
-		} else {
-			name = tcell.KeyNames[key]
-		}
-		eh.KeyManager.RegisterKeyBinding(component, key, r, name, description, action)
-	}
-}
-
-type Primitive interface {
-	SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey) *tview.Box
-}
-
-// SetInputCapture sets the input capture for the current component
-func (eh *ComponentManager) SetInputCapture(p Primitive, c Component) {
-	p.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return eh.HandleKeyEvent(event, c)
-	})
-}
-
-// HandleKeyEvent handles a key event based on the current component
-func (eh *ComponentManager) HandleKeyEvent(e *tcell.EventKey, component Component) *tcell.EventKey {
-	log.Debug().Msgf("Handling key event: %v for component: %v", e, component)
-	keys := eh.KeyManager.GetKeysForComponent(component)
-	for _, k := range keys {
-		if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {
-			return k.Action(e)
-		}
-	}
-
-	// handle subcomponents
-	subcomponents, _ := eh.GetSubcomponents(component)
-	for _, subcomponent := range subcomponents {
-		subKeys := eh.KeyManager.GetKeysForComponent(subcomponent)
-		for _, k := range subKeys {
-			if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {
-				return k.Action(e)
-			}
-		}
-	}
-
-	// If no key was found for the current component, check the global keys
-	globalKeys := eh.KeyManager.GetGlobalKeys()
-	for _, k := range globalKeys {
-		if (e.Key() == tcell.KeyRune && k.Rune == e.Rune()) || (k.Key == e.Key() && k.Rune == 0) {
-			return k.Action(e)
-		}
-	}
-
-	return e
 }
 
 // Subscribe subscribes to events from a specific component

@@ -21,16 +21,15 @@ type Component struct {
 	// enabled is a flag that indicates if the component is enabled.
 	enabled bool
 
+	// name is the name of the component.
+	// It's used mainly for managing avaliable keybindings.
+	identifier manager.Component
 	// app is a pointer to the main app.
 	// It's used for accessing app focus, root page etc.
 	app *App
 
 	// dao is a pointer to the mongo dao.
 	dao *mongo.Dao
-
-	// name is the name of the component.
-	// It's used mainly for managing avaliable keybindings.
-	identifier manager.Component
 
 	// initFunc is a function that is called when the component is initialized.
 	// It's main purpose is to run all the initialization functions of the subcomponents.

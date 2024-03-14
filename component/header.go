@@ -26,7 +26,7 @@ type (
 		*Component
 		*tview.Table
 
-		style    *config.Header
+		style    *config.HeaderStyle
 		baseInfo BaseInfo
 	}
 )

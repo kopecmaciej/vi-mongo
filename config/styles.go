@@ -16,20 +16,20 @@ type (
 	Style string
 
 	Styles struct {
-		Root      Root      `yaml:"main"`
-		Connector Connector `yaml:"connector"`
-		Header    Header    `yaml:"header"`
-		Sidebar   Sidebar   `yaml:"sidebar"`
-		Content   Content   `yaml:"content"`
-		DocPeeker DocPeeker `yaml:"docPeeker"`
-		InputBar  InputBar  `yaml:"filterBar"`
-		History   History   `yaml:"history"`
-		Help      Help      `yaml:"help"`
-		Others    Others    `yaml:"others"`
+		Root      RootStyle      `yaml:"main"`
+		Connector ConnectorStyle `yaml:"connector"`
+		Header    HeaderStyle    `yaml:"header"`
+		Sidebar   SidebarStyle   `yaml:"sidebar"`
+		Content   ContentStyle   `yaml:"content"`
+		DocPeeker DocPeekerStyle `yaml:"docPeeker"`
+		InputBar  InputBarStyle  `yaml:"filterBar"`
+		History   HistoryStyle   `yaml:"history"`
+		Help      HelpStyle      `yaml:"help"`
+		Others    OthersStyle    `yaml:"others"`
 	}
 
-	// Root is a struct that contains all the root styles for the application
-	Root struct {
+	// RootStyle is a struct that contains all the root styles for the application
+	RootStyle struct {
 		BackgroundColor    Style `yaml:"backgroundColor"`
 		TextColor          Style `yaml:"textColor"`
 		SecondaryTextColor Style `yaml:"secondaryTextColor"`
@@ -39,8 +39,8 @@ type (
 		GraphicsColor      Style `yaml:"graphicsColor"`
 	}
 
-	// Connector is a struct that contains all the styles for the connector
-	Connector struct {
+	// ConnectorStyle is a struct that contains all the styles for the connector
+	ConnectorStyle struct {
 		BackgroundColor              Style `yaml:"backgroundColor"`
 		BorderColor                  Style `yaml:"borderColor"`
 		TitleColor                   Style `yaml:"titleColor"`
@@ -55,8 +55,8 @@ type (
 		ListSecondaryBackgroundColor Style `yaml:"listSecondaryBackgroundColor"`
 	}
 
-	// Header is a struct that contains all the styles for the header
-	Header struct {
+	// HeaderStyle is a struct that contains all the styles for the header
+	HeaderStyle struct {
 		BackgroundColor Style `yaml:"backgroundColor"`
 		BorderColor     Style `yaml:"borderColor"`
 		TitleColor      Style `yaml:"titleColor"`
@@ -66,8 +66,8 @@ type (
 		InactiveSymbol  Style `yaml:"inactiveSymbol"`
 	}
 
-	// Sidebar is a struct that contains all the styles for the sidebar
-	Sidebar struct {
+	// SidebarStyle is a struct that contains all the styles for the sidebar
+	SidebarStyle struct {
 		BackgroundColor Style `yaml:"backgroundColor"`
 		BorderColor     Style `yaml:"borderColor"`
 		TitleColor      Style `yaml:"titleColor"`
@@ -78,8 +78,8 @@ type (
 		BranchColor     Style `yaml:"branchColor"`
 	}
 
-	// Content is a struct that contains all the styles for the content
-	Content struct {
+	// ContentStyle is a struct that contains all the styles for the content
+	ContentStyle struct {
 		BackgroundColor  Style `yaml:"backgroundColor"`
 		BorderColor      Style `yaml:"borderColor"`
 		TitleColor       Style `yaml:"titleColor"`
@@ -88,8 +88,8 @@ type (
 		SelectedRowColor Style `yaml:"selectedRowColor"`
 	}
 
-	// DocPeeker is a struct that contains all the styles for the json peeker
-	DocPeeker struct {
+	// DocPeekerStyle is a struct that contains all the styles for the json peeker
+	DocPeekerStyle struct {
 		BackgroundColor Style `yaml:"backgroundColor"`
 		BorderColor     Style `yaml:"borderColor"`
 		TitleColor      Style `yaml:"titleColor"`
@@ -98,17 +98,17 @@ type (
 		BracketColor    Style `yaml:"bracketColor"`
 	}
 
-	// InputBar is a struct that contains all the styles for the filter bar
-	InputBar struct {
-		BackgroundColor Style        `yaml:"backgroundColor"`
-		BorderColor     Style        `yaml:"borderColor"`
-		TitleColor      Style        `yaml:"titleColor"`
-		LabelColor      Style        `yaml:"labelColor"`
-		InputColor      Style        `yaml:"inputColor"`
-		Autocomplete    Autocomplete `yaml:"autocomplete"`
+	// InputBarStyle is a struct that contains all the styles for the filter bar
+	InputBarStyle struct {
+		BackgroundColor Style             `yaml:"backgroundColor"`
+		BorderColor     Style             `yaml:"borderColor"`
+		TitleColor      Style             `yaml:"titleColor"`
+		LabelColor      Style             `yaml:"labelColor"`
+		InputColor      Style             `yaml:"inputColor"`
+		Autocomplete    AutocompleteStyle `yaml:"autocomplete"`
 	}
 
-	Autocomplete struct {
+	AutocompleteStyle struct {
 		BackgroundColor       Style `yaml:"backgroundColor"`
 		BorderColor           Style `yaml:"borderColor"`
 		TextColor             Style `yaml:"textColor"`
@@ -117,14 +117,14 @@ type (
 		SecondaryTextColor    Style `yaml:"secondaryTextColor"`
 	}
 
-	History struct {
+	HistoryStyle struct {
 		BackgroundColor         Style `yaml:"backgroundColor"`
 		TextColor               Style `yaml:"textColor"`
 		SelectedTextColor       Style `yaml:"selectedTextColor"`
 		SelectedBackgroundColor Style `yaml:"selectedBackgroundColor"`
 	}
 
-	Help struct {
+	HelpStyle struct {
 		BackgroundColor  Style `yaml:"backgroundColor"`
 		BorderColor      Style `yaml:"borderColor"`
 		TitleColor       Style `yaml:"titleColor"`
@@ -132,7 +132,7 @@ type (
 		DescriptionColor Style `yaml:"descriptionColor"`
 	}
 
-	Others struct {
+	OthersStyle struct {
 		ButtonsTextColor       Style `yaml:"buttonsTextColor"`
 		ButtonsBackgroundColor Style `yaml:"buttonsBackgroundColor"`
 	}
@@ -189,7 +189,7 @@ func (s *Styles) loadMainStyles() {
 }
 
 func (s *Styles) loadDefaultStyles() {
-	s.Root = Root{
+	s.Root = RootStyle{
 		BackgroundColor:    "#0F172A",
 		TextColor:          "#FFFFFF",
 		SecondaryTextColor: "#F1FA8C",
@@ -199,7 +199,7 @@ func (s *Styles) loadDefaultStyles() {
 		GraphicsColor:      "#387D44",
 	}
 
-	s.Connector = Connector{
+	s.Connector = ConnectorStyle{
 		BackgroundColor:             "#0F172A",
 		BorderColor:                 "#387D44",
 		TitleColor:                  "#F1FA8C",
@@ -213,7 +213,7 @@ func (s *Styles) loadDefaultStyles() {
 		ListSecondaryTextColor:      "#50FA7B",
 	}
 
-	s.Header = Header{
+	s.Header = HeaderStyle{
 		BackgroundColor: "#0F172A",
 		BorderColor:     "#387D44",
 		KeyColor:        "#F1FA8C",
@@ -222,7 +222,7 @@ func (s *Styles) loadDefaultStyles() {
 		InactiveSymbol:  "○",
 	}
 
-	s.Sidebar = Sidebar{
+	s.Sidebar = SidebarStyle{
 		BackgroundColor: "#0F172A",
 		BorderColor:     "#387D44",
 		NodeColor:       "#387D44",
@@ -232,7 +232,7 @@ func (s *Styles) loadDefaultStyles() {
 		LeafSymbol:      "📄",
 	}
 
-	s.Content = Content{
+	s.Content = ContentStyle{
 		BackgroundColor:  "#0F172A",
 		BorderColor:      "#387D44",
 		TitleColor:       "#163694",
@@ -241,7 +241,7 @@ func (s *Styles) loadDefaultStyles() {
 		SelectedRowColor: "#50FA7B",
 	}
 
-	s.DocPeeker = DocPeeker{
+	s.DocPeeker = DocPeekerStyle{
 		BackgroundColor: "#0F172A",
 		BorderColor:     "#50FA7B",
 		TitleColor:      "#F1FA8C",
@@ -250,12 +250,12 @@ func (s *Styles) loadDefaultStyles() {
 		BracketColor:    "#FFFFFF",
 	}
 
-	s.InputBar = InputBar{
+	s.InputBar = InputBarStyle{
 		BackgroundColor: "#0F172A",
 		BorderColor:     "#50FA7B",
 		LabelColor:      "#F1FA8C",
 		InputColor:      "#FFFFFF",
-		Autocomplete: Autocomplete{
+		Autocomplete: AutocompleteStyle{
 			BackgroundColor:       "#163694",
 			TextColor:             "#F1FA8C",
 			BorderColor:           "#50FA7B",
@@ -265,14 +265,14 @@ func (s *Styles) loadDefaultStyles() {
 		},
 	}
 
-	s.History = History{
+	s.History = HistoryStyle{
 		BackgroundColor:         "#0F172A",
 		TextColor:               "#F1FA8C",
 		SelectedTextColor:       "#50FA7B",
 		SelectedBackgroundColor: "#163694",
 	}
 
-	s.Help = Help{
+	s.Help = HelpStyle{
 		BackgroundColor:  "#0F172A",
 		BorderColor:      "#50FA7B",
 		TitleColor:       "#163694",
@@ -280,7 +280,7 @@ func (s *Styles) loadDefaultStyles() {
 		DescriptionColor: "#FFFFFF",
 	}
 
-	s.Others = Others{
+	s.Others = OthersStyle{
 		ButtonsTextColor:       "#F1FA8C",
 		ButtonsBackgroundColor: "#0F172A",
 	}

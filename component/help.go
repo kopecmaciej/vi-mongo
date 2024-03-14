@@ -1,6 +1,8 @@
 package component
 
 import (
+	"fmt"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
@@ -16,7 +18,7 @@ type Help struct {
 	*Component
 	*tview.Table
 
-	style *config.Help
+	style *config.HelpStyle
 }
 
 // NewHelp creates a new Help component
@@ -38,60 +40,69 @@ func (h *Help) init() error {
 	return nil
 }
 
-func (h *Help) Render() {
+func (h *Help) Render() error {
 	h.Table.Clear()
-	currComponent := h.app.Manager.CurrentComponent()
-	cKeys := h.app.Manager.KeyManager.GetKeysForComponent(currComponent)
-	gKeys := h.app.Manager.KeyManager.GetKeysForComponent(manager.GlobalComponent)
-	hKeys := h.app.Manager.KeyManager.GetKeysForComponent(HelpComponent)
+
+	currectComponent := h.app.Manager.CurrentComponent()
+	cKeys, err := h.app.Keys.GetKeysForComponent(string(currectComponent))
+	if err != nil {
+		ShowErrorModal(h.app.Root, "Error while getting keys for component", err)
+		return err
+	}
 
 	pos := 0
-	h.addSectionHeader(string(currComponent), pos)
-	pos += 3
-	for _, key := range cKeys {
-		h.Table.SetCell(pos, 0, tview.NewTableCell(key.Name).SetTextColor(h.style.KeyColor.Color()))
-		h.Table.SetCell(pos, 1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
-		h.Table.SetCell(pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
-		pos += 1
+	for component, keys := range cKeys {
+		h.addHeaderSection(component, pos)
+		pos += 3
+		h.AddKeySection(component, keys, &pos)
 	}
 
-	subComponents, ok := h.app.Manager.GetSubcomponents(currComponent)
-	if ok {
-		for _, subComponent := range subComponents {
-			h.addSectionHeader(string(subComponent), pos)
-			pos += 3
-			subKeys := h.app.Manager.KeyManager.GetKeysForComponent(subComponent)
-			for _, key := range subKeys {
-				h.Table.SetCell(pos, 0, tview.NewTableCell(key.Name).SetTextColor(h.style.KeyColor.Color()))
-				h.Table.SetCell(pos, 1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
-				h.Table.SetCell(pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
-				pos += 1
-			}
-		}
+	gKeys, err := h.app.Keys.GetKeysForComponent("Global")
+	for component, keys := range gKeys {
+		h.addHeaderSection(component, pos)
+		pos += 3
+		h.AddKeySection(component, keys, &pos)
 	}
 
-	h.addSectionHeader("Global Keys", pos)
-	pos += 3
-	for _, key := range gKeys {
-		h.Table.SetCell(pos, 0, tview.NewTableCell(key.Name).SetTextColor(h.style.KeyColor.Color()))
-		h.Table.SetCell(pos, 1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
-		h.Table.SetCell(pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
-		pos += 1
-	}
-	h.addSectionHeader("Help Keys", pos)
-	pos += 3
-	for _, key := range hKeys {
-		h.Table.SetCell(pos, 0, tview.NewTableCell(key.Name).SetTextColor(h.style.KeyColor.Color()))
-		h.Table.SetCell(pos, 1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
-		h.Table.SetCell(pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
-		pos += 1
-	}
+	// h.addSectionHeader("Help Keys", pos)
+	// pos += 3
+	// for _, key := range hKeys {
+	// 	h.Table.SetCell(pos, 0, tview.NewTableCell(key.Name).SetTextColor(h.style.KeyColor.Color()))
+	// 	h.Table.SetCell(pos, 1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
+	// 	h.Table.SetCell(pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
+	// 	pos += 1
+	// }
+	return nil
 }
 
-func (h *Help) addSectionHeader(name string, row int) {
+func (h *Help) addHeaderSection(name string, row int) {
 	h.Table.SetCell(row, 0, tview.NewTableCell(" ").SetTextColor(h.style.DescriptionColor.Color()))
 	h.Table.SetCell(row+1, 0, tview.NewTableCell(name).SetTextColor(h.style.TitleColor.Color()))
 	h.Table.SetCell(row+2, 0, tview.NewTableCell("-----------").SetTextColor(h.style.DescriptionColor.Color()))
+}
+
+func (h *Help) AddKeySection(name string, keys []config.Key, pos *int) {
+	for _, key := range keys {
+		var keyString string
+		var iter []string
+		if len(key.Keys) > 0 {
+			iter = key.Keys
+		} else {
+			iter = key.Runes
+		}
+		for i, k := range iter {
+			if i == 0 {
+				keyString = fmt.Sprintf("%s", k)
+			} else {
+				keyString = fmt.Sprintf("%s, %s", keyString, k)
+			}
+		}
+
+		h.Table.SetCell(*pos, 0, tview.NewTableCell(keyString).SetTextColor(h.style.KeyColor.Color()))
+		h.Table.SetCell(*pos, 1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
+		h.Table.SetCell(*pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
+		*pos += 1
+	}
 }
 
 func (h *Help) setStyle() {
@@ -108,13 +119,14 @@ func (h *Help) setStyle() {
 
 // setKeybindings sets a key binding for the help Component
 func (h *Help) setKeybindings() {
-	manager := h.app.Manager.SetKeyHandlerForComponent(HelpComponent)
-	manager(tcell.KeyEsc, 0, "Close Help", func(e *tcell.EventKey) *tcell.EventKey {
-		h.app.Root.RemovePage(HelpComponent)
-		return nil
-	})
+	k := h.app.Keys
 
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return h.app.Manager.HandleKeyEvent(event, HelpComponent)
+		switch {
+		case k.Contains(k.HelpKeys.Close, event.Name()):
+			h.app.Root.RemovePage(HelpComponent)
+			return nil
+		}
+		return event
 	})
 }

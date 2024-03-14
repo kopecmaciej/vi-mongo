@@ -20,11 +20,13 @@ type (
 		Root    *Root
 		Styles  *config.Styles
 		Config  *config.Config
+		Keys    *config.KeyBindings
 	}
 )
 
 func NewApp(appConfig *config.Config) App {
 	styles := config.NewStyles()
+	keyBindings := config.NewKeyBindings()
 
 	app := App{
 		Application: tview.NewApplication(),
@@ -32,6 +34,7 @@ func NewApp(appConfig *config.Config) App {
 		Manager:     manager.NewComponentManager(),
 		Styles:      styles,
 		Config:      appConfig,
+		Keys:        &keyBindings,
 	}
 
 	return app
@@ -57,25 +60,20 @@ func (a *App) Init() error {
 }
 
 func (a *App) setKeybindings(ctx context.Context, help *Help) {
-	m := a.Manager.SetKeyHandlerForComponent(manager.GlobalComponent)
-	m(tcell.KeyRune, '?', "Toggle help", func(e *tcell.EventKey) *tcell.EventKey {
-		if a.Root.HasPage(string(HelpComponent)) {
-			a.Root.RemovePage(HelpComponent)
+	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch {
+		case a.Keys.Contains(a.Keys.Global.ToggleHelp, event.Name()):
+			if a.Root.HasPage(string(HelpComponent)) {
+				a.Root.RemovePage(HelpComponent)
+				return nil
+			}
+			err := help.Render()
+			if err != nil {
+				return event
+			}
+			a.Root.AddPage(HelpComponent, help, true, true)
 			return nil
 		}
-		help.Render()
-		a.Root.AddPage(HelpComponent, help, true, true)
-		return nil
-	})
-	m(tcell.KeyCtrlC, 0, "Quit the application", func(e *tcell.EventKey) *tcell.EventKey {
-		if a.Dao != nil {
-			a.Dao.ForceClose(ctx)
-		}
-		a.Stop()
-		return nil
-	})
-
-	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return a.Manager.HandleKeyEvent(event, manager.GlobalComponent)
+		return event
 	})
 }

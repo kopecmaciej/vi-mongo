@@ -21,7 +21,7 @@ type InputBar struct {
 	*tview.InputField
 
 	historyModal   *HistoryModal
-	style          *config.InputBar
+	style          *config.InputBarStyle
 	mutex          sync.Mutex
 	enabled        bool
 	autocompleteOn bool

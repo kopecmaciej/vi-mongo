@@ -20,7 +20,7 @@ type HistoryModal struct {
 	*Component
 	*primitives.ListModal
 
-	style *config.History
+	style *config.HistoryStyle
 }
 
 func NewHistoryModal() *HistoryModal {

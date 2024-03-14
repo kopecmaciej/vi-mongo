@@ -63,14 +63,15 @@ func (s *SideBar) setStyle() {
 }
 
 func (s *SideBar) setKeybindings(ctx context.Context) {
-	manager := s.app.Manager.SetKeyHandlerForComponent(s.GetIdentifier())
-	manager(tcell.KeyRune, '/', "Enable filter bar", func(event *tcell.EventKey) *tcell.EventKey {
-		s.filterBar.Enable()
-		s.render(ctx)
-		return nil
-	})
+	keys := s.app.Keys
 	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		return s.app.Manager.HandleKeyEvent(event, s.GetIdentifier())
+		switch {
+		case keys.Contains(keys.Sidebar.FilterBar, event.Name()):
+			s.filterBar.Enable()
+			s.render(ctx)
+			return nil
+		}
+		return event
 	})
 }
 
