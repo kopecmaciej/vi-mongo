@@ -10,7 +10,7 @@ type DeleteModal struct {
 	*Component
 	*tview.Modal
 
-	style *config.Others
+	style *config.OthersStyle
 }
 
 func NewDeleteModal() *DeleteModal {

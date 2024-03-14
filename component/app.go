@@ -71,7 +71,10 @@ func (a *App) setKeybindings(ctx context.Context, help *Help) {
 				a.Root.RemovePage(HelpComponent)
 				return nil
 			}
-			help.Render()
+			err := help.Render()
+			if err != nil {
+				return event
+			}
 			a.Root.AddPage(HelpComponent, help, true, true)
 			return nil
 		}

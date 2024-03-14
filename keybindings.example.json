@@ -1,0 +1,9 @@
+{
+  "global": {
+    "toggleHelp": {
+      "keys": ["Ctrl+Y"],
+      "runes": [""],
+      "description": "Global keybindings"
+    }
+  }
+}

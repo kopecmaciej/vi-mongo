@@ -91,18 +91,18 @@ func (c *Connector) setKeybindings() {
 	k := c.app.Keys
 	c.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.ConnectorForm.MoveFocusUp, event.Name()):
+		case k.Contains(k.Connector.ConnectorForm.FormFocusUp, event.Name()):
 			if c.moveFormFocusUp() {
 				return nil
 			}
-		case k.Contains(k.ConnectorForm.MoveFocusDown, event.Name()):
+		case k.Contains(k.Connector.ConnectorForm.FormFocusDown, event.Name()):
 			if c.moveFormFocusDown() {
 				return nil
 			}
-		case k.Contains(k.ConnectorForm.SaveConnection, event.Name()):
+		case k.Contains(k.Connector.ConnectorForm.SaveConnection, event.Name()):
 			c.saveButtonFunc()
 			return nil
-		case k.Contains(k.ConnectorForm.FocusList, event.Name()):
+		case k.Contains(k.Connector.ConnectorForm.FocusList, event.Name()):
 			c.app.SetFocus(c.list)
 			return nil
 		}
@@ -112,13 +112,13 @@ func (c *Connector) setKeybindings() {
 
 	c.list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.ConnectorList.FocusForm, event.Name()):
+		case k.Contains(k.Connector.ConnectorList.FocusForm, event.Name()):
 			c.app.SetFocus(c.form)
 			return nil
-		case k.Contains(k.ConnectorList.DeleteConnection, event.Name()):
+		case k.Contains(k.Connector.ConnectorList.DeleteConnection, event.Name()):
 			c.deleteCurrConnection()
 			return nil
-		case k.Contains(k.ConnectorList.SetConnection, event.Name()):
+		case k.Contains(k.Connector.ConnectorList.SetConnection, event.Name()):
 			c.setConnections()
 			return nil
 		}

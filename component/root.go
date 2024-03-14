@@ -15,7 +15,7 @@ type Root struct {
 	*tview.Pages
 
 	flex      *tview.Flex
-	style     *config.Root
+	style     *config.RootStyle
 	connector *Connector
 	header    *Header
 	sideBar   *SideBar
@@ -114,7 +114,7 @@ func (r *Root) setKeybindings() {
 	k := r.app.Keys
 	r.app.Root.flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.RootKeys.FocusNext, event.Name()):
+		case k.Contains(k.Root.FocusNext, event.Name()):
 			focus := r.app.GetFocus()
 			if focus == r.sideBar.dbTree {
 				r.app.SetFocus(r.content.Table)
@@ -122,7 +122,7 @@ func (r *Root) setKeybindings() {
 				r.app.SetFocus(r.sideBar.dbTree)
 			}
 			return nil
-		case k.Contains(k.RootKeys.HideSidebar, event.Name()):
+		case k.Contains(k.Root.HideSidebar, event.Name()):
 			if _, ok := r.flex.GetItem(0).(*SideBar); ok {
 				r.flex.RemoveItem(r.sideBar)
 				r.app.SetFocus(r.content.Table)
@@ -131,7 +131,7 @@ func (r *Root) setKeybindings() {
 				r.render()
 			}
 			return nil
-		case k.Contains(k.RootKeys.OpenConnector, event.Name()):
+		case k.Contains(k.Root.OpenConnector, event.Name()):
 			r.flex.Clear()
 			r.renderConnector()
 			return nil

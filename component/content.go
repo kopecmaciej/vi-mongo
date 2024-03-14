@@ -26,7 +26,7 @@ type Content struct {
 
 	Table            *tview.Table
 	View             *tview.TextView
-	style            *config.Content
+	style            *config.ContentStyle
 	queryBar         *InputBar
 	jsonPeeker       *DocPeeker
 	deleteModal      *DeleteModal
@@ -109,62 +109,62 @@ func (c *Content) setKeybindings(ctx context.Context) {
 
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Contents.PeekDocument, event.Name()):
+		case k.Contains(k.Root.Content.PeekDocument, event.Name()):
 			err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error while peeking document", err)
 			}
 			return nil
-		case k.Contains(k.Contents.ViewDocument, event.Name()):
+		case k.Contains(k.Root.Content.ViewDocument, event.Name()):
 			err := c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error while viewing document", err)
 			}
 			return nil
-		case k.Contains(k.Contents.AddDocument, event.Name()):
+		case k.Contains(k.Root.Content.AddDocument, event.Name()):
 			err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error while adding document", err)
 			}
 			return nil
-		case k.Contains(k.Contents.EditDocument, event.Name()):
+		case k.Contains(k.Root.Content.EditDocument, event.Name()):
 			updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error while editing document", err)
 			}
 			c.refreshCell(updated)
 			return nil
-		case k.Contains(k.Contents.DuplicateDocument, event.Name()):
+		case k.Contains(k.Root.Content.DuplicateDocument, event.Name()):
 			err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error while duplicating document", err)
 			}
 			return nil
-		case k.Contains(k.Contents.ToggleQuery, event.Name()):
+		case k.Contains(k.Root.Content.ToggleQuery, event.Name()):
 			c.queryBar.Toggle()
 			c.render(true)
 			return nil
-		case k.Contains(k.Contents.DeleteDocument, event.Name()):
+		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
 			err := c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error while deleting document", err)
 			}
 			return nil
-		case k.Contains(k.Contents.Refresh, event.Name()):
+		case k.Contains(k.Root.Content.Refresh, event.Name()):
 			err := c.refresh(ctx)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error while refreshing documents", err)
 			}
 			return nil
-		case k.Contains(k.Contents.NextPage, event.Name()):
+		case k.Contains(k.Root.Content.NextPage, event.Name()):
 			c.goToNextMongoPage(ctx)
 			return nil
-		case k.Contains(k.Contents.PreviousPage, event.Name()):
+		case k.Contains(k.Root.Content.PreviousPage, event.Name()):
 			c.goToPrevMongoPage(ctx)
 			return nil
 		}
 
-		return event // Default case to handle other keys
+		return event
 	})
 }
 

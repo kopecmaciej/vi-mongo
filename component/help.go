@@ -6,7 +6,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/rivo/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -18,7 +17,7 @@ type Help struct {
 	*Component
 	*tview.Table
 
-	style *config.Help
+	style *config.HelpStyle
 }
 
 // NewHelp creates a new Help component
@@ -42,32 +41,30 @@ func (h *Help) init() error {
 	return nil
 }
 
-func (h *Help) Render() {
+func (h *Help) Render() error {
 	h.Table.Clear()
 
 	currectComponent := h.app.Manager.CurrentComponent()
-	log.Info().Msgf("Current Component: %v", currectComponent)
-	cKeys, _ := h.app.Keys.GetKeysForComponent(string(currectComponent))
-
-	pos := 0
-	h.addSectionHeader(string(currectComponent), pos)
-	pos += 3
-	for _, key := range cKeys {
-		k := fmt.Sprintf("%v", key.Keys)
-		h.Table.SetCell(pos, 0, tview.NewTableCell(k).SetTextColor(h.style.KeyColor.Color()))
-		h.Table.SetCell(pos, 1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
-		h.Table.SetCell(pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
-		pos += 1
+	cKeys, err := h.app.Keys.GetKeysForComponent(string(currectComponent))
+	if err != nil {
+		ShowErrorModal(h.app.Root, "Error while getting keys for component", err)
+		return err
 	}
 
-	// h.addSectionHeader("Global Keys", pos)
-	// pos += 3
-	// for _, key := range gKeys {
-	// 	h.Table.SetCell(pos, 0, tview.NewTableCell(key.Name).SetTextColor(h.style.KeyColor.Color()))
-	// 	h.Table.SetCell(pos, 1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
-	// 	h.Table.SetCell(pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
-	// 	pos += 1
-	// }
+	pos := 0
+	for component, keys := range cKeys {
+		h.addHeaderSection(component, pos)
+		pos += 3
+		h.AddKeySection(component, keys, &pos)
+	}
+
+	gKeys, err := h.app.Keys.GetKeysForComponent("Global")
+	for component, keys := range gKeys {
+		h.addHeaderSection(component, pos)
+		pos += 3
+		h.AddKeySection(component, keys, &pos)
+	}
+
 	// h.addSectionHeader("Help Keys", pos)
 	// pos += 3
 	// for _, key := range hKeys {
@@ -76,12 +73,37 @@ func (h *Help) Render() {
 	// 	h.Table.SetCell(pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
 	// 	pos += 1
 	// }
+	return nil
 }
 
-func (h *Help) addSectionHeader(name string, row int) {
+func (h *Help) addHeaderSection(name string, row int) {
 	h.Table.SetCell(row, 0, tview.NewTableCell(" ").SetTextColor(h.style.DescriptionColor.Color()))
 	h.Table.SetCell(row+1, 0, tview.NewTableCell(name).SetTextColor(h.style.TitleColor.Color()))
 	h.Table.SetCell(row+2, 0, tview.NewTableCell("-----------").SetTextColor(h.style.DescriptionColor.Color()))
+}
+
+func (h *Help) AddKeySection(name string, keys []config.Key, pos *int) {
+	for _, key := range keys {
+		var keyString string
+		var iter []string
+		if len(key.Keys) > 0 {
+			iter = key.Keys
+		} else {
+			iter = key.Runes
+		}
+		for i, k := range iter {
+			if i == 0 {
+				keyString = fmt.Sprintf("%s", k)
+			} else {
+				keyString = fmt.Sprintf("%s, %s", keyString, k)
+			}
+		}
+
+		h.Table.SetCell(*pos, 0, tview.NewTableCell(keyString).SetTextColor(h.style.KeyColor.Color()))
+		h.Table.SetCell(*pos, 1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
+		h.Table.SetCell(*pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
+		*pos += 1
+	}
 }
 
 func (h *Help) setStyle() {

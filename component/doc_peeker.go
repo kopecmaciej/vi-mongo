@@ -27,7 +27,7 @@ type DocPeeker struct {
 	*Component
 	*primitives.ModalView
 
-	style       *config.DocPeeker
+	style       *config.DocPeekerStyle
 	eventChan   chan interface{}
 	docModifier *DocModifier
 	state       peekerState

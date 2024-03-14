@@ -23,7 +23,7 @@ type DBTree struct {
 	*tview.TreeView
 
 	inputModal *primitives.InputModal
-	style      *config.Sidebar
+	style      *config.SidebarStyle
 
 	NodeSelectFunc func(ctx context.Context, db string, coll string, filter map[string]interface{}) error
 }
@@ -68,20 +68,20 @@ func (t *DBTree) setKeybindings(ctx context.Context) {
 	k := t.app.Keys
 	t.app.Root.Pages.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.DBTree.ExpandAll, event.Name()):
+		case k.Contains(k.Sidebar.DBTree.ExpandAll, event.Name()):
 			t.GetRoot().ExpandAll()
 			return nil
-		case k.Contains(k.DBTree.CollapseAll, event.Name()):
+		case k.Contains(k.Sidebar.DBTree.CollapseAll, event.Name()):
 			t.GetRoot().CollapseAll()
 			t.GetRoot().SetExpanded(true)
 			return nil
-		case k.Contains(k.DBTree.AddCollection, event.Name()):
+		case k.Contains(k.Sidebar.DBTree.AddCollection, event.Name()):
 			t.addCollection(ctx)
 			return nil
-		case k.Contains(k.DBTree.DeleteCollection, event.Name()):
+		case k.Contains(k.Sidebar.DBTree.DeleteCollection, event.Name()):
 			t.deleteCollection(ctx)
 			return nil
-		case k.Contains(k.DBTree.ToggleExpand, event.Name()):
+		case k.Contains(k.Sidebar.DBTree.ToggleExpand, event.Name()):
 			t.GetCurrentNode().SetExpanded(!t.GetCurrentNode().IsExpanded())
 			return nil
 		}
