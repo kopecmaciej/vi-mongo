@@ -10,10 +10,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-const (
-	AppComponent = "App"
-)
-
 type (
 	// App is a main application struct
 	App struct {

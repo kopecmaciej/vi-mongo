@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
 	"github.com/rs/zerolog/log"
 )
 
@@ -13,16 +12,17 @@ const (
 )
 
 type (
+	Component string
 	// EventMsg is a wrapper for tcell.EventKey that also contains
 	// the sender of the event
 	EventMsg struct {
 		*tcell.EventKey
-		Sender tview.Identifier
+		Sender Component
 	}
 
 	// Listener
 	Listener struct {
-		Component tview.Identifier
+		Component Component
 		Channel   chan EventMsg
 	}
 
@@ -32,23 +32,23 @@ type (
 	ComponentManager struct {
 		// componentStack is responsible for keeping track of the current component
 		// that is being rendered
-		componentStack []tview.Identifier
+		componentStack []Component
 		mutex          sync.Mutex
-		listeners      map[tview.Identifier]chan EventMsg
+		listeners      map[Component]chan EventMsg
 	}
 )
 
 // NewComponentManager creates a new ComponentManager
 func NewComponentManager() *ComponentManager {
 	return &ComponentManager{
-		componentStack: make([]tview.Identifier, 0),
+		componentStack: make([]Component, 0),
 		mutex:          sync.Mutex{},
-		listeners:      make(map[tview.Identifier]chan EventMsg),
+		listeners:      make(map[Component]chan EventMsg),
 	}
 }
 
 // PushComponent adds a new component to the component stack
-func (eh *ComponentManager) PushComponent(component tview.Identifier, subcomponents ...tview.Identifier) {
+func (eh *ComponentManager) PushComponent(component Component, subcomponents ...Component) {
 	eh.mutex.Lock()
 	defer eh.mutex.Unlock()
 	if len(eh.componentStack) > 0 && eh.componentStack[len(eh.componentStack)-1] == component {
@@ -67,7 +67,7 @@ func (eh *ComponentManager) PopComponent() {
 }
 
 // CurrentComponent returns the current component
-func (eh *ComponentManager) CurrentComponent() tview.Identifier {
+func (eh *ComponentManager) CurrentComponent() Component {
 	log.Info().Msgf("Current Component: %v", eh.componentStack)
 	eh.mutex.Lock()
 	defer eh.mutex.Unlock()
@@ -78,7 +78,7 @@ func (eh *ComponentManager) CurrentComponent() tview.Identifier {
 }
 
 // Subscribe subscribes to events from a specific component
-func (eh *ComponentManager) Subscribe(component tview.Identifier) chan EventMsg {
+func (eh *ComponentManager) Subscribe(component Component) chan EventMsg {
 	eh.mutex.Lock()
 	defer eh.mutex.Unlock()
 	listener := make(chan EventMsg, 1)
@@ -87,7 +87,7 @@ func (eh *ComponentManager) Subscribe(component tview.Identifier) chan EventMsg 
 }
 
 // Unsubscribe unsubscribes from events from a specific component
-func (eh *ComponentManager) Unsubscribe(component tview.Identifier, listener chan EventMsg) {
+func (eh *ComponentManager) Unsubscribe(component Component, listener chan EventMsg) {
 	eh.mutex.Lock()
 	defer eh.mutex.Unlock()
 	delete(eh.listeners, component)
@@ -103,7 +103,7 @@ func (eh *ComponentManager) Broadcast(event EventMsg) {
 }
 
 // BroadcastTo sends an event to a specific component
-func (eh *ComponentManager) SendTo(component tview.Identifier, event EventMsg) {
+func (eh *ComponentManager) SendTo(component Component, event EventMsg) {
 	eh.mutex.Lock()
 	defer eh.mutex.Unlock()
 	if listener, exists := eh.listeners[component]; exists {

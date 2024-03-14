@@ -5,6 +5,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rivo/tview"
 )
@@ -41,7 +42,6 @@ func NewRoot() *Root {
 func (r *Root) Init() error {
 	r.setStyles()
 	r.setKeybindings()
-	r.SetIdentifier("Root")
 
 	if err := r.connector.Init(r.app); err != nil {
 		return err
@@ -170,7 +170,7 @@ func (r *Root) renderConnector() error {
 }
 
 // AddPage is a wrapper for tview.Pages.AddPage
-func (r *Root) AddPage(component tview.Identifier, page tview.Primitive, resize, visable bool) *tview.Pages {
+func (r *Root) AddPage(component manager.Component, page tview.Primitive, resize, visable bool) *tview.Pages {
 	if r.Pages.HasPage(string(component)) && r.app.Manager.CurrentComponent() == component {
 		return r.Pages
 	}
@@ -179,7 +179,7 @@ func (r *Root) AddPage(component tview.Identifier, page tview.Primitive, resize,
 }
 
 // RemovePage is a wrapper for tview.Pages.RemovePage
-func (r *Root) RemovePage(component tview.Identifier) *tview.Pages {
+func (r *Root) RemovePage(component manager.Component) *tview.Pages {
 	r.app.Manager.PopComponent()
 	return r.Pages.RemovePage(string(component))
 }

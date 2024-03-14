@@ -5,15 +5,14 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/rivo/tview"
 )
 
 const (
 	pathToConfig = "config.json"
 
-	ConnectorComponent = tview.Identifier("Connector")
-	ConnectorForm      = tview.Identifier("ConnectorForm")
-	ConnectorList      = tview.Identifier("ConnectorList")
+	ConnectorComponent = manager.Component("Connector")
 )
 
 // Connector is a view for connecting to mongodb using tview package
@@ -39,8 +38,6 @@ func NewConnector() *Connector {
 		form:      tview.NewForm(),
 		list:      tview.NewList(),
 	}
-	c.form.SetIdentifier(ConnectorForm)
-	c.list.SetIdentifier(ConnectorList)
 
 	return c
 }

@@ -5,11 +5,12 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/rivo/tview"
 )
 
 const (
-	HelpComponent tview.Identifier = "Help"
+	HelpComponent manager.Component = "Help"
 )
 
 // Help is a component that provides a help screen for keybindings
@@ -26,8 +27,6 @@ func NewHelp() *Help {
 		Component: NewComponent(HelpComponent),
 		Table:     tview.NewTable(),
 	}
-
-	h.SetIdentifier(HelpComponent)
 
 	h.SetAfterInitFunc(h.init)
 

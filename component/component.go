@@ -5,7 +5,6 @@ import (
 
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
-	"github.com/rivo/tview"
 )
 
 // every component should implement this interface
@@ -22,6 +21,9 @@ type Component struct {
 	// enabled is a flag that indicates if the component is enabled.
 	enabled bool
 
+	// name is the name of the component.
+	// It's used mainly for managing avaliable keybindings.
+	identifier manager.Component
 	// app is a pointer to the main app.
 	// It's used for accessing app focus, root page etc.
 	app *App
@@ -38,13 +40,10 @@ type Component struct {
 
 	// mutex is a mutex that is used to synchronize the component.
 	mutex sync.Mutex
-
-	// identifier is a unique name of the component.
-	identifier tview.Identifier
 }
 
 // NewComponent is a constructor for the Component struct.
-func NewComponent(identifier tview.Identifier) *Component {
+func NewComponent(identifier manager.Component) *Component {
 	return &Component{
 		identifier: identifier,
 	}
@@ -107,6 +106,11 @@ func (c *Component) GetComponent() *Component {
 	return c
 }
 
+// GetIdentifier returns the identifier of the component.
+func (c *Component) GetIdentifier() manager.Component {
+	return c.identifier
+}
+
 // Subscribe subscribes the component to the global events.
 func (c *Component) Subscribe() {
 	c.listener = c.app.Manager.Subscribe(c.identifier)
@@ -118,6 +122,6 @@ func (c *Component) BroadcastEvent(event manager.EventMsg) {
 }
 
 // SendToComponent sends an event to the component.
-func (c *Component) SendToComponent(component tview.Identifier, event manager.EventMsg) {
+func (c *Component) SendToComponent(component manager.Component, event manager.EventMsg) {
 	c.app.Manager.SendTo(component, event)
 }
