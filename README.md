@@ -38,7 +38,7 @@ databases.
 - [ ] Managing Indexes
 - [ ] Aggregation Pipeline
 - [ ] Exporting/Importing Documents
-- [ ] Move autocomplete keys to json file, so that it can be easily modified
+- [x] Move autocomplete keys to json file, so that it can be easily modified
 
 ## Issues
 
