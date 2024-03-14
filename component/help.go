@@ -64,14 +64,13 @@ func (h *Help) Render() error {
 		h.AddKeySection(component, keys, &pos)
 	}
 
-	// h.addSectionHeader("Help Keys", pos)
-	// pos += 3
-	// for _, key := range hKeys {
-	// 	h.Table.SetCell(pos, 0, tview.NewTableCell(key.Name).SetTextColor(h.style.KeyColor.Color()))
-	// 	h.Table.SetCell(pos, 1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
-	// 	h.Table.SetCell(pos, 2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
-	// 	pos += 1
-	// }
+	hKeys, err := h.app.Keys.GetKeysForComponent("Help")
+	for component, keys := range hKeys {
+		h.addHeaderSection(component, pos)
+		pos += 3
+		h.AddKeySection(component, keys, &pos)
+	}
+
 	return nil
 }
 
@@ -123,7 +122,7 @@ func (h *Help) setKeybindings() {
 
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.HelpKeys.Close, event.Name()):
+		case k.Contains(k.Help.Close, event.Name()):
 			h.app.Root.RemovePage(HelpComponent)
 			return nil
 		}

@@ -19,7 +19,7 @@ type (
 		Root      RootKeys      `json:"rootKeys"`
 		Sidebar   SidebarKeys   `json:"sidebarKeys"`
 		Connector ConnectorKeys `json:"connector"`
-		HelpKeys  HelpKeys      `json:"helpKeys"`
+		Help      HelpKeys      `json:"helpKeys"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -222,7 +222,7 @@ func NewKeyBindings() KeyBindings {
 				},
 			},
 		},
-		HelpKeys: HelpKeys{
+		Help: HelpKeys{
 			Close: Key{
 				Keys:        []string{"Esc"},
 				Description: "Close help",
