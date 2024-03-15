@@ -105,6 +105,7 @@ func (s *SideBar) filterBarListener(ctx context.Context) {
 func (s *SideBar) filter(ctx context.Context, text string) {
 	defer s.render(ctx)
 	dbsWitColls := s.dbsWithColls
+	expand := false
 	filtered := []mongo.DBsWithCollections{}
 	if text == "" {
 		return
@@ -117,11 +118,12 @@ func (s *SideBar) filter(ctx context.Context, text string) {
 		//TODO: tree should expand on found coll
 		for _, coll := range db.Collections {
 			if re.MatchString(coll) {
+				expand = true
 				filtered = append(filtered, db)
 			}
 		}
 	}
-	s.dbTree.RenderTree(ctx, filtered, text)
+	s.dbTree.RenderTree(ctx, filtered, expand)
 
 	log.Debug().Msgf("Filtered: %v", filtered)
 }
@@ -130,7 +132,7 @@ func (s *SideBar) renderWithFilter(ctx context.Context, filter string) error {
 	if err := s.fetchDbsWithCollections(ctx, filter); err != nil {
 		return err
 	}
-	s.dbTree.RenderTree(ctx, s.dbsWithColls, filter)
+	s.dbTree.RenderTree(ctx, s.dbsWithColls, false)
 
 	return nil
 }

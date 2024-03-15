@@ -90,7 +90,7 @@ func (t *DBTree) setKeybindings(ctx context.Context) {
 	})
 }
 
-func (t *DBTree) RenderTree(ctx context.Context, dbsWitColls []mongo.DBsWithCollections, filter string) {
+func (t *DBTree) RenderTree(ctx context.Context, dbsWitColls []mongo.DBsWithCollections, expand bool) {
 	rootNode := t.rootNode()
 	t.SetRoot(rootNode)
 
@@ -118,6 +118,9 @@ func (t *DBTree) RenderTree(ctx context.Context, dbsWitColls []mongo.DBsWithColl
 	}
 
 	t.SetCurrentNode(rootNode.GetChildren()[0])
+	if expand {
+		t.GetRoot().ExpandAll()
+	}
 }
 
 func (t *DBTree) addCollection(ctx context.Context) error {
@@ -146,6 +149,8 @@ func (t *DBTree) addCollection(ctx context.Context) error {
 			if collectionName == "" {
 				return event
 			}
+			db, collectionName = t.removeSymbols(db, collectionName)
+			log.Info().Msgf("Adding collection %s to db %s", collectionName, db)
 			err := t.dao.AddCollection(ctx, db, collectionName)
 			if err != nil {
 				log.Error().Err(err).Msg("Error adding collection")
@@ -154,9 +159,11 @@ func (t *DBTree) addCollection(ctx context.Context) error {
 			collNode := t.collNode(collectionName)
 			parent.AddChild(collNode)
 			collNode.SetReference(parent)
+			t.inputModal.SetText("")
 			t.app.Root.RemovePage(InputModalComponent)
 		}
 		if event.Key() == tcell.KeyEscape {
+			t.inputModal.SetText("")
 			t.app.Root.RemovePage(InputModalComponent)
 		}
 

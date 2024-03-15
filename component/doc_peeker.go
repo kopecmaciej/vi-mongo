@@ -92,7 +92,7 @@ func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 	var prettyJson bytes.Buffer
 	err := json.Indent(&prettyJson, []byte(jsonString), "", "  ")
 	if err != nil {
-		log.Printf("Error marshaling JSON: %v", err)
+		log.Error().Err(err).Msg("Error indenting JSON")
 		return nil
 	}
 	text := string(prettyJson.Bytes())
@@ -109,7 +109,7 @@ func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 		if buttonLabel == "Edit" {
 			updatedDoc, err := dc.docModifier.Edit(ctx, db, coll, jsonString)
 			if err != nil {
-				log.Error().Err(err)
+				log.Error().Err(err).Msg("Error editing document")
 				return
 			}
 			dc.state.rawDocument = updatedDoc

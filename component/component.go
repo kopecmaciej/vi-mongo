@@ -55,6 +55,10 @@ func NewComponent(identifier manager.Component) *Component {
 // Init is a function that is called when the component is initialized.
 // If custom initialization is needed, this function should be overriden.
 func (c *Component) Init(app *App) error {
+	if c.app != nil && c.identifier != "" {
+		return nil
+	}
+
 	c.app = app
 	if app.Dao != nil {
 		c.dao = app.Dao

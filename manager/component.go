@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -68,7 +67,6 @@ func (eh *ComponentManager) PopComponent() {
 
 // CurrentComponent returns the current component
 func (eh *ComponentManager) CurrentComponent() Component {
-	log.Info().Msgf("Current Component: %v", eh.componentStack)
 	eh.mutex.Lock()
 	defer eh.mutex.Unlock()
 	if len(eh.componentStack) == 0 {

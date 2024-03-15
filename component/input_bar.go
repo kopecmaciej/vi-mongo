@@ -122,9 +122,11 @@ func (i *InputBar) DoneFuncHandler(accept func(string), reject func()) {
 		case tcell.KeyEnter:
 			i.Toggle()
 			text := i.GetText()
-			err := i.historyModal.SaveToHistory(text)
-			if err != nil {
-				log.Error().Err(err).Msg("Error saving query to history")
+			if i.historyModal != nil {
+				err := i.historyModal.SaveToHistory(text)
+				if err != nil {
+					log.Error().Err(err).Msg("Error saving query to history")
+				}
 			}
 			accept(text)
 		}

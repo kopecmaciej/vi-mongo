@@ -21,6 +21,7 @@ type MongoConfig struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Name     string `yaml:"name"`
+	Timeout  int    `yaml:"timeout"`
 }
 
 type LogConfig struct {

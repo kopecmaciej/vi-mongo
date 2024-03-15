@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -145,31 +144,31 @@ func NewKeyBindings() KeyBindings {
 						Description: "Add collection",
 					},
 					DeleteCollection: Key{
-						Runes:       []string{"D"},
+						Keys:        []string{"Ctrl+D"},
 						Description: "Delete collection",
 					},
 				},
 			},
 			Content: ContentKeys{
 				PeekDocument: Key{
-					Runes:       []string{"P"},
+					Runes:       []string{"p"},
 					Keys:        []string{"Enter"},
 					Description: "Peek document",
 				},
 				ViewDocument: Key{
-					Runes:       []string{"V"},
+					Runes:       []string{"v"},
 					Description: "View document",
 				},
 				AddDocument: Key{
-					Runes:       []string{"A"},
+					Runes:       []string{"a"},
 					Description: "Add document",
 				},
 				EditDocument: Key{
-					Runes:       []string{"E"},
+					Runes:       []string{"e"},
 					Description: "Edit document",
 				},
 				DuplicateDocument: Key{
-					Runes:       []string{"D"},
+					Runes:       []string{"d"},
 					Description: "Duplicate document",
 				},
 				DeleteDocument: Key{
@@ -194,11 +193,11 @@ func NewKeyBindings() KeyBindings {
 				},
 				InputBar: InputBarKeys{
 					ShowHistory: Key{
-						Keys:        []string{"Ctrl+H"},
+						Keys:        []string{"Ctrl+Y"},
 						Description: "Show history",
 					},
 					ClearInput: Key{
-						Keys:        []string{"Ctrl+L"},
+						Keys:        []string{"Ctrl+D"},
 						Description: "Clear input",
 					},
 				},
@@ -344,7 +343,6 @@ func (kb *KeyBindings) ConvertStrKeyToTcellKey(key string) (tcell.Key, bool) {
 
 // Contains checks if the keybindings contains the key
 func (kb *KeyBindings) Contains(configKey Key, namedKey string) bool {
-	log.Debug().Msgf("configKey: %v, namedKey: %v", configKey, namedKey)
 	if namedKey == "Rune[ ]" {
 		namedKey = "Space"
 	}

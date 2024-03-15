@@ -147,13 +147,14 @@ func (c *Connector) renderForm() *tview.Form {
 
 	c.form.AddInputField("Name", "", 40, nil, nil)
 	c.form.AddTextView("Info", "Name is optional but it's recommended", 40, 1, true, false)
-	c.form.AddInputField("Url", "", 40, nil, nil)
+	c.form.AddInputField("Url", "mongodb://", 40, nil, nil)
 	c.form.AddTextView("Info", "You can either provide a connection string or fill the form below", 40, 2, true, false)
 	c.form.AddInputField("Host", "", 40, nil, nil)
 	c.form.AddInputField("Port", "", 10, nil, nil)
 	c.form.AddInputField("Username", "", 40, nil, nil)
 	c.form.AddPasswordField("Password", "", 40, '*', nil)
 	c.form.AddInputField("Database", "", 40, nil, nil)
+	c.form.AddInputField("Timeout", "10", 10, nil, nil)
 
 	c.form.AddButton("Save", c.saveButtonFunc)
 	c.form.AddButton("Cancel", c.cancelButtonFunc)
@@ -192,9 +193,9 @@ func (c *Connector) setConnections() {
 	err := c.app.Config.SetCurrentConnection(connName)
 	if err != nil {
 		ShowErrorModal(c.app.Root, "Failed to set current connection", err)
+		return
 	}
 	c.app.Config.CurrentConnection = connName
-	c.app.Root.RemovePage("Connector")
 	if c.callback != nil {
 		c.callback()
 	}
@@ -226,13 +227,20 @@ func (c *Connector) deleteCurrConnection() error {
 func (c *Connector) saveButtonFunc() {
 	name := c.form.GetFormItemByLabel("Name").(*tview.InputField).GetText()
 	url := c.form.GetFormItemByLabel("Url").(*tview.InputField).GetText()
-	if url != "" {
+	timeout := c.form.GetFormItemByLabel("Timeout").(*tview.InputField).GetText()
+	intTimeout, err := strconv.Atoi(timeout)
+	if err != nil {
+		ShowErrorModal(c.app.Root, "Timeout must be a number", err)
+		return
+	}
+	if url != "mongodb://" {
 		if name == "" {
 			name = url
 		}
 		err := c.saveConnection(&config.MongoConfig{
-			Name: name,
-			Uri:  url,
+			Name:    name,
+			Uri:     url,
+			Timeout: intTimeout,
 		})
 		if err != nil {
 			ShowErrorModal(c.app.Root, "Failed to save connection", err)
@@ -260,6 +268,7 @@ func (c *Connector) saveButtonFunc() {
 			Username: username,
 			Password: password,
 			Database: database,
+			Timeout:  intTimeout,
 		})
 		if err != nil {
 			ShowErrorModal(c.app.Root, "Failed to save connection", err)

@@ -15,7 +15,8 @@ type Root struct {
 	*Component
 	*tview.Pages
 
-	flex      *tview.Flex
+	mainFlex  *tview.Flex
+	innerFlex *tview.Flex
 	style     *config.RootStyle
 	connector *Connector
 	header    *Header
@@ -27,7 +28,8 @@ func NewRoot() *Root {
 	r := &Root{
 		Component: NewComponent("Root"),
 		Pages:     tview.NewPages(),
-		flex:      tview.NewFlex(),
+		mainFlex:  tview.NewFlex(),
+		innerFlex: tview.NewFlex(),
 		connector: NewConnector(),
 		header:    NewHeader(),
 		sideBar:   NewSideBar(),
@@ -65,12 +67,10 @@ func (r *Root) renderMainView() error {
 	client := mongo.NewClient(currConn)
 	err := client.Connect()
 	if err != nil {
-		ShowErrorModal(r, "Error connecting to database", err)
 		return err
 	}
 	err = client.Ping()
 	if err != nil {
-		ShowErrorModal(r, "Error pinging database", err)
 		return err
 	}
 
@@ -106,13 +106,13 @@ func (r *Root) initSubcomponents() error {
 func (r *Root) setStyles() {
 	r.style = &r.app.Styles.Root
 	r.Pages.SetBackgroundColor(r.style.BackgroundColor.Color())
-	r.flex.SetBackgroundColor(r.style.BackgroundColor.Color())
+	r.mainFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
 }
 
 // setKeybindings sets a key binding for the root Component
 func (r *Root) setKeybindings() {
 	k := r.app.Keys
-	r.app.Root.flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	r.app.Root.mainFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Root.FocusNext, event.Name()):
 			focus := r.app.GetFocus()
@@ -123,16 +123,15 @@ func (r *Root) setKeybindings() {
 			}
 			return nil
 		case k.Contains(k.Root.HideSidebar, event.Name()):
-			if _, ok := r.flex.GetItem(0).(*SideBar); ok {
-				r.flex.RemoveItem(r.sideBar)
+			if _, ok := r.mainFlex.GetItem(0).(*SideBar); ok {
+				r.mainFlex.RemoveItem(r.sideBar)
 				r.app.SetFocus(r.content.Table)
 			} else {
-				r.flex.Clear()
+				r.mainFlex.Clear()
 				r.render()
 			}
 			return nil
 		case k.Contains(k.Root.OpenConnector, event.Name()):
-			r.flex.Clear()
 			r.renderConnector()
 			return nil
 		}
@@ -142,16 +141,19 @@ func (r *Root) setKeybindings() {
 
 // render renders the root component and all subcomponents
 func (r *Root) render() error {
-	body := tview.NewFlex()
-	body.SetBackgroundColor(r.style.BackgroundColor.Color())
-	body.SetDirection(tview.FlexRow)
+	r.mainFlex.Clear()
+	r.innerFlex.Clear()
 
-	r.flex.AddItem(r.sideBar, 30, 0, true)
-	r.flex.AddItem(body, 0, 7, false)
-	body.AddItem(r.header, 0, 1, false)
-	body.AddItem(r.content, 0, 7, true)
+	r.innerFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
+	r.innerFlex.SetDirection(tview.FlexRow)
 
-	r.AddPage(r.GetIdentifier(), r.flex, true, true)
+	r.mainFlex.AddItem(r.sideBar, 30, 0, true)
+	r.mainFlex.AddItem(r.innerFlex, 0, 7, false)
+	r.innerFlex.AddItem(r.header, 0, 1, false)
+	r.innerFlex.AddItem(r.content, 0, 7, true)
+
+	r.AddPage(r.GetIdentifier(), r.mainFlex, true, true)
+	r.app.SetFocus(r.mainFlex)
 
 	return nil
 }
@@ -159,9 +161,11 @@ func (r *Root) render() error {
 // renderConnector renders connector component
 func (r *Root) renderConnector() error {
 	r.connector.SetCallback(func() {
+		r.RemovePage(r.connector.GetIdentifier())
 		err := r.renderMainView()
 		if err != nil {
-			ShowErrorModal(r, "Error connecting to database", err)
+			r.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
+			ShowErrorModal(r, "Error while connecting to the database", err)
 		}
 	})
 
