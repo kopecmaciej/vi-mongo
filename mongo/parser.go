@@ -12,6 +12,16 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// StringifyDocument converts a map to a JSON string
+func StringifyDocument(document map[string]interface{}) (string, error) {
+	// convert id to oid
+	converted, err := ConvertIdsToOids([]primitive.M{document})
+	if err != nil {
+		return "", err
+	}
+	return converted[0], nil
+}
+
 // ParseStringQuery transforms a query string with ObjectId into a filter map compatible with MongoDB's BSON.
 // If keys are not quoted, this function will quote them.
 func ParseStringQuery(query string) (map[string]interface{}, error) {

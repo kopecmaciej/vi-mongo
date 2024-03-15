@@ -122,10 +122,19 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			}
 			return nil
 		case k.Contains(k.Root.Content.AddDocument, event.Name()):
-			err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
+			ID, err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error while adding document", err)
 			}
+			insertedDoc, err := c.dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
+			if err != nil {
+				defer ShowErrorModal(c.app.Root, "Error while getting inserted document", err)
+			}
+			strDoc, err := mongo.StringifyDocument(insertedDoc)
+			if err != nil {
+				defer ShowErrorModal(c.app.Root, "Error while stringifying document", err)
+			}
+			c.addCell(strDoc)
 			return nil
 		case k.Contains(k.Root.Content.EditDocument, event.Name()):
 			updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
@@ -135,10 +144,19 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			c.refreshCell(updated)
 			return nil
 		case k.Contains(k.Root.Content.DuplicateDocument, event.Name()):
-			err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			ID, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error while duplicating document", err)
 			}
+			duplicatedDoc, err := c.dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
+			if err != nil {
+				defer ShowErrorModal(c.app.Root, "Error while getting inserted document", err)
+			}
+			strDoc, err := mongo.StringifyDocument(duplicatedDoc)
+			if err != nil {
+				defer ShowErrorModal(c.app.Root, "Error while stringifying document", err)
+			}
+			c.addCell(strDoc)
 			return nil
 		case k.Contains(k.Root.Content.ToggleQuery, event.Name()):
 			c.queryBar.Toggle()
@@ -318,6 +336,12 @@ func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map
 
 func (c *Content) refresh(ctx context.Context) error {
 	return c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
+}
+
+// addCell adds a new cell to the table
+func (c *Content) addCell(content string) {
+	maxRow := c.Table.GetRowCount()
+	c.Table.SetCell(maxRow, 0, tview.NewTableCell(content).SetAlign(tview.AlignLeft))
 }
 
 // refreshCell refreshes the cell with the new content

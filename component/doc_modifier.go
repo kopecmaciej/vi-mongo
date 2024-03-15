@@ -10,6 +10,7 @@ import (
 
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rs/zerolog/log"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // DocModifier is a component that allows editing JSON documents
@@ -23,29 +24,34 @@ func NewDocModifier() *DocModifier {
 	}
 }
 
-func (d *DocModifier) Insert(ctx context.Context, db, coll string) error {
+func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.ObjectID, error) {
 	createdDoc, err := d.openEditor(ctx, "{}")
 	if err != nil {
 		log.Printf("Error editing document: %v", err)
-		return nil
+		return primitive.NilObjectID, nil
 	}
 	if createdDoc == "{}" {
 		log.Debug().Msgf("No document created")
-		return nil
+		return primitive.NilObjectID, nil
 	}
 
 	var document map[string]interface{}
 	err = json.Unmarshal([]byte(createdDoc), &document)
 	if err != nil {
-		return fmt.Errorf("Error unmarshaling JSON: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("Error unmarshaling JSON: %v", err)
 	}
 
-	err = d.dao.InsetDocument(ctx, db, coll, document)
+	rawID, err := d.dao.InsetDocument(ctx, db, coll, document)
 	if err != nil {
-		return fmt.Errorf("Error inserting document: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("Error inserting document: %v", err)
 	}
 
-	return nil
+	ID, ok := rawID.(primitive.ObjectID)
+	if !ok {
+		return primitive.NilObjectID, fmt.Errorf("Error converting _id to primitive.ObjectID")
+	}
+
+	return ID, nil
 }
 
 // Edit opens the editor with the document and saves it if it was changed
@@ -69,32 +75,37 @@ func (d *DocModifier) Edit(ctx context.Context, db, coll string, rawDocument str
 }
 
 // Duplicate opens the editor with the document and saves it as a new document
-func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocument string) error {
+func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocument string) (primitive.ObjectID, error) {
 	replacedDoc, err := removeField(rawDocument, "_id")
 
 	duplicateDoc, err := d.openEditor(ctx, replacedDoc)
 	if err != nil {
-		return fmt.Errorf("Error editing document: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("Error editing document: %v", err)
 	}
 	if duplicateDoc == "" {
 		log.Debug().Msgf("Document not duplicated")
-		return nil
+		return primitive.NilObjectID, nil
 	}
 
 	var document map[string]interface{}
 	err = json.Unmarshal([]byte(duplicateDoc), &document)
 	if err != nil {
-		return fmt.Errorf("Error unmarshaling JSON: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("Error unmarshaling JSON: %v", err)
 	}
 
 	delete(document, "_id")
 
-	err = d.dao.InsetDocument(ctx, db, coll, document)
+	rawID, err := d.dao.InsetDocument(ctx, db, coll, document)
 	if err != nil {
-		return fmt.Errorf("Error inserting document: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("Error inserting document: %v", err)
 	}
 
-	return nil
+	ID, ok := rawID.(primitive.ObjectID)
+	if !ok {
+		return primitive.NilObjectID, fmt.Errorf("Error converting _id to primitive.ObjectID")
+	}
+
+	return ID, nil
 }
 
 // updateDocument saves the document to the database
