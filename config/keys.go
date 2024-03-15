@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -17,7 +18,6 @@ type (
 	KeyBindings struct {
 		Global    GlobalKeys    `json:"global"`
 		Root      RootKeys      `json:"rootKeys"`
-		Sidebar   SidebarKeys   `json:"sidebarKeys"`
 		Connector ConnectorKeys `json:"connector"`
 		Help      HelpKeys      `json:"helpKeys"`
 	}
@@ -42,7 +42,7 @@ type (
 		FocusNext     Key         `json:"focusNext"`
 		HideSidebar   Key         `json:"hideSidebar"`
 		OpenConnector Key         `json:"openConnector"`
-		SidebarKeys   SidebarKeys `json:"sidebar"`
+		Sidebar       SidebarKeys `json:"sidebar"`
 		Content       ContentKeys `json:"content"`
 	}
 
@@ -115,14 +115,14 @@ func NewKeyBindings() KeyBindings {
 				Description: "Focus next component",
 			},
 			HideSidebar: Key{
-				Keys:        []string{"Ctrl+B"},
+				Keys:        []string{"Ctrl+S"},
 				Description: "Hide sidebar",
 			},
 			OpenConnector: Key{
 				Keys:        []string{"Ctrl+O"},
 				Description: "Open connector",
 			},
-			SidebarKeys: SidebarKeys{
+			Sidebar: SidebarKeys{
 				FilterBar: Key{
 					Runes:       []string{"/"},
 					Description: "Focus filter bar",
@@ -344,6 +344,7 @@ func (kb *KeyBindings) ConvertStrKeyToTcellKey(key string) (tcell.Key, bool) {
 
 // Contains checks if the keybindings contains the key
 func (kb *KeyBindings) Contains(configKey Key, namedKey string) bool {
+	log.Debug().Msgf("configKey: %v, namedKey: %v", configKey, namedKey)
 	if namedKey == "Rune[ ]" {
 		namedKey = "Space"
 	}

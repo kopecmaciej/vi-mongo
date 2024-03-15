@@ -27,8 +27,15 @@ func NewInputModal() *InputModal {
 func (mi *InputModal) Draw(screen tcell.Screen) {
 	screenWidth, screenHeight := screen.Size()
 
+	minWidth, minHeight := 50, 5
 	// Calculate the width and height of the popup
 	width, height := screenWidth/5, screenHeight/6
+	if width < minWidth {
+		width = minWidth
+	}
+	if height < minHeight {
+		height = minHeight
+	}
 
 	// Calculate the position of the popup (centered)
 	x, y := (screenWidth-width)/2, (screenHeight-height)/2

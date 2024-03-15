@@ -66,7 +66,7 @@ func (s *SideBar) setKeybindings(ctx context.Context) {
 	keys := s.app.Keys
 	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case keys.Contains(keys.Sidebar.FilterBar, event.Name()):
+		case keys.Contains(keys.Root.Sidebar.FilterBar, event.Name()):
 			s.filterBar.Enable()
 			s.render(ctx)
 			return nil
