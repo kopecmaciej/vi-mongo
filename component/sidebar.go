@@ -113,13 +113,34 @@ func (s *SideBar) filter(ctx context.Context, text string) {
 	for _, db := range dbsWitColls {
 		re := regexp.MustCompile(`(?i)` + text)
 		if re.MatchString(db.DB) {
-			filtered = append(filtered, db)
+			contain := false
+			for _, f := range filtered {
+				if f.DB == db.DB {
+					contain = true
+					break
+				}
+			}
+			if !contain {
+				filtered = append(filtered, db)
+			}
 		}
-		//TODO: tree should expand on found coll
 		for _, coll := range db.Collections {
 			if re.MatchString(coll) {
-				expand = true
-				filtered = append(filtered, db)
+				contain := false
+				for _, f := range filtered {
+					if f.DB == db.DB {
+						f.Collections = append(f.Collections, coll)
+						contain = true
+						break
+					}
+				}
+				if !contain {
+					expand = true
+					filtered = append(filtered, mongo.DBsWithCollections{
+						DB:          db.DB,
+						Collections: []string{coll},
+					})
+				}
 			}
 		}
 	}

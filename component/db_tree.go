@@ -106,14 +106,7 @@ func (t *DBTree) RenderTree(ctx context.Context, dbsWitColls []mongo.DBsWithColl
 		rootNode.AddChild(parent)
 
 		for _, child := range item.Collections {
-			child := t.collNode(child)
-			child.SetReference(parent)
-			parent.AddChild(child)
-
-			child.SetSelectedFunc(func() {
-				db, coll := t.removeSymbols(parent.GetText(), child.GetText())
-				t.NodeSelectFunc(ctx, db, coll, nil)
-			})
+			t.addChildNode(ctx, parent, child, false)
 		}
 	}
 
@@ -156,9 +149,7 @@ func (t *DBTree) addCollection(ctx context.Context) error {
 				log.Error().Err(err).Msg("Error adding collection")
 				return nil
 			}
-			collNode := t.collNode(collectionName)
-			parent.AddChild(collNode)
-			collNode.SetReference(parent)
+			t.addChildNode(ctx, parent, collectionName, true)
 			t.inputModal.SetText("")
 			t.app.Root.RemovePage(InputModalComponent)
 		}
@@ -189,23 +180,38 @@ func (t *DBTree) deleteCollection(ctx context.Context) error {
 	confirmModal.SetText(text).
 		AddButtons([]string{"OK", "Cancel"})
 	confirmModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		defer t.app.Root.RemovePage(ConfirmModalComponent)
 		if buttonLabel == "OK" {
 			err := t.dao.DeleteCollection(ctx, db, coll)
 			if err != nil {
 				return
 			}
+			childCount := parent.GetChildren()
+			var index int
+			for i, child := range childCount {
+				if child.GetText() == t.GetCurrentNode().GetText() {
+					index = i
+					break
+				}
+			}
 			parent.RemoveChild(t.GetCurrentNode())
-			t.app.Root.RemovePage(ConfirmModalComponent)
-			t.app.SetFocus(t)
-		} else if buttonLabel == "Cancel" || buttonLabel == "" {
-			t.app.Root.RemovePage(ConfirmModalComponent)
-			t.app.SetFocus(t)
+			t.SetCurrentNode(parent.GetChildren()[index-1])
 		}
 	})
 
 	t.app.Root.AddPage(ConfirmModalComponent, confirmModal, true, true)
 
 	return nil
+}
+
+func (t *DBTree) addChildNode(ctx context.Context, parent *tview.TreeNode, collectionName string, expand bool) {
+	collNode := t.collNode(collectionName)
+	parent.AddChild(collNode).SetExpanded(expand)
+	collNode.SetReference(parent)
+	collNode.SetSelectedFunc(func() {
+		db, coll := t.removeSymbols(parent.GetText(), collNode.GetText())
+		t.NodeSelectFunc(ctx, db, coll, nil)
+	})
 }
 
 func (t *DBTree) rootNode() *tview.TreeNode {
