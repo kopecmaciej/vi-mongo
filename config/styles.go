@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
+	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )

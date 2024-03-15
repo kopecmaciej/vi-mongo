@@ -3,7 +3,7 @@ package component
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
-	"github.com/rivo/tview"
+	"github.com/kopecmaciej/tview"
 )
 
 type DeleteModal struct {

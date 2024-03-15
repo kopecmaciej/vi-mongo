@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/kopecmaciej/mongui/config"
-	"github.com/rivo/tview"
+	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
 

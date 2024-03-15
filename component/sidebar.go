@@ -7,7 +7,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/mongo"
-	"github.com/rivo/tview"
+	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
 

@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
+	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
 

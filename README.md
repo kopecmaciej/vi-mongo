@@ -1,7 +1,5 @@
 # Mongui: Terminal User Interface for MongoDB
 
-## WORK IN PROGRESS
-
 ## Overview
 
 **Mongui** is an intuitive Terminal User Interface (TUI) application, crafted
@@ -18,6 +16,15 @@ developers alike.
   and delete documents in your databases with ease.
 
 ## Installation
+
+For now, Mongui is available only by having Go installed on your machine. To
+install Mongui, simply run the following command:
+
+```
+git@github.com:kopecmaciej/mongui.git
+cd mongui
+make
+```
 
 ## Usage
 
@@ -42,7 +49,7 @@ databases.
 
 ## Issues
 
-- [ ] Searching collection on sidebar not expanding tree
+- [x] Searching collection on sidebar not expanding tree
 - [ ] No clearing history
 - [ ] Header not updated after changing database/collection
 - [ ] No view with shortcuts

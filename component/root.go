@@ -7,7 +7,7 @@ import (
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
-	"github.com/rivo/tview"
+	"github.com/kopecmaciej/tview"
 )
 
 // Root is a component that manages visaibility of other components

@@ -9,7 +9,7 @@ import (
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/mongui/primitives"
-	"github.com/rivo/tview"
+	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
 
@@ -195,7 +195,11 @@ func (t *DBTree) deleteCollection(ctx context.Context) error {
 				}
 			}
 			parent.RemoveChild(t.GetCurrentNode())
-			t.SetCurrentNode(parent.GetChildren()[index-1])
+			if index == 0 && len(childCount) > 1 {
+				t.SetCurrentNode(parent.GetChildren()[0])
+			} else if index > 0 {
+				t.SetCurrentNode(parent.GetChildren()[index-1])
+			}
 		}
 	})
 

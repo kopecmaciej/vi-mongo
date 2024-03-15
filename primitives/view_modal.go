@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
+	"github.com/kopecmaciej/tview"
 )
 
 // Text is the text to be displayed in the modal.

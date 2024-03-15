@@ -9,7 +9,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/mongo"
-	"github.com/rivo/tview"
+	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -298,16 +298,7 @@ func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map
 		return err
 	}
 
-	if count == 0 {
-		noDocCell := tview.NewTableCell("No documents found").
-			SetAlign(tview.AlignLeft).
-			SetSelectable(false)
-
-		c.Table.SetCell(1, 1, noDocCell)
-		return nil
-	}
-
-	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", c.state.Count, c.state.Page, c.state.Limit)
+	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.Page, c.state.Limit)
 	if filter != nil {
 		prettyFilter, err := json.Marshal(filter)
 		if err != nil {
@@ -322,14 +313,20 @@ func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map
 
 	c.Table.SetCell(0, 0, headerCell)
 
+	if count == 0 {
+		// TODO: find why if selectable is set to false, program crashes
+		c.Table.SetCell(2, 0, tview.NewTableCell("No documents found"))
+	}
+
 	for i, d := range documents {
 		dataCell := tview.NewTableCell(d)
 		dataCell.SetAlign(tview.AlignLeft)
 
 		c.Table.SetCell(i+2, 0, dataCell)
+		c.Table.Select(2, 0)
 	}
 
-	c.Table.ScrollToBeginning()
+	// c.Table.ScrollToBeginning()
 
 	return nil
 }
