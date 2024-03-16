@@ -1,12 +1,22 @@
-# Mongui: Terminal User Interface for MongoDB
+<p align="center"><img src="./assets/mongui_header.png"></p>
+
+# MongUI: Terminal User Interface for MongoDB
+
+### Managing connections
+
+<p align="center"><img src="./assets/manage_connections.gif"></p>
+
+### Working with documents
+
+<p align="center"><img src="./assets/working_with_docs.gif"></p>
 
 ## Overview
 
-**Mongui** is an intuitive Terminal User Interface (TUI) application, crafted
-with Go, designed to streamline and simplify the management of MongoDB
-databases. Emphasizing ease of use without sacrificing functionality, Mongui
-offers a user-friendly command-line experience for database administrators and
-developers alike.
+**MongUI** is an intuitive Terminal User Interface (TUI) application, written in
+Go, designed to streamline and simplify the management of MongoDB databases.
+Emphasizing ease of use without sacrificing functionality, Mongui offers a
+user-friendly command-line experience for database administrators and developers
+alike.
 
 ## Features
 
@@ -21,19 +31,10 @@ For now, Mongui is available only by having Go installed on your machine. To
 install Mongui, simply run the following command:
 
 ```
-git@github.com:kopecmaciej/mongui.git
+git clone git@github.com:kopecmaciej/mongui.git
 cd mongui
 make
 ```
-
-## Usage
-
-Launch Mongui from the terminal:
-
-`mongui`
-
-Follow on-screen instructions for navigating and managing your MongoDB
-databases.
 
 ## List of features to be implemented
 
