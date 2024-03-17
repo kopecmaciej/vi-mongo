@@ -4,11 +4,11 @@
 
 ### Managing connections (adding, removing)
 
-<p align="center"><img width="1280" height="640" src="./assets/manage_connections.gif"></p>
+![](./assets/manage_connections.gif)
 
 ### Working with documents (viewing, duplicating, deleting), autocomplete, etc.
 
-<p align="center"><img width="1280" height="640" src="./assets/working_with_documents.gif"></p>
+![](./assets/working_with_documents.gif)
 
 ## Overview
 
