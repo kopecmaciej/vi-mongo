@@ -1,14 +1,14 @@
 <p align="center"><img src="./assets/mongui_header.png"></p>
 
-# MongUI: Terminal User Interface for MongoDB
+## Showcasing some of the features of MongUI
 
-### Managing connections
+### Managing connections (adding, removing)
 
-<p align="center"><img src="./assets/manage_connections.gif"></p>
+<p align="center"><img width="1280" height="640" src="./assets/manage_connections.gif"></p>
 
-### Working with documents
+### Working with documents (viewing, duplicating, deleting), autocomplete, etc.
 
-<p align="center"><img src="./assets/working_with_docs.gif"></p>
+<p align="center"><img width="1280" height="640" src="./assets/working_with_documents.gif"></p>
 
 ## Overview
 
@@ -24,6 +24,12 @@ alike.
   to navigate and manage your MongoDB databases.
 - **Managing Documents**: Mongui allows you to view, create, update, duplicate
   and delete documents in your databases with ease.
+- **Managing Collections**: Mongui provides a simple way to manage your
+  collections, including the ability to create, delete collections.
+- **Autocomplete**: Mongui offers an autocomplete feature that suggests
+  collection names, database names, and MongoDB commands as you type.
+- **Query History**: Mongui keeps track of your query history, allowing you to
+  easily access and reuse previous queries.
 
 ## Installation
 
