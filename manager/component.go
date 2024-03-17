@@ -16,7 +16,8 @@ type (
 	// the sender of the event
 	EventMsg struct {
 		*tcell.EventKey
-		Sender Component
+		Sender  Component
+		Message interface{}
 	}
 
 	// Listener

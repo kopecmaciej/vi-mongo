@@ -64,27 +64,35 @@ func (r *Root) Init() error {
 
 func (r *Root) renderMainView() error {
 	currConn := r.app.Config.GetCurrentConnection()
-	client := mongo.NewClient(currConn)
-	err := client.Connect()
-	if err != nil {
-		return err
+	if r.app.Dao != nil && *r.app.Dao.Config == *currConn {
+		return nil
+	} else {
+		// TODO: find the correct way to refresh those components
+		r.content = NewContent()
+		r.sideBar = NewSideBar()
+		r.header = NewHeader()
+		client := mongo.NewClient(currConn)
+		err := client.Connect()
+		if err != nil {
+			return err
+		}
+		err = client.Ping()
+		if err != nil {
+			return err
+		}
+
+		r.app.Dao = mongo.NewDao(client.Client, client.Config)
+
+		if err := r.initSubcomponents(); err != nil {
+			return err
+		}
+
+		r.sideBar.dbTree.NodeSelectFunc = r.content.RenderContent
+
+		r.render()
+
+		return nil
 	}
-	err = client.Ping()
-	if err != nil {
-		return err
-	}
-
-	r.app.Dao = mongo.NewDao(client.Client, client.Config)
-
-	if err := r.initSubcomponents(); err != nil {
-		return err
-	}
-
-	r.sideBar.dbTree.NodeSelectFunc = r.content.RenderContent
-
-	r.render()
-
-	return nil
 }
 
 func (r *Root) initSubcomponents() error {
