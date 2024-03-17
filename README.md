@@ -1,12 +1,22 @@
-# Mongui: Terminal User Interface for MongoDB
+<p align="center"><img src="./assets/mongui_header.png"></p>
+
+## Showcasing some of the features of MongUI
+
+### Managing connections (adding, removing)
+
+<p align="center"><img width="1280" height="640" src="./assets/manage_connections.gif"></p>
+
+### Working with documents (viewing, duplicating, deleting), autocomplete, etc.
+
+<p align="center"><img width="1280" height="640" src="./assets/working_with_documents.gif"></p>
 
 ## Overview
 
-**Mongui** is an intuitive Terminal User Interface (TUI) application, crafted
-with Go, designed to streamline and simplify the management of MongoDB
-databases. Emphasizing ease of use without sacrificing functionality, Mongui
-offers a user-friendly command-line experience for database administrators and
-developers alike.
+**MongUI** is an intuitive Terminal User Interface (TUI) application, written in
+Go, designed to streamline and simplify the management of MongoDB databases.
+Emphasizing ease of use without sacrificing functionality, Mongui offers a
+user-friendly command-line experience for database administrators and developers
+alike.
 
 ## Features
 
@@ -14,6 +24,12 @@ developers alike.
   to navigate and manage your MongoDB databases.
 - **Managing Documents**: Mongui allows you to view, create, update, duplicate
   and delete documents in your databases with ease.
+- **Managing Collections**: Mongui provides a simple way to manage your
+  collections, including the ability to create, delete collections.
+- **Autocomplete**: Mongui offers an autocomplete feature that suggests
+  collection names, database names, and MongoDB commands as you type.
+- **Query History**: Mongui keeps track of your query history, allowing you to
+  easily access and reuse previous queries.
 
 ## Installation
 
@@ -21,19 +37,10 @@ For now, Mongui is available only by having Go installed on your machine. To
 install Mongui, simply run the following command:
 
 ```
-git@github.com:kopecmaciej/mongui.git
+git clone git@github.com:kopecmaciej/mongui.git
 cd mongui
 make
 ```
-
-## Usage
-
-Launch Mongui from the terminal:
-
-`mongui`
-
-Follow on-screen instructions for navigating and managing your MongoDB
-databases.
 
 ## List of features to be implemented
 
