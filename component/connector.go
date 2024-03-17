@@ -132,13 +132,14 @@ func (c *Connector) Render(currItem int) {
 
 	if len(c.app.Config.Connections) > 0 {
 		c.renderList(currItem)
+		defer c.app.SetFocus(c.list)
+	} else {
+		defer c.app.SetFocus(c.form)
 	}
 	c.renderForm()
 
 	// easy way to center the form
 	c.AddItem(tview.NewBox(), 0, 1, false)
-
-	c.app.SetFocus(c.list)
 }
 
 // renderForm renders the form for creating new connection
@@ -203,9 +204,16 @@ func (c *Connector) setConnections() {
 
 // saveConnection saves new connection to config file
 func (c *Connector) saveConnection(mongoCfg *config.MongoConfig) error {
-	err := c.app.Config.AddConnection(mongoCfg)
-	if err != nil {
-		return err
+	if mongoCfg.Uri != "" {
+		err := c.app.Config.AddConnectionFromUri(mongoCfg)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := c.app.Config.AddConnection(mongoCfg)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

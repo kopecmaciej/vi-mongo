@@ -43,7 +43,6 @@ func NewHeader() *Header {
 	return &h
 }
 
-// init initializes the header component
 func (h *Header) init() error {
 	ctx := context.Background()
 	h.setStyle()
@@ -53,12 +52,11 @@ func (h *Header) init() error {
 	}
 	h.render()
 
-	go h.Refresh()
+	go h.refresh()
 
 	return nil
 }
 
-// setStyle sets the style of the header component
 func (h *Header) setStyle() {
 	h.style = &h.app.Styles.Header
 	h.Table.SetBackgroundColor(h.style.BackgroundColor.Color())
@@ -69,6 +67,8 @@ func (h *Header) setStyle() {
 	h.Table.SetTitle(" Database Info ")
 }
 
+// setBaseInfo sets the base information about the database
+// such as status, host, port, database, version, uptime, connections, memory etc.
 func (h *Header) setBaseInfo(ctx context.Context) error {
 	ss, err := h.dao.GetServerStatus(ctx)
 	if err != nil {
@@ -83,23 +83,24 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 	}
 
 	h.baseInfo = BaseInfo{
-		0:  {"Status", status},
-		1:  {"Host", h.dao.Config.Host},
-		2:  {"Port", port},
-		3:  {"Database", h.dao.Config.Database},
-		4:  {"Collection", "-"},
-		5:  {"Version", ss.Version},
-		6:  {"Uptime", strconv.Itoa(int(ss.Uptime))},
-		7:  {"Connections", strconv.Itoa(int(ss.CurrentConns))},
-		8:  {"Available Connections", strconv.Itoa(int(ss.AvailableConns))},
-		9:  {"Resident Memory", strconv.Itoa(int(ss.Mem.Resident))},
-		10: {"Virtual Memory", strconv.Itoa(int(ss.Mem.Virtual))},
+		0: {"Status", status},
+		1: {"Host", h.dao.Config.Host},
+		2: {"Port", port},
+		3: {"Database", h.dao.Config.Database},
+		4: {"Version", ss.Version},
+		5: {"Uptime", strconv.Itoa(int(ss.Uptime))},
+		6: {"Connections", strconv.Itoa(int(ss.CurrentConns))},
+		7: {"Available Connections", strconv.Itoa(int(ss.AvailableConns))},
+		8: {"Resident Memory", strconv.Itoa(int(ss.Mem.Resident))},
+		9: {"Virtual Memory", strconv.Itoa(int(ss.Mem.Virtual))},
 	}
 
 	return nil
 }
 
-func (h *Header) Refresh() {
+// refresh refreshes the header component every 10 seconds
+// to display the most recent information about the database
+func (h *Header) refresh() {
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -115,7 +116,7 @@ func (h *Header) Refresh() {
 	}
 }
 
-// set base information about database
+// render renders the header component
 func (h *Header) render() {
 	b := h.baseInfo
 

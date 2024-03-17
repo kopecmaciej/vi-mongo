@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
@@ -131,6 +133,24 @@ func (c *Config) AddConnection(mongoConfig *MongoConfig) error {
 	return os.WriteFile(pathToConfig, updatedConfig, 0644)
 }
 
+// AddConnectionFromUri adds a MongoDB connection to the config file
+// using a URI
+func (c *Config) AddConnectionFromUri(mongoConfig *MongoConfig) error {
+	log.Info().Msgf("Adding connection from URI: %s", mongoConfig.Uri)
+	host, port, db, err := ParseMongoDBURI(mongoConfig.Uri)
+	if err != nil {
+		return err
+	}
+	mongoConfig.Host = host
+	intPort, err := strconv.Atoi(port)
+	if err != nil {
+		return err
+	}
+	mongoConfig.Port = intPort
+	mongoConfig.Database = db
+	return c.AddConnection(mongoConfig)
+}
+
 // DeleteConnection deletes a config from the config file by name
 func (c *Config) DeleteConnection(name string) error {
 	log.Info().Msgf("Deleting connection: %s", name)
@@ -161,6 +181,45 @@ func (m *MongoConfig) GetUri() string {
 	}
 
 	return uri
+}
+
+func ParseMongoDBURI(uri string) (host, port, db string, err error) {
+	if !strings.HasPrefix(uri, "mongodb://") && !strings.HasPrefix(uri, "mongodb+srv://") {
+		return "", "", "", fmt.Errorf("invalid MongoDB URI prefix")
+	}
+
+	trimURI := strings.TrimPrefix(uri, "mongodb://")
+	trimURI = strings.TrimPrefix(trimURI, "mongodb+srv://")
+
+	splitURI := strings.Split(trimURI, "@")
+	if len(splitURI) > 1 {
+		trimURI = splitURI[1]
+	} else {
+		trimURI = splitURI[0]
+	}
+
+	db = strings.Split(trimURI, "/")[1]
+	if db == "" {
+		db = ""
+	}
+	if strings.Contains(db, "?") {
+		db = strings.Split(db, "?")[0]
+	}
+	if strings.HasPrefix(uri, "mongodb+srv://") {
+		host = trimURI
+		port = "Default SRV"
+		return host, port, db, nil
+	}
+
+	hostPort := strings.Split(trimURI, "/")[0]
+	hostPortSplit := strings.Split(hostPort, ":")
+	host = hostPortSplit[0]
+	if len(hostPortSplit) > 1 {
+		port = hostPortSplit[1]
+	} else {
+		port = "27017"
+	}
+	return host, port, db, nil
 }
 
 func loadAndUnmarshal() (*Config, error) {
