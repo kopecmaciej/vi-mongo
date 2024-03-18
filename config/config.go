@@ -123,6 +123,11 @@ func (c *Config) AddConnection(mongoConfig *MongoConfig) error {
 	if c.Connections == nil {
 		c.Connections = []MongoConfig{}
 	}
+	for _, connection := range c.Connections {
+		if connection.Name == mongoConfig.Name {
+			return fmt.Errorf("connection with name %s already exists", mongoConfig.Name)
+		}
+	}
 	c.Connections = append(c.Connections, *mongoConfig)
 
 	updatedConfig, err := yaml.Marshal(c)
@@ -198,9 +203,9 @@ func ParseMongoDBURI(uri string) (host, port, db string, err error) {
 		trimURI = splitURI[0]
 	}
 
-	db = strings.Split(trimURI, "/")[1]
-	if db == "" {
-		db = ""
+	splitDB := strings.Split(trimURI, "/")
+	if len(splitDB) > 1 {
+		db = splitDB[1]
 	}
 	if strings.Contains(db, "?") {
 		db = strings.Split(db, "?")[0]

@@ -16,9 +16,9 @@ type (
 	// nested keybindings of their children components
 	KeyBindings struct {
 		Global    GlobalKeys    `json:"global"`
-		Root      RootKeys      `json:"rootKeys"`
+		Root      RootKeys      `json:"root"`
 		Connector ConnectorKeys `json:"connector"`
-		Help      HelpKeys      `json:"helpKeys"`
+		Help      HelpKeys      `json:"help"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -250,7 +250,17 @@ func NewKeyBindings() KeyBindings {
 		return defaultKeyBindings
 	}
 
-	v := reflect.ValueOf(&defaultKeyBindings).Elem()
+	defaultKeyBindings.Merge(customKeyBindings)
+
+	return defaultKeyBindings
+}
+
+// Merge merges the custom keybindings with the default keybindings
+func (kb *KeyBindings) Merge(customKeyBindings *KeyBindings) {
+	if customKeyBindings == nil {
+		return
+	}
+	v := reflect.ValueOf(kb).Elem()
 	cv := reflect.ValueOf(customKeyBindings).Elem()
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
@@ -273,8 +283,7 @@ func NewKeyBindings() KeyBindings {
 			}
 		}
 	}
-
-	return defaultKeyBindings
+	return
 }
 
 // LoadCustomKeyBindings loads custom keybindings from the config file
@@ -309,7 +318,7 @@ func (kb KeyBindings) GetKeysForComponent(component string) ([]OrderedKeys, erro
 	field := v.FieldByName(component)
 
 	if !field.IsValid() || field.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("field %s not found", component) // Return nil if the field doesn't exist or isn't a struct.
+		return nil, fmt.Errorf("field %s not found", component)
 	}
 
 	var iterateOverField func(field reflect.Value, c string)

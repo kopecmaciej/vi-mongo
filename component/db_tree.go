@@ -92,7 +92,7 @@ func (t *DBTree) setKeybindings(ctx context.Context) {
 	})
 }
 
-func (t *DBTree) RenderTree(ctx context.Context, dbsWitColls []mongo.DBsWithCollections, expand bool) {
+func (t *DBTree) Render(ctx context.Context, dbsWitColls []mongo.DBsWithCollections, expand bool) {
 	rootNode := t.rootNode()
 	t.SetRoot(rootNode)
 

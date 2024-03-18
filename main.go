@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"time"
 
 	"github.com/kopecmaciej/mongui/component"
 	"github.com/kopecmaciej/mongui/config"
@@ -15,8 +14,6 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error loading config")
 	}
-
-	// sleep()
 
 	logLevel := zerolog.InfoLevel
 	if config.Debug {
@@ -62,8 +59,4 @@ func logging(path string, logLevel zerolog.Level, pretty bool) *os.File {
 	log.Logger = log.With().Caller().Logger()
 
 	return logFile
-}
-
-func sleep() {
-	time.Sleep(time.Second * 8)
 }

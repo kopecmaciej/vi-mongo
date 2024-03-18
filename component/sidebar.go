@@ -6,9 +6,15 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
+)
+
+const (
+	SideBarComponent   manager.Component = "SideBar"
+	FilterBarComponent manager.Component = "FilterBar"
 )
 
 type SideBar struct {
@@ -23,10 +29,10 @@ type SideBar struct {
 
 func NewSideBar() *SideBar {
 	s := &SideBar{
-		Component: NewComponent("SideBar"),
+		Component: NewComponent(SideBarComponent),
 		Flex:      tview.NewFlex(),
 		dbTree:    NewDBTree(),
-		filterBar: NewInputBar("Filter"),
+		filterBar: NewInputBar(string(FilterBarComponent)),
 		mutex:     sync.Mutex{},
 	}
 
@@ -144,7 +150,7 @@ func (s *SideBar) filter(ctx context.Context, text string) {
 			}
 		}
 	}
-	s.dbTree.RenderTree(ctx, filtered, expand)
+	s.dbTree.Render(ctx, filtered, expand)
 
 	log.Debug().Msgf("Filtered: %v", filtered)
 }
@@ -153,7 +159,7 @@ func (s *SideBar) renderWithFilter(ctx context.Context, filter string) error {
 	if err := s.fetchDbsWithCollections(ctx, filter); err != nil {
 		return err
 	}
-	s.dbTree.RenderTree(ctx, s.dbsWithColls, false)
+	s.dbTree.Render(ctx, s.dbsWithColls, false)
 
 	return nil
 }
