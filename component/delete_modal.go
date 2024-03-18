@@ -6,6 +6,10 @@ import (
 	"github.com/kopecmaciej/tview"
 )
 
+const (
+	DeleteModalComponent = "DeleteModal"
+)
+
 type DeleteModal struct {
 	*Component
 	*tview.Modal
@@ -15,7 +19,7 @@ type DeleteModal struct {
 
 func NewDeleteModal() *DeleteModal {
 	dm := &DeleteModal{
-		Component: NewComponent("DeleteModal"),
+		Component: NewComponent(DeleteModalComponent),
 		Modal:     tview.NewModal(),
 	}
 

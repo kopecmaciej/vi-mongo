@@ -38,13 +38,13 @@ func NewSideBar() *SideBar {
 func (s *SideBar) init() error {
 	ctx := context.Background()
 	s.setStyle()
-	s.setKeybindings(ctx)
+	s.setKeybindings()
 
 	if err := s.dbTree.Init(s.app); err != nil {
 		return err
 	}
 
-	if err := s.render(ctx); err != nil {
+	if err := s.render(); err != nil {
 		return err
 	}
 	if err := s.renderWithFilter(ctx, ""); err != nil {
@@ -62,20 +62,20 @@ func (s *SideBar) setStyle() {
 	s.Flex.SetDirection(tview.FlexRow)
 }
 
-func (s *SideBar) setKeybindings(ctx context.Context) {
+func (s *SideBar) setKeybindings() {
 	keys := s.app.Keys
 	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case keys.Contains(keys.Root.Sidebar.FilterBar, event.Name()):
 			s.filterBar.Enable()
-			s.render(ctx)
+			s.render()
 			return nil
 		}
 		return event
 	})
 }
 
-func (s *SideBar) render(ctx context.Context) error {
+func (s *SideBar) render() error {
 	s.Flex.Clear()
 
 	var primitive tview.Primitive
@@ -97,13 +97,13 @@ func (s *SideBar) filterBarListener(ctx context.Context) {
 		s.filter(ctx, text)
 	}
 	rejectFunc := func() {
-		s.render(ctx)
+		s.render()
 	}
 	s.filterBar.DoneFuncHandler(accceptFunc, rejectFunc)
 }
 
 func (s *SideBar) filter(ctx context.Context, text string) {
-	defer s.render(ctx)
+	defer s.render()
 	dbsWitColls := s.dbsWithColls
 	expand := false
 	filtered := []mongo.DBsWithCollections{}

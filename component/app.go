@@ -1,8 +1,6 @@
 package component
 
 import (
-	"context"
-
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
@@ -42,7 +40,6 @@ func NewApp(appConfig *config.Config) App {
 
 // Init initializes app
 func (a *App) Init() error {
-	ctx := context.Background()
 	a.Root.app = a
 	if err := a.Root.Init(); err != nil {
 		return err
@@ -54,12 +51,12 @@ func (a *App) Init() error {
 	if err != nil {
 		return err
 	}
-	a.setKeybindings(ctx, help)
+	a.setKeybindings(help)
 
 	return a.Run()
 }
 
-func (a *App) setKeybindings(ctx context.Context, help *Help) {
+func (a *App) setKeybindings(help *Help) {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case a.Keys.Contains(a.Keys.Global.ToggleHelp, event.Name()):

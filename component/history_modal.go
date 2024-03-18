@@ -11,6 +11,8 @@ import (
 )
 
 const (
+	HistoryModalComponent manager.Component = "HistoryModal"
+
 	maxHistory      = 10
 	historyFilePath = "history.txt"
 )
@@ -25,7 +27,7 @@ type HistoryModal struct {
 
 func NewHistoryModal() *HistoryModal {
 	h := &HistoryModal{
-		Component: NewComponent("HistoryModal"),
+		Component: NewComponent(HistoryModalComponent),
 		ListModal: primitives.NewListModal(),
 	}
 

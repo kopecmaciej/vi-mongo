@@ -10,6 +10,10 @@ import (
 	"github.com/kopecmaciej/tview"
 )
 
+const (
+	RootComponent manager.Component = "Root"
+)
+
 // Root is a component that manages visaibility of other components
 type Root struct {
 	*Component
@@ -26,7 +30,7 @@ type Root struct {
 
 func NewRoot() *Root {
 	r := &Root{
-		Component: NewComponent("Root"),
+		Component: NewComponent(RootComponent),
 		Pages:     tview.NewPages(),
 		mainFlex:  tview.NewFlex(),
 		innerFlex: tview.NewFlex(),

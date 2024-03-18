@@ -52,9 +52,11 @@ func (h *Help) Render() error {
 
 	pos := 0
 	for _, keys := range cKeys {
-		h.addHeaderSection(keys.Component, pos)
-		pos += 3
-		h.AddKeySection(keys.Component, keys.Keys, &pos)
+		if len(keys.Keys) > 0 {
+			h.addHeaderSection(keys.Component, pos)
+			pos += 3
+			h.AddKeySection(keys.Component, keys.Keys, &pos)
+		}
 	}
 
 	gKeys, err := h.app.Keys.GetKeysForComponent("Global")

@@ -8,9 +8,14 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+const (
+	DocModifierComponent manager.Component = "DocModifier"
 )
 
 // DocModifier is a component that allows editing JSON documents
@@ -20,12 +25,12 @@ type DocModifier struct {
 
 func NewDocModifier() *DocModifier {
 	return &DocModifier{
-		Component: NewComponent("DocModifier"),
+		Component: NewComponent(DocModifierComponent),
 	}
 }
 
 func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.ObjectID, error) {
-	createdDoc, err := d.openEditor(ctx, "{}")
+	createdDoc, err := d.openEditor("{}")
 	if err != nil {
 		log.Printf("Error editing document: %v", err)
 		return primitive.NilObjectID, nil
@@ -56,7 +61,7 @@ func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.Ob
 
 // Edit opens the editor with the document and saves it if it was changed
 func (d *DocModifier) Edit(ctx context.Context, db, coll string, rawDocument string) (string, error) {
-	updatedDocument, err := d.openEditor(ctx, rawDocument)
+	updatedDocument, err := d.openEditor(rawDocument)
 	if err != nil {
 		return "", fmt.Errorf("Error editing document: %v", err)
 	}
@@ -78,7 +83,7 @@ func (d *DocModifier) Edit(ctx context.Context, db, coll string, rawDocument str
 func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocument string) (primitive.ObjectID, error) {
 	replacedDoc, err := removeField(rawDocument, "_id")
 
-	duplicateDoc, err := d.openEditor(ctx, replacedDoc)
+	duplicateDoc, err := d.openEditor(replacedDoc)
 	if err != nil {
 		return primitive.NilObjectID, fmt.Errorf("Error editing document: %v", err)
 	}
@@ -137,7 +142,7 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, rawDo
 }
 
 // openEditor opens the editor with the document and returns the edited document
-func (d *DocModifier) openEditor(ctx context.Context, rawDocument string) (string, error) {
+func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 	prettyJsonBuffer, err := mongo.IndientJSON(rawDocument)
 	if err != nil {
 		return "", fmt.Errorf("Error indenting JSON: %v", err)
@@ -163,17 +168,17 @@ func (d *DocModifier) openEditor(ctx context.Context, rawDocument string) (strin
 		cmd.Stderr = os.Stderr
 		err = cmd.Run()
 		if err != nil {
-			log.Printf("Error running editor: %v", err)
+			log.Error().Err(err).Msg("Error running editor")
 			return
 		}
 
 		editedBytes, err := os.ReadFile(tmpFile.Name())
 		if err != nil {
-			log.Printf("Error reading edited file: %v", err)
+			log.Error().Err(err).Msg("Error reading edited file")
 			return
 		}
 		if !json.Valid(editedBytes) {
-			log.Printf("Edited JSON is not valid")
+			log.Error().Msg("Edited JSON is not valid")
 			return
 		}
 		updatedDocument = string(editedBytes)

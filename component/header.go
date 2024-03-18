@@ -6,8 +6,13 @@ import (
 	"time"
 
 	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
+)
+
+const (
+	HeaderComponent manager.Component = "Header"
 )
 
 type (
@@ -34,7 +39,7 @@ type (
 // NewHeader creates a new header component
 func NewHeader() *Header {
 	h := Header{
-		Component: NewComponent("Header"),
+		Component: NewComponent(HeaderComponent),
 		Table:     tview.NewTable(),
 	}
 

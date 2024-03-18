@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 
 	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/mongui/primitives"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,6 +14,10 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
+)
+
+const (
+	DocPeekerComponent manager.Component = "DocPeeker"
 )
 
 // peekerState is used to store the state of the document being peeked at
@@ -36,7 +41,7 @@ type DocPeeker struct {
 // NewDocPeeker creates a new DocPeeker component
 func NewDocPeeker() *DocPeeker {
 	peekr := &DocPeeker{
-		Component:   NewComponent("DocPeeker"),
+		Component:   NewComponent(DocPeekerComponent),
 		ModalView:   primitives.NewModalView(),
 		docModifier: NewDocModifier(),
 	}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/mongui/primitives"
 	"github.com/kopecmaciej/tview"
@@ -14,8 +15,9 @@ import (
 )
 
 const (
-	InputModalComponent   = "InputModal"
-	ConfirmModalComponent = "ConfirmModal"
+	DBTreeComponent       manager.Component = "DBTree"
+	InputModalComponent   manager.Component = "InputModal"
+	ConfirmModalComponent manager.Component = "ConfirmModal"
 )
 
 type DBTree struct {
@@ -30,7 +32,7 @@ type DBTree struct {
 
 func NewDBTree() *DBTree {
 	d := &DBTree{
-		Component:  NewComponent("DBTree"),
+		Component:  NewComponent(DBTreeComponent),
 		TreeView:   tview.NewTreeView(),
 		inputModal: primitives.NewInputModal(),
 	}

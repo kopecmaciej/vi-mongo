@@ -116,7 +116,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			}
 			return nil
 		case k.Contains(k.Root.Content.ViewDocument, event.Name()):
-			err := c.viewJson(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+			err := c.viewJson(c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error while viewing document", err)
 			}
@@ -366,7 +366,7 @@ func (c *Content) goToPrevMongoPage(ctx context.Context) {
 	c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
 }
 
-func (c *Content) viewJson(ctx context.Context, jsonString string) error {
+func (c *Content) viewJson(jsonString string) error {
 	c.View.Clear()
 
 	c.app.Root.AddPage(JsonViewComponent, c.View, true, true)
