@@ -29,11 +29,13 @@ func (m *Client) Connect() error {
 	defer cancel()
 
 	uri := m.Config.GetUri()
-	clientOptions := options.Client().ApplyURI(uri)
-	client, err := mongo.Connect(ctx, clientOptions)
+	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+	opts := options.Client().ApplyURI(uri).SetServerAPIOptions(serverAPI)
+	client, err := mongo.Connect(ctx, opts)
 	if err != nil {
 		return err
 	}
+
 	m.Client = client
 
 	log.Info().Msgf("Connected to %s", uri)

@@ -203,21 +203,19 @@ func ParseMongoDBURI(uri string) (host, port, db string, err error) {
 		trimURI = splitURI[0]
 	}
 
+	if strings.Contains(trimURI, "?") {
+		trimURI = strings.Split(trimURI, "?")[0]
+	}
+
 	splitDB := strings.Split(trimURI, "/")
 	if len(splitDB) > 1 {
 		db = splitDB[1]
-	}
-	if strings.Contains(db, "?") {
-		db = strings.Split(db, "?")[0]
-	}
-	if strings.HasPrefix(uri, "mongodb+srv://") {
-		host = trimURI
-		port = "Default SRV"
-		return host, port, db, nil
+		trimURI = splitDB[0]
+	} else {
+		db = ""
 	}
 
-	hostPort := strings.Split(trimURI, "/")[0]
-	hostPortSplit := strings.Split(hostPort, ":")
+	hostPortSplit := strings.Split(trimURI, ":")
 	host = hostPortSplit[0]
 	if len(hostPortSplit) > 1 {
 		port = hostPortSplit[1]

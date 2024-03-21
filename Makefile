@@ -11,6 +11,9 @@ build:
 run:
 	$(BUILD_DIR)/$(SVC_NAME)
 
+test:
+	go test -v ./...
+
 debug:
 	if [ -f /proc/sys/kernel/yama/ptrace_scope ]; then \
 		sudo sysctl kernel.yama.ptrace_scope=0; \

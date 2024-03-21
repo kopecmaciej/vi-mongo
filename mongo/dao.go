@@ -33,8 +33,11 @@ func (d *Dao) GetServerStatus(ctx context.Context) (*ServerStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	status.Repl.ReadOnly = isMaster["readOnly"].(bool)
-	status.Repl.IsMaster = isMaster["ismaster"].(bool)
+	var ok bool
+	status.Repl.IsMaster, ok = isMaster["ismaster"].(bool)
+	if !ok {
+		status.Repl.IsMaster = false
+	}
 
 	return &status, nil
 }

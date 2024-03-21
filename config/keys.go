@@ -214,7 +214,7 @@ func NewKeyBindings() KeyBindings {
 					Description: "Move form focus down",
 				},
 				SaveConnection: Key{
-					Keys:        []string{"Ctrl+S"},
+					Keys:        []string{"Ctrl+S", "Enter"},
 					Description: "Save connection",
 				},
 				FocusList: Key{
