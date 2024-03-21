@@ -154,7 +154,10 @@ func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 	}
 	defer os.Remove(tmpFile.Name())
 
-	ed := d.app.Config.GetEditorCmd()
+	ed, err := d.app.Config.GetEditorCmd()
+	if err != nil {
+		return "", fmt.Errorf("Error getting editor command: %v", err)
+	}
 	log.Debug().Msgf("%s", ed)
 	editor, err := exec.LookPath(ed)
 	if err != nil {

@@ -1,6 +1,7 @@
 package component
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
@@ -14,12 +15,13 @@ func NewErrorModal(message string, err error) *tview.Modal {
 		log.Error().Err(err).Msg(message)
 	}
 
-	message = message + "\n\n" + "[yellow][::i]For more information check the logs[white]"
+	message = "[White::b] " + message + " [::]"
 
 	errModal := tview.NewModal()
 	errModal.SetTitle(" Error ")
 	errModal.SetBorderPadding(0, 0, 1, 1)
 	errModal.SetBackgroundColor(tview.Styles.ContrastBackgroundColor)
+	errModal.SetTextColor(tcell.ColorRed)
 	errModal.SetText(message)
 	errModal.AddButtons([]string{"Ok"})
 

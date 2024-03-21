@@ -42,6 +42,7 @@ type Config struct {
 	Debug              bool          `yaml:"debug"`
 	Editor             EditorConfig  `yaml:"editor"`
 	ShowConnectionPage bool          `yaml:"showConnectionPage"`
+	ShowWelcomePage    bool          `yaml:"showWelcomePage"`
 	CurrentConnection  string        `yaml:"currentConnection"`
 	Connections        []MongoConfig `yaml:"connections"`
 }
@@ -51,7 +52,7 @@ type Config struct {
 // with the default settings
 func LoadConfig() (*Config, error) {
 	config := &Config{}
-	configPath, err := getConfigPath()
+	configPath, err := GetConfigPath()
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +99,7 @@ func loadDefaultConfig() *Config {
 		},
 		Debug:              false,
 		ShowConnectionPage: true,
+		ShowWelcomePage:    true,
 		CurrentConnection:  "",
 		Connections:        []MongoConfig{},
 	}
@@ -114,7 +116,7 @@ func ensureConfigDirExist() error {
 	return nil
 }
 
-func getConfigPath() (string, error) {
+func GetConfigPath() (string, error) {
 	configPath, err := xdg.ConfigFile(dirName)
 	if err != nil {
 		return "", err
@@ -123,38 +125,31 @@ func getConfigPath() (string, error) {
 	return configPath, nil
 }
 
-// SaveMongoConfig saves the given MongoDB configuration to the config file
-// If the file does not exist, it will be created
-func SaveMongoConfig(config *MongoConfig) error {
-	bytes, err := yaml.Marshal(config)
-	if err != nil {
-		return err
-	}
-	configPath, err := getConfigPath()
+// UpdateConfig updates the config file with the new settings
+func (c *Config) UpdateConfig() error {
+	updatedConfig, err := yaml.Marshal(c)
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(configPath, bytes, 0644)
+	configPath, err := GetConfigPath()
 	if err != nil {
-		if os.IsNotExist(err) {
-			// Create the config file with default settings
-			err := os.WriteFile(configPath, bytes, 0644)
-			if err != nil {
-				return err
-			}
-		}
+		return err
 	}
 
-	return nil
+	return os.WriteFile(configPath, updatedConfig, 0644)
 }
 
 // GetEditorCmd returns the editor command from the config file
-func (c *Config) GetEditorCmd() string {
-	if c.Editor.Env != "" {
-		return os.Getenv(c.Editor.Env)
+func (c *Config) GetEditorCmd() (string, error) {
+	if c.Editor.Env == "" && c.Editor.Command == "" {
+		return "", fmt.Errorf("editor not set")
 	}
-	return c.Editor.Command
+	if c.Editor.Command != "" {
+		return c.Editor.Command, nil
+	}
+
+	return os.Getenv(c.Editor.Env), nil
 }
 
 // SetCurrentConnection sets the current connection in the config file
@@ -168,7 +163,7 @@ func (c *Config) SetCurrentConnection(name string) error {
 		return err
 	}
 
-	configPath, err := getConfigPath()
+	configPath, err := GetConfigPath()
 	if err != nil {
 		return err
 	}
@@ -205,7 +200,7 @@ func (c *Config) AddConnection(mongoConfig *MongoConfig) error {
 		return err
 	}
 
-	configPath, err := getConfigPath()
+	configPath, err := GetConfigPath()
 	if err != nil {
 		return err
 	}
@@ -246,7 +241,7 @@ func (c *Config) DeleteConnection(name string) error {
 		return err
 	}
 
-	configPath, err := getConfigPath()
+	configPath, err := GetConfigPath()
 	if err != nil {
 		return err
 	}
@@ -306,7 +301,7 @@ func ParseMongoDBURI(uri string) (host, port, db string, err error) {
 }
 
 func loadAndUnmarshal() (*Config, error) {
-	configPath, errr := getConfigPath()
+	configPath, errr := GetConfigPath()
 	if errr != nil {
 		return nil, errr
 	}
