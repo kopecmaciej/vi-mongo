@@ -33,10 +33,25 @@ alike.
 
 ## Installation
 
-For now, Mongui is available only by having Go installed on your machine. To
-install Mongui, simply run the following command:
+### Using curl
 
+```bash
+curl -L https://github.com/kopecmaciej/mongui/releases/download/v0.1.0-beta/mongui -o mongui
+chmod +x mongui
+sudo mv mongui /usr/bin
 ```
+
+### Using wget
+
+```bash
+wget https://github.com/kopecmaciej/mongui/releases/download/v0.1.0-beta/mongui
+chmod +x mongui
+sudo mv mongui /usr/bin
+```
+
+### Using Go
+
+```bash
 git clone git@github.com:kopecmaciej/mongui.git
 cd mongui
 make
