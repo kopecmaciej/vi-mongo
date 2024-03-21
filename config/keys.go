@@ -101,7 +101,20 @@ type (
 )
 
 func NewKeyBindings() KeyBindings {
-	defaultKeyBindings := KeyBindings{
+	defaultKeyBindings := loadDefaultKeybindings()
+
+	customKeyBindings, err := defaultKeyBindings.LoadCustomKeyBindings("keybindings.json")
+	if err != nil {
+		return defaultKeyBindings
+	}
+
+	defaultKeyBindings.Merge(customKeyBindings)
+
+	return defaultKeyBindings
+}
+
+func loadDefaultKeybindings() KeyBindings {
+	return KeyBindings{
 		Global: GlobalKeys{
 			ToggleHelp: Key{
 				Runes:       []string{"?"},
@@ -244,15 +257,6 @@ func NewKeyBindings() KeyBindings {
 			},
 		},
 	}
-
-	customKeyBindings, err := defaultKeyBindings.LoadCustomKeyBindings("keybindings.json")
-	if err != nil {
-		return defaultKeyBindings
-	}
-
-	defaultKeyBindings.Merge(customKeyBindings)
-
-	return defaultKeyBindings
 }
 
 // Merge merges the custom keybindings with the default keybindings

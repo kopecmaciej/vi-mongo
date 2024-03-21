@@ -1,8 +1,0 @@
-log:
-    path: mongui.log
-    level: info
-    prettyPrint: true
-debug: true
-showConnectionPage: true
-currentConnection: 
-connections:

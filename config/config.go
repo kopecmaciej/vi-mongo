@@ -6,13 +6,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/adrg/xdg"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
 
 const (
-	pathToConfig        = "config.yaml"
-	pathToDefaultConfig = "config.default.yaml"
+	dirName = "mongui"
 )
 
 type MongoConfig struct {
@@ -44,15 +44,23 @@ type Config struct {
 // If the file does not exist, it will be created
 // with the default settings
 func LoadConfig() (*Config, error) {
-	bytes, err := os.ReadFile(pathToConfig)
+	configPath, err := getConfigPath()
+	if err != nil {
+		return nil, err
+	}
+	bytes, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// Create the config file with default settings
-			bytes, err = os.ReadFile(pathToDefaultConfig)
+			err := ensureConfigDirExist()
 			if err != nil {
 				return nil, err
 			}
-			err = os.WriteFile(pathToConfig, bytes, 0644)
+			defaultConfig := loadDefaultConfig()
+			bytes, err = yaml.Marshal(defaultConfig)
+			if err != nil {
+				return nil, err
+			}
+			err = os.WriteFile(configPath, bytes, 0644)
 			if err != nil {
 				return nil, err
 			}
@@ -70,6 +78,41 @@ func LoadConfig() (*Config, error) {
 	return config, nil
 }
 
+func ensureConfigDirExist() error {
+	configPath, err := xdg.ConfigFile(dirName)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return os.MkdirAll(configPath, 0755)
+	}
+	return nil
+}
+
+func getConfigPath() (string, error) {
+	configPath, err := xdg.ConfigFile(dirName)
+	if err != nil {
+		return "", err
+	}
+	configPath = fmt.Sprintf("%s/config.yaml", configPath)
+	return configPath, nil
+}
+
+// loadDefaultConfig loads the default config settings
+func loadDefaultConfig() *Config {
+	return &Config{
+		Log: LogConfig{
+			Path:        "/tmp/mongui.log",
+			Level:       "info",
+			PrettyPrint: true,
+		},
+		Debug:              false,
+		ShowConnectionPage: true,
+		CurrentConnection:  "",
+		Connections:        []MongoConfig{},
+	}
+}
+
 // SaveMongoConfig saves the given MongoDB configuration to the config file
 // If the file does not exist, it will be created
 func SaveMongoConfig(config *MongoConfig) error {
@@ -77,12 +120,16 @@ func SaveMongoConfig(config *MongoConfig) error {
 	if err != nil {
 		return err
 	}
+	configPath, err := getConfigPath()
+	if err != nil {
+		return err
+	}
 
-	err = os.WriteFile(pathToConfig, bytes, 0644)
+	err = os.WriteFile(configPath, bytes, 0644)
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Create the config file with default settings
-			err := os.WriteFile(pathToConfig, bytes, 0644)
+			err := os.WriteFile(configPath, bytes, 0644)
 			if err != nil {
 				return err
 			}
@@ -103,7 +150,12 @@ func (c *Config) SetCurrentConnection(name string) error {
 		return err
 	}
 
-	return os.WriteFile(pathToConfig, updatedConfig, 0644)
+	configPath, err := getConfigPath()
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(configPath, updatedConfig, 0644)
 }
 
 // GetCurrentConnection gets the current connection from the config file
@@ -135,7 +187,12 @@ func (c *Config) AddConnection(mongoConfig *MongoConfig) error {
 		return err
 	}
 
-	return os.WriteFile(pathToConfig, updatedConfig, 0644)
+	configPath, err := getConfigPath()
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(configPath, updatedConfig, 0644)
 }
 
 // AddConnectionFromUri adds a MongoDB connection to the config file
@@ -171,7 +228,12 @@ func (c *Config) DeleteConnection(name string) error {
 		return err
 	}
 
-	return os.WriteFile(pathToConfig, updatedConfig, 0644)
+	configPath, err := getConfigPath()
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(configPath, updatedConfig, 0644)
 }
 
 func (m *MongoConfig) GetUri() string {
@@ -226,7 +288,12 @@ func ParseMongoDBURI(uri string) (host, port, db string, err error) {
 }
 
 func loadAndUnmarshal() (*Config, error) {
-	file, err := os.Open(pathToConfig)
+	configPath, errr := getConfigPath()
+	if errr != nil {
+		return nil, errr
+	}
+
+	file, err := os.Open(configPath)
 	if err != nil {
 		return nil, err
 	}
