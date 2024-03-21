@@ -158,7 +158,6 @@ func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Error getting editor command: %v", err)
 	}
-	log.Debug().Msgf("%s", ed)
 	editor, err := exec.LookPath(ed)
 	if err != nil {
 		return "", fmt.Errorf("Error looking for editor: %v", err)

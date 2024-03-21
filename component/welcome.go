@@ -88,9 +88,11 @@ func (w *Welcome) renderForm() {
 	w.form.AddTextView("Welcome", welcomeText, 60, 2, true, false)
 	w.form.AddTextView("Editor info", "Set command (vim, nano etc) or env variable ($ENV) to open editor", 60, 2, true, false)
 	w.form.AddInputField("Editor", "$EDITOR", 30, nil, nil)
-	w.form.AddInputField("logFile", "/tmp/mongui.log", 30, nil, nil)
-	w.form.AddInputField("logLevel", "info", 30, nil, nil)
+	w.form.AddTextView("Logs", "Requires restart if changed", 60, 1, true, false)
+	w.form.AddInputField("Log File", "/tmp/mongui.log", 30, nil, nil)
+	w.form.AddInputField("Log Level", "info", 30, nil, nil)
 	w.form.AddCheckbox("Show connection page", true, nil)
+	w.form.AddCheckbox("Show welcome page", false, nil)
 
 	w.form.AddButton(" Save and Connect ", func() {
 		err := w.saveConfig()
@@ -111,6 +113,7 @@ func (w *Welcome) saveConfig() error {
 	logFile := w.form.GetFormItemByLabel("logFile").(*tview.InputField).GetText()
 	logLevel := w.form.GetFormItemByLabel("logLevel").(*tview.InputField).GetText()
 	connPage := w.form.GetFormItemByLabel("Show connection page").(*tview.Checkbox).IsChecked()
+	welcomePage := w.form.GetFormItemByLabel("Show welcome page").(*tview.Checkbox).IsChecked()
 
 	c := w.app.Config
 
@@ -125,7 +128,7 @@ func (w *Welcome) saveConfig() error {
 	c.Log.Path = logFile
 	c.Log.Level = logLevel
 	c.ShowConnectionPage = connPage
-	c.ShowWelcomePage = false
+	c.ShowWelcomePage = welcomePage
 
 	err := w.app.Config.UpdateConfig()
 	if err != nil {
