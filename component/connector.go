@@ -201,23 +201,6 @@ func (c *Connector) setConnections() {
 	}
 }
 
-// saveConnection saves new connection to config file
-func (c *Connector) saveConnection(mongoCfg *config.MongoConfig) error {
-	if mongoCfg.Uri != "mongodb://" {
-		err := c.app.Config.AddConnectionFromUri(mongoCfg)
-		if err != nil {
-			return err
-		}
-	} else {
-		err := c.app.Config.AddConnection(mongoCfg)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // removeConnection removes connection from config file
 func (c *Connector) deleteCurrConnection() error {
 	currItem := c.list.GetCurrentItem()
@@ -247,7 +230,7 @@ func (c *Connector) saveButtonFunc() {
 		if name == "" {
 			name = url
 		}
-		err := c.saveConnection(&config.MongoConfig{
+		err := c.app.Config.AddConnectionFromUri(&config.MongoConfig{
 			Name:    name,
 			Uri:     url,
 			Timeout: intTimeout,
@@ -272,8 +255,7 @@ func (c *Connector) saveButtonFunc() {
 		if name == "" {
 			name = host + ":" + port
 		}
-
-		err = c.saveConnection(&config.MongoConfig{
+		err = c.app.Config.AddConnection(&config.MongoConfig{
 			Name:     name,
 			Host:     host,
 			Port:     intPort,

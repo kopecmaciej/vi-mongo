@@ -112,49 +112,57 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.PeekDocument, event.Name()):
 			err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error while peeking document", err)
+				ShowErrorModal(c.app.Root, "Error peeking document", err)
+				return nil
 			}
 			return nil
 		case k.Contains(k.Root.Content.ViewDocument, event.Name()):
 			err := c.viewJson(c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error while viewing document", err)
+				ShowErrorModal(c.app.Root, "Error viewing document", err)
+				return nil
 			}
 			return nil
 		case k.Contains(k.Root.Content.AddDocument, event.Name()):
 			ID, err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error while adding document", err)
+				ShowErrorModal(c.app.Root, "Error adding document", err)
+				return nil
 			}
 			insertedDoc, err := c.dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error while getting inserted document", err)
+				ShowErrorModal(c.app.Root, "Error getting inserted document", err)
+				return nil
 			}
 			strDoc, err := mongo.StringifyDocument(insertedDoc)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error while stringifying document", err)
+				ShowErrorModal(c.app.Root, "Error stringifying document", err)
+				return nil
 			}
 			c.addCell(strDoc)
 			return nil
 		case k.Contains(k.Root.Content.EditDocument, event.Name()):
 			updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error while editing document", err)
+				defer ShowErrorModalAndFocus(c.app.Root, "Error editing document", err, func() {
+					c.app.SetFocus(c.Table)
+				})
+				return nil
 			}
 			c.refreshCell(updated)
 			return nil
 		case k.Contains(k.Root.Content.DuplicateDocument, event.Name()):
 			ID, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error while duplicating document", err)
+				defer ShowErrorModal(c.app.Root, "Error duplicating document", err)
 			}
 			duplicatedDoc, err := c.dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error while getting inserted document", err)
+				defer ShowErrorModal(c.app.Root, "Error getting inserted document", err)
 			}
 			strDoc, err := mongo.StringifyDocument(duplicatedDoc)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error while stringifying document", err)
+				defer ShowErrorModal(c.app.Root, "Error stringifying document", err)
 			}
 			c.addCell(strDoc)
 			return nil
@@ -165,13 +173,13 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
 			err := c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error while deleting document", err)
+				defer ShowErrorModal(c.app.Root, "Error deleting document", err)
 			}
 			return nil
 		case k.Contains(k.Root.Content.Refresh, event.Name()):
 			err := c.refresh(ctx)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error while refreshing documents", err)
+				defer ShowErrorModal(c.app.Root, "Error refreshing documents", err)
 			}
 			return nil
 		case k.Contains(k.Root.Content.NextPage, event.Name()):

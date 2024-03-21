@@ -32,7 +32,7 @@ func NewDocModifier() *DocModifier {
 func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.ObjectID, error) {
 	createdDoc, err := d.openEditor("{}")
 	if err != nil {
-		log.Printf("Error editing document: %v", err)
+		log.Error().Err(err).Msg("Error opening editor")
 		return primitive.NilObjectID, nil
 	}
 	if createdDoc == "{}" {
@@ -154,7 +154,9 @@ func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 	}
 	defer os.Remove(tmpFile.Name())
 
-	editor, err := exec.LookPath(os.Getenv("EDITOR"))
+	ed := d.app.Config.GetEditorCmd()
+	log.Debug().Msgf("%s", ed)
+	editor, err := exec.LookPath(ed)
 	if err != nil {
 		return "", fmt.Errorf("Error looking for editor: %v", err)
 	}

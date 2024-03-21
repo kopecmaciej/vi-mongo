@@ -114,7 +114,7 @@ func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 		if buttonLabel == "Edit" {
 			updatedDoc, err := dc.docModifier.Edit(ctx, db, coll, jsonString)
 			if err != nil {
-				log.Error().Err(err).Msg("Error editing document")
+				ShowErrorModal(dc.app.Root, "Error editing document", err)
 				return
 			}
 			dc.state.rawDocument = updatedDoc

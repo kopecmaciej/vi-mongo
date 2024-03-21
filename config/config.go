@@ -32,9 +32,15 @@ type LogConfig struct {
 	PrettyPrint bool   `yaml:"prettyPrint"`
 }
 
+type EditorConfig struct {
+	Command string `yaml:"command"`
+	Env     string `yaml:"env"`
+}
+
 type Config struct {
 	Log                LogConfig     `yaml:"log"`
 	Debug              bool          `yaml:"debug"`
+	Editor             EditorConfig  `yaml:"editor"`
 	ShowConnectionPage bool          `yaml:"showConnectionPage"`
 	CurrentConnection  string        `yaml:"currentConnection"`
 	Connections        []MongoConfig `yaml:"connections"`
@@ -44,6 +50,7 @@ type Config struct {
 // If the file does not exist, it will be created
 // with the default settings
 func LoadConfig() (*Config, error) {
+	config := &Config{}
 	configPath, err := getConfigPath()
 	if err != nil {
 		return nil, err
@@ -69,13 +76,31 @@ func LoadConfig() (*Config, error) {
 		}
 	}
 
-	config := &Config{}
 	err = yaml.Unmarshal(bytes, &config)
 	if err != nil {
 		return nil, err
 	}
 
 	return config, nil
+}
+
+// loadDefaultConfig loads the default config settings
+func loadDefaultConfig() *Config {
+	return &Config{
+		Log: LogConfig{
+			Path:        "/tmp/mongui.log",
+			Level:       "info",
+			PrettyPrint: true,
+		},
+		Editor: EditorConfig{
+			Command: "",
+			Env:     "EDITOR",
+		},
+		Debug:              false,
+		ShowConnectionPage: true,
+		CurrentConnection:  "",
+		Connections:        []MongoConfig{},
+	}
 }
 
 func ensureConfigDirExist() error {
@@ -96,21 +121,6 @@ func getConfigPath() (string, error) {
 	}
 	configPath = fmt.Sprintf("%s/config.yaml", configPath)
 	return configPath, nil
-}
-
-// loadDefaultConfig loads the default config settings
-func loadDefaultConfig() *Config {
-	return &Config{
-		Log: LogConfig{
-			Path:        "/tmp/mongui.log",
-			Level:       "info",
-			PrettyPrint: true,
-		},
-		Debug:              false,
-		ShowConnectionPage: true,
-		CurrentConnection:  "",
-		Connections:        []MongoConfig{},
-	}
 }
 
 // SaveMongoConfig saves the given MongoDB configuration to the config file
@@ -137,6 +147,14 @@ func SaveMongoConfig(config *MongoConfig) error {
 	}
 
 	return nil
+}
+
+// GetEditorCmd returns the editor command from the config file
+func (c *Config) GetEditorCmd() string {
+	if c.Editor.Env != "" {
+		return os.Getenv(c.Editor.Env)
+	}
+	return c.Editor.Command
 }
 
 // SetCurrentConnection sets the current connection in the config file
