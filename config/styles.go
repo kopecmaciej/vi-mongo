@@ -19,7 +19,7 @@ type (
 		Welcome   WelcomeStyle   `yaml:"welcome"`
 		Connector ConnectorStyle `yaml:"connector"`
 		Header    HeaderStyle    `yaml:"header"`
-		Sidebar   SidebarStyle   `yaml:"sidebar"`
+		Databases DatabasesStyle `yaml:"databases"`
 		Content   ContentStyle   `yaml:"content"`
 		DocPeeker DocPeekerStyle `yaml:"docPeeker"`
 		InputBar  InputBarStyle  `yaml:"filterBar"`
@@ -75,8 +75,8 @@ type (
 		InactiveSymbol  Style `yaml:"inactiveSymbol"`
 	}
 
-	// SidebarStyle is a struct that contains all the styles for the sidebar
-	SidebarStyle struct {
+	// DatabasesStyle is a struct that contains all the styles for the databases
+	DatabasesStyle struct {
 		BackgroundColor Style `yaml:"backgroundColor"`
 		BorderColor     Style `yaml:"borderColor"`
 		TitleColor      Style `yaml:"titleColor"`
@@ -248,7 +248,7 @@ func (s *Styles) loadDefaultStyles() {
 		InactiveSymbol:  "○",
 	}
 
-	s.Sidebar = SidebarStyle{
+	s.Databases = DatabasesStyle{
 		BackgroundColor: "#0F172A",
 		BorderColor:     "#387D44",
 		NodeColor:       "#387D44",

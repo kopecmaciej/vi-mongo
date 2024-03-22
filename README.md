@@ -71,7 +71,7 @@ make
 
 ## Issues
 
-- [x] Searching collection on sidebar not expanding tree
+- [x] Searching collection on databases not expanding tree
 - [ ] No clearing history
 - [ ] Header not updated after changing database/collection
 - [ ] No view with shortcuts

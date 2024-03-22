@@ -13,25 +13,25 @@ import (
 )
 
 const (
-	SideBarComponent   manager.Component = "SideBar"
+	DatabasesComponent manager.Component = "Databases"
 	FilterBarComponent manager.Component = "FilterBar"
 )
 
-type SideBar struct {
+type Databases struct {
 	*Component
 	*tview.Flex
 
-	dbTree       *DBTree
+	dbTree       *DatabaseTree
 	filterBar    *InputBar
 	mutex        sync.Mutex
 	dbsWithColls []mongo.DBsWithCollections
 }
 
-func NewSideBar() *SideBar {
-	s := &SideBar{
-		Component: NewComponent(SideBarComponent),
+func NewDatabases() *Databases {
+	s := &Databases{
+		Component: NewComponent(DatabasesComponent),
 		Flex:      tview.NewFlex(),
-		dbTree:    NewDBTree(),
+		dbTree:    NewDatabaseTree(),
 		filterBar: NewInputBar(string(FilterBarComponent)),
 		mutex:     sync.Mutex{},
 	}
@@ -41,7 +41,7 @@ func NewSideBar() *SideBar {
 	return s
 }
 
-func (s *SideBar) init() error {
+func (s *Databases) init() error {
 	ctx := context.Background()
 	s.setStyle()
 	s.setKeybindings()
@@ -64,15 +64,15 @@ func (s *SideBar) init() error {
 	return nil
 }
 
-func (s *SideBar) setStyle() {
+func (s *Databases) setStyle() {
 	s.Flex.SetDirection(tview.FlexRow)
 }
 
-func (s *SideBar) setKeybindings() {
+func (s *Databases) setKeybindings() {
 	keys := s.app.Keys
 	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case keys.Contains(keys.Root.Sidebar.FilterBar, event.Name()):
+		case keys.Contains(keys.Root.Databases.FilterBar, event.Name()):
 			s.filterBar.Enable()
 			s.render()
 			return nil
@@ -81,7 +81,7 @@ func (s *SideBar) setKeybindings() {
 	})
 }
 
-func (s *SideBar) render() error {
+func (s *Databases) render() error {
 	s.Flex.Clear()
 
 	var primitive tview.Primitive
@@ -98,7 +98,7 @@ func (s *SideBar) render() error {
 	return nil
 }
 
-func (s *SideBar) filterBarListener(ctx context.Context) {
+func (s *Databases) filterBarListener(ctx context.Context) {
 	accceptFunc := func(text string) {
 		s.filter(ctx, text)
 	}
@@ -108,7 +108,7 @@ func (s *SideBar) filterBarListener(ctx context.Context) {
 	s.filterBar.DoneFuncHandler(accceptFunc, rejectFunc)
 }
 
-func (s *SideBar) filter(ctx context.Context, text string) {
+func (s *Databases) filter(ctx context.Context, text string) {
 	defer s.render()
 	dbsWitColls := s.dbsWithColls
 	expand := false
@@ -155,7 +155,7 @@ func (s *SideBar) filter(ctx context.Context, text string) {
 	log.Debug().Msgf("Filtered: %v", filtered)
 }
 
-func (s *SideBar) renderWithFilter(ctx context.Context, filter string) error {
+func (s *Databases) renderWithFilter(ctx context.Context, filter string) error {
 	if err := s.fetchDbsWithCollections(ctx, filter); err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func (s *SideBar) renderWithFilter(ctx context.Context, filter string) error {
 	return nil
 }
 
-func (s *SideBar) fetchDbsWithCollections(ctx context.Context, filter string) error {
+func (s *Databases) fetchDbsWithCollections(ctx context.Context, filter string) error {
 	dbsWitColls, err := s.dao.ListDbsWithCollections(ctx, filter)
 	if err != nil {
 		return err

@@ -15,24 +15,24 @@ import (
 )
 
 const (
-	DBTreeComponent       manager.Component = "DBTree"
+	DatabaseTreeComponent manager.Component = "DatabaseTree"
 	InputModalComponent   manager.Component = "InputModal"
 	ConfirmModalComponent manager.Component = "ConfirmModal"
 )
 
-type DBTree struct {
+type DatabaseTree struct {
 	*Component
 	*tview.TreeView
 
 	inputModal *primitives.InputModal
-	style      *config.SidebarStyle
+	style      *config.DatabasesStyle
 
 	NodeSelectFunc func(ctx context.Context, db string, coll string, filter map[string]interface{}) error
 }
 
-func NewDBTree() *DBTree {
-	d := &DBTree{
-		Component:  NewComponent(DBTreeComponent),
+func NewDatabaseTree() *DatabaseTree {
+	d := &DatabaseTree{
+		Component:  NewComponent(DatabaseTreeComponent),
 		TreeView:   tview.NewTreeView(),
 		inputModal: primitives.NewInputModal(),
 	}
@@ -42,7 +42,7 @@ func NewDBTree() *DBTree {
 	return d
 }
 
-func (t *DBTree) init() error {
+func (t *DatabaseTree) init() error {
 	ctx := context.Background()
 
 	t.setStyle()
@@ -51,8 +51,8 @@ func (t *DBTree) init() error {
 	return nil
 }
 
-func (t *DBTree) setStyle() {
-	t.style = &t.app.Styles.Sidebar
+func (t *DatabaseTree) setStyle() {
+	t.style = &t.app.Styles.Databases
 	t.SetBorder(true)
 	t.SetTitle(" Databases ")
 	t.SetBorderPadding(0, 0, 1, 1)
@@ -66,24 +66,24 @@ func (t *DBTree) setStyle() {
 	})
 }
 
-func (t *DBTree) setKeybindings(ctx context.Context) {
+func (t *DatabaseTree) setKeybindings(ctx context.Context) {
 	k := t.app.Keys
 	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Root.Sidebar.DBTree.ExpandAll, event.Name()):
+		case k.Contains(k.Root.Databases.ExpandAll, event.Name()):
 			t.GetRoot().ExpandAll()
 			return nil
-		case k.Contains(k.Root.Sidebar.DBTree.CollapseAll, event.Name()):
+		case k.Contains(k.Root.Databases.CollapseAll, event.Name()):
 			t.GetRoot().CollapseAll()
 			t.GetRoot().SetExpanded(true)
 			return nil
-		case k.Contains(k.Root.Sidebar.DBTree.AddCollection, event.Name()):
+		case k.Contains(k.Root.Databases.AddCollection, event.Name()):
 			t.addCollection(ctx)
 			return nil
-		case k.Contains(k.Root.Sidebar.DBTree.DeleteCollection, event.Name()):
+		case k.Contains(k.Root.Databases.DeleteCollection, event.Name()):
 			t.deleteCollection(ctx)
 			return nil
-		case k.Contains(k.Root.Sidebar.DBTree.ToggleExpand, event.Name()):
+		case k.Contains(k.Root.Databases.ToggleExpand, event.Name()):
 			t.GetCurrentNode().SetExpanded(!t.GetCurrentNode().IsExpanded())
 			return nil
 		}
@@ -92,7 +92,7 @@ func (t *DBTree) setKeybindings(ctx context.Context) {
 	})
 }
 
-func (t *DBTree) Render(ctx context.Context, dbsWitColls []mongo.DBsWithCollections, expand bool) {
+func (t *DatabaseTree) Render(ctx context.Context, dbsWitColls []mongo.DBsWithCollections, expand bool) {
 	rootNode := t.rootNode()
 	t.SetRoot(rootNode)
 
@@ -118,7 +118,7 @@ func (t *DBTree) Render(ctx context.Context, dbsWitColls []mongo.DBsWithCollecti
 	}
 }
 
-func (t *DBTree) addCollection(ctx context.Context) error {
+func (t *DatabaseTree) addCollection(ctx context.Context) error {
 	// get the current node's or parent node's
 	level := t.GetCurrentNode().GetLevel()
 	if level == 0 {
@@ -168,7 +168,7 @@ func (t *DBTree) addCollection(ctx context.Context) error {
 	return nil
 }
 
-func (t *DBTree) deleteCollection(ctx context.Context) error {
+func (t *DatabaseTree) deleteCollection(ctx context.Context) error {
 	level := t.GetCurrentNode().GetLevel()
 	if level == 0 || level == 1 {
 		return fmt.Errorf("Cannot delete database")
@@ -210,7 +210,7 @@ func (t *DBTree) deleteCollection(ctx context.Context) error {
 	return nil
 }
 
-func (t *DBTree) addChildNode(ctx context.Context, parent *tview.TreeNode, collectionName string, expand bool) {
+func (t *DatabaseTree) addChildNode(ctx context.Context, parent *tview.TreeNode, collectionName string, expand bool) {
 	collNode := t.collNode(collectionName)
 	parent.AddChild(collNode).SetExpanded(expand)
 	collNode.SetReference(parent)
@@ -220,7 +220,7 @@ func (t *DBTree) addChildNode(ctx context.Context, parent *tview.TreeNode, colle
 	})
 }
 
-func (t *DBTree) rootNode() *tview.TreeNode {
+func (t *DatabaseTree) rootNode() *tview.TreeNode {
 	r := tview.NewTreeNode("")
 	r.SetColor(t.style.NodeColor.Color())
 	r.SetSelectable(false)
@@ -229,7 +229,7 @@ func (t *DBTree) rootNode() *tview.TreeNode {
 	return r
 }
 
-func (t *DBTree) dbNode(name string) *tview.TreeNode {
+func (t *DatabaseTree) dbNode(name string) *tview.TreeNode {
 	r := tview.NewTreeNode(fmt.Sprintf("%s %s", t.style.NodeSymbol.String(), name))
 	r.SetColor(t.style.NodeColor.Color())
 	r.SetSelectable(true)
@@ -242,7 +242,7 @@ func (t *DBTree) dbNode(name string) *tview.TreeNode {
 	return r
 }
 
-func (t *DBTree) collNode(name string) *tview.TreeNode {
+func (t *DatabaseTree) collNode(name string) *tview.TreeNode {
 	ch := tview.NewTreeNode(fmt.Sprintf("%s %s", t.style.LeafSymbol.String(), name))
 	ch.SetColor(t.style.LeafColor.Color())
 	ch.SetSelectable(true)
@@ -251,7 +251,7 @@ func (t *DBTree) collNode(name string) *tview.TreeNode {
 	return ch
 }
 
-func (t *DBTree) removeSymbols(db, coll string) (string, string) {
+func (t *DatabaseTree) removeSymbols(db, coll string) (string, string) {
 	db = strings.Replace(db, t.style.NodeSymbol.String(), "", 1)
 	coll = strings.Replace(coll, t.style.LeafSymbol.String(), "", 1)
 	return strings.TrimSpace(db), strings.TrimSpace(coll)
