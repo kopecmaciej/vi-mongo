@@ -4,7 +4,7 @@ go 1.22.1
 
 require (
 	github.com/gdamore/tcell/v2 v2.7.1
-	github.com/kopecmaciej/tview v0.0.1
+	github.com/kopecmaciej/tview v0.0.2
 	github.com/rs/zerolog v1.32.0
 	github.com/stretchr/testify v1.9.0
 	go.mongodb.org/mongo-driver v1.14.0

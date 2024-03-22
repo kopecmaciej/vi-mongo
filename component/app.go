@@ -63,7 +63,7 @@ func (a *App) Init() error {
 func (a *App) setKeybindings(help *Help) {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case a.Keys.Contains(a.Keys.Global.ToggleHelp, event.Name()):
+		case a.Keys.Contains(a.Keys.Global.ToggleFullScreenHelp, event.Name()):
 			if a.Root.HasPage(string(HelpComponent)) {
 				a.Root.RemovePage(HelpComponent)
 				return nil
@@ -73,6 +73,17 @@ func (a *App) setKeybindings(help *Help) {
 				return event
 			}
 			a.Root.AddPage(HelpComponent, help, true, true)
+			return nil
+		case a.Keys.Contains(a.Keys.Global.ToggleHelpBar, event.Name()):
+			if a.Root.innerFlex.HasItem(help) {
+				a.Root.innerFlex.RemoveItem(help)
+				return nil
+			}
+			err := help.Render()
+			if err != nil {
+				return event
+			}
+			a.Root.innerFlex.AddItem(help, 10, 0, false)
 			return nil
 		}
 		return event

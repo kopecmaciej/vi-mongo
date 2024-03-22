@@ -131,6 +131,7 @@ func (r *Root) setStyles() {
 	r.style = &r.app.Styles.Root
 	r.Pages.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.mainFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
+	r.innerFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
 }
 
 // setKeybindings sets a key binding for the root Component
@@ -173,7 +174,7 @@ func (r *Root) render() error {
 
 	r.mainFlex.AddItem(r.sideBar, 30, 0, true)
 	r.mainFlex.AddItem(r.innerFlex, 0, 7, false)
-	r.innerFlex.AddItem(r.header, 0, 1, false)
+	r.innerFlex.AddItem(r.header, 4, 0, false)
 	r.innerFlex.AddItem(r.content, 0, 7, true)
 
 	r.AddPage(r.GetIdentifier(), r.mainFlex, true, true)

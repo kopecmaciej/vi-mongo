@@ -34,7 +34,8 @@ type (
 	// for the application, they can be triggered from any component
 	// as keys are passed from top to bottom
 	GlobalKeys struct {
-		ToggleHelp Key `json:"toggleHelp"`
+		ToggleFullScreenHelp Key `json:"toggleFullScreenHelp"`
+		ToggleHelpBar        Key `json:"toggleHelpBar"`
 	}
 
 	RootKeys struct {
@@ -116,9 +117,13 @@ func NewKeyBindings() KeyBindings {
 func loadDefaultKeybindings() KeyBindings {
 	return KeyBindings{
 		Global: GlobalKeys{
-			ToggleHelp: Key{
+			ToggleFullScreenHelp: Key{
 				Runes:       []string{"?"},
 				Description: "Toggle help",
+			},
+			ToggleHelpBar: Key{
+				Keys:        []string{"Ctrl+Y"},
+				Description: "Show help in header",
 			},
 		},
 		Root: RootKeys{
