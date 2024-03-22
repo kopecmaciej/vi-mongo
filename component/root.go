@@ -22,6 +22,7 @@ type Root struct {
 	mainFlex  *tview.Flex
 	innerFlex *tview.Flex
 	style     *config.RootStyle
+	welcome   *Welcome
 	connector *Connector
 	header    *Header
 	sideBar   *SideBar
@@ -34,6 +35,7 @@ func NewRoot() *Root {
 		Pages:     tview.NewPages(),
 		mainFlex:  tview.NewFlex(),
 		innerFlex: tview.NewFlex(),
+		welcome:   NewWelcome(),
 		connector: NewConnector(),
 		header:    NewHeader(),
 		sideBar:   NewSideBar(),
@@ -49,17 +51,27 @@ func (r *Root) Init() error {
 	r.setStyles()
 	r.setKeybindings()
 
+	if err := r.welcome.Init(r.app); err != nil {
+		return err
+	}
+
 	if err := r.connector.Init(r.app); err != nil {
 		return err
 	}
-	currConn := r.app.Config.GetCurrentConnection()
-	if currConn == nil || r.app.Config.ShowConnectionPage {
-		if err := r.renderConnector(); err != nil {
+	if r.app.Config.ShowWelcomePage {
+		if err := r.renderWelcome(); err != nil {
 			return err
 		}
 	} else {
-		if err := r.renderMainView(); err != nil {
-			return err
+		currConn := r.app.Config.GetCurrentConnection()
+		if currConn == nil || r.app.Config.ShowConnectionPage {
+			if err := r.renderConnector(); err != nil {
+				return err
+			}
+		} else {
+			if err := r.renderMainView(); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -170,9 +182,23 @@ func (r *Root) render() error {
 	return nil
 }
 
+// renderWelcome renders welcome component
+func (r *Root) renderWelcome() error {
+	r.welcome.SetOnSubmitFunc(func() {
+		r.RemovePage(r.welcome.GetIdentifier())
+		err := r.renderConnector()
+		if err != nil {
+			r.AddPage(r.welcome.GetIdentifier(), r.welcome, true, true)
+			ShowErrorModal(r, "Error while connecting to the database", err)
+		}
+	})
+	r.AddPage(r.welcome.GetIdentifier(), r.welcome, true, true)
+	return nil
+}
+
 // renderConnector renders connector component
 func (r *Root) renderConnector() error {
-	r.connector.SetCallback(func() {
+	r.connector.SetOnSubmitFunc(func() {
 		r.RemovePage(r.connector.GetIdentifier())
 		err := r.renderMainView()
 		if err != nil {

@@ -17,6 +17,7 @@ type (
 
 	Styles struct {
 		Root      RootStyle      `yaml:"main"`
+		Welcome   WelcomeStyle   `yaml:"welcome"`
 		Connector ConnectorStyle `yaml:"connector"`
 		Header    HeaderStyle    `yaml:"header"`
 		Sidebar   SidebarStyle   `yaml:"sidebar"`
@@ -37,6 +38,15 @@ type (
 		FocusColor         Style `yaml:"focusColor"`
 		TitleColor         Style `yaml:"titleColor"`
 		GraphicsColor      Style `yaml:"graphicsColor"`
+	}
+
+	// WelcomeStyle is a struct that contains all the styles for the welcome screen
+	WelcomeStyle struct {
+		BackgroundColor          Style `yaml:"backgroundColor"`
+		TextColor                Style `yaml:"textColor"`
+		FormLabelColor           Style `yaml:"formLabelColor"`
+		FormInputColor           Style `yaml:"formInputColor"`
+		FormInputBackgroundColor Style `yaml:"formInputBackgroundColor"`
 	}
 
 	// ConnectorStyle is a struct that contains all the styles for the connector
@@ -197,6 +207,14 @@ func (s *Styles) loadDefaultStyles() {
 		FocusColor:         "#50FA7B",
 		TitleColor:         "#387D44",
 		GraphicsColor:      "#387D44",
+	}
+
+	s.Welcome = WelcomeStyle{
+		BackgroundColor:          "#0F172A",
+		TextColor:                "#F1FA8C",
+		FormLabelColor:           "#F1FA8C",
+		FormInputColor:           "#F1FA8C",
+		FormInputBackgroundColor: "#163694",
 	}
 
 	s.Connector = ConnectorStyle{

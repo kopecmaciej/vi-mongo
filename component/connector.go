@@ -27,7 +27,7 @@ type Connector struct {
 	list *tview.List
 
 	// function that is called when connection is set
-	callback func()
+	onSubmit func()
 }
 
 // NewConnector creates a new connection view
@@ -58,19 +58,17 @@ func (c *Connector) setStyle() {
 	style := c.app.Styles.Connector
 
 	c.SetBackgroundColor(style.BackgroundColor.Color())
-	c.form.SetBackgroundColor(style.BackgroundColor.Color())
-	c.list.SetBackgroundColor(style.BackgroundColor.Color())
-
-	c.form.SetBorder(true)
-	c.list.SetBorder(true)
 	c.form.SetTitle(" New connection ")
-	c.list.SetTitle(" Saved connections ")
-
-	c.list.ShowSecondaryText(true)
-	c.list.SetWrapText(true)
-
+	c.form.SetBorder(true)
+	c.form.SetBackgroundColor(style.BackgroundColor.Color())
 	c.form.SetFieldTextColor(style.FormInputColor.Color())
 	c.form.SetFieldBackgroundColor(style.FormInputBackgroundColor.Color())
+
+	c.list.SetTitle(" Saved connections ")
+	c.list.SetBorder(true)
+	c.list.SetBackgroundColor(style.BackgroundColor.Color())
+	c.list.ShowSecondaryText(true)
+	c.list.SetWrapText(true)
 
 	mainStyle := tcell.StyleDefault.
 		Foreground(style.ListTextColor.Color()).
@@ -196,8 +194,8 @@ func (c *Connector) setConnections() {
 		return
 	}
 	c.app.Config.CurrentConnection = connName
-	if c.callback != nil {
-		c.callback()
+	if c.onSubmit != nil {
+		c.onSubmit()
 	}
 }
 
@@ -279,9 +277,9 @@ func (c *Connector) cancelButtonFunc() {
 	c.Render()
 }
 
-// SetCallback sets callback function
-func (c *Connector) SetCallback(callback func()) {
-	c.callback = callback
+// SetOnSubmitFunc sets callback function
+func (c *Connector) SetOnSubmitFunc(onSubmit func()) {
+	c.onSubmit = onSubmit
 }
 
 // moveFormFocusUp moves the focus in the form up
