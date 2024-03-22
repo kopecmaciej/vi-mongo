@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/adrg/xdg"
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
-	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
 
@@ -148,39 +148,50 @@ type (
 	}
 )
 
-// NewStyles creates a new Styles struct with default values
-func NewStyles() *Styles {
+// LoadStyles creates a new Styles struct with default values
+func LoadStyles() (*Styles, error) {
 	styles := &Styles{}
 
-	customStyles, err := styles.LoadCustomConfig()
+	stylePath, err := getStylePath()
 	if err != nil {
-		log.Debug().Err(err).Msg("Failed to load custom styles, loading default styles")
-		styles.loadDefaultStyles()
-	} else {
-		log.Debug().Msg("Loaded custom styles")
-		styles = customStyles
+		return nil, err
+	}
+	bytes, err := os.ReadFile(stylePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			styles.loadDefaultStyles()
+			bytes, err = yaml.Marshal(styles)
+			if err != nil {
+				return nil, err
+			}
+			err = os.WriteFile(stylePath, bytes, 0644)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	err = yaml.Unmarshal(bytes, &styles)
+	if err != nil {
+		return nil, err
 	}
 
 	styles.loadMainStyles()
 
-	return styles
+	return styles, nil
 }
 
-func (s *Styles) LoadCustomConfig() (*Styles, error) {
-	bytes, err := os.ReadFile("styles.yaml")
+func getStylePath() (string, error) {
+	configPath, err := xdg.ConfigFile(ConfigDirName)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	styles := &Styles{}
-	err = yaml.Unmarshal(bytes, styles)
-	if err != nil {
-		return nil, err
-	}
+	configPath = configPath + "/styles.yaml"
 
-	log.Info().Msgf("Loaded styles from styles.yaml")
-
-	return styles, nil
+	return configPath, nil
 }
 
 func (s *Styles) loadMainStyles() {

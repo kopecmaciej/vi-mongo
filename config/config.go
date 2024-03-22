@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	dirName = "mongui"
+	ConfigDirName = "mongui"
 )
 
 type MongoConfig struct {
@@ -63,8 +63,8 @@ func LoadConfig() (*Config, error) {
 			if err != nil {
 				return nil, err
 			}
-			defaultConfig := loadDefaultConfig()
-			bytes, err = yaml.Marshal(defaultConfig)
+			config.loadDefaultConfig()
+			bytes, err = yaml.Marshal(config)
 			if err != nil {
 				return nil, err
 			}
@@ -86,8 +86,8 @@ func LoadConfig() (*Config, error) {
 }
 
 // loadDefaultConfig loads the default config settings
-func loadDefaultConfig() *Config {
-	return &Config{
+func (c *Config) loadDefaultConfig() {
+	c = &Config{
 		Log: LogConfig{
 			Path:        "/tmp/mongui.log",
 			Level:       "info",
@@ -106,7 +106,7 @@ func loadDefaultConfig() *Config {
 }
 
 func ensureConfigDirExist() error {
-	configPath, err := xdg.ConfigFile(dirName)
+	configPath, err := xdg.ConfigFile(ConfigDirName)
 	if err != nil {
 		return err
 	}
@@ -117,7 +117,7 @@ func ensureConfigDirExist() error {
 }
 
 func GetConfigPath() (string, error) {
-	configPath, err := xdg.ConfigFile(dirName)
+	configPath, err := xdg.ConfigFile(ConfigDirName)
 	if err != nil {
 		return "", err
 	}
@@ -298,24 +298,4 @@ func ParseMongoDBURI(uri string) (host, port, db string, err error) {
 		port = "27017"
 	}
 	return host, port, db, nil
-}
-
-func loadAndUnmarshal() (*Config, error) {
-	configPath, errr := GetConfigPath()
-	if errr != nil {
-		return nil, errr
-	}
-
-	file, err := os.Open(configPath)
-	if err != nil {
-		return nil, err
-	}
-
-	config := &Config{}
-	err = yaml.NewDecoder(file).Decode(config)
-	if err != nil {
-		return nil, err
-	}
-
-	return config, nil
 }

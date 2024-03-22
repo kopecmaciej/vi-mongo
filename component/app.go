@@ -6,6 +6,7 @@ import (
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/tview"
+	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -23,7 +24,10 @@ type (
 )
 
 func NewApp(appConfig *config.Config) App {
-	styles := config.NewStyles()
+	styles, err := config.LoadStyles()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to load styles")
+	}
 	keyBindings := config.NewKeyBindings()
 
 	app := App{
