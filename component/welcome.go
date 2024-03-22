@@ -110,8 +110,8 @@ func (w *Welcome) renderForm() {
 
 func (w *Welcome) saveConfig() error {
 	editorCmd := w.form.GetFormItemByLabel("Editor").(*tview.InputField).GetText()
-	logFile := w.form.GetFormItemByLabel("logFile").(*tview.InputField).GetText()
-	logLevel := w.form.GetFormItemByLabel("logLevel").(*tview.InputField).GetText()
+	logFile := w.form.GetFormItemByLabel("Log File").(*tview.InputField).GetText()
+	logLevel := w.form.GetFormItemByLabel("Log Level").(*tview.InputField).GetText()
 	connPage := w.form.GetFormItemByLabel("Show connection page").(*tview.Checkbox).IsChecked()
 	welcomePage := w.form.GetFormItemByLabel("Show welcome page").(*tview.Checkbox).IsChecked()
 
