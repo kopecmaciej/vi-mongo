@@ -13,8 +13,7 @@ import (
 const (
 	HistoryModalComponent manager.Component = "HistoryModal"
 
-	maxHistory      = 10
-	historyFilePath = "history.txt"
+	maxHistory = 10
 )
 
 // HistoryModal is a modal with history of queries
@@ -112,7 +111,7 @@ func (h *HistoryModal) SaveToHistory(text string) error {
 	}
 	updatedHistory = append(updatedHistory, text)
 
-	historyFile, err := os.OpenFile(historyFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	historyFile, err := os.OpenFile(getHisotryFilePath(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -137,7 +136,7 @@ func (h *HistoryModal) GetText() string {
 
 // loadHistory loads history from history file
 func (h *HistoryModal) loadHistory() ([]string, error) {
-	file, err := os.ReadFile(historyFilePath)
+	file, err := os.ReadFile(getHisotryFilePath())
 	if err != nil {
 		return nil, err
 	}
@@ -152,4 +151,13 @@ func (h *HistoryModal) loadHistory() ([]string, error) {
 	}
 
 	return history, nil
+}
+
+func getHisotryFilePath() string {
+	configDir, err := config.GetConfigDir()
+	if err != nil {
+		return ""
+	}
+
+	return configDir + "/history.txt"
 }

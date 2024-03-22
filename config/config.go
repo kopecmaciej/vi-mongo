@@ -105,6 +105,8 @@ func (c *Config) loadDefaultConfig() {
 	}
 }
 
+// ensureConfigDirExist ensures the config directory exists
+// If it does not exist, it will be created
 func ensureConfigDirExist() error {
 	configPath, err := xdg.ConfigFile(ConfigDirName)
 	if err != nil {
@@ -116,13 +118,22 @@ func ensureConfigDirExist() error {
 	return nil
 }
 
+// GetConfigDir returns the path to the config directory
+func GetConfigDir() (string, error) {
+	configPath, err := xdg.ConfigFile(ConfigDirName)
+	if err != nil {
+		return "", err
+	}
+	return configPath, nil
+}
+
+// GetConfigPath returns the path to the config file
 func GetConfigPath() (string, error) {
 	configPath, err := xdg.ConfigFile(ConfigDirName)
 	if err != nil {
 		return "", err
 	}
-	configPath = fmt.Sprintf("%s/config.yaml", configPath)
-	return configPath, nil
+	return fmt.Sprintf("%s/config.yaml", configPath), nil
 }
 
 // UpdateConfig updates the config file with the new settings

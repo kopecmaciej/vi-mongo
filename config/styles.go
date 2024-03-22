@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/adrg/xdg"
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"gopkg.in/yaml.v3"
@@ -184,14 +183,12 @@ func LoadStyles() (*Styles, error) {
 }
 
 func getStylePath() (string, error) {
-	configPath, err := xdg.ConfigFile(ConfigDirName)
+	configPath, err := GetConfigDir()
 	if err != nil {
 		return "", err
 	}
 
-	configPath = configPath + "/styles.yaml"
-
-	return configPath, nil
+	return configPath + "/styles.yaml", nil
 }
 
 func (s *Styles) loadMainStyles() {
