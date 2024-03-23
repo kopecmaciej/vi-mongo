@@ -1,6 +1,8 @@
 package component
 
 import (
+	"strings"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
@@ -66,6 +68,10 @@ func (a *App) Init() error {
 
 func (a *App) setKeybindings() {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// TODO: This is temporary solution
+		if strings.Contains(string(a.Manager.CurrentComponent()), "Input") {
+			return event
+		}
 		switch {
 		case a.Keys.Contains(a.Keys.Global.ToggleFullScreenHelp, event.Name()):
 			if a.Root.HasPage(string(HelpComponent)) {
@@ -78,7 +84,7 @@ func (a *App) setKeybindings() {
 			}
 			a.Root.AddPage(HelpComponent, a.Help, true, true)
 			return nil
-		case a.Keys.Contains(a.Keys.Global.ToggleHelpBar, event.Name()):
+		case a.Keys.Contains(a.Keys.Global.ToggleHelpBarFooter, event.Name()):
 			if a.Root.innerFlex.HasItem(a.Help) {
 				a.Root.innerFlex.RemoveItem(a.Help)
 				return nil

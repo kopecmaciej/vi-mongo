@@ -57,6 +57,23 @@ cd mongui
 make
 ```
 
+## Usage
+
+After installing Mongui, you can run it by typing `mongui` in your terminal.
+
+```bash
+mongui
+```
+
+In any moment you can press `Ctrl + H` to see help page with all available
+shortcuts. Resizing terminal while running Mongui should work fine, but if you
+encounter any issues, please let me know.
+
+All configuration files should be stored in `~/.config/mongui` directory, but it
+depends on the system settings as env `XDG_CONFIG_HOME` can be set to different
+directories (more information here:
+[XDG Base Directory](https://github.com/adrg/xdg?tab=readme-ov-file#xdg-base-directory))
+
 ## List of features to be implemented
 
 - [x] Query History
@@ -77,3 +94,7 @@ make
 - [ ] No view with shortcuts
 - [ ] Content not updated after editing from picker
 - [ ] Performance issue while loading large bson files
+
+```
+
+```

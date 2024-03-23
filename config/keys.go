@@ -35,7 +35,7 @@ type (
 	// as keys are passed from top to bottom
 	GlobalKeys struct {
 		ToggleFullScreenHelp Key `json:"toggleFullScreenHelp"`
-		ToggleHelpBar        Key `json:"toggleHelpBar"`
+		ToggleHelpBarFooter  Key `json:"toggleHelpBarFooter"`
 	}
 
 	RootKeys struct {
@@ -101,7 +101,7 @@ type (
 // if the file does not exist it creates a new one with default keybindings
 func LoadKeybindings() (*KeyBindings, error) {
 	keybindings := &KeyBindings{}
-	keybidingsPath, err := getKeygindingsParh()
+	keybidingsPath, err := getKeygindingsPath()
 	if err != nil {
 		return nil, err
 	}
@@ -137,12 +137,13 @@ func LoadKeybindings() (*KeyBindings, error) {
 func (k *KeyBindings) loadDefaultKeybindings() {
 	k.Global = GlobalKeys{
 		ToggleFullScreenHelp: Key{
-			Runes:       []string{"?"},
+			// TODO: Check in how many systems ctrl+H is used as backspace
+			Keys:        []string{"Backspace"},
 			Description: "Toggle help",
 		},
-		ToggleHelpBar: Key{
-			Keys:        []string{"Ctrl+Y"},
-			Description: "Show help in header",
+		ToggleHelpBarFooter: Key{
+			Runes:       []string{"?"},
+			Description: "Show help in footer",
 		},
 	}
 
@@ -357,7 +358,7 @@ func (kb *KeyBindings) Contains(configKey Key, namedKey string) bool {
 	return false
 }
 
-func getKeygindingsParh() (string, error) {
+func getKeygindingsPath() (string, error) {
 	configDir, err := GetConfigDir()
 	if err != nil {
 		return "", err
