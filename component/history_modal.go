@@ -136,13 +136,16 @@ func (h *HistoryModal) GetText() string {
 
 // loadHistory loads history from history file
 func (h *HistoryModal) loadHistory() ([]string, error) {
-	file, err := os.ReadFile(getHisotryFilePath())
+	bytes, err := os.ReadFile(getHisotryFilePath())
 	if err != nil {
+		if os.IsNotExist(err) {
+			err = os.WriteFile(getHisotryFilePath(), []byte{}, 0644)
+		}
 		return nil, err
 	}
 
 	history := []string{}
-	lines := strings.Split(string(file), "\n")
+	lines := strings.Split(string(bytes), "\n")
 
 	for _, line := range lines {
 		if line != "" {

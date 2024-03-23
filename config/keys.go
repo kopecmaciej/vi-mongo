@@ -56,20 +56,20 @@ type (
 	}
 
 	ContentKeys struct {
-		PeekDocument      Key          `json:"peekDocument"`
-		ViewDocument      Key          `json:"viewDocument"`
-		AddDocument       Key          `json:"addDocument"`
-		EditDocument      Key          `json:"editDocument"`
-		DuplicateDocument Key          `json:"duplicateDocument"`
-		DeleteDocument    Key          `json:"deleteDocument"`
-		Refresh           Key          `json:"refresh"`
-		ToggleQuery       Key          `json:"toggleQuery"`
-		NextPage          Key          `json:"nextPage"`
-		PreviousPage      Key          `json:"previousPage"`
-		InputBar          InputBarKeys `json:"inputBar"`
+		PeekDocument      Key      `json:"peekDocument"`
+		ViewDocument      Key      `json:"viewDocument"`
+		AddDocument       Key      `json:"addDocument"`
+		EditDocument      Key      `json:"editDocument"`
+		DuplicateDocument Key      `json:"duplicateDocument"`
+		DeleteDocument    Key      `json:"deleteDocument"`
+		Refresh           Key      `json:"refresh"`
+		ToggleQuery       Key      `json:"toggleQuery"`
+		NextPage          Key      `json:"nextPage"`
+		PreviousPage      Key      `json:"previousPage"`
+		QueryBar          QueryBar `json:"queryBar"`
 	}
 
-	InputBarKeys struct {
+	QueryBar struct {
 		ShowHistory Key `json:"showHistory"`
 		ClearInput  Key `json:"clearInput"`
 	}
@@ -233,7 +233,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 		},
 	}
 
-	k.Root.Content.InputBar = InputBarKeys{
+	k.Root.Content.QueryBar = QueryBar{
 		ShowHistory: Key{
 			Keys:        []string{"Ctrl+Y"},
 			Description: "Show history",

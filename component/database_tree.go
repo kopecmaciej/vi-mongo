@@ -24,17 +24,19 @@ type DatabaseTree struct {
 	*Component
 	*tview.TreeView
 
-	inputModal *primitives.InputModal
-	style      *config.DatabasesStyle
+	addModal    *primitives.InputModal
+	deleteModal *tview.Modal
+	style       *config.DatabasesStyle
 
 	NodeSelectFunc func(ctx context.Context, db string, coll string, filter map[string]interface{}) error
 }
 
 func NewDatabaseTree() *DatabaseTree {
 	d := &DatabaseTree{
-		Component:  NewComponent(DatabaseTreeComponent),
-		TreeView:   tview.NewTreeView(),
-		inputModal: primitives.NewInputModal(),
+		Component:   NewComponent(DatabaseTreeComponent),
+		TreeView:    tview.NewTreeView(),
+		addModal:    primitives.NewInputModal(),
+		deleteModal: tview.NewModal(),
 	}
 
 	d.SetAfterInitFunc(d.init)
@@ -64,6 +66,13 @@ func (t *DatabaseTree) setStyle() {
 	t.SetSelectedFunc(func(node *tview.TreeNode) {
 		t.SetCurrentNode(node)
 	})
+
+	t.addModal.SetInputLabel("Collection name: ")
+	t.addModal.SetFieldBackgroundColor(tcell.ColorBlack)
+	t.addModal.SetBorder(true)
+
+	t.deleteModal.SetButtonTextColor(tcell.ColorWhite)
+	t.deleteModal.AddButtons([]string{"[red]Delete", "Cancel"})
 }
 
 func (t *DatabaseTree) setKeybindings(ctx context.Context) {
@@ -132,38 +141,33 @@ func (t *DatabaseTree) addCollection(ctx context.Context) error {
 	}
 	db := parent.GetText()
 
-	label := fmt.Sprintf("Add collection name for db %s", db)
-	t.inputModal.SetLabel(label)
-	t.inputModal.SetInputLabel("Collection name: ")
-	t.inputModal.SetFieldBackgroundColor(tcell.ColorBlack)
-	t.inputModal.SetBorder(true)
+	t.addModal.SetLabel(fmt.Sprintf("Add collection name for [%s][::b]%s", t.style.NodeColor.Color(), db))
 
-	t.inputModal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	t.addModal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
-			collectionName := t.inputModal.GetText()
+			collectionName := t.addModal.GetText()
 			if collectionName == "" {
 				return event
 			}
 			db, collectionName = t.removeSymbols(db, collectionName)
-			log.Info().Msgf("Adding collection %s to db %s", collectionName, db)
 			err := t.dao.AddCollection(ctx, db, collectionName)
 			if err != nil {
 				log.Error().Err(err).Msg("Error adding collection")
 				return nil
 			}
 			t.addChildNode(ctx, parent, collectionName, true)
-			t.inputModal.SetText("")
+			t.addModal.SetText("")
 			t.app.Root.RemovePage(InputModalComponent)
 		}
 		if event.Key() == tcell.KeyEscape {
-			t.inputModal.SetText("")
+			t.addModal.SetText("")
 			t.app.Root.RemovePage(InputModalComponent)
 		}
 
 		return event
 	})
 
-	t.app.Root.AddPage(InputModalComponent, t.inputModal, true, true)
+	t.app.Root.AddPage(InputModalComponent, t.addModal, true, true)
 
 	return nil
 }
@@ -174,16 +178,13 @@ func (t *DatabaseTree) deleteCollection(ctx context.Context) error {
 		return fmt.Errorf("Cannot delete database")
 	}
 	parent := t.GetCurrentNode().GetReference().(*tview.TreeNode)
-	db, coll := t.removeSymbols(parent.GetText(), t.GetCurrentNode().GetText())
-
-	confirmModal := tview.NewModal()
-	confirmModal.SetButtonTextColor(tcell.ColorWhite)
-	text := fmt.Sprintf("Are you sure you want to delete collection %s from db %s", coll, db)
-	confirmModal.SetText(text).
-		AddButtons([]string{"OK", "Cancel"})
-	confirmModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+	db, coll := parent.GetText(), t.GetCurrentNode().GetText()
+	text := fmt.Sprintf("Are you sure you want to delete [%s]%s [white]from [%s]%s", t.style.LeafColor.Color(), coll, t.style.NodeColor.Color(), db)
+	t.deleteModal.SetText(text)
+	db, coll = t.removeSymbols(db, coll)
+	t.deleteModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		defer t.app.Root.RemovePage(ConfirmModalComponent)
-		if buttonLabel == "OK" {
+		if buttonIndex == 0 {
 			err := t.dao.DeleteCollection(ctx, db, coll)
 			if err != nil {
 				return
@@ -205,7 +206,7 @@ func (t *DatabaseTree) deleteCollection(ctx context.Context) error {
 		}
 	})
 
-	t.app.Root.AddPage(ConfirmModalComponent, confirmModal, true, true)
+	t.app.Root.AddPage(ConfirmModalComponent, t.deleteModal, true, true)
 
 	return nil
 }

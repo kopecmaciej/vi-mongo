@@ -17,6 +17,7 @@ const (
 	FilterBarComponent manager.Component = "FilterBar"
 )
 
+// Databases is flex container for DatabaseTree and InputBar
 type Databases struct {
 	*Component
 	*tview.Flex
