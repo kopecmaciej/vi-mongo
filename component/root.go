@@ -22,10 +22,9 @@ type Root struct {
 	mainFlex  *tview.Flex
 	innerFlex *tview.Flex
 	style     *config.RootStyle
-	welcome   *Welcome
 	connector *Connector
 	header    *Header
-	sideBar   *SideBar
+	databases *Databases
 	content   *Content
 }
 
@@ -35,10 +34,9 @@ func NewRoot() *Root {
 		Pages:     tview.NewPages(),
 		mainFlex:  tview.NewFlex(),
 		innerFlex: tview.NewFlex(),
-		welcome:   NewWelcome(),
 		connector: NewConnector(),
 		header:    NewHeader(),
-		sideBar:   NewSideBar(),
+		databases: NewDatabases(),
 		content:   NewContent(),
 	}
 
@@ -50,10 +48,6 @@ func NewRoot() *Root {
 func (r *Root) Init() error {
 	r.setStyles()
 	r.setKeybindings()
-
-	if err := r.welcome.Init(r.app); err != nil {
-		return err
-	}
 
 	if err := r.connector.Init(r.app); err != nil {
 		return err
@@ -85,7 +79,7 @@ func (r *Root) renderMainView() error {
 	} else {
 		// TODO: find the correct way to refresh those components
 		r.content = NewContent()
-		r.sideBar = NewSideBar()
+		r.databases = NewDatabases()
 		r.header = NewHeader()
 		client := mongo.NewClient(currConn)
 		err := client.Connect()
@@ -103,7 +97,7 @@ func (r *Root) renderMainView() error {
 			return err
 		}
 
-		r.sideBar.dbTree.NodeSelectFunc = r.content.RenderContent
+		r.databases.dbTree.NodeSelectFunc = r.content.RenderContent
 
 		r.render()
 
@@ -121,7 +115,7 @@ func (r *Root) initSubcomponents() error {
 	}
 
 	go runWithDraw(r.header.Init)
-	go runWithDraw(r.sideBar.Init)
+	go runWithDraw(r.databases.Init)
 	go runWithDraw(r.content.Init)
 
 	return nil
@@ -141,15 +135,15 @@ func (r *Root) setKeybindings() {
 		switch {
 		case k.Contains(k.Root.FocusNext, event.Name()):
 			focus := r.app.GetFocus()
-			if focus == r.sideBar.dbTree {
+			if focus == r.databases.dbTree {
 				r.app.SetFocus(r.content.Table)
 			} else {
-				r.app.SetFocus(r.sideBar.dbTree)
+				r.app.SetFocus(r.databases.dbTree)
 			}
 			return nil
-		case k.Contains(k.Root.HideSidebar, event.Name()):
-			if _, ok := r.mainFlex.GetItem(0).(*SideBar); ok {
-				r.mainFlex.RemoveItem(r.sideBar)
+		case k.Contains(k.Root.HideDatabases, event.Name()):
+			if _, ok := r.mainFlex.GetItem(0).(*Databases); ok {
+				r.mainFlex.RemoveItem(r.databases)
 				r.app.SetFocus(r.content.Table)
 			} else {
 				r.mainFlex.Clear()
@@ -172,7 +166,7 @@ func (r *Root) render() error {
 	r.innerFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.innerFlex.SetDirection(tview.FlexRow)
 
-	r.mainFlex.AddItem(r.sideBar, 30, 0, true)
+	r.mainFlex.AddItem(r.databases, 30, 0, true)
 	r.mainFlex.AddItem(r.innerFlex, 0, 7, false)
 	r.innerFlex.AddItem(r.header, 4, 0, false)
 	r.innerFlex.AddItem(r.content, 0, 7, true)
@@ -185,15 +179,21 @@ func (r *Root) render() error {
 
 // renderWelcome renders welcome component
 func (r *Root) renderWelcome() error {
-	r.welcome.SetOnSubmitFunc(func() {
-		r.RemovePage(r.welcome.GetIdentifier())
+	welcome := NewWelcome()
+
+	if err := welcome.Init(r.app); err != nil {
+		return err
+	}
+	welcome.SetOnSubmitFunc(func() {
+		r.RemovePage(welcome.GetIdentifier())
 		err := r.renderConnector()
 		if err != nil {
-			r.AddPage(r.welcome.GetIdentifier(), r.welcome, true, true)
+			r.AddPage(welcome.GetIdentifier(), welcome, true, true)
 			ShowErrorModal(r, "Error while connecting to the database", err)
+			return
 		}
 	})
-	r.AddPage(r.welcome.GetIdentifier(), r.welcome, true, true)
+	r.AddPage(welcome.GetIdentifier(), welcome, true, true)
 	return nil
 }
 

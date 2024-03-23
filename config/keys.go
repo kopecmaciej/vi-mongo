@@ -39,19 +39,15 @@ type (
 	}
 
 	RootKeys struct {
-		FocusNext     Key         `json:"focusNext"`
-		HideSidebar   Key         `json:"hideSidebar"`
-		OpenConnector Key         `json:"openConnector"`
-		Sidebar       SidebarKeys `json:"sidebar"`
-		Content       ContentKeys `json:"content"`
+		FocusNext     Key           `json:"focusNext"`
+		HideDatabases   Key           `json:"hideDatabases"`
+		OpenConnector Key           `json:"openConnector"`
+		Databases     DatabasesKeys `json:"databases"`
+		Content       ContentKeys   `json:"content"`
 	}
 
-	SidebarKeys struct {
-		FilterBar Key        `json:"filterBar"`
-		DBTree    DBTreeKeys `json:"dbTree"`
-	}
-
-	DBTreeKeys struct {
+	DatabasesKeys struct {
+		FilterBar        Key `json:"filterBar"`
 		ExpandAll        Key `json:"expandAll"`
 		CollapseAll      Key `json:"collapseAll"`
 		ToggleExpand     Key `json:"toggleExpand"`
@@ -131,40 +127,38 @@ func loadDefaultKeybindings() KeyBindings {
 				Keys:        []string{"Tab"},
 				Description: "Focus next component",
 			},
-			HideSidebar: Key{
+			HideDatabases: Key{
 				Keys:        []string{"Ctrl+S"},
-				Description: "Hide sidebar",
+				Description: "Hide databases",
 			},
 			OpenConnector: Key{
 				Keys:        []string{"Ctrl+O"},
 				Description: "Open connector",
 			},
-			Sidebar: SidebarKeys{
+			Databases: DatabasesKeys{
 				FilterBar: Key{
 					Runes:       []string{"/"},
 					Description: "Focus filter bar",
 				},
-				DBTree: DBTreeKeys{
-					ExpandAll: Key{
-						Runes:       []string{"E"},
-						Description: "Expand all",
-					},
-					CollapseAll: Key{
-						Runes:       []string{"W"},
-						Description: "Collapse all",
-					},
-					ToggleExpand: Key{
-						Runes:       []string{"T"},
-						Description: "Toggle expand",
-					},
-					AddCollection: Key{
-						Runes:       []string{"A"},
-						Description: "Add collection",
-					},
-					DeleteCollection: Key{
-						Keys:        []string{"Ctrl+D"},
-						Description: "Delete collection",
-					},
+				ExpandAll: Key{
+					Runes:       []string{"E"},
+					Description: "Expand all",
+				},
+				CollapseAll: Key{
+					Runes:       []string{"W"},
+					Description: "Collapse all",
+				},
+				ToggleExpand: Key{
+					Runes:       []string{"T"},
+					Description: "Toggle expand",
+				},
+				AddCollection: Key{
+					Runes:       []string{"A"},
+					Description: "Add collection",
+				},
+				DeleteCollection: Key{
+					Keys:        []string{"Ctrl+D"},
+					Description: "Delete collection",
 				},
 			},
 			Content: ContentKeys{

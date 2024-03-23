@@ -17,6 +17,7 @@ type (
 		Dao     *mongo.Dao
 		Manager *manager.ComponentManager
 		Root    *Root
+		Help    *Help
 		Styles  *config.Styles
 		Config  *config.Config
 		Keys    *config.KeyBindings
@@ -33,6 +34,7 @@ func NewApp(appConfig *config.Config) App {
 	app := App{
 		Application: tview.NewApplication(),
 		Root:        NewRoot(),
+		Help:        NewHelp(),
 		Manager:     manager.NewComponentManager(),
 		Styles:      styles,
 		Config:      appConfig,
@@ -50,17 +52,16 @@ func (a *App) Init() error {
 	}
 	a.SetRoot(a.Root.Pages, true).EnableMouse(true)
 
-	help := NewHelp()
-	err := help.Init(a)
+	err := a.Help.Init(a)
 	if err != nil {
 		return err
 	}
-	a.setKeybindings(help)
+	a.setKeybindings()
 
 	return a.Run()
 }
 
-func (a *App) setKeybindings(help *Help) {
+func (a *App) setKeybindings() {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case a.Keys.Contains(a.Keys.Global.ToggleFullScreenHelp, event.Name()):
@@ -68,22 +69,22 @@ func (a *App) setKeybindings(help *Help) {
 				a.Root.RemovePage(HelpComponent)
 				return nil
 			}
-			err := help.Render()
+			err := a.Help.Render()
 			if err != nil {
 				return event
 			}
-			a.Root.AddPage(HelpComponent, help, true, true)
+			a.Root.AddPage(HelpComponent, a.Help, true, true)
 			return nil
 		case a.Keys.Contains(a.Keys.Global.ToggleHelpBar, event.Name()):
-			if a.Root.innerFlex.HasItem(help) {
-				a.Root.innerFlex.RemoveItem(help)
+			if a.Root.innerFlex.HasItem(a.Help) {
+				a.Root.innerFlex.RemoveItem(a.Help)
 				return nil
 			}
-			err := help.Render()
+			err := a.Help.Render()
 			if err != nil {
 				return event
 			}
-			a.Root.innerFlex.AddItem(help, 10, 0, false)
+			a.Root.innerFlex.AddItem(a.Help, 10, 0, false)
 			return nil
 		}
 		return event
