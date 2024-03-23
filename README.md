@@ -37,6 +37,8 @@ alike.
 
 ```bash
 curl https://api.github.com/repos/kopecmaciej/mongui/releases/latest | jq -r '.assets[0].browser_download_url' | xargs curl -L -o mongui
+# or if no jq installed
+# curl https://api.github.com/repos/kopecmaciej/mongui/releases/latest | grep browser_download_url | cut -d '"' -f4 | xargs curl -L -o mongui
 chmod +x mongui
 sudo mv mongui /usr/bin
 ```

@@ -226,3 +226,8 @@ func (r *Root) RemovePage(component manager.Component) *tview.Pages {
 	r.app.Manager.PopComponent()
 	return r.Pages.RemovePage(string(component))
 }
+
+// HasPage is a wrapper for tview.Pages.HasPage
+func (r *Root) HasPage(component manager.Component) bool {
+	return r.Pages.HasPage(string(component))
+}

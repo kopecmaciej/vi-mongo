@@ -64,10 +64,10 @@ func (h *HistoryModal) setStyle() {
 func (h *HistoryModal) setKeybindings() {
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyEsc, tcell.KeyEnter:
+		case tcell.KeyEsc, tcell.KeyEnter, tcell.KeyCtrlY:
 			eventKey := manager.EventMsg{EventKey: event, Sender: h.GetIdentifier()}
-			h.app.Root.RemovePage(h.GetIdentifier())
 			h.SendToComponent(InputBarComponent, eventKey)
+			h.app.Root.RemovePage(h.GetIdentifier())
 			return nil
 		}
 		return event

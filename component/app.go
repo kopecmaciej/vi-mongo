@@ -74,7 +74,7 @@ func (a *App) setKeybindings() {
 		}
 		switch {
 		case a.Keys.Contains(a.Keys.Global.ToggleFullScreenHelp, event.Name()):
-			if a.Root.HasPage(string(HelpComponent)) {
+			if a.Root.HasPage(HelpComponent) {
 				a.Root.RemovePage(HelpComponent)
 				return nil
 			}

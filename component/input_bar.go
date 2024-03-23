@@ -237,7 +237,7 @@ func (i *InputBar) handleEvents() {
 					i.SetText(i.historyModal.GetText())
 					i.app.SetFocus(i)
 				})
-			case tcell.KeyEsc:
+			case tcell.KeyEsc, tcell.KeyCtrlY:
 				i.app.QueueUpdateDraw(func() {
 					i.app.SetFocus(i)
 				})
