@@ -182,15 +182,6 @@ func LoadStyles() (*Styles, error) {
 	return styles, nil
 }
 
-func getStylePath() (string, error) {
-	configPath, err := GetConfigDir()
-	if err != nil {
-		return "", err
-	}
-
-	return configPath + "/styles.yaml", nil
-}
-
 func (s *Styles) loadMainStyles() {
 	tview.Styles.PrimitiveBackgroundColor = s.loadColor(s.Root.BackgroundColor)
 	tview.Styles.ContrastBackgroundColor = s.loadColor(s.Root.BackgroundColor)
@@ -338,4 +329,13 @@ func (s *Style) String() string {
 func isHexColor(s string) bool {
 	re := regexp.MustCompile("^#(?:[0-9a-fA-F]{3}){1,2}$")
 	return re.MatchString(s)
+}
+
+func getStylePath() (string, error) {
+	configPath, err := GetConfigDir()
+	if err != nil {
+		return "", err
+	}
+
+	return configPath + "/styles.yaml", nil
 }

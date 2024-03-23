@@ -29,7 +29,10 @@ func NewApp(appConfig *config.Config) App {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load styles")
 	}
-	keyBindings := config.NewKeyBindings()
+	keyBindings, err := config.LoadKeybindings()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to load keybindings")
+	}
 
 	app := App{
 		Application: tview.NewApplication(),
@@ -38,7 +41,7 @@ func NewApp(appConfig *config.Config) App {
 		Manager:     manager.NewComponentManager(),
 		Styles:      styles,
 		Config:      appConfig,
-		Keys:        &keyBindings,
+		Keys:        keyBindings,
 	}
 
 	return app

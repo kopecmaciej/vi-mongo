@@ -40,7 +40,7 @@ type (
 
 	RootKeys struct {
 		FocusNext     Key           `json:"focusNext"`
-		HideDatabases   Key           `json:"hideDatabases"`
+		HideDatabases Key           `json:"hideDatabases"`
 		OpenConnector Key           `json:"openConnector"`
 		Databases     DatabasesKeys `json:"databases"`
 		Content       ContentKeys   `json:"content"`
@@ -97,212 +97,192 @@ type (
 	}
 )
 
-func NewKeyBindings() KeyBindings {
-	defaultKeyBindings := loadDefaultKeybindings()
-
-	customKeyBindings, err := defaultKeyBindings.LoadCustomKeyBindings("keybindings.json")
+// LoadKeybindings loads keybindings from the config file
+// if the file does not exist it creates a new one with default keybindings
+func LoadKeybindings() (*KeyBindings, error) {
+	keybindings := &KeyBindings{}
+	keybidingsPath, err := getKeygindingsParh()
 	if err != nil {
-		return defaultKeyBindings
+		return nil, err
 	}
-
-	defaultKeyBindings.Merge(customKeyBindings)
-
-	return defaultKeyBindings
-}
-
-func loadDefaultKeybindings() KeyBindings {
-	return KeyBindings{
-		Global: GlobalKeys{
-			ToggleFullScreenHelp: Key{
-				Runes:       []string{"?"},
-				Description: "Toggle help",
-			},
-			ToggleHelpBar: Key{
-				Keys:        []string{"Ctrl+Y"},
-				Description: "Show help in header",
-			},
-		},
-		Root: RootKeys{
-			FocusNext: Key{
-				Keys:        []string{"Tab"},
-				Description: "Focus next component",
-			},
-			HideDatabases: Key{
-				Keys:        []string{"Ctrl+S"},
-				Description: "Hide databases",
-			},
-			OpenConnector: Key{
-				Keys:        []string{"Ctrl+O"},
-				Description: "Open connector",
-			},
-			Databases: DatabasesKeys{
-				FilterBar: Key{
-					Runes:       []string{"/"},
-					Description: "Focus filter bar",
-				},
-				ExpandAll: Key{
-					Runes:       []string{"E"},
-					Description: "Expand all",
-				},
-				CollapseAll: Key{
-					Runes:       []string{"W"},
-					Description: "Collapse all",
-				},
-				ToggleExpand: Key{
-					Runes:       []string{"T"},
-					Description: "Toggle expand",
-				},
-				AddCollection: Key{
-					Runes:       []string{"A"},
-					Description: "Add collection",
-				},
-				DeleteCollection: Key{
-					Keys:        []string{"Ctrl+D"},
-					Description: "Delete collection",
-				},
-			},
-			Content: ContentKeys{
-				PeekDocument: Key{
-					Runes:       []string{"p"},
-					Keys:        []string{"Enter"},
-					Description: "Peek document",
-				},
-				ViewDocument: Key{
-					Runes:       []string{"v"},
-					Description: "View document",
-				},
-				AddDocument: Key{
-					Runes:       []string{"a"},
-					Description: "Add document",
-				},
-				EditDocument: Key{
-					Runes:       []string{"e"},
-					Description: "Edit document",
-				},
-				DuplicateDocument: Key{
-					Runes:       []string{"d"},
-					Description: "Duplicate document",
-				},
-				DeleteDocument: Key{
-					Keys:        []string{"Ctrl+D"},
-					Description: "Delete document",
-				},
-				Refresh: Key{
-					Keys:        []string{"Ctrl+R"},
-					Description: "Refresh",
-				},
-				ToggleQuery: Key{
-					Runes:       []string{"/"},
-					Description: "Toggle query",
-				},
-				NextPage: Key{
-					Keys:        []string{"Ctrl+N"},
-					Description: "Next page",
-				},
-				PreviousPage: Key{
-					Keys:        []string{"Ctrl+B"},
-					Description: "Previous page",
-				},
-				InputBar: InputBarKeys{
-					ShowHistory: Key{
-						Keys:        []string{"Ctrl+Y"},
-						Description: "Show history",
-					},
-					ClearInput: Key{
-						Keys:        []string{"Ctrl+D"},
-						Description: "Clear input",
-					},
-				},
-			},
-		},
-		Connector: ConnectorKeys{
-			ConnectorForm: ConnectorFormKeys{
-				FormFocusUp: Key{
-					Keys:        []string{"Up"},
-					Description: "Move form focus up",
-				},
-				FormFocusDown: Key{
-					Keys:        []string{"Down"},
-					Description: "Move form focus down",
-				},
-				SaveConnection: Key{
-					Keys:        []string{"Ctrl+S", "Enter"},
-					Description: "Save connection",
-				},
-				FocusList: Key{
-					Keys:        []string{"Esc"},
-					Description: "Focus Connection List",
-				},
-			},
-			ConnectorList: ConnectorListKeys{
-				FocusForm: Key{
-					Keys:        []string{"Ctrl+A"},
-					Description: "Move focus to form",
-				},
-				DeleteConnection: Key{
-					Keys:        []string{"Ctrl+D"},
-					Description: "Delete selected connection",
-				},
-				SetConnection: Key{
-					Keys:        []string{"Enter", "Space"},
-					Description: "Set selected connection",
-				},
-			},
-		},
-		Help: HelpKeys{
-			Close: Key{
-				Keys:        []string{"Esc"},
-				Description: "Close help",
-			},
-		},
-	}
-}
-
-// Merge merges the custom keybindings with the default keybindings
-func (kb *KeyBindings) Merge(customKeyBindings *KeyBindings) {
-	if customKeyBindings == nil {
-		return
-	}
-	v := reflect.ValueOf(kb).Elem()
-	cv := reflect.ValueOf(customKeyBindings).Elem()
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		cfield := cv.Field(i)
-		if cfield.Kind() == reflect.Struct {
-			for j := 0; j < field.NumField(); j++ {
-				keyField := field.Field(j)
-				ckeyField := cfield.Field(j)
-				if ckeyField.Kind() == reflect.Struct {
-					for k := 0; k < keyField.NumField(); k++ {
-						key := keyField.Field(k)
-						ckey := ckeyField.Field(k)
-						if ckey.Kind() == reflect.Slice {
-							if ckey.Len() > 0 {
-								key.Set(ckey)
-							}
-						}
-					}
-				}
+	bytes, err := os.ReadFile(keybidingsPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err := ensureConfigDirExist()
+			if err != nil {
+				return nil, err
 			}
+			keybindings.loadDefaultKeybindings()
+			bytes, err = json.Marshal(keybindings)
+			if err != nil {
+				return nil, err
+			}
+			err = os.WriteFile(keybidingsPath, bytes, 0644)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
 		}
 	}
-	return
+
+	err = json.Unmarshal(bytes, &keybindings)
+	if err != nil {
+		return nil, err
+	}
+
+	return keybindings, nil
 }
 
-// LoadCustomKeyBindings loads custom keybindings from the config file
-func (kb *KeyBindings) LoadCustomKeyBindings(path string) (keyBindings *KeyBindings, err error) {
-	customKeyBindings := &KeyBindings{}
-
-	bytes, err := os.ReadFile(path)
-	if err != nil {
-		return keyBindings, err
+func (k *KeyBindings) loadDefaultKeybindings() {
+	k.Global = GlobalKeys{
+		ToggleFullScreenHelp: Key{
+			Runes:       []string{"?"},
+			Description: "Toggle help",
+		},
+		ToggleHelpBar: Key{
+			Keys:        []string{"Ctrl+Y"},
+			Description: "Show help in header",
+		},
 	}
-	err = json.Unmarshal(bytes, customKeyBindings)
-	if err != nil {
-		return keyBindings, err
+
+	k.Root = RootKeys{
+		FocusNext: Key{
+			Keys:        []string{"Tab"},
+			Description: "Focus next component",
+		},
+		HideDatabases: Key{
+			Keys:        []string{"Ctrl+S"},
+			Description: "Hide databases",
+		},
+		OpenConnector: Key{
+			Keys:        []string{"Ctrl+O"},
+			Description: "Open connector",
+		},
 	}
 
-	return customKeyBindings, nil
+	k.Root.Databases = DatabasesKeys{
+		FilterBar: Key{
+			Runes:       []string{"/"},
+			Description: "Focus filter bar",
+		},
+		ExpandAll: Key{
+			Runes:       []string{"E"},
+			Description: "Expand all",
+		},
+		CollapseAll: Key{
+			Runes:       []string{"W"},
+			Description: "Collapse all",
+		},
+		ToggleExpand: Key{
+			Runes:       []string{"T"},
+			Description: "Toggle expand",
+		},
+		AddCollection: Key{
+			Runes:       []string{"A"},
+			Description: "Add collection",
+		},
+		DeleteCollection: Key{
+			Keys:        []string{"Ctrl+D"},
+			Description: "Delete collection",
+		},
+	}
+
+	k.Root.Content = ContentKeys{
+		PeekDocument: Key{
+			Runes:       []string{"p"},
+			Keys:        []string{"Enter"},
+			Description: "Peek document",
+		},
+		ViewDocument: Key{
+			Runes:       []string{"v"},
+			Description: "View document",
+		},
+		AddDocument: Key{
+			Runes:       []string{"a"},
+			Description: "Add document",
+		},
+		EditDocument: Key{
+			Runes:       []string{"e"},
+			Description: "Edit document",
+		},
+		DuplicateDocument: Key{
+			Runes:       []string{"d"},
+			Description: "Duplicate document",
+		},
+		DeleteDocument: Key{
+			Keys:        []string{"Ctrl+D"},
+			Description: "Delete document",
+		},
+		Refresh: Key{
+			Keys:        []string{"Ctrl+R"},
+			Description: "Refresh",
+		},
+		ToggleQuery: Key{
+			Runes:       []string{"/"},
+			Description: "Toggle query",
+		},
+		NextPage: Key{
+			Keys:        []string{"Ctrl+N"},
+			Description: "Next page",
+		},
+		PreviousPage: Key{
+			Keys:        []string{"Ctrl+B"},
+			Description: "Previous page",
+		},
+	}
+
+	k.Root.Content.InputBar = InputBarKeys{
+		ShowHistory: Key{
+			Keys:        []string{"Ctrl+Y"},
+			Description: "Show history",
+		},
+		ClearInput: Key{
+			Keys:        []string{"Ctrl+D"},
+			Description: "Clear input",
+		},
+	}
+
+	k.Connector.ConnectorForm = ConnectorFormKeys{
+		FormFocusUp: Key{
+			Keys:        []string{"Up"},
+			Description: "Move form focus up",
+		},
+		FormFocusDown: Key{
+			Keys:        []string{"Down"},
+			Description: "Move form focus down",
+		},
+		SaveConnection: Key{
+			Keys:        []string{"Ctrl+S", "Enter"},
+			Description: "Save connection",
+		},
+		FocusList: Key{
+			Keys:        []string{"Esc"},
+			Description: "Focus Connection List",
+		},
+	}
+
+	k.Connector.ConnectorList = ConnectorListKeys{
+		FocusForm: Key{
+			Keys:        []string{"Ctrl+A"},
+			Description: "Move focus to form",
+		},
+		DeleteConnection: Key{
+			Keys:        []string{"Ctrl+D"},
+			Description: "Delete selected connection",
+		},
+		SetConnection: Key{
+			Keys:        []string{"Enter", "Space"},
+			Description: "Set selected connection",
+		},
+	}
+
+	k.Help = HelpKeys{
+		Close: Key{
+			Keys:        []string{"Esc"},
+			Description: "Close help",
+		},
+	}
 }
 
 type OrderedKeys struct {
@@ -375,4 +355,13 @@ func (kb *KeyBindings) Contains(configKey Key, namedKey string) bool {
 	}
 
 	return false
+}
+
+func getKeygindingsParh() (string, error) {
+	configDir, err := GetConfigDir()
+	if err != nil {
+		return "", err
+	}
+
+	return configDir + "/keybindings.json", nil
 }
