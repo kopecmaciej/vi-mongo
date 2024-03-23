@@ -36,7 +36,7 @@ alike.
 ### Using curl
 
 ```bash
-curl -L https://github.com/kopecmaciej/mongui/releases/download/v0.1.0-beta/mongui -o mongui
+curl https://api.github.com/repos/kopecmaciej/mongui/releases/latest | jq -r '.assets[0].browser_download_url' | xargs curl -L -o mongui
 chmod +x mongui
 sudo mv mongui /usr/bin
 ```
@@ -44,7 +44,7 @@ sudo mv mongui /usr/bin
 ### Using wget
 
 ```bash
-wget https://github.com/kopecmaciej/mongui/releases/download/v0.1.0-beta/mongui
+wget -O - https://api.github.com/repos/kopecmaciej/mongui/releases/latest | jq -r '.assets[0].browser_download_url' | xargs wget
 chmod +x mongui
 sudo mv mongui /usr/bin
 ```
