@@ -18,6 +18,7 @@ type (
 		Global    GlobalKeys    `json:"global"`
 		Root      RootKeys      `json:"root"`
 		Connector ConnectorKeys `json:"connector"`
+		Welcome   WelcomeKeys   `json:"welcome"`
 		Help      HelpKeys      `json:"help"`
 	}
 
@@ -90,6 +91,11 @@ type (
 		FocusForm        Key `json:"focusForm"`
 		DeleteConnection Key `json:"deleteConnection"`
 		SetConnection    Key `json:"setConnection"`
+	}
+
+	WelcomeKeys struct {
+		MoveFocusUp   Key `json:"moveFocusUp"`
+		MoveFocusDown Key `json:"moveFocusDown"`
 	}
 
 	HelpKeys struct {
@@ -274,6 +280,17 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 		SetConnection: Key{
 			Keys:        []string{"Enter", "Space"},
 			Description: "Set selected connection",
+		},
+	}
+
+	k.Welcome = WelcomeKeys{
+		MoveFocusUp: Key{
+			Keys:        []string{"Shift+Tab"},
+			Description: "Move focus up",
+		},
+		MoveFocusDown: Key{
+			Keys:        []string{"Tab"},
+			Description: "Move focus down",
 		},
 	}
 
