@@ -61,7 +61,7 @@ func (w *Welcome) Render() {
 	w.AddItem(tview.NewBox(), 0, 1, false)
 
 	w.renderForm()
-	w.Flex.AddItem(w.form, 0, 1, true)
+	w.Flex.AddItem(w.form, 80, 0, true)
 
 	w.AddItem(tview.NewBox(), 0, 1, false)
 

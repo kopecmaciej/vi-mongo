@@ -137,13 +137,12 @@ func LoadKeybindings() (*KeyBindings, error) {
 func (k *KeyBindings) loadDefaultKeybindings() {
 	k.Global = GlobalKeys{
 		ToggleFullScreenHelp: Key{
-			// TODO: Check in how many systems ctrl+H is used as backspace
-			Keys:        []string{"Backspace"},
-			Description: "Toggle help",
+			Keys:        []string{"Ctrl+K"},
+			Description: "Toggle full screen help",
 		},
 		ToggleHelpBarFooter: Key{
 			Runes:       []string{"?"},
-			Description: "Show help in footer",
+			Description: "Toggle help in footer",
 		},
 	}
 

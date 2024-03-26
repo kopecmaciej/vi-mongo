@@ -16,13 +16,14 @@ type (
 	App struct {
 		*tview.Application
 
-		Dao     *mongo.Dao
-		Manager *manager.ComponentManager
-		Root    *Root
-		Help    *Help
-		Styles  *config.Styles
-		Config  *config.Config
-		Keys    *config.KeyBindings
+		Dao            *mongo.Dao
+		Manager        *manager.ComponentManager
+		Root           *Root
+		FullScreenHelp *Help
+		FooterHelp     *Help
+		Styles         *config.Styles
+		Config         *config.Config
+		Keys           *config.KeyBindings
 	}
 )
 
@@ -37,13 +38,14 @@ func NewApp(appConfig *config.Config) App {
 	}
 
 	app := App{
-		Application: tview.NewApplication(),
-		Root:        NewRoot(),
-		Help:        NewHelp(),
-		Manager:     manager.NewComponentManager(),
-		Styles:      styles,
-		Config:      appConfig,
-		Keys:        keyBindings,
+		Application:    tview.NewApplication(),
+		Root:           NewRoot(),
+		FullScreenHelp: NewHelp(),
+		FooterHelp:     NewHelp(),
+		Manager:        manager.NewComponentManager(),
+		Styles:         styles,
+		Config:         appConfig,
+		Keys:           keyBindings,
 	}
 
 	return app
@@ -57,7 +59,11 @@ func (a *App) Init() error {
 	}
 	a.SetRoot(a.Root.Pages, true).EnableMouse(true)
 
-	err := a.Help.Init(a)
+	err := a.FullScreenHelp.Init(a)
+	if err != nil {
+		return err
+	}
+	err = a.FooterHelp.Init(a)
 	if err != nil {
 		return err
 	}
@@ -78,22 +84,26 @@ func (a *App) setKeybindings() {
 				a.Root.RemovePage(HelpComponent)
 				return nil
 			}
-			err := a.Help.Render()
+			err := a.FullScreenHelp.Render()
 			if err != nil {
 				return event
 			}
-			a.Root.AddPage(HelpComponent, a.Help, true, true)
+			a.Root.AddPage(HelpComponent, a.FullScreenHelp, true, true)
 			return nil
 		case a.Keys.Contains(a.Keys.Global.ToggleHelpBarFooter, event.Name()):
-			if a.Root.innerFlex.HasItem(a.Help) {
-				a.Root.innerFlex.RemoveItem(a.Help)
+			if a.Root.innerFlex.HasItem(a.FooterHelp) {
+				a.Root.innerFlex.RemoveItem(a.FooterHelp)
 				return nil
 			}
-			err := a.Help.Render()
+			err := a.FooterHelp.Render()
 			if err != nil {
 				return event
 			}
-			a.Root.innerFlex.AddItem(a.Help, 10, 0, false)
+			a.Root.innerFlex.AddItem(a.FooterHelp, 10, 0, false)
+			err = a.FooterHelp.Render()
+			if err != nil {
+				return event
+			}
 			return nil
 		}
 		return event

@@ -7,7 +7,6 @@ import (
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -102,7 +101,6 @@ func (h *Help) addHeaderSection(name string, row, col int) {
 }
 
 func (h *Help) fillWithEmptySpace(width, height int) {
-	log.Info().Msgf("width: %d, height: %d", width, height)
 	for i := 0; i < height; i++ {
 		for j := 0; j < width; j++ {
 			h.Table.SetCell(i, j, tview.NewTableCell(" ").SetTextColor(h.style.BackgroundColor.Color()))
