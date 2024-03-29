@@ -374,6 +374,25 @@ func (kb *KeyBindings) Contains(configKey Key, namedKey string) bool {
 	return false
 }
 
+func (k *Key) String() string {
+	var keyString string
+	var iter []string
+	if len(k.Keys) > 0 {
+		iter = k.Keys
+	} else {
+		iter = k.Runes
+	}
+	for i, k := range iter {
+		if i == 0 {
+			keyString = fmt.Sprintf("%s", k)
+		} else {
+			keyString = fmt.Sprintf("%s, %s", keyString, k)
+		}
+	}
+
+	return keyString
+}
+
 func getKeygindingsPath() (string, error) {
 	configDir, err := GetConfigDir()
 	if err != nil {

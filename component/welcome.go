@@ -1,6 +1,7 @@
 package component
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/kopecmaciej/mongui/config"
@@ -93,7 +94,7 @@ func (w *Welcome) renderForm() {
 	w.form.AddInputField("Log Level", "info", 30, nil, nil)
 	w.form.AddCheckbox("Show connection page", true, nil)
 	w.form.AddCheckbox("Show welcome page", false, nil)
-	w.form.AddTextView("Show help", "Press "+strings.Join(w.app.Keys.Global.ToggleFullScreenHelp.Keys, "")+" to show help", 60, 1, true, false)
+	w.form.AddTextView("Show help", fmt.Sprintf("Press %s to show help", w.app.Keys.Global.ToggleFullScreenHelp.String()), 60, 1, true, false)
 
 	w.form.AddButton(" Save and Connect ", func() {
 		err := w.saveConfig()
