@@ -9,7 +9,6 @@ import (
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -152,8 +151,6 @@ func (s *Databases) filter(ctx context.Context, text string) {
 		}
 	}
 	s.dbTree.Render(ctx, filtered, expand)
-
-	log.Debug().Msgf("Filtered: %v", filtered)
 }
 
 func (s *Databases) renderWithFilter(ctx context.Context, filter string) error {

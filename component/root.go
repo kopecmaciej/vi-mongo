@@ -153,6 +153,10 @@ func (r *Root) setKeybindings() {
 		case k.Contains(k.Root.OpenConnector, event.Name()):
 			r.renderConnector()
 			return nil
+		case k.Contains(k.Root.HideFooterHelp, event.Name()):
+			if r.innerFlex.HasItem(r.app.FooterHelp) {
+				r.innerFlex.RemoveItem(r.app.FooterHelp)
+			}
 		}
 		return event
 	})
