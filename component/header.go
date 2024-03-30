@@ -41,6 +41,7 @@ func NewHeader() *Header {
 	h := Header{
 		Component: NewComponent(HeaderComponent),
 		Table:     tview.NewTable(),
+		baseInfo:  make(BaseInfo),
 	}
 
 	h.SetAfterInitFunc(h.init)
@@ -53,7 +54,7 @@ func (h *Header) init() error {
 	h.setStyle()
 
 	if err := h.setBaseInfo(ctx); err != nil {
-		return err
+		h.setInactiveBaseInfo(err)
 	}
 	h.render()
 
@@ -82,11 +83,6 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 
 	port := strconv.Itoa(h.dao.Config.Port)
 
-	status := h.style.InactiveSymbol.String()
-	if ss.Ok == 1 {
-		status = h.style.ActiveSymbol.String()
-	}
-
 	orElseNil := func(i int32) string {
 		if i == 0 {
 			return ""
@@ -95,7 +91,7 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 	}
 
 	h.baseInfo = BaseInfo{
-		0:  {"Status", status},
+		0:  {"Status", h.style.ActiveSymbol.String()},
 		1:  {"Host", h.dao.Config.Host},
 		2:  {"Port", port},
 		3:  {"Database", h.dao.Config.Database},
@@ -115,17 +111,17 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 // to display the most recent information about the database
 func (h *Header) refresh() {
 	for {
+		time.Sleep(10 * time.Second)
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		err := h.setBaseInfo(ctx)
 		if err != nil {
-			log.Error().Err(err).Msg("error while refreshing header")
-			h.baseInfo[0] = info{"Status", h.style.InactiveSymbol.String()}
+			log.Error().Err(err).Msg("Error while refreshing header")
+			h.setInactiveBaseInfo(err)
 		}
 		h.app.QueueUpdateDraw(func() {
 			h.render()
 		})
-		time.Sleep(10 * time.Second)
 	}
 }
 
@@ -146,6 +142,14 @@ func (h *Header) render() {
 		h.Table.SetCell(currRow, currCol, h.keyCell(b[order].label))
 		h.Table.SetCell(currRow, currCol+1, h.valueCell(b[order].value))
 		currRow++
+	}
+}
+
+func (h *Header) setInactiveBaseInfo(err error) {
+	h.baseInfo = make(BaseInfo)
+	h.baseInfo[0] = info{"Status", h.style.InactiveSymbol.String()}
+	if err != nil {
+		h.baseInfo[1] = info{"Error", err.Error()}
 	}
 }
 
