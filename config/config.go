@@ -38,6 +38,7 @@ type EditorConfig struct {
 }
 
 type Config struct {
+	Version            string        `yaml:"version"`
 	Log                LogConfig     `yaml:"log"`
 	Debug              bool          `yaml:"debug"`
 	Editor             EditorConfig  `yaml:"editor"`
