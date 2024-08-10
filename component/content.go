@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/mongo"
@@ -188,10 +189,23 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.PreviousPage, event.Name()):
 			c.goToPrevMongoPage(ctx)
 			return nil
+		case k.Contains(k.Root.Content.CopyValue, event.Name()):
+			selectedDoc := c.Table.GetCell(c.Table.GetSelection()).Text
+			err := c.copyToClipboard(selectedDoc)
+			if err != nil {
+				ShowErrorModal(c.app.Root, "Error copying document", err)
+			} else {
+				ShowInfoModal(c.app.Root, "Value copied to clipboard")
+			}
+			return nil
 		}
 
 		return event
 	})
+}
+
+func (c *Content) copyToClipboard(text string) error {
+	return clipboard.WriteAll(text)
 }
 
 func (c *Content) render(setFocus bool) {

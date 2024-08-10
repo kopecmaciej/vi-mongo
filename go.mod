@@ -13,6 +13,7 @@ require (
 
 require (
 	github.com/adrg/xdg v0.4.0
+	github.com/atotto/clipboard v0.1.4
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect

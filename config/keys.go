@@ -64,6 +64,7 @@ type (
 		EditDocument      Key      `json:"editDocument"`
 		DuplicateDocument Key      `json:"duplicateDocument"`
 		DeleteDocument    Key      `json:"deleteDocument"`
+		CopyValue         Key      `json:"copyValue"`
 		Refresh           Key      `json:"refresh"`
 		ToggleQuery       Key      `json:"toggleQuery"`
 		NextPage          Key      `json:"nextPage"`
@@ -166,10 +167,10 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Keys:        []string{"Ctrl+O"},
 			Description: "Open connector",
 		},
-    HideFooterHelp: Key{
-      Keys:        []string{"Esc"},
-      Description: "Hide footer help",
-    },
+		HideFooterHelp: Key{
+			Keys:        []string{"Esc"},
+			Description: "Hide footer help",
+		},
 	}
 
 	k.Root.Databases = DatabasesKeys{
@@ -224,6 +225,10 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 		DeleteDocument: Key{
 			Keys:        []string{"Ctrl+D"},
 			Description: "Delete document",
+		},
+		CopyValue: Key{
+			Runes:       []string{"c"},
+			Description: "Copy value",
 		},
 		Refresh: Key{
 			Keys:        []string{"Ctrl+R"},
