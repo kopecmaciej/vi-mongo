@@ -175,7 +175,7 @@ func (t *DatabaseTree) addCollection(ctx context.Context) error {
 func (t *DatabaseTree) deleteCollection(ctx context.Context) error {
 	level := t.GetCurrentNode().GetLevel()
 	if level == 0 || level == 1 {
-		return fmt.Errorf("Cannot delete database")
+		return fmt.Errorf("cannot delete database")
 	}
 	parent := t.GetCurrentNode().GetReference().(*tview.TreeNode)
 	db, coll := parent.GetText(), t.GetCurrentNode().GetText()

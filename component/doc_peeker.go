@@ -9,8 +9,8 @@ import (
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/mongui/primitives"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 
+	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
@@ -24,7 +24,6 @@ const (
 type peekerState struct {
 	mongo.CollectionState
 	rawDocument string
-	id          primitive.ObjectID
 }
 
 // DocPeeker is a component that provides a modal view for peeking at a document
@@ -33,7 +32,6 @@ type DocPeeker struct {
 	*primitives.ModalView
 
 	style       *config.DocPeekerStyle
-	eventChan   chan interface{}
 	docModifier *DocModifier
 	state       peekerState
 }
@@ -76,11 +74,27 @@ func (dc *DocPeeker) setStyle() {
 
 func (dc *DocPeeker) setKeybindings(ctx context.Context) {
 	dc.ModalView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyCtrlR {
+		switch event.Key() {
+		case tcell.KeyCtrlR:
 			if err := dc.render(ctx); err != nil {
 				log.Error().Err(err).Msg("Error refreshing document")
 			}
 			return nil
+		case tcell.KeyRune:
+			switch event.Rune() {
+			case 'j':
+				dc.ModalView.MoveDown()
+			case 'k':
+				dc.ModalView.MoveUp()
+			case 'c':
+				if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "full"); err != nil {
+					ShowErrorModal(dc.app.Root, "Error copying full line", err)
+				}
+			case 'v':
+				if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "value"); err != nil {
+					ShowErrorModal(dc.app.Root, "Error copying value", err)
+				}
+			}
 		}
 		return event
 	})
@@ -100,7 +114,7 @@ func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 		log.Error().Err(err).Msg("Error indenting JSON")
 		return nil
 	}
-	text := string(prettyJson.Bytes())
+	text := prettyJson.String()
 
 	dc.ModalView.SetText(primitives.Text{
 		Content: text,

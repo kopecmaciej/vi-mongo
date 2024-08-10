@@ -41,6 +41,9 @@ type ModalView struct {
 	// The optional callback for when the user clicked one of the buttons. It
 	// receives the index of the clicked button and the button's label.
 	done func(buttonIndex int, buttonLabel string)
+
+	// The selected line index
+	selectedLine int
 }
 
 // NewModalView returns a new modal message window.
@@ -215,7 +218,12 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 			return s
 		})
 
-		m.frame.AddText(lines[i], true, m.text.Align, m.text.Color)
+		// Highlight the selected line
+		if i-startLine == m.selectedLine {
+			m.frame.AddText("> "+lines[i], true, m.text.Align, tcell.ColorYellow)
+		} else {
+			m.frame.AddText("  "+lines[i], true, m.text.Align, m.text.Color)
+		}
 	}
 
 	// Set the modal's position and size.
@@ -275,19 +283,22 @@ func (m *ModalView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 
 		switch key {
 		case tcell.KeyDown:
-			m.ScrollDown()
+			m.MoveDown()
 		case tcell.KeyUp:
-			m.ScrollUp()
+			m.MoveUp()
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case 'j':
-				m.ScrollDown()
+				m.MoveDown()
 			case 'k':
-				m.ScrollUp()
+				m.MoveUp()
 			case 'g':
 				m.scrollPosition = 0
+				m.selectedLine = 0
 			case 'G':
 				m.scrollPosition = m.endPosition
+				_, _, _, height := m.GetRect()
+				m.selectedLine = height - 7
 			}
 		}
 
@@ -303,4 +314,59 @@ func (m *ModalView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 func (m *ModalView) SetScrollable(scrollable bool) *ModalView {
 	m.scrollable = scrollable
 	return m
+}
+
+func (m *ModalView) MoveUp() {
+	if m.selectedLine > 0 {
+		m.selectedLine--
+	} else if m.scrollPosition > 0 {
+		m.ScrollUp()
+	}
+	m.ensureSelectedLineVisible()
+}
+
+func (m *ModalView) MoveDown() {
+	_, _, width, height := m.GetRect()
+	maxLines := height - 6 // Subtracting 6 to account for borders and padding
+	totalLines := len(tview.WordWrap(m.text.Content, width-4))
+
+	if m.selectedLine < maxLines-1 && m.selectedLine < totalLines-1 {
+		m.selectedLine++
+	} else if m.scrollPosition < m.endPosition {
+		m.ScrollDown()
+	}
+	m.ensureSelectedLineVisible()
+}
+
+func (m *ModalView) ensureSelectedLineVisible() {
+	if m.selectedLine < 0 {
+		m.selectedLine = 0
+	}
+	_, _, _, height := m.GetRect()
+	maxLines := height - 6
+	if m.selectedLine >= maxLines {
+		m.selectedLine = maxLines - 1
+	}
+}
+
+func (m *ModalView) CopySelectedLine(copyFunc func(text string) error, copyType string) error {
+	_, _, width, _ := m.GetRect()
+	lines := tview.WordWrap(m.text.Content, width-4)
+	selectedLineIndex := m.scrollPosition + m.selectedLine
+	if selectedLineIndex >= 0 && selectedLineIndex < len(lines) {
+		line := lines[selectedLineIndex]
+		switch copyType {
+		case "full":
+			return copyFunc(line)
+		case "value":
+			// Extract value after the colon
+			if parts := strings.SplitN(line, ":", 2); len(parts) > 1 {
+				return copyFunc(strings.TrimSpace(parts[1]))
+			}
+			return copyFunc(line) // If no colon found, copy the full line
+		default:
+			return copyFunc(line)
+		}
+	}
+	return nil
 }
