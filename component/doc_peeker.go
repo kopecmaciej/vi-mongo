@@ -82,10 +82,6 @@ func (dc *DocPeeker) setKeybindings(ctx context.Context) {
 			return nil
 		case tcell.KeyRune:
 			switch event.Rune() {
-			case 'j':
-				dc.ModalView.MoveDown()
-			case 'k':
-				dc.ModalView.MoveUp()
 			case 'c':
 				if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "full"); err != nil {
 					ShowErrorModal(dc.app.Root, "Error copying full line", err)

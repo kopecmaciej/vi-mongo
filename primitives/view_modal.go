@@ -200,12 +200,10 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 	}
 
 	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
-		// colorize curly braces
 		if strings.Contains(lines[i], "{") || strings.Contains(lines[i], "}") {
 			lines[i] = strings.ReplaceAll(lines[i], "{", "[red]{")
 			lines[i] = strings.ReplaceAll(lines[i], "}", "[red]}"+"[white]")
 		}
-		// colorize json keys
 		re := regexp.MustCompile(`"([^"]+)":`)
 		lines[i] = re.ReplaceAllStringFunc(lines[i], func(s string) string {
 			// Extract key
@@ -218,7 +216,6 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 			return s
 		})
 
-		// Highlight the selected line
 		if i-startLine == m.selectedLine {
 			m.frame.AddText("> "+lines[i], true, m.text.Align, tcell.ColorYellow)
 		} else {
@@ -297,8 +294,8 @@ func (m *ModalView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 				m.selectedLine = 0
 			case 'G':
 				m.scrollPosition = m.endPosition
-				_, _, _, height := m.GetRect()
-				m.selectedLine = height - 7
+				_, _, width, _ := m.GetRect()
+				m.selectedLine = len(tview.WordWrap(m.text.Content, width-6))
 			}
 		}
 
@@ -322,30 +319,17 @@ func (m *ModalView) MoveUp() {
 	} else if m.scrollPosition > 0 {
 		m.ScrollUp()
 	}
-	m.ensureSelectedLineVisible()
 }
 
 func (m *ModalView) MoveDown() {
 	_, _, width, height := m.GetRect()
-	maxLines := height - 6 // Subtracting 6 to account for borders and padding
+	maxLines := height - 6
 	totalLines := len(tview.WordWrap(m.text.Content, width-4))
 
 	if m.selectedLine < maxLines-1 && m.selectedLine < totalLines-1 {
 		m.selectedLine++
 	} else if m.scrollPosition < m.endPosition {
 		m.ScrollDown()
-	}
-	m.ensureSelectedLineVisible()
-}
-
-func (m *ModalView) ensureSelectedLineVisible() {
-	if m.selectedLine < 0 {
-		m.selectedLine = 0
-	}
-	_, _, _, height := m.GetRect()
-	maxLines := height - 6
-	if m.selectedLine >= maxLines {
-		m.selectedLine = maxLines - 1
 	}
 }
 
@@ -359,11 +343,10 @@ func (m *ModalView) CopySelectedLine(copyFunc func(text string) error, copyType 
 		case "full":
 			return copyFunc(line)
 		case "value":
-			// Extract value after the colon
 			if parts := strings.SplitN(line, ":", 2); len(parts) > 1 {
 				return copyFunc(strings.TrimSpace(parts[1]))
 			}
-			return copyFunc(line) // If no colon found, copy the full line
+			return copyFunc(line)
 		default:
 			return copyFunc(line)
 		}
