@@ -105,6 +105,7 @@ type (
 		KeyColor        Style `yaml:"keyColor"`
 		ValueColor      Style `yaml:"valueColor"`
 		BracketColor    Style `yaml:"bracketColor"`
+		HighlightColor  Style `yaml:"highlightColor"`
 	}
 
 	// InputBarStyle is a struct that contains all the styles for the filter bar
@@ -262,9 +263,10 @@ func (s *Styles) loadDefaultStyles() {
 		BackgroundColor: "#0F172A",
 		BorderColor:     "#50FA7B",
 		TitleColor:      "#F1FA8C",
-		KeyColor:        "#F1FA8C",
+		KeyColor:        "#387D44",
 		ValueColor:      "#FFFFFF",
-		BracketColor:    "#FFFFFF",
+		HighlightColor:  "#163694",
+		BracketColor:    "#FF5555",
 	}
 
 	s.InputBar = InputBarStyle{

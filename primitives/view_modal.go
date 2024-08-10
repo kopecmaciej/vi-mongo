@@ -45,6 +45,12 @@ type ModalView struct {
 
 	// The selected line index
 	selectedLine int
+
+	// The color of the highlighted text.
+	highlightColor tcell.Color
+
+	// The colors for document elements.
+	keyColor, valueColor, bracketColor tcell.Color
 }
 
 // NewModalView returns a new modal message window.
@@ -202,29 +208,22 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 
 	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
 		line := lines[i]
-
-		// Highlight curly braces
-		line = strings.ReplaceAll(line, "{", "[red::b]{[::-]")
-		line = strings.ReplaceAll(line, "}", "[red::b]}[::-]")
-
-		// Highlight key-value pairs
-		re := regexp.MustCompile(`"([^"]+)":\s*("[^"]*"|[^,}\s]+)?`)
+		if strings.Contains(line, "{") || strings.Contains(line, "}") {
+			line = strings.ReplaceAll(line, "{", fmt.Sprintf("[%s]{", m.bracketColor.String()))
+			line = strings.ReplaceAll(line, "}", fmt.Sprintf("[%s]}[%s]", m.bracketColor.String(), m.valueColor.String()))
+		}
+		re := regexp.MustCompile(`"([^"]+)":`)
 		line = re.ReplaceAllStringFunc(line, func(s string) string {
-			parts := re.FindStringSubmatch(s)
-			if len(parts) > 2 {
-				key := parts[1]
-				value := parts[2]
-				if value == "" {
-					return fmt.Sprintf(`[green::b]"%s"[white:-:-]`, key)
-				}
-				return fmt.Sprintf(`[green::b]"%s"[white:-:-]:%s`, key, value)
+			matches := re.FindStringSubmatch(s)
+			if len(matches) > 1 {
+				key := matches[1]
+				return fmt.Sprintf("[%s]\"%s\"[%s]:", m.keyColor.String(), key, m.valueColor.String())
 			}
 			return s
 		})
 
-		// Apply selection highlight
 		if i-startLine == m.selectedLine {
-			line = fmt.Sprintf("[white:gray:b]> %s[-:-:-]", line)
+			line = fmt.Sprintf("[-:%s:b]> %s[-:-:-]", m.highlightColor.String(), line)
 		} else {
 			line = "  " + line
 		}
@@ -361,4 +360,18 @@ func (m *ModalView) CopySelectedLine(copyFunc func(text string) error, copyType 
 		}
 	}
 	return nil
+}
+
+// SetHighlightColor sets the color of the highlighted text.
+func (m *ModalView) SetHighlightColor(color tcell.Color) *ModalView {
+	m.highlightColor = color
+	return m
+}
+
+// SetDocumentColors sets the colors for document elements.
+func (m *ModalView) SetDocumentColors(keyColor, valueColor, bracketColor tcell.Color) *ModalView {
+	m.keyColor = keyColor
+	m.valueColor = valueColor
+	m.bracketColor = bracketColor
+	return m
 }

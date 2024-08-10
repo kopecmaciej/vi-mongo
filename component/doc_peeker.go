@@ -68,6 +68,14 @@ func (dc *DocPeeker) setStyle() {
 	dc.SetTitle("Document Details")
 	dc.SetTitleAlign(tview.AlignLeft)
 	dc.SetTitleColor(dc.style.TitleColor.Color())
+	dc.SetBackgroundColor(dc.style.BackgroundColor.Color())
+	dc.SetBorderColor(dc.style.BorderColor.Color())
+	dc.SetHighlightColor(dc.style.HighlightColor.Color())
+	dc.SetDocumentColors(
+		dc.style.KeyColor.Color(),
+		dc.style.ValueColor.Color(),
+		dc.style.BracketColor.Color(),
+	)
 
 	dc.ModalView.AddButtons([]string{"Edit", "Close"})
 }
