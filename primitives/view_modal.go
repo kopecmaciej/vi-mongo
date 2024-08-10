@@ -1,6 +1,7 @@
 package primitives
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -200,27 +201,35 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 	}
 
 	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
-		if strings.Contains(lines[i], "{") || strings.Contains(lines[i], "}") {
-			lines[i] = strings.ReplaceAll(lines[i], "{", "[red]{")
-			lines[i] = strings.ReplaceAll(lines[i], "}", "[red]}"+"[white]")
-		}
-		re := regexp.MustCompile(`"([^"]+)":`)
-		lines[i] = re.ReplaceAllStringFunc(lines[i], func(s string) string {
-			// Extract key
-			matches := re.FindStringSubmatch(s)
-			if len(matches) > 1 {
-				// Apply color to key only
-				key := matches[1]
-				return "[green]\"" + key + "\"[white]:"
+		line := lines[i]
+
+		// Highlight curly braces
+		line = strings.ReplaceAll(line, "{", "[red::b]{[::-]")
+		line = strings.ReplaceAll(line, "}", "[red::b]}[::-]")
+
+		// Highlight key-value pairs
+		re := regexp.MustCompile(`"([^"]+)":\s*("[^"]*"|[^,}\s]+)?`)
+		line = re.ReplaceAllStringFunc(line, func(s string) string {
+			parts := re.FindStringSubmatch(s)
+			if len(parts) > 2 {
+				key := parts[1]
+				value := parts[2]
+				if value == "" {
+					return fmt.Sprintf(`[green::b]"%s"[white:-:-]`, key)
+				}
+				return fmt.Sprintf(`[green::b]"%s"[white:-:-]:%s`, key, value)
 			}
 			return s
 		})
 
+		// Apply selection highlight
 		if i-startLine == m.selectedLine {
-			m.frame.AddText("> "+lines[i], true, m.text.Align, tcell.ColorYellow)
+			line = fmt.Sprintf("[white:gray:b]> %s[-:-:-]", line)
 		} else {
-			m.frame.AddText("  "+lines[i], true, m.text.Align, m.text.Color)
+			line = "  " + line
 		}
+
+		m.frame.AddText(line, true, m.text.Align, m.text.Color)
 	}
 
 	// Set the modal's position and size.
