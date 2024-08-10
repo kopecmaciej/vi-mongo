@@ -99,6 +99,9 @@ func (h *HistoryModal) Render() error {
 // It will overwrite oldest entry if history is full.
 func (h *HistoryModal) SaveToHistory(text string) error {
 	history, err := h.loadHistory()
+	if err != nil {
+		return err
+	}
 
 	var updatedHistory []string
 	for _, line := range history {

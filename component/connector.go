@@ -10,8 +10,6 @@ import (
 )
 
 const (
-	pathToConfig = "config.json"
-
 	ConnectorComponent = manager.Component("Connector")
 )
 

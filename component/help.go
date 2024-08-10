@@ -119,7 +119,7 @@ func (h *Help) AddKeySection(name string, keys []config.Key, pos *int, col int) 
 		}
 		for i, k := range iter {
 			if i == 0 {
-				keyString = fmt.Sprintf("%s", k)
+				keyString = k
 			} else {
 				keyString = fmt.Sprintf("%s, %s", keyString, k)
 			}

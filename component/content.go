@@ -25,15 +25,14 @@ type Content struct {
 	*Component
 	*tview.Flex
 
-	Table            *tview.Table
-	View             *tview.TextView
-	style            *config.ContentStyle
-	queryBar         *InputBar
-	jsonPeeker       *DocPeeker
-	deleteModal      *DeleteModal
-	docModifier      *DocModifier
-	state            mongo.CollectionState
-	autocompleteKeys []string
+	Table       *tview.Table
+	View        *tview.TextView
+	style       *config.ContentStyle
+	queryBar    *InputBar
+	jsonPeeker  *DocPeeker
+	deleteModal *DeleteModal
+	docModifier *DocModifier
+	state       mongo.CollectionState
 }
 
 // NewContent creates a new Content component
@@ -398,7 +397,7 @@ func (c *Content) viewJson(jsonString string) error {
 		return err
 	}
 
-	c.View.SetText(string(indentedJson.Bytes()))
+	c.View.SetText(indentedJson.String())
 	c.View.ScrollToBeginning()
 
 	c.View.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {

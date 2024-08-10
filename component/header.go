@@ -112,13 +112,15 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 func (h *Header) refresh() {
 	for {
 		time.Sleep(10 * time.Second)
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		err := h.setBaseInfo(ctx)
-		if err != nil {
-			log.Error().Err(err).Msg("Error while refreshing header")
-			h.setInactiveBaseInfo(err)
-		}
+		func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			err := h.setBaseInfo(ctx)
+			if err != nil {
+				log.Error().Err(err).Msg("Error while refreshing header")
+				h.setInactiveBaseInfo(err)
+			}
+		}()
 		h.app.QueueUpdateDraw(func() {
 			h.render()
 		})

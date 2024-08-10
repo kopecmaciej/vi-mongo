@@ -43,17 +43,17 @@ func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.Ob
 	var document map[string]interface{}
 	err = json.Unmarshal([]byte(createdDoc), &document)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("Error unmarshaling JSON: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("error unmarshaling JSON: %v", err)
 	}
 
 	rawID, err := d.dao.InsetDocument(ctx, db, coll, document)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("Error inserting document: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("error inserting document: %v", err)
 	}
 
 	ID, ok := rawID.(primitive.ObjectID)
 	if !ok {
-		return primitive.NilObjectID, fmt.Errorf("Error converting _id to primitive.ObjectID")
+		return primitive.NilObjectID, fmt.Errorf("error converting _id to primitive.ObjectID")
 	}
 
 	return ID, nil
@@ -63,7 +63,7 @@ func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.Ob
 func (d *DocModifier) Edit(ctx context.Context, db, coll string, rawDocument string) (string, error) {
 	updatedDocument, err := d.openEditor(rawDocument)
 	if err != nil {
-		return "", fmt.Errorf("Error editing document: %v", err)
+		return "", fmt.Errorf("error editing document: %v", err)
 	}
 
 	if updatedDocument == rawDocument {
@@ -73,7 +73,7 @@ func (d *DocModifier) Edit(ctx context.Context, db, coll string, rawDocument str
 
 	err = d.updateDocument(ctx, db, coll, updatedDocument)
 	if err != nil {
-		return "", fmt.Errorf("Error saving document: %v", err)
+		return "", fmt.Errorf("error saving document: %v", err)
 	}
 
 	return updatedDocument, nil
@@ -82,10 +82,13 @@ func (d *DocModifier) Edit(ctx context.Context, db, coll string, rawDocument str
 // Duplicate opens the editor with the document and saves it as a new document
 func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocument string) (primitive.ObjectID, error) {
 	replacedDoc, err := removeField(rawDocument, "_id")
+	if err != nil {
+		return primitive.NilObjectID, fmt.Errorf("error removing _id field: %v", err)
+	}
 
 	duplicateDoc, err := d.openEditor(replacedDoc)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("Error editing document: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("error editing document: %v", err)
 	}
 	if duplicateDoc == "" {
 		log.Debug().Msgf("Document not duplicated")
@@ -95,19 +98,19 @@ func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocumen
 	var document map[string]interface{}
 	err = json.Unmarshal([]byte(duplicateDoc), &document)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("Error unmarshaling JSON: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("error unmarshaling JSON: %v", err)
 	}
 
 	delete(document, "_id")
 
 	rawID, err := d.dao.InsetDocument(ctx, db, coll, document)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("Error inserting document: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("error inserting document: %v", err)
 	}
 
 	ID, ok := rawID.(primitive.ObjectID)
 	if !ok {
-		return primitive.NilObjectID, fmt.Errorf("Error converting _id to primitive.ObjectID")
+		return primitive.NilObjectID, fmt.Errorf("error converting _id to primitive.ObjectID")
 	}
 
 	return ID, nil
@@ -116,25 +119,25 @@ func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocumen
 // updateDocument saves the document to the database
 func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, rawDocument string) error {
 	if rawDocument == "" {
-		return fmt.Errorf("Document cannot be empty")
+		return fmt.Errorf("document cannot be empty")
 	}
 	var document map[string]interface{}
 	err := json.Unmarshal([]byte(rawDocument), &document)
 	if err != nil {
-		log.Error().Msgf("Error unmarshaling JSON: %v", err)
+		log.Error().Msgf("error unmarshaling JSON: %v", err)
 		return nil
 	}
 
 	id, err := mongo.GetIDFromDocument(document)
 	if err != nil {
-		log.Error().Msgf("Error getting _id from document: %v", err)
+		log.Error().Msgf("error getting _id from document: %v", err)
 		return nil
 	}
 	delete(document, "_id")
 
 	err = d.dao.UpdateDocument(ctx, db, coll, id, document)
 	if err != nil {
-		log.Error().Msgf("Error updating document: %v", err)
+		log.Error().Msgf("error updating document: %v", err)
 		return nil
 	}
 
@@ -145,22 +148,22 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, rawDo
 func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 	prettyJsonBuffer, err := mongo.IndientJSON(rawDocument)
 	if err != nil {
-		return "", fmt.Errorf("Error indenting JSON: %v", err)
+		return "", fmt.Errorf("error indenting JSON: %v", err)
 	}
 
 	tmpFile, err := d.writeToTempFile(prettyJsonBuffer)
 	if err != nil {
-		return "", fmt.Errorf("Error writing to temp file: %v", err)
+		return "", fmt.Errorf("error writing to temp file: %v", err)
 	}
 	defer os.Remove(tmpFile.Name())
 
 	ed, err := d.app.Config.GetEditorCmd()
 	if err != nil {
-		return "", fmt.Errorf("Error getting editor command: %v", err)
+		return "", fmt.Errorf("error getting editor command: %v", err)
 	}
 	editor, err := exec.LookPath(ed)
 	if err != nil {
-		return "", fmt.Errorf("Error looking for editor: %v", err)
+		return "", fmt.Errorf("error looking for editor: %v", err)
 	}
 
 	updatedDocument := ""
@@ -172,13 +175,13 @@ func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 		cmd.Stderr = os.Stderr
 		err = cmd.Run()
 		if err != nil {
-			log.Error().Err(err).Msg("Error running editor")
+			log.Error().Err(err).Msg("error running editor")
 			return
 		}
 
 		editedBytes, err := os.ReadFile(tmpFile.Name())
 		if err != nil {
-			log.Error().Err(err).Msg("Error reading edited file")
+			log.Error().Err(err).Msg("error reading edited file")
 			return
 		}
 		if !json.Valid(editedBytes) {
@@ -195,20 +198,20 @@ func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 func (d *DocModifier) writeToTempFile(bufferJson bytes.Buffer) (*os.File, error) {
 	tmpFile, err := os.CreateTemp("", "doc-*.json")
 	if err != nil {
-		return nil, fmt.Errorf("Error creating temp file: %v", err)
+		return nil, fmt.Errorf("error creating temp file: %v", err)
 	}
 
 	_, err = tmpFile.Write(bufferJson.Bytes())
 	if err != nil {
 		err = os.Remove(tmpFile.Name())
 		if err != nil {
-			return nil, fmt.Errorf("Error removing temp file: %v", err)
+			return nil, fmt.Errorf("error removing temp file: %v", err)
 		}
-		return nil, fmt.Errorf("Error writing to temp file: %v", err)
+		return nil, fmt.Errorf("error writing to temp file: %v", err)
 	}
 
 	if err := tmpFile.Close(); err != nil {
-		return nil, fmt.Errorf("Error closing temp file: %v", err)
+		return nil, fmt.Errorf("error closing temp file: %v", err)
 	}
 
 	return tmpFile, nil
