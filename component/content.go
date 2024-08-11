@@ -229,10 +229,11 @@ func (c *Content) render(setFocus bool) {
 
 func (c *Content) queryBarListener(ctx context.Context) {
 	accceptFunc := func(text string) {
-		c.Flex.RemoveItem(c.queryBar)
 		filter, err := mongo.ParseStringQuery(text)
 		if err != nil {
-			defer ShowErrorModal(c.app.Root, "Error parsing query", err)
+			defer ShowErrorModalAndFocus(c.app.Root, "Error parsing query\nPlease check the query syntax", err, func() {
+				c.app.SetFocus(c.queryBar)
+			})
 		}
 		c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
 		c.Table.Select(2, 0)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
+	"github.com/rs/zerolog/log"
 )
 
 // Text is the text to be displayed in the modal.
@@ -206,17 +207,29 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 		startLine = 0
 	}
 
+	// calculate lines to highlight
+	numLinesToHighlight := m.calculateNextLinesToHighlight(lines)
+
 	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
-		line := lines[i]
-		line = m.formatLine(line, i == startLine)
+		lines[i] = m.formatLine(lines[i], i == startLine)
+	}
 
+	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
 		if i-startLine == m.selectedLine {
-			line = m.highlightLine(line)
+			lines[i] = m.highlightLine(lines[i], true)
+			for j := m.selectedLine + 1; j <= m.selectedLine+numLinesToHighlight; j++ {
+				log.Debug().Msgf("highlighting line: %d", j)
+				lines[j] = m.highlightLine(lines[j], false)
+			}
 		} else {
-			line = "  " + line
+			lines[i] = " " + lines[i]
 		}
+	}
 
-		m.frame.AddText(line, true, m.text.Align, m.text.Color)
+	log.Debug().Msgf("lines highlighted: %s", lines[m.selectedLine])
+
+	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
+		m.frame.AddText(lines[i], true, m.text.Align, m.text.Color)
 	}
 
 	// Set the modal's position and size.
@@ -231,6 +244,48 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 	m.frame.Draw(screen)
 }
 
+func calculateIndent(line string) int {
+	return len(line) - len(strings.TrimLeft(line, " \t"))
+}
+
+func (m *ModalView) calculateNextLinesToHighlight(lines []string) int {
+	currentIndent := calculateIndent(lines[m.selectedLine])
+	linesToHighlight := 0
+
+	// TODO: this is not clear way to handle highlighting, but for now it works
+	for i := m.selectedLine + 1; i < len(lines); i++ {
+		nextIndent := calculateIndent(lines[i])
+
+		// highlight till the end if first line
+		if m.selectedLine == 0 {
+			return len(lines) - 1
+		}
+
+		// if current indent is 0, highlight only given line
+		if currentIndent == 0 {
+			return linesToHighlight
+		}
+
+		// Case 1: Same indent, new key:value pair
+		if nextIndent == currentIndent {
+			return linesToHighlight
+			// Case 2: Wrapped line, continue highlighting
+		} else if nextIndent == 0 {
+			linesToHighlight++
+			// Case 3: Object or array, continue until we find matching indent
+		} else if nextIndent > currentIndent {
+			linesToHighlight++
+			for j := i + 1; j < len(lines); j++ {
+				if calculateIndent(lines[j]) == currentIndent {
+					return j - m.selectedLine
+				}
+			}
+		}
+	}
+
+	return linesToHighlight
+}
+
 func (m *ModalView) formatLine(line string, isFirstLine bool) string {
 	if isFirstLine && strings.TrimSpace(line) == "{" {
 		return fmt.Sprintf("[%s]{[%s]", m.bracketColor.String(), m.valueColor.String())
@@ -241,12 +296,13 @@ func (m *ModalView) formatLine(line string, isFirstLine bool) string {
 		line = strings.ReplaceAll(line, "}", fmt.Sprintf("[%s]}[%s]", m.bracketColor.String(), m.valueColor.String()))
 	}
 
-	re := regexp.MustCompile(`"([^"]+)":`)
+	re := regexp.MustCompile(`"([^"]+)":(.*)`)
 	line = re.ReplaceAllStringFunc(line, func(s string) string {
 		matches := re.FindStringSubmatch(s)
-		if len(matches) > 1 {
+		if len(matches) > 2 {
 			key := matches[1]
-			return fmt.Sprintf("[%s]\"%s\"[%s]:", m.keyColor.String(), key, m.valueColor.String())
+			value := strings.TrimSpace(matches[2])
+			return fmt.Sprintf("[%s]\"%s\"[:]: [%s]%s[-]", m.keyColor.String(), key, m.valueColor.String(), value)
 		}
 		return s
 	})
@@ -254,12 +310,11 @@ func (m *ModalView) formatLine(line string, isFirstLine bool) string {
 	return line
 }
 
-func (m *ModalView) highlightLine(line string) string {
-	colorizeLine := func(line string) string {
-		return fmt.Sprintf("[-:%s:b]> %s[-:-:-]", m.highlightColor.String(), line)
+func (m *ModalView) highlightLine(line string, withMark bool) string {
+	if withMark {
+		return fmt.Sprintf("[-:%s:b]>%s[-:-:-]", m.highlightColor.String(), line)
 	}
-
-	return colorizeLine(line)
+	return fmt.Sprintf("[-:%s:b]%s[-:-:-]", m.highlightColor.String(), line)
 }
 
 // Additional methods to handle scrolling

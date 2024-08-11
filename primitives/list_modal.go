@@ -9,8 +9,7 @@ import (
 type ListModal struct {
 	*tview.Box
 
-	list  *tview.List
-	label string
+	list *tview.List
 }
 
 func NewListModal() *ListModal {
