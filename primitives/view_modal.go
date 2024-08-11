@@ -208,22 +208,10 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 
 	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
 		line := lines[i]
-		if strings.Contains(line, "{") || strings.Contains(line, "}") {
-			line = strings.ReplaceAll(line, "{", fmt.Sprintf("[%s]{", m.bracketColor.String()))
-			line = strings.ReplaceAll(line, "}", fmt.Sprintf("[%s]}[%s]", m.bracketColor.String(), m.valueColor.String()))
-		}
-		re := regexp.MustCompile(`"([^"]+)":`)
-		line = re.ReplaceAllStringFunc(line, func(s string) string {
-			matches := re.FindStringSubmatch(s)
-			if len(matches) > 1 {
-				key := matches[1]
-				return fmt.Sprintf("[%s]\"%s\"[%s]:", m.keyColor.String(), key, m.valueColor.String())
-			}
-			return s
-		})
+		line = m.formatLine(line, i == startLine)
 
 		if i-startLine == m.selectedLine {
-			line = fmt.Sprintf("[-:%s:b]> %s[-:-:-]", m.highlightColor.String(), line)
+			line = m.highlightLine(line)
 		} else {
 			line = "  " + line
 		}
@@ -241,6 +229,37 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 	// Draw the frame.
 	m.frame.SetRect(x, y, width, height)
 	m.frame.Draw(screen)
+}
+
+func (m *ModalView) formatLine(line string, isFirstLine bool) string {
+	if isFirstLine && strings.TrimSpace(line) == "{" {
+		return fmt.Sprintf("[%s]{[%s]", m.bracketColor.String(), m.valueColor.String())
+	}
+
+	if strings.Contains(line, "{") || strings.Contains(line, "}") {
+		line = strings.ReplaceAll(line, "{", fmt.Sprintf("[%s]{", m.bracketColor.String()))
+		line = strings.ReplaceAll(line, "}", fmt.Sprintf("[%s]}[%s]", m.bracketColor.String(), m.valueColor.String()))
+	}
+
+	re := regexp.MustCompile(`"([^"]+)":`)
+	line = re.ReplaceAllStringFunc(line, func(s string) string {
+		matches := re.FindStringSubmatch(s)
+		if len(matches) > 1 {
+			key := matches[1]
+			return fmt.Sprintf("[%s]\"%s\"[%s]:", m.keyColor.String(), key, m.valueColor.String())
+		}
+		return s
+	})
+
+	return line
+}
+
+func (m *ModalView) highlightLine(line string) string {
+	colorizeLine := func(line string) string {
+		return fmt.Sprintf("[-:%s:b]> %s[-:-:-]", m.highlightColor.String(), line)
+	}
+
+	return colorizeLine(line)
 }
 
 // Additional methods to handle scrolling

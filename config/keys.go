@@ -394,7 +394,7 @@ func (k *Key) String() string {
 	}
 	for i, k := range iter {
 		if i == 0 {
-			keyString = fmt.Sprintf("%s", k)
+			keyString = k
 		} else {
 			keyString = fmt.Sprintf("%s, %s", keyString, k)
 		}
