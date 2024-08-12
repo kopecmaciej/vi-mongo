@@ -7,7 +7,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
-	"github.com/rs/zerolog/log"
 )
 
 // Text is the text to be displayed in the modal.
@@ -207,28 +206,20 @@ func (m *ModalView) Draw(screen tcell.Screen) {
 		startLine = 0
 	}
 
-	// calculate lines to highlight
 	numLinesToHighlight := m.calculateNextLinesToHighlight(lines)
 
 	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
 		lines[i] = m.formatLine(lines[i], i == startLine)
-	}
 
-	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
 		if i-startLine == m.selectedLine {
 			lines[i] = m.highlightLine(lines[i], true)
 			for j := m.selectedLine + 1; j <= m.selectedLine+numLinesToHighlight; j++ {
-				log.Debug().Msgf("highlighting line: %d", j)
 				lines[j] = m.highlightLine(lines[j], false)
 			}
 		} else {
 			lines[i] = " " + lines[i]
 		}
-	}
 
-	log.Debug().Msgf("lines highlighted: %s", lines[m.selectedLine])
-
-	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
 		m.frame.AddText(lines[i], true, m.text.Align, m.text.Color)
 	}
 
@@ -256,6 +247,10 @@ func (m *ModalView) calculateNextLinesToHighlight(lines []string) int {
 	for i := m.selectedLine + 1; i < len(lines); i++ {
 		nextIndent := calculateIndent(lines[i])
 
+		if lines[i] == "}" && nextIndent == 0 {
+			return linesToHighlight
+		}
+
 		// highlight till the end if first line
 		if m.selectedLine == 0 {
 			return len(lines) - 1
@@ -270,6 +265,8 @@ func (m *ModalView) calculateNextLinesToHighlight(lines []string) int {
 		if nextIndent == currentIndent {
 			return linesToHighlight
 			// Case 2: Wrapped line, continue highlighting
+		} else if nextIndent > 0 && nextIndent < currentIndent {
+			return linesToHighlight
 		} else if nextIndent == 0 {
 			linesToHighlight++
 			// Case 3: Object or array, continue until we find matching indent
@@ -419,19 +416,32 @@ func (m *ModalView) CopySelectedLine(copyFunc func(text string) error, copyType 
 	_, _, width, _ := m.GetRect()
 	lines := tview.WordWrap(m.text.Content, width-4)
 	selectedLineIndex := m.scrollPosition + m.selectedLine
+
 	if selectedLineIndex >= 0 && selectedLineIndex < len(lines) {
-		line := lines[selectedLineIndex]
+		numLinesToHighlight := m.calculateNextLinesToHighlight(lines)
+		highlightedLines := lines[selectedLineIndex : selectedLineIndex+numLinesToHighlight+1]
+
+		var textToCopy string
 		switch copyType {
 		case "full":
-			return copyFunc(line)
+			textToCopy = strings.Join(highlightedLines, "\n")
+			textToCopy = strings.TrimSuffix(textToCopy, ",")
+			textToCopy = strings.ReplaceAll(textToCopy, " ", "")
+			textToCopy = strings.ReplaceAll(textToCopy, "{", "{ ")
+			textToCopy = strings.ReplaceAll(textToCopy, "}", " }")
 		case "value":
-			if parts := strings.SplitN(line, ":", 2); len(parts) > 1 {
-				return copyFunc(strings.TrimSpace(parts[1]))
+			for _, line := range highlightedLines {
+				if parts := strings.SplitN(line, ":", 2); len(parts) > 1 {
+					textToCopy += strings.TrimSpace(parts[1]) + "\n"
+				} else {
+					textToCopy += strings.TrimSpace(line) + "\n"
+				}
 			}
-			return copyFunc(line)
 		default:
-			return copyFunc(line)
+			textToCopy = strings.Join(highlightedLines, "\n")
 		}
+
+		return copyFunc(strings.TrimSpace(textToCopy))
 	}
 	return nil
 }
