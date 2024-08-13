@@ -28,7 +28,7 @@ type DatabaseTree struct {
 	deleteModal *tview.Modal
 	style       *config.DatabasesStyle
 
-	NodeSelectFunc func(ctx context.Context, db string, coll string, filter map[string]interface{}) error
+	NodeSelectFunc func(ctx context.Context, db string, coll string) error
 }
 
 func NewDatabaseTree() *DatabaseTree {
@@ -217,7 +217,7 @@ func (t *DatabaseTree) addChildNode(ctx context.Context, parent *tview.TreeNode,
 	collNode.SetReference(parent)
 	collNode.SetSelectedFunc(func() {
 		db, coll := t.removeSymbols(parent.GetText(), collNode.GetText())
-		t.NodeSelectFunc(ctx, db, coll, nil)
+		t.NodeSelectFunc(ctx, db, coll)
 	})
 }
 

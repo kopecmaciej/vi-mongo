@@ -71,6 +71,7 @@ type (
 		NextPage          Key      `json:"nextPage"`
 		PreviousPage      Key      `json:"previousPage"`
 		QueryBar          QueryBar `json:"queryBar"`
+		ToggleSort        Key      `json:"toggleSort"`
 	}
 
 	QueryBar struct {
@@ -253,6 +254,10 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Runes:       []string{"/"},
 			Description: "Toggle query",
 		},
+		ToggleSort: Key{
+			Runes:       []string{"s"},
+			Description: "Toggle sort",
+		},
 		NextPage: Key{
 			Keys:        []string{"Ctrl+N"},
 			Description: "Next page",
@@ -280,27 +285,19 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 	}
 
 	k.Connector.ConnectorForm = ConnectorFormKeys{
-		FormFocusUp: Key{
-			Keys:        []string{"Ctrl+K"},
-			Description: "Move form focus up",
-		},
-		FormFocusDown: Key{
-			Keys:        []string{"Ctrl+J"},
-			Description: "Move form focus down",
-		},
 		SaveConnection: Key{
 			Keys:        []string{"Ctrl+S", "Enter"},
 			Description: "Save connection",
 		},
 		FocusList: Key{
-			Keys:        []string{"Esc"},
+			Keys:        []string{"Esc", "Ctrl+Left"},
 			Description: "Focus Connection List",
 		},
 	}
 
 	k.Connector.ConnectorList = ConnectorListKeys{
 		FocusForm: Key{
-			Keys:        []string{"Ctrl+A"},
+			Keys:        []string{"Ctrl+A", "Ctrl+Right"},
 			Description: "Move focus to form",
 		},
 		DeleteConnection: Key{

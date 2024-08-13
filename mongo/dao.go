@@ -88,20 +88,20 @@ type Filter struct {
 	Value string
 }
 
-func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, filter primitive.M, page, limit int64) ([]primitive.M, int64, error) {
-	count, err := d.client.Database(db).Collection(collection).CountDocuments(ctx, filter)
+func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState) ([]primitive.M, int64, error) {
+	count, err := d.client.Database(state.Db).Collection(state.Coll).CountDocuments(ctx, state.Filter)
 	if err != nil {
 		return nil, 0, err
 	}
-	coll := d.client.Database(db).Collection(collection)
+	coll := d.client.Database(state.Db).Collection(state.Coll)
 
 	options := options.FindOptions{
-		Limit: &limit,
-		Skip:  &page,
-		Sort:  primitive.D{{Key: "_id", Value: 1}},
+		Limit: &state.Limit,
+		Skip:  &state.Page,
+		Sort:  state.Sort,
 	}
 
-	cursor, err := coll.Find(ctx, filter, &options)
+	cursor, err := coll.Find(ctx, state.Filter, &options)
 	if err != nil {
 		return nil, 0, err
 	}
