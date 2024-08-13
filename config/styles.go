@@ -105,6 +105,7 @@ type (
 		KeyColor        Style `yaml:"keyColor"`
 		ValueColor      Style `yaml:"valueColor"`
 		BracketColor    Style `yaml:"bracketColor"`
+		ArrayColor      Style `yaml:"arrayColor"`
 		HighlightColor  Style `yaml:"highlightColor"`
 	}
 
@@ -151,33 +152,30 @@ type (
 // LoadStyles creates a new Styles struct with default values
 func LoadStyles() (*Styles, error) {
 	styles := &Styles{}
+	defaultStyles := &Styles{}
+	defaultStyles.loadDefaultStyles()
 
 	stylePath, err := getStylePath()
 	if err != nil {
 		return nil, err
 	}
+
 	bytes, err := os.ReadFile(stylePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			styles.loadDefaultStyles()
-			bytes, err = yaml.Marshal(styles)
-			if err != nil {
-				return nil, err
-			}
-			err = os.WriteFile(stylePath, bytes, 0644)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
+			// Use default styles if file doesn't exist
+			return defaultStyles, nil
 		}
+		return nil, err
 	}
 
-	err = yaml.Unmarshal(bytes, &styles)
+	err = yaml.Unmarshal(bytes, styles)
 	if err != nil {
 		return nil, err
 	}
 
+	// Merge loaded styles with default styles
+	MergeConfigs(styles, defaultStyles)
 	styles.loadMainStyles()
 
 	return styles, nil
@@ -265,6 +263,7 @@ func (s *Styles) loadDefaultStyles() {
 		TitleColor:      "#F1FA8C",
 		KeyColor:        "#387D44",
 		ValueColor:      "#FFFFFF",
+		ArrayColor:      "#387D44",
 		HighlightColor:  "#163694",
 		BracketColor:    "#FF5555",
 	}

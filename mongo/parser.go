@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,7 +16,7 @@ import (
 // StringifyDocument converts a map to a JSON string
 func StringifyDocument(document map[string]interface{}) (string, error) {
 	// convert id to oid
-	converted, err := ConvertIdsToOids([]primitive.M{document})
+	converted, err := ConvertSpecialTypes([]primitive.M{document})
 	if err != nil {
 		return "", err
 	}
@@ -90,18 +91,11 @@ func GetIDFromDocument(document map[string]interface{}) (primitive.ObjectID, err
 	return primitive.ObjectIDFromHex(id)
 }
 
-// ConvertIdsToOids converts a slice of documents to a slice of strings with the _id field converted to an $oid
-func ConvertIdsToOids(documents []primitive.M) ([]string, error) {
+// ConvertSpecialTypes converts a slice of documents to a slice of strings with special types converted
+func ConvertSpecialTypes(documents []primitive.M) ([]string, error) {
 	var docs []string
 	for _, document := range documents {
-		for key, value := range document {
-			if oid, ok := value.(primitive.ObjectID); ok {
-				obj := primitive.M{
-					"$oid": oid.Hex(),
-				}
-				document[key] = obj
-			}
-		}
+		 convertSpecialTypesInDoc(document)
 		jsonBytes, err := json.Marshal(document)
 		if err != nil {
 			log.Error().Err(err).Msg("Error marshaling JSON")
@@ -111,6 +105,26 @@ func ConvertIdsToOids(documents []primitive.M) ([]string, error) {
 	}
 
 	return docs, nil
+}
+
+func convertSpecialTypesInDoc(doc primitive.M) {
+	for key, value := range doc {
+		switch v := value.(type) {
+		case primitive.ObjectID:
+			doc[key] = primitive.M{"$oid": v.Hex()}
+		case primitive.DateTime:
+			doc[key] = primitive.M{"$date": v.Time().Format(time.RFC3339)}
+		case primitive.M:
+			convertSpecialTypesInDoc(v)
+		case []interface{}:
+			for i, item := range v {
+				if subDoc, ok := item.(primitive.M); ok {
+					convertSpecialTypesInDoc(subDoc)
+					v[i] = subDoc
+				}
+			}
+		}
+	}
 }
 
 // IndientJSON indents a JSON string and returns a a buffer
@@ -123,4 +137,68 @@ func IndientJSON(jsonString string) (bytes.Buffer, error) {
 	}
 
 	return prettyJson, nil
+}
+
+// MongoToJSON converts a MongoDB document to a JSON string
+func MongoToJSON(document bson.M) (string, error) {
+	convertedDoc := convertMongoToJSON(document)
+	jsonBytes, err := json.Marshal(convertedDoc)
+	if err != nil {
+		return "", fmt.Errorf("error marshaling to JSON: %w", err)
+	}
+	return string(jsonBytes), nil
+}
+
+func convertMongoToJSON(doc bson.M) bson.M {
+	for key, value := range doc {
+		switch v := value.(type) {
+		case primitive.ObjectID:
+			doc[key] = v.Hex()
+		case primitive.DateTime:
+			doc[key] = v.Time().Format(time.RFC3339)
+		case bson.M:
+			doc[key] = convertMongoToJSON(v)
+		case []interface{}:
+			for i, item := range v {
+				if subDoc, ok := item.(bson.M); ok {
+					v[i] = convertMongoToJSON(subDoc)
+				}
+			}
+		}
+	}
+	return doc
+}
+
+// JSONToMongo converts a JSON string to a MongoDB document
+func JSONToMongo(jsonString string) (bson.M, error) {
+	var doc bson.M
+	err := bson.UnmarshalExtJSON([]byte(jsonString), true, &doc)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing JSON to MongoDB document: %w", err)
+	}
+	return convertJSONToMongo(doc), nil
+}
+
+func convertJSONToMongo(doc bson.M) bson.M {
+	for key, value := range doc {
+		switch v := value.(type) {
+		case string:
+			if key == "_id" || strings.HasSuffix(key, "Id") {
+				if objectID, err := primitive.ObjectIDFromHex(v); err == nil {
+					doc[key] = objectID
+				}
+			} else if t, err := time.Parse(time.RFC3339, v); err == nil {
+				doc[key] = primitive.NewDateTimeFromTime(t)
+			}
+		case bson.M:
+			doc[key] = convertJSONToMongo(v)
+		case []interface{}:
+			for i, item := range v {
+				if subDoc, ok := item.(bson.M); ok {
+					v[i] = convertJSONToMongo(subDoc)
+				}
+			}
+		}
+	}
+	return doc
 }

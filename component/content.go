@@ -227,14 +227,19 @@ func (c *Content) render(setFocus bool) {
 	}
 }
 
+func (c *Content) parseQueryBarText(text string) map[string]interface{} {
+	parsedText, err := mongo.ParseStringQuery(text)
+	if err != nil {
+		ShowErrorModalAndFocus(c.app.Root, "Error parsing query\nPlease check the query syntax", err, func() {
+			c.app.SetFocus(c.queryBar)
+		})
+	}
+	return parsedText
+}
+
 func (c *Content) queryBarListener(ctx context.Context) {
 	accceptFunc := func(text string) {
-		filter, err := mongo.ParseStringQuery(text)
-		if err != nil {
-			defer ShowErrorModalAndFocus(c.app.Root, "Error parsing query\nPlease check the query syntax", err, func() {
-				c.app.SetFocus(c.queryBar)
-			})
-		}
+		filter := c.parseQueryBarText(text)
 		c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
 		c.Table.Select(2, 0)
 	}
@@ -261,7 +266,7 @@ func (c *Content) listDocuments(ctx context.Context, db, coll string, filters ma
 
 	c.loadAutocompleteKeys(documents)
 
-	docsWithOid, err := mongo.ConvertIdsToOids(documents)
+	docsWithOid, err := mongo.ConvertSpecialTypes(documents)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -377,7 +382,8 @@ func (c *Content) goToNextMongoPage(ctx context.Context) {
 		return
 	}
 	c.state.Page += c.state.Limit
-	c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
+	filter := c.parseQueryBarText(c.queryBar.GetText())
+	c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
 }
 
 func (c *Content) goToPrevMongoPage(ctx context.Context) {
@@ -385,7 +391,8 @@ func (c *Content) goToPrevMongoPage(ctx context.Context) {
 		return
 	}
 	c.state.Page -= c.state.Limit
-	c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
+	filter := c.parseQueryBarText(c.queryBar.GetText())
+	c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
 }
 
 func (c *Content) viewJson(jsonString string) error {

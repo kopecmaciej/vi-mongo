@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+
 	"github.com/kopecmaciej/mongui/config"
 
 	"github.com/rs/zerolog/log"
@@ -104,7 +105,7 @@ func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, f
 	if err != nil {
 		return nil, 0, err
 	}
-	defer cursor.Close(nil)
+	defer cursor.Close(ctx)
 
 	var documents []primitive.M
 	for cursor.Next(nil) {
@@ -116,6 +117,7 @@ func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, f
 
 		documents = append(documents, document)
 	}
+
 	if err := cursor.Err(); err != nil {
 		return nil, 0, err
 	}

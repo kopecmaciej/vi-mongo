@@ -50,7 +50,7 @@ type ModalView struct {
 	highlightColor tcell.Color
 
 	// The colors for document elements.
-	keyColor, valueColor, bracketColor tcell.Color
+	keyColor, valueColor, bracketColor, arrayColor tcell.Color
 }
 
 // NewModalView returns a new modal message window.
@@ -107,6 +107,21 @@ func (m *ModalView) SetButtonTextColor(color tcell.Color) *ModalView {
 	return m
 }
 
+// SetHighlightColor sets the color of the highlighted text.
+func (m *ModalView) SetHighlightColor(color tcell.Color) *ModalView {
+	m.highlightColor = color
+	return m
+}
+
+// SetDocumentColors sets the colors for document elements.
+func (m *ModalView) SetDocumentColors(keyColor, valueColor, bracketColor, arrayColor tcell.Color) *ModalView {
+	m.keyColor = keyColor
+	m.valueColor = valueColor
+	m.bracketColor = bracketColor
+	m.arrayColor = arrayColor
+	return m
+}
+
 // SetButtonStyle sets the style of the buttons when they are not focused.
 func (m *ModalView) SetButtonStyle(style tcell.Style) *ModalView {
 	m.form.SetButtonStyle(style)
@@ -148,10 +163,6 @@ func (m *ModalView) AddButtons(labels []string) *ModalView {
 					case 'l':
 						return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
 					}
-				case tcell.KeyDown, tcell.KeyRight:
-					return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
-				case tcell.KeyUp, tcell.KeyLeft:
-					return tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone)
 				}
 				return event
 			})
@@ -368,13 +379,6 @@ func (m *ModalView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 				m.MoveDown()
 			case 'k':
 				m.MoveUp()
-			case 'g':
-				m.scrollPosition = 0
-				m.selectedLine = 0
-			case 'G':
-				m.scrollPosition = m.endPosition
-				_, _, width, _ := m.GetRect()
-				m.selectedLine = len(tview.WordWrap(m.text.Content, width-6))
 			}
 		}
 
@@ -412,6 +416,26 @@ func (m *ModalView) MoveDown() {
 	}
 }
 
+func (m *ModalView) MoveToTop() {
+	m.scrollPosition = 0
+	m.selectedLine = 0
+}
+
+func (m *ModalView) MoveToBottom() {
+	_, _, width, height := m.GetRect()
+	maxLines := height - 6
+	lines := tview.WordWrap(m.text.Content, width-4)
+	totalLines := len(lines)
+
+	if totalLines > maxLines {
+		m.scrollPosition = totalLines - maxLines
+		m.selectedLine = maxLines - 1
+	} else {
+		m.scrollPosition = 0
+		m.selectedLine = totalLines - 1
+	}
+}
+
 func (m *ModalView) CopySelectedLine(copyFunc func(text string) error, copyType string) error {
 	_, _, width, _ := m.GetRect()
 	lines := tview.WordWrap(m.text.Content, width-4)
@@ -444,18 +468,4 @@ func (m *ModalView) CopySelectedLine(copyFunc func(text string) error, copyType 
 		return copyFunc(strings.TrimSpace(textToCopy))
 	}
 	return nil
-}
-
-// SetHighlightColor sets the color of the highlighted text.
-func (m *ModalView) SetHighlightColor(color tcell.Color) *ModalView {
-	m.highlightColor = color
-	return m
-}
-
-// SetDocumentColors sets the colors for document elements.
-func (m *ModalView) SetDocumentColors(keyColor, valueColor, bracketColor tcell.Color) *ModalView {
-	m.keyColor = keyColor
-	m.valueColor = valueColor
-	m.bracketColor = bracketColor
-	return m
 }

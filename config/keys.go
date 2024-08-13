@@ -20,6 +20,7 @@ type (
 		Connector ConnectorKeys `json:"connector"`
 		Welcome   WelcomeKeys   `json:"welcome"`
 		Help      HelpKeys      `json:"help"`
+		DocPeeker DocPeekerKeys `json:"docPeeker"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -103,41 +104,54 @@ type (
 	HelpKeys struct {
 		Close Key `json:"close"`
 	}
+
+	DocPeekerKeys struct {
+		MoveToTop    Key `json:"moveToTop"`
+		MoveToBottom Key `json:"moveToBottom"`
+		CopyFullLine Key `json:"copyFullLine"`
+		CopyValue    Key `json:"copyValue"`
+		Refresh      Key `json:"refresh"`
+	}
 )
 
 // LoadKeybindings loads keybindings from the config file
 // if the file does not exist it creates a new one with default keybindings
 func LoadKeybindings() (*KeyBindings, error) {
 	keybindings := &KeyBindings{}
-	keybidingsPath, err := getKeygindingsPath()
+	defaultKeybindings := &KeyBindings{}
+	defaultKeybindings.loadDefaultKeybindings()
+
+	keybindingsPath, err := getKeybindingsPath()
 	if err != nil {
 		return nil, err
 	}
-	bytes, err := os.ReadFile(keybidingsPath)
+
+	bytes, err := os.ReadFile(keybindingsPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			err := ensureConfigDirExist()
 			if err != nil {
 				return nil, err
 			}
-			keybindings.loadDefaultKeybindings()
-			bytes, err = json.Marshal(keybindings)
+			bytes, err = json.Marshal(defaultKeybindings)
 			if err != nil {
 				return nil, err
 			}
-			err = os.WriteFile(keybidingsPath, bytes, 0644)
+			err = os.WriteFile(keybindingsPath, bytes, 0644)
 			if err != nil {
 				return nil, err
 			}
-		} else {
-			return nil, err
+			return defaultKeybindings, nil
 		}
+		return nil, err
 	}
 
-	err = json.Unmarshal(bytes, &keybindings)
+	err = json.Unmarshal(bytes, keybindings)
 	if err != nil {
 		return nil, err
 	}
+
+	MergeConfigs(keybindings, defaultKeybindings)
 
 	return keybindings, nil
 }
@@ -310,6 +324,29 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Close help",
 		},
 	}
+
+	k.DocPeeker = DocPeekerKeys{
+		MoveToTop: Key{
+			Runes:       []string{"g"},
+			Description: "Move to top",
+		},
+		MoveToBottom: Key{
+			Runes:       []string{"G"},
+			Description: "Move to bottom",
+		},
+		CopyFullLine: Key{
+			Runes:       []string{"c"},
+			Description: "Copy full line",
+		},
+		CopyValue: Key{
+			Runes:       []string{"v"},
+			Description: "Copy value",
+		},
+		Refresh: Key{
+			Keys:        []string{"Ctrl+R"},
+			Description: "Refresh document",
+		},
+	}
 }
 
 type OrderedKeys struct {
@@ -403,7 +440,7 @@ func (k *Key) String() string {
 	return keyString
 }
 
-func getKeygindingsPath() (string, error) {
+func getKeybindingsPath() (string, error) {
 	configDir, err := GetConfigDir()
 	if err != nil {
 		return "", err

@@ -1,7 +1,6 @@
 package component
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,6 +10,7 @@ import (
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/rs/zerolog/log"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -40,10 +40,9 @@ func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.Ob
 		return primitive.NilObjectID, nil
 	}
 
-	var document map[string]interface{}
-	err = json.Unmarshal([]byte(createdDoc), &document)
+	document, err := mongo.JSONToMongo(createdDoc)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("error unmarshaling JSON: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("error converting JSON to MongoDB document: %v", err)
 	}
 
 	rawID, err := d.dao.InsetDocument(ctx, db, coll, document)
@@ -81,12 +80,19 @@ func (d *DocModifier) Edit(ctx context.Context, db, coll string, rawDocument str
 
 // Duplicate opens the editor with the document and saves it as a new document
 func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocument string) (primitive.ObjectID, error) {
-	replacedDoc, err := removeField(rawDocument, "_id")
+	mongoDoc, err := mongo.JSONToMongo(rawDocument)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("error removing _id field: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("error converting JSON to MongoDB document: %v", err)
 	}
 
-	duplicateDoc, err := d.openEditor(replacedDoc)
+	delete(mongoDoc, "_id")
+
+	jsonDoc, err := mongo.MongoToJSON(mongoDoc)
+	if err != nil {
+		return primitive.NilObjectID, fmt.Errorf("error converting MongoDB document to JSON: %v", err)
+	}
+
+	duplicateDoc, err := d.openEditor(jsonDoc)
 	if err != nil {
 		return primitive.NilObjectID, fmt.Errorf("error editing document: %v", err)
 	}
@@ -95,13 +101,10 @@ func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocumen
 		return primitive.NilObjectID, nil
 	}
 
-	var document map[string]interface{}
-	err = json.Unmarshal([]byte(duplicateDoc), &document)
+	document, err := mongo.JSONToMongo(duplicateDoc)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("error unmarshaling JSON: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("error converting JSON to MongoDB document: %v", err)
 	}
-
-	delete(document, "_id")
 
 	rawID, err := d.dao.InsetDocument(ctx, db, coll, document)
 	if err != nil {
@@ -121,24 +124,21 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, rawDo
 	if rawDocument == "" {
 		return fmt.Errorf("document cannot be empty")
 	}
-	var document map[string]interface{}
-	err := json.Unmarshal([]byte(rawDocument), &document)
+
+	document, err := mongo.JSONToMongo(rawDocument)
 	if err != nil {
-		log.Error().Msgf("error unmarshaling JSON: %v", err)
-		return nil
+		return fmt.Errorf("error converting JSON to MongoDB document: %v", err)
 	}
 
-	id, err := mongo.GetIDFromDocument(document)
-	if err != nil {
-		log.Error().Msgf("error getting _id from document: %v", err)
-		return nil
+	id, ok := document["_id"].(primitive.ObjectID)
+	if !ok {
+		return fmt.Errorf("error getting _id from document")
 	}
 	delete(document, "_id")
 
 	err = d.dao.UpdateDocument(ctx, db, coll, id, document)
 	if err != nil {
-		log.Error().Msgf("error updating document: %v", err)
-		return nil
+		return fmt.Errorf("error updating document: %v", err)
 	}
 
 	return nil
@@ -146,12 +146,17 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, rawDo
 
 // openEditor opens the editor with the document and returns the edited document
 func (d *DocModifier) openEditor(rawDocument string) (string, error) {
-	prettyJsonBuffer, err := mongo.IndientJSON(rawDocument)
+	mongoDoc, err := mongo.JSONToMongo(rawDocument)
 	if err != nil {
-		return "", fmt.Errorf("error indenting JSON: %v", err)
+		return "", fmt.Errorf("error converting JSON to MongoDB document: %v", err)
 	}
 
-	tmpFile, err := d.writeToTempFile(prettyJsonBuffer)
+	jsonDoc, err := bson.MarshalExtJSON(mongoDoc, true, true)
+	if err != nil {
+		return "", fmt.Errorf("error marshaling MongoDB document to JSON: %v", err)
+	}
+
+	tmpFile, err := d.writeToTempFile(jsonDoc)
 	if err != nil {
 		return "", fmt.Errorf("error writing to temp file: %v", err)
 	}
@@ -195,13 +200,13 @@ func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 }
 
 // writeToTempFile writes the JSON to a temp file and returns the file
-func (d *DocModifier) writeToTempFile(bufferJson bytes.Buffer) (*os.File, error) {
+func (d *DocModifier) writeToTempFile(bufferJson []byte) (*os.File, error) {
 	tmpFile, err := os.CreateTemp("", "doc-*.json")
 	if err != nil {
 		return nil, fmt.Errorf("error creating temp file: %v", err)
 	}
 
-	_, err = tmpFile.Write(bufferJson.Bytes())
+	_, err = tmpFile.Write(bufferJson)
 	if err != nil {
 		err = os.Remove(tmpFile.Name())
 		if err != nil {

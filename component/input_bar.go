@@ -3,7 +3,6 @@ package component
 import (
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
@@ -22,7 +21,6 @@ type InputBar struct {
 
 	historyModal   *HistoryModal
 	style          *config.InputBarStyle
-	mutex          sync.Mutex
 	enabled        bool
 	autocompleteOn bool
 	docKeys        []string
@@ -148,9 +146,7 @@ func (i *InputBar) EnableAutocomplete() {
 	mongoKeywords := ma.Operators
 
 	i.SetAutocompleteFunc(func(currentText string) (entries []tview.AutocompleteItem) {
-		if strings.HasPrefix(currentText, "\"") {
-			currentText = currentText[1:]
-		}
+		currentText = strings.TrimPrefix(currentText, "\"")
 
 		words := strings.Fields(currentText)
 		if len(words) > 0 {

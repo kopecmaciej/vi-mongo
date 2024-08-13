@@ -2,8 +2,8 @@ package component
 
 import (
 	"context"
-	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kopecmaciej/mongui/config"
@@ -91,34 +91,18 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 		return strconv.Itoa(int(i))
 	}
 
-	// Get help keys from KeyBindings
-	keyBindings, err := config.LoadKeybindings()
-	if err != nil {
-		log.Error().Err(err).Msg("Error loading keybindings")
-	}
-
-	var footerKey, fullScreenKey string
-	if keyBindings != nil {
-		footerKey = keyBindings.Global.ToggleHelpBarFooter.String()
-		fullScreenKey = keyBindings.Global.ToggleFullScreenHelp.String()
-	} else {
-		footerKey = "?"
-		fullScreenKey = "Ctrl+H"
-	}
-
 	h.baseInfo = BaseInfo{
-		0:  {"HelpKeys", fmt.Sprintf("%s, %s", footerKey, fullScreenKey)},
-		1:  {"Status", h.style.ActiveSymbol.String()},
-		2:  {"Host", h.dao.Config.Host},
-		3:  {"Port", port},
-		4:  {"Database", h.dao.Config.Database},
-		5:  {"Version", ss.Version},
-		6:  {"Uptime", orElseNil(ss.Uptime)},
-		7:  {"Connections", orElseNil(ss.CurrentConns)},
-		8:  {"Available Connections", orElseNil(ss.AvailableConns)},
-		9:  {"Resident Memory", orElseNil(ss.Mem.Resident)},
-		10: {"Virtual Memory", orElseNil(ss.Mem.Virtual)},
-		11: {"Is Master", strconv.FormatBool(ss.Repl.IsMaster)},
+		0:  {"Status", h.style.ActiveSymbol.String()},
+		1:  {"Host", h.dao.Config.Host},
+		2:  {"Port", port},
+		3:  {"Database", h.dao.Config.Database},
+		4:  {"Version", ss.Version},
+		5:  {"Uptime", orElseNil(ss.Uptime)},
+		6:  {"Connections", orElseNil(ss.CurrentConns)},
+		7:  {"Available Connections", orElseNil(ss.AvailableConns)},
+		8:  {"Resident Memory", orElseNil(ss.Mem.Resident)},
+		9:  {"Virtual Memory", orElseNil(ss.Mem.Virtual)},
+		10: {"Is Master", strconv.FormatBool(ss.Repl.IsMaster)},
 	}
 
 	return nil
@@ -127,15 +111,21 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 // refresh refreshes the header component every 10 seconds
 // to display the most recent information about the database
 func (h *Header) refresh() {
+	sleep := 10 * time.Second
 	for {
-		time.Sleep(10 * time.Second)
+		time.Sleep(sleep)
 		func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			err := h.setBaseInfo(ctx)
 			if err != nil {
+				// if error is unauthorized, there is no need to refresh
+				if strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
+					return
+				}
 				log.Error().Err(err).Msg("Error while refreshing header")
 				h.setInactiveBaseInfo(err)
+				sleep += 5 * time.Second
 			}
 		}()
 		h.app.QueueUpdateDraw(func() {

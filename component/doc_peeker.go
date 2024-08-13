@@ -75,33 +75,48 @@ func (dc *DocPeeker) setStyle() {
 		dc.style.KeyColor.Color(),
 		dc.style.ValueColor.Color(),
 		dc.style.BracketColor.Color(),
+		dc.style.ArrayColor.Color(),
 	)
 
 	dc.ModalView.AddButtons([]string{"Edit", "Close"})
 }
 
 func (dc *DocPeeker) setKeybindings(ctx context.Context) {
+	k := dc.app.Keys
 	dc.ModalView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyCtrlR:
+		switch {
+		case k.Contains(k.DocPeeker.MoveToTop, event.Name()):
+			dc.MoveToTop()
+			return nil
+		case k.Contains(k.DocPeeker.MoveToBottom, event.Name()):
+			dc.MoveToBottom()
+			return nil
+		case k.Contains(k.DocPeeker.CopyFullLine, event.Name()):
+			if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "full"); err != nil {
+				ShowErrorModal(dc.app.Root, "Error copying full line", err)
+			}
+			return nil
+		case k.Contains(k.DocPeeker.CopyValue, event.Name()):
+			if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "value"); err != nil {
+				ShowErrorModal(dc.app.Root, "Error copying value", err)
+			}
+			return nil
+		case k.Contains(k.DocPeeker.Refresh, event.Name()):
 			if err := dc.render(ctx); err != nil {
 				log.Error().Err(err).Msg("Error refreshing document")
 			}
 			return nil
-		case tcell.KeyRune:
-			switch event.Rune() {
-			case 'c':
-				if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "full"); err != nil {
-					ShowErrorModal(dc.app.Root, "Error copying full line", err)
-				}
-			case 'v':
-				if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "value"); err != nil {
-					ShowErrorModal(dc.app.Root, "Error copying value", err)
-				}
-			}
 		}
 		return event
 	})
+}
+
+func (dc *DocPeeker) MoveToTop() {
+	dc.ModalView.MoveToTop()
+}
+
+func (dc *DocPeeker) MoveToBottom() {
+	dc.ModalView.MoveToBottom()
 }
 
 func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString string) error {

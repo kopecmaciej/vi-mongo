@@ -7,6 +7,7 @@ import (
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/tview"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -16,8 +17,9 @@ const (
 // Help is a component that provides a help screen for keybindings
 type Help struct {
 	*Component
-	*tview.Table
+	*tview.Flex
 
+	Table *tview.Table
 	style *config.HelpStyle
 }
 
@@ -25,6 +27,7 @@ type Help struct {
 func NewHelp() *Help {
 	h := &Help{
 		Component: NewComponent(HelpComponent),
+		Flex:      tview.NewFlex(),
 		Table:     tview.NewTable(),
 	}
 
@@ -40,9 +43,11 @@ func (h *Help) init() error {
 	return nil
 }
 
-func (h *Help) Render() error {
+func (h *Help) Render(fullScreen bool) error {
+	h.Clear()
 	h.Table.Clear()
 	_, _, width, height := h.GetRect()
+	log.Info().Int("width", width).Int("height", height).Msg("Dimensions")
 
 	currectComponent := h.app.Manager.CurrentComponent()
 	cKeys, err := h.app.Keys.GetKeysForComponent(string(currectComponent))
@@ -67,6 +72,10 @@ func (h *Help) Render() error {
 	}
 
 	gKeys, err := h.app.Keys.GetKeysForComponent("Global")
+	if err != nil {
+		ShowErrorModal(h.app.Root, "Error while getting keys for component", err)
+		return err
+	}
 	for _, keys := range gKeys {
 		if h.shouldMoveToNextColumn(height, pos+3+len(keys.Keys)) {
 			pos = 0
@@ -78,6 +87,10 @@ func (h *Help) Render() error {
 	}
 
 	hKeys, err := h.app.Keys.GetKeysForComponent("Help")
+	if err != nil {
+		ShowErrorModal(h.app.Root, "Error while getting keys for component", err)
+		return err
+	}
 	for _, keys := range hKeys {
 		if h.shouldMoveToNextColumn(height, pos+3+len(keys.Keys)) {
 			pos = 0
@@ -86,6 +99,16 @@ func (h *Help) Render() error {
 		h.addHeaderSection(keys.Component, pos, col)
 		pos += 2
 		h.AddKeySection(keys.Component, keys.Keys, &pos, col)
+	}
+
+	h.Table.ScrollToBeginning()
+
+	if fullScreen {
+		h.Flex.AddItem(tview.NewBox(), 0, 1, false)
+	}
+	h.Flex.AddItem(h.Table, 0, 1, true)
+	if fullScreen {
+		h.Flex.AddItem(tview.NewBox(), 0, 1, false)
 	}
 
 	return nil
@@ -134,13 +157,13 @@ func (h *Help) AddKeySection(name string, keys []config.Key, pos *int, col int) 
 
 func (h *Help) setStyle() {
 	h.style = &h.app.Styles.Help
-	h.SetBorder(true)
-	h.SetTitle(" Help ")
-	h.SetTitleAlign(tview.AlignLeft)
-	h.SetBorderPadding(0, 0, 1, 1)
-	h.SetSelectable(false, false)
-	h.SetBackgroundColor(h.style.BackgroundColor.Color())
-	h.SetBorderColor(h.style.BorderColor.Color())
+	h.Table.SetBorder(true)
+	h.Table.SetTitle(" Help ")
+	h.Table.SetTitleAlign(tview.AlignLeft)
+	h.Table.SetBorderPadding(0, 0, 1, 1)
+	h.Table.SetSelectable(false, false)
+	h.Table.SetBackgroundColor(h.style.BackgroundColor.Color())
+	h.Table.SetBorderColor(h.style.BorderColor.Color())
 }
 
 // setKeybindings sets a key binding for the help Component

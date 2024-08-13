@@ -84,7 +84,7 @@ func (a *App) setKeybindings() {
 				a.Root.RemovePage(HelpComponent)
 				return nil
 			}
-			err := a.FullScreenHelp.Render()
+			err := a.FullScreenHelp.Render(true)
 			if err != nil {
 				return event
 			}
@@ -95,15 +95,11 @@ func (a *App) setKeybindings() {
 				a.Root.innerFlex.RemoveItem(a.FooterHelp)
 				return nil
 			}
-			err := a.FooterHelp.Render()
+			err := a.FooterHelp.Render(false)
 			if err != nil {
 				return event
 			}
 			a.Root.innerFlex.AddItem(a.FooterHelp, 10, 0, false)
-			err = a.FooterHelp.Render()
-			if err != nil {
-				return event
-			}
 			return nil
 		}
 		return event
