@@ -108,7 +108,7 @@ func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, f
 	defer cursor.Close(ctx)
 
 	var documents []primitive.M
-	for cursor.Next(nil) {
+	for cursor.Next(ctx) {
 		var document primitive.M
 		err := cursor.Decode(&document)
 		if err != nil {
@@ -144,7 +144,7 @@ func (d *Dao) InsetDocument(ctx context.Context, db string, collection string, d
 	return res.InsertedID, nil
 }
 
-func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, id primitive.ObjectID, document primitive.M) error {
+func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, id interface{}, document primitive.M) error {
 	updated, err := d.client.Database(db).Collection(collection).UpdateOne(ctx, primitive.M{"_id": id}, primitive.M{"$set": document})
 	if err != nil {
 		log.Error().Msgf("Error updating document: %v", err)
@@ -160,7 +160,7 @@ func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, 
 	return nil
 }
 
-func (d *Dao) DeleteDocument(ctx context.Context, db string, collection string, id primitive.ObjectID) error {
+func (d *Dao) DeleteDocument(ctx context.Context, db string, collection string, id interface{}) error {
 	deleted, err := d.client.Database(db).Collection(collection).DeleteOne(ctx, primitive.M{"_id": id})
 	if err != nil {
 		return err

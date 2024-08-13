@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/kopecmaciej/mongui/component"
@@ -9,6 +8,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var (
@@ -42,14 +42,20 @@ func init() {
 func runApp(cmd *cobra.Command, args []string) {
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		fmt.Println("Error loading config:", err)
+		log.Fatal().Err(err).Msg("Error loading config")
 		os.Exit(1)
 	}
 
-	// Override config values with CLI flags
-	cfg.Debug = debug
-	cfg.ShowWelcomePage = showWelcomePage
-	cfg.ShowConnectionPage = showConnectionPage
+	cmd.Flags().Visit(func(f *pflag.Flag) {
+		switch f.Name {
+		case "debug":
+			cfg.Debug = debug
+		case "show-welcome-page":
+			cfg.ShowWelcomePage = showWelcomePage
+		case "show-connection-page":
+			cfg.ShowConnectionPage = showConnectionPage
+		}
+	})
 
 	logLevel := zerolog.InfoLevel
 	if cfg.Debug {
@@ -64,6 +70,9 @@ func runApp(cmd *cobra.Command, args []string) {
 		}
 	}()
 
+	if cfg.Debug {
+		log.Info().Msg("Debug mode enabled")
+	}
 	log.Info().Msg("Mongo UI started")
 	app := component.NewApp(cfg)
 	err = app.Init()

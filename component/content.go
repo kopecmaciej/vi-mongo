@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
+	"regexp"
 
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
@@ -149,7 +149,10 @@ func (c *Content) setKeybindings(ctx context.Context) {
 				})
 				return nil
 			}
-			c.refreshCell(updated)
+			trimmed := regexp.MustCompile(`(?m)^\s+`).ReplaceAllString(updated, "")
+			trimmed = regexp.MustCompile(`(?m):\s+`).ReplaceAllString(trimmed, ":")
+
+			c.refreshCell(trimmed)
 			return nil
 		case k.Contains(k.Root.Content.DuplicateDocument, event.Name()):
 			ID, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
@@ -266,12 +269,12 @@ func (c *Content) listDocuments(ctx context.Context, db, coll string, filters ma
 
 	c.loadAutocompleteKeys(documents)
 
-	docsWithOid, err := mongo.ConvertSpecialTypes(documents)
+	parsedDocs, err := mongo.ParseRawDocuments(documents)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return docsWithOid, count, nil
+	return parsedDocs, count, nil
 }
 
 func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
@@ -370,9 +373,6 @@ func (c *Content) addCell(content string) {
 
 // refreshCell refreshes the cell with the new content
 func (c *Content) refreshCell(content string) {
-	// Trim the content, as in table we don't want to see new lines and spaces
-	content = strings.ReplaceAll(content, "\n", "")
-	content = strings.ReplaceAll(content, " ", "")
 	row, col := c.Table.GetSelection()
 	c.Table.SetCell(row, col, tview.NewTableCell(content).SetAlign(tview.AlignLeft))
 }
@@ -422,8 +422,19 @@ func (c *Content) viewJson(jsonString string) error {
 
 func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 	objectID, err := mongo.GetIDFromJSON(jsonString)
+	if err != nil {
+		return err
+	}
 
-	c.deleteModal.SetText("Are you sure you want to delete document of ID: [blue]" + objectID.Hex())
+	var stringifyId string
+	if objectID, ok := objectID.(primitive.ObjectID); ok {
+		stringifyId = objectID.Hex()
+	}
+	if strID, ok := objectID.(string); ok {
+		stringifyId = strID
+	}
+
+	c.deleteModal.SetText("Are you sure you want to delete document of ID: [blue]" + stringifyId)
 	c.deleteModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonIndex == 0 {
 			err = c.dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectID)
