@@ -67,6 +67,8 @@ func (c *Connector) setStyle() {
 	c.list.SetBackgroundColor(style.BackgroundColor.Color())
 	c.list.ShowSecondaryText(true)
 	c.list.SetWrapText(true)
+	c.list.SetBorderPadding(1, 1, 1, 1)
+	c.list.SetItemGap(1)
 
 	mainStyle := tcell.StyleDefault.
 		Foreground(style.ListTextColor.Color()).
@@ -84,14 +86,6 @@ func (c *Connector) setKeybindings() {
 	k := c.app.Keys
 	c.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Connector.ConnectorForm.FormFocusUp, event.Name()):
-			if c.moveFormFocusUp() {
-				return nil
-			}
-		case k.Contains(k.Connector.ConnectorForm.FormFocusDown, event.Name()):
-			if c.moveFormFocusDown() {
-				return nil
-			}
 		case k.Contains(k.Connector.ConnectorForm.SaveConnection, event.Name()):
 			c.saveButtonFunc()
 			return nil
@@ -165,10 +159,6 @@ func (c *Connector) renderForm() *tview.Form {
 // renderList renders the list of all available connections
 func (c *Connector) renderList() {
 	c.list.Clear()
-	// let's add little padding to the list
-	c.list.SetDrawFunc(func(screen tcell.Screen, x, y, width, height int) (int, int, int, int) {
-		return x + 3, y + 2, width, height
-	})
 
 	for _, conn := range c.app.Config.Connections {
 		uri := "uri: " + conn.GetUri()
@@ -271,41 +261,10 @@ func (c *Connector) saveButtonFunc() {
 
 // cancelButtonFunc is a function for canceling the form
 func (c *Connector) cancelButtonFunc() {
-	c.form.Clear(true)
-	c.Render()
+	c.renderForm()
 }
 
 // SetOnSubmitFunc sets callback function
 func (c *Connector) SetOnSubmitFunc(onSubmit func()) {
 	c.onSubmit = onSubmit
-}
-
-// moveFormFocusUp moves the focus in the form up
-func (c *Connector) moveFormFocusUp() bool {
-	if c.form.HasFocus() {
-		index, _ := c.form.GetFocusedItemIndex()
-		// skip the textview item
-		if index == 3 {
-			index -= 2
-		} else {
-			index--
-		}
-		c.form.SetFocus(index)
-	}
-	return c.form.HasFocus()
-}
-
-// moveFormFocusDown moves the focus down in the form
-func (c *Connector) moveFormFocusDown() bool {
-	if c.form.HasFocus() {
-		index, _ := c.form.GetFocusedItemIndex()
-		// skip the textview item
-		if index == 1 {
-			index += 2
-		} else {
-			index++
-		}
-		c.form.SetFocus(index)
-	}
-	return c.form.HasFocus()
 }

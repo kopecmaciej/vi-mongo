@@ -34,6 +34,7 @@ func StringifyDocument(document map[string]interface{}) (string, error) {
 // ParseStringQuery transforms a query string with ObjectId into a filter map compatible with MongoDB's BSON.
 // If keys are not quoted, this function will quote them.
 func ParseStringQuery(query string) (map[string]interface{}, error) {
+	var parseError error
 	if query == "" {
 		return map[string]interface{}{}, nil
 	}
@@ -47,14 +48,27 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 	query = strings.ReplaceAll(query, "ObjectId(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "\")", "\"}")
 
+	dateRegex := regexp.MustCompile(`\{\"\$date\"\s*:\s*\"(.*?)\"\}`)
+	query = dateRegex.ReplaceAllStringFunc(query, func(match string) string {
+		dateStr := dateRegex.FindStringSubmatch(match)[1]
+		t, err := time.Parse(time.RFC3339, dateStr)
+		if err != nil {
+			parseError = err
+			return match
+		}
+		return fmt.Sprintf(`{"$date":{"$numberLong":"%d"}}`, primitive.NewDateTimeFromTime(t).Time().UnixMilli())
+	})
+	if parseError != nil {
+		return nil, fmt.Errorf("error parsing date: %w", parseError)
+	}
+
 	re := regexp.MustCompile(`(\{|\,)\s*([a-zA-Z0-9_.]+)\s*:`)
 	query = re.ReplaceAllString(query, `$1 "$2":`)
 
-	filter := map[string]interface{}{}
-
-	err := bson.UnmarshalExtJSON([]byte(query), true, &filter)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing query %s: %w", query, err)
+	var filter primitive.M
+	parseError = bson.UnmarshalExtJSON([]byte(query), true, &filter)
+	if parseError != nil {
+		return nil, fmt.Errorf("error parsing query %s: %w", query, parseError)
 	}
 
 	return filter, nil
@@ -91,7 +105,6 @@ func GetIDFromDocument(document map[string]interface{}) (interface{}, error) {
 	case string:
 		id = typedId
 	case map[string]interface{}:
-		// This is a stringified ObjectId, we need to convert it to primitive.ObjectID
 		oidString, ok := typedId["$oid"].(string)
 		if !ok {
 			return nil, fmt.Errorf("invalid $oid field in _id")
@@ -121,7 +134,7 @@ func ParseRawDocuments(documents []primitive.M) ([]string, error) {
 				}
 			case primitive.DateTime:
 				doc[key] = primitive.M{
-					"$date": v.Time().Format(time.RFC3339),
+					"$date": v.Time(),
 				}
 			}
 		}

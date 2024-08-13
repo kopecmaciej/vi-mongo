@@ -121,6 +121,7 @@ func (d *Dao) ListDocuments(ctx context.Context, db string, collection string, f
 	if err := cursor.Err(); err != nil {
 		return nil, 0, err
 	}
+
 	return documents, count, nil
 }
 

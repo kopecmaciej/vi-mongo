@@ -79,6 +79,7 @@ type (
 	}
 
 	ConnectorKeys struct {
+		ToggleFocus   Key               `json:"toggleFocus"`
 		ConnectorForm ConnectorFormKeys `json:"connectorForm"`
 		ConnectorList ConnectorListKeys `json:"connectorList"`
 	}
@@ -273,13 +274,18 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 		},
 	}
 
+	k.Connector.ToggleFocus = Key{
+		Keys:        []string{"Tab", "Backtab"},
+		Description: "Toggle focus",
+	}
+
 	k.Connector.ConnectorForm = ConnectorFormKeys{
 		FormFocusUp: Key{
-			Keys:        []string{"Up"},
+			Keys:        []string{"Ctrl+K"},
 			Description: "Move form focus up",
 		},
 		FormFocusDown: Key{
-			Keys:        []string{"Down"},
+			Keys:        []string{"Ctrl+J"},
 			Description: "Move form focus down",
 		},
 		SaveConnection: Key{
@@ -309,7 +315,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 
 	k.Welcome = WelcomeKeys{
 		MoveFocusUp: Key{
-			Keys:        []string{"Shift+Tab"},
+			Keys:        []string{"Backtab"},
 			Description: "Move focus up",
 		},
 		MoveFocusDown: Key{
