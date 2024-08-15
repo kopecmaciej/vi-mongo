@@ -42,7 +42,7 @@ func NewContent() *Content {
 	state := mongo.CollectionState{
 		Page:   0,
 		Limit:  50,
-		Sort:   primitive.M{"_id": 1},
+		Sort:   primitive.M{},
 		Filter: primitive.M{},
 	}
 
@@ -73,6 +73,9 @@ func (c *Content) init() error {
 	if err := c.jsonPeeker.Init(c.app); err != nil {
 		return err
 	}
+	if err := c.docModifier.Init(c.app); err != nil {
+		return err
+	}
 	if err := c.deleteModal.Init(c.app); err != nil {
 		return err
 	}
@@ -82,16 +85,18 @@ func (c *Content) init() error {
 	if err := c.sortBar.Init(c.app); err != nil {
 		return err
 	}
+
 	c.queryBar.EnableAutocomplete()
 	c.queryBar.EnableHistory()
 	c.queryBar.SetDefaultText("{ <$0> }")
-	if err := c.docModifier.Init(c.app); err != nil {
-		return err
-	}
+
+	c.sortBar.EnableAutocomplete()
+	c.sortBar.SetDefaultText("{ <$0> }")
 
 	c.render(false)
 
-	c.queryBarListener(ctx)
+	c.queryBarListener()
+	c.sortBarListener()
 
 	return nil
 }
@@ -246,7 +251,7 @@ func (c *Content) render(setFocus bool) {
 	}
 }
 
-func (c *Content) queryBarListener(ctx context.Context) {
+func (c *Content) queryBarListener() {
 	accceptFunc := func(text string) {
 		filter, err := mongo.ParseStringQuery(text)
 		if err != nil {
@@ -255,7 +260,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 			})
 		}
 		c.state.Filter = filter
-		c.RenderContent(ctx, c.state.Db, c.state.Coll)
+		c.render(true)
 		c.Table.Select(2, 0)
 	}
 	rejectFunc := func() {
@@ -265,7 +270,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 	c.queryBar.DoneFuncHandler(accceptFunc, rejectFunc)
 }
 
-func (c *Content) sortBarListener(ctx context.Context) {
+func (c *Content) sortBarListener() {
 	acceptFunc := func(text string) {
 		sort, err := mongo.ParseStringQuery(text)
 		if err != nil {
@@ -274,7 +279,7 @@ func (c *Content) sortBarListener(ctx context.Context) {
 			})
 		}
 		c.state.Sort = sort
-		c.RenderContent(ctx, c.state.Db, c.state.Coll)
+		c.render(true)
 	}
 	rejectFunc := func() {
 		c.render(true)
@@ -343,6 +348,7 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 	}
 
 	c.queryBar.LoadNewKeys(autocompleteKeys)
+	c.sortBar.LoadNewKeys(autocompleteKeys)
 }
 
 func (c *Content) RenderContent(ctx context.Context, db, coll string) error {
@@ -362,9 +368,16 @@ func (c *Content) RenderContent(ctx context.Context, db, coll string) error {
 		prettyFilter, err := json.Marshal(c.state.Filter)
 		if err != nil {
 			log.Error().Err(err).Msg("Error marshaling filter")
-			return err
+
 		}
 		headerInfo += fmt.Sprintf(", Filter: %v", string(prettyFilter))
+	}
+	if c.state.Sort != nil {
+		prettySort, err := json.Marshal(c.state.Sort)
+		if err != nil {
+			log.Error().Err(err).Msg("Error marshaling sort")
+		}
+		headerInfo += fmt.Sprintf(", Sort: %v", string(prettySort))
 	}
 	headerCell := tview.NewTableCell(headerInfo).
 		SetAlign(tview.AlignLeft).

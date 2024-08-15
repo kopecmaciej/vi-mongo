@@ -339,7 +339,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 		},
 		CopyFullLine: Key{
 			Runes:       []string{"c"},
-			Description: "Copy full line",
+			Description: "Copy full object",
 		},
 		CopyValue: Key{
 			Runes:       []string{"v"},

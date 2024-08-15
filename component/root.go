@@ -228,7 +228,12 @@ func (r *Root) AddPage(component manager.Component, page tview.Primitive, resize
 // RemovePage is a wrapper for tview.Pages.RemovePage
 func (r *Root) RemovePage(component manager.Component) *tview.Pages {
 	r.app.Manager.PopComponent()
-	return r.Pages.RemovePage(string(component))
+	r.Pages.RemovePage(string(component))
+	if r.app.PreviousFocus != nil {
+		r.app.SetFocus(r.app.PreviousFocus)
+		r.app.PreviousFocus = nil
+	}
+	return r.Pages
 }
 
 // HasPage is a wrapper for tview.Pages.HasPage
