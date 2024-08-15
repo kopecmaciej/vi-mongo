@@ -13,14 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func ConvertToJSON(document map[string]interface{}) (string, error) {
-	jsonBytes, err := json.Marshal(document)
-	if err != nil {
-		return "", err
-	}
-	return string(jsonBytes), nil
-}
-
 // StringifyDocument converts a map to a JSON string
 func StringifyDocument(document map[string]interface{}) (string, error) {
 	// convert id to oid
@@ -161,6 +153,7 @@ func IndientJSON(jsonString string) (bytes.Buffer, error) {
 	return prettyJson, nil
 }
 
+// ParseJSONDocument converts a JSON string to a primitive.M document
 func ParseJSONDocument(jsonDoc string) (primitive.M, error) {
 	parsedDocs, err := ParseJSONDocuments([]string{jsonDoc})
 	if err != nil {
@@ -196,6 +189,7 @@ func ParseJSONDocuments(jsonDocs []string) ([]primitive.M, error) {
 	return documents, nil
 }
 
+// convertValue converts a value to a compatible MongoDB type
 func convertValue(value interface{}) (interface{}, error) {
 	switch v := value.(type) {
 	case map[string]interface{}:
@@ -209,7 +203,6 @@ func convertValue(value interface{}) (interface{}, error) {
 			}
 			return primitive.NewDateTimeFromTime(t), nil
 		}
-		// Recursively convert nested objects
 		convertedMap := make(map[string]interface{})
 		for k, v := range v {
 			convertedValue, err := convertValue(v)
@@ -220,7 +213,6 @@ func convertValue(value interface{}) (interface{}, error) {
 		}
 		return convertedMap, nil
 	case []interface{}:
-		// Recursively convert array elements
 		convertedArray := make([]interface{}, len(v))
 		for i, elem := range v {
 			convertedElem, err := convertValue(elem)

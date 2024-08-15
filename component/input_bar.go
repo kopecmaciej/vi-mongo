@@ -115,10 +115,10 @@ func (i *InputBar) DoneFuncHandler(accept func(string), reject func()) {
 	i.SetDoneFunc(func(key tcell.Key) {
 		switch key {
 		case tcell.KeyEsc:
-			i.Toggle()
+			i.Toggle("")
 			reject()
 		case tcell.KeyEnter:
-			i.Toggle()
+			i.Toggle("")
 			text := i.GetText()
 			if i.historyModal != nil {
 				err := i.historyModal.SaveToHistory(text)
@@ -213,9 +213,12 @@ func (i *InputBar) displayHistoryModal() {
 }
 
 // Draws default text if input is empty
-func (i *InputBar) Toggle() {
+func (i *InputBar) Toggle(text string) {
 	i.Component.Toggle()
-	if i.GetText() == "" {
+	if text == "" {
+		text = i.GetText()
+	}
+	if text == "" {
 		go i.app.QueueUpdateDraw(func() {
 			i.SetWordAtCursor(i.defaultText)
 		})

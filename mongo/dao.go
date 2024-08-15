@@ -89,7 +89,16 @@ type Filter struct {
 }
 
 func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState) ([]primitive.M, int64, error) {
-	count, err := d.client.Database(state.Db).Collection(state.Coll).CountDocuments(ctx, state.Filter)
+	filter, err := ParseStringQuery(state.Filter)
+	if err != nil {
+		return nil, 0, err
+	}
+	sort, err := ParseStringQuery(state.Sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	count, err := d.client.Database(state.Db).Collection(state.Coll).CountDocuments(ctx, filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -98,10 +107,10 @@ func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState) ([]prim
 	options := options.FindOptions{
 		Limit: &state.Limit,
 		Skip:  &state.Page,
-		Sort:  state.Sort,
+		Sort:  sort,
 	}
 
-	cursor, err := coll.Find(ctx, state.Filter, &options)
+	cursor, err := coll.Find(ctx, filter, &options)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -97,7 +97,7 @@ func (r *Root) renderMainView() error {
 			return err
 		}
 
-		r.databases.dbTree.NodeSelectFunc = r.content.RenderContent
+		r.databases.dbTree.NodeSelectFunc = r.content.HandleDatabaseSelection
 
 		r.render()
 
