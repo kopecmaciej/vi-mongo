@@ -24,6 +24,7 @@ type (
 		Styles         *config.Styles
 		Config         *config.Config
 		Keys           *config.KeyBindings
+		PreviousFocus  tview.Primitive
 	}
 )
 
@@ -84,6 +85,7 @@ func (a *App) setKeybindings() {
 				a.Root.RemovePage(HelpComponent)
 				return nil
 			}
+			a.PreviousFocus = a.GetFocus()
 			err := a.FullScreenHelp.Render(true)
 			if err != nil {
 				return event
@@ -99,7 +101,8 @@ func (a *App) setKeybindings() {
 			if err != nil {
 				return event
 			}
-			a.Root.innerFlex.AddItem(a.FooterHelp, 10, 0, false)
+			a.Root.innerFlex.AddItem(a.FooterHelp, 10, 0, true)
+			a.SetFocus(a.FooterHelp)
 			return nil
 		}
 		return event

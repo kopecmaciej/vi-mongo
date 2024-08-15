@@ -23,9 +23,11 @@ type ServerStatus struct {
 }
 
 type CollectionState struct {
-	Db    string
-	Coll  string
-	Page  int64
-	Limit int64
-	Count int64
+	Db     string
+	Coll   string
+	Page   int64
+	Limit  int64
+	Count  int64
+	Sort   string
+	Filter string
 }

@@ -119,7 +119,6 @@ func (h *Header) refresh() {
 			defer cancel()
 			err := h.setBaseInfo(ctx)
 			if err != nil {
-				// if error is unauthorized, there is no need to refresh
 				if strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
 					return
 				}
@@ -158,7 +157,11 @@ func (h *Header) setInactiveBaseInfo(err error) {
 	h.baseInfo = make(BaseInfo)
 	h.baseInfo[0] = info{"Status", h.style.InactiveSymbol.String()}
 	if err != nil {
-		h.baseInfo[1] = info{"Error", err.Error()}
+		if strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
+			h.baseInfo[1] = info{"Error", "Unauthorized, please check your credentials or your privileges"}
+		} else {
+			h.baseInfo[1] = info{"Error", err.Error()}
+		}
 	}
 }
 

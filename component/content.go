@@ -2,7 +2,6 @@ package component
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"regexp"
 
@@ -20,6 +19,11 @@ const (
 	JsonViewComponent = "JsonView"
 )
 
+var defaultState = mongo.CollectionState{
+	Page:  0,
+	Limit: 50,
+}
+
 // Content is a component that displays documents in a table
 type Content struct {
 	*Component
@@ -29,30 +33,29 @@ type Content struct {
 	View        *tview.TextView
 	style       *config.ContentStyle
 	queryBar    *InputBar
+	sortBar     *InputBar
 	jsonPeeker  *DocPeeker
 	deleteModal *DeleteModal
 	docModifier *DocModifier
 	state       mongo.CollectionState
+	stateMap    map[string]mongo.CollectionState // New field to store states for each collection
 }
 
 // NewContent creates a new Content component
 // It also initializes all subcomponents
 func NewContent() *Content {
-	state := mongo.CollectionState{
-		Page:  0,
-		Limit: 50,
-	}
-
 	c := &Content{
 		Component:   NewComponent("Content"),
 		Table:       tview.NewTable(),
 		Flex:        tview.NewFlex(),
 		View:        tview.NewTextView(),
 		queryBar:    NewInputBar("Query"),
+		sortBar:     NewInputBar("Sort"),
 		jsonPeeker:  NewDocPeeker(),
 		deleteModal: NewDeleteModal(),
 		docModifier: NewDocModifier(),
-		state:       state,
+		state:       defaultState,
+		stateMap:    make(map[string]mongo.CollectionState),
 	}
 
 	c.SetAfterInitFunc(c.init)
@@ -69,22 +72,30 @@ func (c *Content) init() error {
 	if err := c.jsonPeeker.Init(c.app); err != nil {
 		return err
 	}
+	if err := c.docModifier.Init(c.app); err != nil {
+		return err
+	}
 	if err := c.deleteModal.Init(c.app); err != nil {
 		return err
 	}
 	if err := c.queryBar.Init(c.app); err != nil {
 		return err
 	}
+	if err := c.sortBar.Init(c.app); err != nil {
+		return err
+	}
+
 	c.queryBar.EnableAutocomplete()
 	c.queryBar.EnableHistory()
 	c.queryBar.SetDefaultText("{ <$0> }")
-	if err := c.docModifier.Init(c.app); err != nil {
-		return err
-	}
+
+	c.sortBar.EnableAutocomplete()
+	c.sortBar.SetDefaultText("{ <$0> }")
 
 	c.render(false)
 
 	c.queryBarListener(ctx)
+	c.sortBarListener(ctx)
 
 	return nil
 }
@@ -170,7 +181,19 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			c.addCell(strDoc)
 			return nil
 		case k.Contains(k.Root.Content.ToggleQuery, event.Name()):
-			c.queryBar.Toggle()
+			if c.state.Filter != "" {
+				c.queryBar.Toggle(c.state.Filter)
+			} else {
+				c.queryBar.Toggle("")
+			}
+			c.render(true)
+			return nil
+		case k.Contains(k.Root.Content.ToggleSort, event.Name()):
+			if c.state.Sort != "" {
+				c.sortBar.Toggle(c.state.Sort)
+			} else {
+				c.sortBar.Toggle("")
+			}
 			c.render(true)
 			return nil
 		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
@@ -180,7 +203,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			}
 			return nil
 		case k.Contains(k.Root.Content.Refresh, event.Name()):
-			err := c.refresh(ctx)
+			err := c.updateContent(ctx)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error refreshing documents", err)
 			}
@@ -221,6 +244,11 @@ func (c *Content) render(setFocus bool) {
 		focusPrimitive = c.queryBar
 	}
 
+	if c.sortBar.IsEnabled() {
+		c.Flex.AddItem(c.sortBar, 3, 0, false)
+		focusPrimitive = c.sortBar
+	}
+
 	c.Flex.AddItem(c.Table, 0, 1, true)
 	_, _, _, height := c.Flex.GetInnerRect()
 	c.state.Limit = int64(height) - 4
@@ -230,29 +258,8 @@ func (c *Content) render(setFocus bool) {
 	}
 }
 
-func (c *Content) queryBarListener(ctx context.Context) {
-	accceptFunc := func(text string) {
-		filter, err := mongo.ParseStringQuery(text)
-		if err != nil {
-			defer ShowErrorModalAndFocus(c.app.Root, "Error parsing query\nPlease check the query syntax", err, func() {
-				c.app.SetFocus(c.queryBar)
-			})
-		}
-		c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
-		c.Table.Select(2, 0)
-	}
-	rejectFunc := func() {
-		c.render(true)
-	}
-
-	c.queryBar.DoneFuncHandler(accceptFunc, rejectFunc)
-}
-
-func (c *Content) listDocuments(ctx context.Context, db, coll string, filters map[string]interface{}) ([]string, int64, error) {
-	c.state.Db = db
-	c.state.Coll = coll
-
-	documents, count, err := c.dao.ListDocuments(ctx, db, coll, filters, c.state.Page, c.state.Limit)
+func (c *Content) listDocuments(ctx context.Context) ([]string, int64, error) {
+	documents, count, err := c.dao.ListDocuments(ctx, &c.state)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -311,26 +318,40 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 	}
 
 	c.queryBar.LoadNewKeys(autocompleteKeys)
+	c.sortBar.LoadNewKeys(autocompleteKeys)
 }
 
-func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map[string]interface{}) error {
+// HandleDatabaseSelection is called when a database/collection is selected in the DatabaseTree
+func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) error {
+	c.queryBar.Toggle("")
+	c.sortBar.SetText("")
+
+	state, ok := c.stateMap[db+"."+coll]
+	if !ok {
+		state = defaultState
+		state.Db = db
+		state.Coll = coll
+	}
+	c.state = state
+	return c.updateContent(ctx)
+}
+
+func (c *Content) updateContent(ctx context.Context) error {
 	c.Table.Clear()
 	c.app.SetFocus(c.Table)
 
-	documents, count, err := c.listDocuments(ctx, db, coll, filter)
+	documents, count, err := c.listDocuments(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("Error listing documents")
 		return err
 	}
 
 	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.Page, c.state.Limit)
-	if filter != nil {
-		prettyFilter, err := json.Marshal(filter)
-		if err != nil {
-			log.Error().Err(err).Msg("Error marshaling filter")
-			return err
-		}
-		headerInfo += fmt.Sprintf(", Filter: %v", string(prettyFilter))
+	if c.state.Filter != "" {
+		headerInfo += fmt.Sprintf(", Filter: %v", c.state.Filter)
+	}
+	if c.state.Sort != "" {
+		headerInfo += fmt.Sprintf(", Sort: %v", c.state.Sort)
 	}
 	headerCell := tview.NewTableCell(headerInfo).
 		SetAlign(tview.AlignLeft).
@@ -351,13 +372,41 @@ func (c *Content) RenderContent(ctx context.Context, db, coll string, filter map
 		c.Table.Select(2, 0)
 	}
 
-	// c.Table.ScrollToBeginning()
+	c.stateMap[c.state.Db+"."+c.state.Coll] = c.state
 
 	return nil
 }
 
-func (c *Content) refresh(ctx context.Context) error {
-	return c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
+func (c *Content) queryBarListener(ctx context.Context) {
+	acceptFunc := func(text string) {
+		c.state.Filter = text
+		collectionKey := c.state.Db + "." + c.state.Coll
+		c.stateMap[collectionKey] = c.state
+		c.updateContent(ctx)
+		c.Table.Select(2, 0)
+		if c.Flex.HasItem(c.queryBar) {
+			c.Flex.RemoveItem(c.queryBar)
+		}
+	}
+	rejectFunc := func() {
+		c.render(true)
+	}
+
+	c.queryBar.DoneFuncHandler(acceptFunc, rejectFunc)
+}
+
+func (c *Content) sortBarListener(ctx context.Context) {
+	acceptFunc := func(text string) {
+		c.state.Sort = text
+		collectionKey := c.state.Db + "." + c.state.Coll
+		c.stateMap[collectionKey] = c.state
+		c.updateContent(ctx)
+	}
+	rejectFunc := func() {
+		c.render(true)
+	}
+
+	c.sortBar.DoneFuncHandler(acceptFunc, rejectFunc)
 }
 
 // addCell adds a new cell to the table
@@ -377,13 +426,9 @@ func (c *Content) goToNextMongoPage(ctx context.Context) {
 		return
 	}
 	c.state.Page += c.state.Limit
-	filter, err := mongo.ParseStringQuery(c.queryBar.GetText())
-	if err != nil {
-		defer ShowErrorModalAndFocus(c.app.Root, "Error parsing query\nPlease check the query syntax", err, func() {
-			c.app.SetFocus(c.queryBar)
-		})
-	}
-	c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
+	collectionKey := c.state.Db + "." + c.state.Coll
+	c.stateMap[collectionKey] = c.state
+	c.updateContent(ctx)
 }
 
 func (c *Content) goToPrevMongoPage(ctx context.Context) {
@@ -391,13 +436,9 @@ func (c *Content) goToPrevMongoPage(ctx context.Context) {
 		return
 	}
 	c.state.Page -= c.state.Limit
-	filter, err := mongo.ParseStringQuery(c.queryBar.GetText())
-	if err != nil {
-		defer ShowErrorModalAndFocus(c.app.Root, "Error parsing query\nPlease check the query syntax", err, func() {
-			c.app.SetFocus(c.queryBar)
-		})
-	}
-	c.RenderContent(ctx, c.state.Db, c.state.Coll, filter)
+	collectionKey := c.state.Db + "." + c.state.Coll
+	c.stateMap[collectionKey] = c.state
+	c.updateContent(ctx)
 }
 
 func (c *Content) viewJson(jsonString string) error {
@@ -448,7 +489,7 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 			}
 		}
 		c.app.Root.RemovePage(c.deleteModal.GetIdentifier())
-		c.RenderContent(ctx, c.state.Db, c.state.Coll, nil)
+		c.updateContent(ctx)
 	})
 
 	c.app.Root.AddPage(c.deleteModal.GetIdentifier(), c.deleteModal, true, true)

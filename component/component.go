@@ -7,16 +7,6 @@ import (
 	"github.com/kopecmaciej/mongui/mongo"
 )
 
-// every component should implement this interface
-// it's used for managing components in the app
-type ComponentRenderer interface {
-	// Render is a function that renders the component.
-	Render() error
-
-	// setStyle is a function that sets the style of the component.
-	SetStyle(style string)
-}
-
 // Component is a base struct for all components.
 // It contains all the basic fields and functions that are used by all components.
 // It also implements the Component interface.

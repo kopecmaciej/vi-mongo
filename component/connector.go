@@ -105,9 +105,6 @@ func (c *Connector) setKeybindings() {
 		case k.Contains(k.Connector.ConnectorList.DeleteConnection, event.Name()):
 			c.deleteCurrConnection()
 			return nil
-		case k.Contains(k.Connector.ConnectorList.SetConnection, event.Name()):
-			c.setConnections()
-			return nil
 		}
 		return event
 	})
@@ -137,10 +134,10 @@ func (c *Connector) renderForm() *tview.Form {
 	c.form.Clear(true)
 
 	c.form.AddInputField("Name", "", 40, nil, nil)
-	c.form.AddTextView("Info", "Name is optional but it's recommended", 40, 1, true, false)
 	c.form.AddInputField("Url", "mongodb://", 40, nil, nil)
 	c.form.AddTextView("Example", "mongodb://username:password@host:port/db", 40, 1, true, false)
 	c.form.AddTextView("Info", "Provide Url or fill the form below", 41, 1, true, false)
+	c.form.AddTextView(" ", "-- ----------------------------------------", 40, 1, true, false)
 	c.form.AddInputField("Host", "", 40, nil, nil)
 	c.form.AddInputField("Port", "", 10, nil, nil)
 	c.form.AddInputField("Username", "", 40, nil, nil)
@@ -162,11 +159,12 @@ func (c *Connector) renderList() {
 
 	for _, conn := range c.app.Config.Connections {
 		uri := "uri: " + conn.GetUri()
-		c.list.AddItem(conn.Name, uri, 0, nil)
+		c.list.AddItem(conn.Name, uri, 0, func() {
+			c.setConnections()
+		})
 	}
 
-	button := tview.NewButton("Add new connection")
-	button.SetSelectedFunc(func() {
+	c.list.AddItem("Click to add new connection", "or by pressing "+c.app.Keys.Connector.ConnectorList.FocusForm.String(), 0, func() {
 		c.app.SetFocus(c.form)
 	})
 
@@ -175,6 +173,9 @@ func (c *Connector) renderList() {
 
 // setConnections sets connections from config file
 func (c *Connector) setConnections() {
+	if c.list.GetCurrentItem() == c.list.GetItemCount()-1 {
+		return
+	}
 	connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
 	err := c.app.Config.SetCurrentConnection(connName)
 	if err != nil {
