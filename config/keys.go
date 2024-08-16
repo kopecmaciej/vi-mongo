@@ -86,8 +86,6 @@ type (
 	}
 
 	ConnectorFormKeys struct {
-		FormFocusUp    Key `json:"formFocusUp"`
-		FormFocusDown  Key `json:"formFocusDown"`
 		SaveConnection Key `json:"saveConnection"`
 		FocusList      Key `json:"focusList"`
 	}
@@ -161,11 +159,11 @@ func LoadKeybindings() (*KeyBindings, error) {
 func (k *KeyBindings) loadDefaultKeybindings() {
 	k.Global = GlobalKeys{
 		ToggleFullScreenHelp: Key{
-			Keys:        []string{"Ctrl+K"},
+			Runes:       []string{"?"},
 			Description: "Toggle full screen help",
 		},
 		ToggleHelpBarFooter: Key{
-			Runes:       []string{"?"},
+			Keys:        []string{"Ctrl+?"},
 			Description: "Toggle help in footer",
 		},
 	}

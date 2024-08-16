@@ -6,13 +6,10 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
-)
-
-const (
-	InputBarComponent = "InputBar"
 )
 
 type InputBar struct {
@@ -27,9 +24,9 @@ type InputBar struct {
 	defaultText    string
 }
 
-func NewInputBar(label string) *InputBar {
+func NewInputBar(componentName manager.Component, label string) *InputBar {
 	i := &InputBar{
-		Component: NewComponent(InputBarComponent),
+		Component: NewComponent(manager.Component(componentName)),
 		InputField: tview.NewInputField().
 			SetLabel(" " + label + ": "),
 		enabled:        false,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
@@ -17,6 +18,8 @@ import (
 const (
 	ContentComponent  = "Content"
 	JsonViewComponent = "JsonView"
+	QueryBarComponent = "QueryBar"
+	SortBarComponent  = "SortBar"
 )
 
 var defaultState = mongo.CollectionState{
@@ -49,8 +52,8 @@ func NewContent() *Content {
 		Table:       tview.NewTable(),
 		Flex:        tview.NewFlex(),
 		View:        tview.NewTextView(),
-		queryBar:    NewInputBar("Query"),
-		sortBar:     NewInputBar("Sort"),
+		queryBar:    NewInputBar(QueryBarComponent, "Query"),
+		sortBar:     NewInputBar(SortBarComponent, "Sort"),
 		jsonPeeker:  NewDocPeeker(),
 		deleteModal: NewDeleteModal(),
 		docModifier: NewDocModifier(),
@@ -323,7 +326,7 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 
 // HandleDatabaseSelection is called when a database/collection is selected in the DatabaseTree
 func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) error {
-	c.queryBar.Toggle("")
+	c.queryBar.SetText("")
 	c.sortBar.SetText("")
 
 	state, ok := c.stateMap[db+"."+coll]
@@ -379,11 +382,11 @@ func (c *Content) updateContent(ctx context.Context) error {
 
 func (c *Content) queryBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.Filter = text
+		c.state.Filter = strings.ReplaceAll(text, " ", "")
+		log.Info().Msgf("Filter: %v", c.state.Filter)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		c.updateContent(ctx)
-		c.Table.Select(2, 0)
 		if c.Flex.HasItem(c.queryBar) {
 			c.Flex.RemoveItem(c.queryBar)
 		}
@@ -397,10 +400,13 @@ func (c *Content) queryBarListener(ctx context.Context) {
 
 func (c *Content) sortBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.Sort = text
+		c.state.Sort = strings.ReplaceAll(text, " ", "")
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		c.updateContent(ctx)
+		if c.Flex.HasItem(c.sortBar) {
+			c.Flex.RemoveItem(c.sortBar)
+		}
 	}
 	rejectFunc := func() {
 		c.render(true)

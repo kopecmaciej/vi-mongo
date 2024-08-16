@@ -66,7 +66,7 @@ func (h *HistoryModal) setKeybindings() {
 		switch event.Key() {
 		case tcell.KeyEsc, tcell.KeyEnter, tcell.KeyCtrlY:
 			eventKey := manager.EventMsg{EventKey: event, Sender: h.GetIdentifier()}
-			h.SendToComponent(InputBarComponent, eventKey)
+			h.SendToComponent(QueryBarComponent, eventKey)
 			h.app.Root.RemovePage(h.GetIdentifier())
 			return nil
 		}

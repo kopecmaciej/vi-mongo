@@ -7,7 +7,6 @@ import (
 	"github.com/kopecmaciej/mongui/config"
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -103,7 +102,6 @@ func (h *Help) addHeaderSection(name string, row, col int) {
 }
 
 func (h *Help) AddKeySection(name string, keys []config.Key, pos *int, col int) {
-	log.Debug().Msgf("pos: %d", *pos)
 	for _, key := range keys {
 		var keyString string
 		var iter []string

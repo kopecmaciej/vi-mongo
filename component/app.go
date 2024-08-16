@@ -76,9 +76,6 @@ func (a *App) Init() error {
 func (a *App) setKeybindings() {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// TODO: This is temporary solution
-		if strings.Contains(string(a.Manager.CurrentComponent()), "Input") {
-			return event
-		}
 		switch {
 		case a.Keys.Contains(a.Keys.Global.ToggleFullScreenHelp, event.Name()):
 			if a.Root.HasPage(HelpComponent) {
@@ -93,6 +90,11 @@ func (a *App) setKeybindings() {
 			a.Root.AddPage(HelpComponent, a.FullScreenHelp, true, true)
 			return nil
 		case a.Keys.Contains(a.Keys.Global.ToggleHelpBarFooter, event.Name()):
+
+			if strings.Contains(string(a.Manager.CurrentComponent()), "Input") {
+				return event
+			}
+
 			if a.Root.innerFlex.HasItem(a.FooterHelp) {
 				a.Root.innerFlex.RemoveItem(a.FooterHelp)
 				return nil

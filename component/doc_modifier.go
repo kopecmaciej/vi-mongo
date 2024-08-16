@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
@@ -35,7 +36,7 @@ func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.Ob
 		log.Error().Err(err).Msg("Error opening editor")
 		return primitive.NilObjectID, nil
 	}
-	if createdDoc == "{}" {
+	if strings.ReplaceAll(createdDoc, " ", "") == "{}" {
 		log.Debug().Msgf("No document created")
 		return primitive.NilObjectID, nil
 	}
@@ -66,7 +67,7 @@ func (d *DocModifier) Edit(ctx context.Context, db, coll string, rawDocument str
 		return "", fmt.Errorf("error editing document: %v", err)
 	}
 
-	if updatedDocument == rawDocument {
+	if strings.ReplaceAll(updatedDocument, " ", "") == strings.ReplaceAll(rawDocument, " ", "") {
 		log.Debug().Msgf("Edited JSON is the same as original")
 		return "", nil
 	}

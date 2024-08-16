@@ -6,14 +6,13 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/mongui/manager"
 	"github.com/kopecmaciej/mongui/mongo"
 	"github.com/kopecmaciej/tview"
 )
 
 const (
-	DatabasesComponent manager.Component = "Databases"
-	FilterBarComponent manager.Component = "FilterBar"
+	DatabasesComponent = "Databases"
+	FilterBarComponent = "FilterBar"
 )
 
 // Databases is flex container for DatabaseTree and InputBar
@@ -32,7 +31,7 @@ func NewDatabases() *Databases {
 		Component: NewComponent(DatabasesComponent),
 		Flex:      tview.NewFlex(),
 		dbTree:    NewDatabaseTree(),
-		filterBar: NewInputBar(string(FilterBarComponent)),
+		filterBar: NewInputBar(FilterBarComponent, "Filter"),
 		mutex:     sync.Mutex{},
 	}
 
