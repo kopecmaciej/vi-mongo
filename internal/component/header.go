@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kopecmaciej/mongui/config"
-	"github.com/kopecmaciej/mongui/manager"
+	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )

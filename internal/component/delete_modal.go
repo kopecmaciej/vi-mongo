@@ -2,7 +2,7 @@ package component
 
 import (
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/tview"
 )
 

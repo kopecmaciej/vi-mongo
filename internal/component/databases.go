@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/mongui/mongo"
+	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/kopecmaciej/tview"
 )
 

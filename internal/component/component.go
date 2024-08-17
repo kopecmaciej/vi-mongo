@@ -3,8 +3,8 @@ package component
 import (
 	"sync"
 
-	"github.com/kopecmaciej/mongui/manager"
-	"github.com/kopecmaciej/mongui/mongo"
+	"github.com/kopecmaciej/mongui/internal/manager"
+	"github.com/kopecmaciej/mongui/internal/mongo"
 )
 
 // Component is a base struct for all components.

@@ -5,10 +5,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/kopecmaciej/mongui/config"
-	"github.com/kopecmaciej/mongui/manager"
-	"github.com/kopecmaciej/mongui/mongo"
-	"github.com/kopecmaciej/mongui/primitives"
+	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/mongui/internal/manager"
+	"github.com/kopecmaciej/mongui/internal/mongo"
+	"github.com/kopecmaciej/mongui/internal/primitives"
 
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"

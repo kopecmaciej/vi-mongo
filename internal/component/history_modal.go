@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/mongui/config"
-	"github.com/kopecmaciej/mongui/manager"
-	"github.com/kopecmaciej/mongui/primitives"
+	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/mongui/internal/manager"
+	"github.com/kopecmaciej/mongui/internal/primitives"
 )
 
 const (

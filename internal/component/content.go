@@ -8,8 +8,8 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/mongui/config"
-	"github.com/kopecmaciej/mongui/mongo"
+	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
