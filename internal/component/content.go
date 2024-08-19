@@ -261,7 +261,7 @@ func (c *Content) render(setFocus bool) {
 	}
 }
 
-func (c *Content) listDocuments(ctx context.Context) ([]string, int64, error) {
+func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, int64, error) {
 	documents, count, err := c.dao.ListDocuments(ctx, &c.state)
 	if err != nil {
 		return nil, 0, err
@@ -271,15 +271,11 @@ func (c *Content) listDocuments(ctx context.Context) ([]string, int64, error) {
 	}
 
 	c.state.Count = count
+	c.state.Docs = documents
 
 	c.loadAutocompleteKeys(documents)
 
-	parsedDocs, err := mongo.ParseRawDocuments(documents)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return parsedDocs, count, nil
+	return documents, count, nil
 }
 
 func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
@@ -349,6 +345,11 @@ func (c *Content) updateContent(ctx context.Context) error {
 		return err
 	}
 
+	parsedDocs, err := mongo.ParseRawDocuments(documents)
+	if err != nil {
+		return err
+	}
+
 	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.Page, c.state.Limit)
 	if c.state.Filter != "" {
 		headerInfo += fmt.Sprintf(", Filter: %v", c.state.Filter)
@@ -367,7 +368,7 @@ func (c *Content) updateContent(ctx context.Context) error {
 		c.Table.SetCell(2, 0, tview.NewTableCell("No documents found"))
 	}
 
-	for i, d := range documents {
+	for i, d := range parsedDocs {
 		dataCell := tview.NewTableCell(d)
 		dataCell.SetAlign(tview.AlignLeft)
 

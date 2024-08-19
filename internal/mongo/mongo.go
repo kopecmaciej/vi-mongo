@@ -1,5 +1,7 @@
 package mongo
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type ServerStatus struct {
 	Ok             int32  `bson:"ok"`
 	Version        string `bson:"version"`
@@ -30,4 +32,5 @@ type CollectionState struct {
 	Count  int64
 	Sort   string
 	Filter string
+	Docs   []primitive.M
 }

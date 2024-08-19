@@ -59,6 +59,7 @@ type (
 	}
 
 	ContentKeys struct {
+		ExpandDocument    Key      `json:"expandDocument"`
 		PeekDocument      Key      `json:"peekDocument"`
 		ViewDocument      Key      `json:"viewDocument"`
 		AddDocument       Key      `json:"addDocument"`
@@ -215,6 +216,10 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 	}
 
 	k.Root.Content = ContentKeys{
+		ExpandDocument: Key{
+			Runes:       []string{"e"},
+			Description: "Expand document",
+		},
 		PeekDocument: Key{
 			Runes:       []string{"p"},
 			Keys:        []string{"Enter"},
