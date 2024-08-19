@@ -3,8 +3,8 @@ package cmd
 import (
 	"os"
 
-	"github.com/kopecmaciej/mongui/component"
-	"github.com/kopecmaciej/mongui/config"
+	"github.com/kopecmaciej/mongui/internal/component"
+	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
