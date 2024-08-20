@@ -130,11 +130,20 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			c.updateContent(ctx)
 			return nil
 		case k.Contains(k.Root.Content.PeekDocument, event.Name()):
-			err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
-			if err != nil {
-				ShowErrorModal(c.app.Root, "Error peeking document", err)
-				return nil
+			var doc string
+			if c.isMultiRowView {
+				multiRowDoc, err := c.getMultiRowDocument()
+				if err != nil {
+					ShowErrorModalAndFocus(c.app.Root, "Error peeking document", err, func() {
+						c.app.SetFocus(c.Table)
+					})
+					return nil
+				}
+				doc = multiRowDoc
+			} else {
+				doc = c.Table.GetCell(c.Table.GetSelection()).Text
 			}
+			c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, doc)
 			return nil
 		case k.Contains(k.Root.Content.ViewDocument, event.Name()):
 			err := c.viewJson(c.Table.GetCell(c.Table.GetSelection()).Text)
@@ -177,15 +186,21 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.DuplicateDocument, event.Name()):
 			ID, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error duplicating document", err)
+				defer ShowErrorModalAndFocus(c.app.Root, "Error duplicating document", err, func() {
+					c.app.SetFocus(c.Table)
+				})
 			}
 			duplicatedDoc, err := c.dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error getting inserted document", err)
+				defer ShowErrorModalAndFocus(c.app.Root, "Error getting inserted document", err, func() {
+					c.app.SetFocus(c.Table)
+				})
 			}
 			strDoc, err := mongo.StringifyDocument(duplicatedDoc)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error stringifying document", err)
+				defer ShowErrorModalAndFocus(c.app.Root, "Error stringifying document", err, func() {
+					c.app.SetFocus(c.Table)
+				})
 			}
 			c.addCell(strDoc)
 			return nil
@@ -208,13 +223,17 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
 			err := c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error deleting document", err)
+				defer ShowErrorModalAndFocus(c.app.Root, "Error deleting document", err, func() {
+					c.app.SetFocus(c.Table)
+				})
 			}
 			return nil
 		case k.Contains(k.Root.Content.Refresh, event.Name()):
 			err := c.updateContent(ctx)
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error refreshing documents", err)
+				defer ShowErrorModalAndFocus(c.app.Root, "Error refreshing documents", err, func() {
+					c.app.SetFocus(c.Table)
+				})
 			}
 			return nil
 		case k.Contains(k.Root.Content.NextPage, event.Name()):
@@ -227,9 +246,13 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			selectedDoc := c.Table.GetCell(c.Table.GetSelection()).Text
 			err := clipboard.WriteAll(selectedDoc)
 			if err != nil {
-				ShowErrorModal(c.app.Root, "Error copying document", err)
+				ShowErrorModalAndFocus(c.app.Root, "Error copying document", err, func() {
+					c.app.SetFocus(c.Table)
+				})
 			} else {
-				ShowInfoModal(c.app.Root, "Value copied to clipboard")
+				ShowInfoModalAndFocus(c.app.Root, "Value copied to clipboard", func() {
+					c.app.SetFocus(c.Table)
+				})
 			}
 			return nil
 		}
@@ -578,4 +601,45 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 	c.app.Root.AddPage(c.deleteModal.GetIdentifier(), c.deleteModal, true, true)
 
 	return nil
+}
+
+func (c *Content) getMultiRowDocument() (string, error) {
+	row, _ := c.Table.GetSelection()
+
+	_id := ""
+
+	for i := row; i >= 0; i-- {
+		cell := c.Table.GetCell(i, 0)
+		if strings.Contains(cell.Text, `"_id":`) {
+			_id = cell.Text
+			break
+		}
+	}
+
+	var value string
+	if strings.Contains(_id, `"$oid"`) {
+		value = strings.Split(_id, `"`)[5]
+	} else {
+		value = strings.Split(_id, `"`)[3]
+	}
+	for _, doc := range c.state.Docs {
+		var idValue string
+		if doc_id, ok := doc["_id"].(primitive.M); ok {
+			idValue = doc_id["$oid"].(string)
+		} else if strID, ok := doc["_id"].(string); ok {
+			idValue = strID
+		}
+		if idValue == value {
+			jsoned, err := mongo.StringifyDocument(doc)
+			if err != nil {
+				return "", err
+			}
+			indentedJson, err := mongo.IndentJSON(jsoned)
+			if err != nil {
+				return "", err
+			}
+			return indentedJson.String(), nil
+		}
+	}
+	return "", fmt.Errorf("document not found")
 }
