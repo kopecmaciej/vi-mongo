@@ -32,33 +32,35 @@ type Content struct {
 	*Component
 	*tview.Flex
 
-	Table       *tview.Table
-	View        *tview.TextView
-	style       *config.ContentStyle
-	queryBar    *InputBar
-	sortBar     *InputBar
-	jsonPeeker  *DocPeeker
-	deleteModal *DeleteModal
-	docModifier *DocModifier
-	state       mongo.CollectionState
-	stateMap    map[string]mongo.CollectionState // New field to store states for each collection
+	Table          *tview.Table
+	View           *tview.TextView
+	style          *config.ContentStyle
+	queryBar       *InputBar
+	sortBar        *InputBar
+	jsonPeeker     *DocPeeker
+	deleteModal    *DeleteModal
+	docModifier    *DocModifier
+	state          mongo.CollectionState
+	stateMap       map[string]mongo.CollectionState // New field to store states for each collection
+	isMultiRowView bool
 }
 
 // NewContent creates a new Content component
 // It also initializes all subcomponents
 func NewContent() *Content {
 	c := &Content{
-		Component:   NewComponent("Content"),
-		Table:       tview.NewTable(),
-		Flex:        tview.NewFlex(),
-		View:        tview.NewTextView(),
-		queryBar:    NewInputBar(QueryBarComponent, "Query"),
-		sortBar:     NewInputBar(SortBarComponent, "Sort"),
-		jsonPeeker:  NewDocPeeker(),
-		deleteModal: NewDeleteModal(),
-		docModifier: NewDocModifier(),
-		state:       defaultState,
-		stateMap:    make(map[string]mongo.CollectionState),
+		Component:      NewComponent("Content"),
+		Table:          tview.NewTable(),
+		Flex:           tview.NewFlex(),
+		View:           tview.NewTextView(),
+		queryBar:       NewInputBar(QueryBarComponent, "Query"),
+		sortBar:        NewInputBar(SortBarComponent, "Sort"),
+		jsonPeeker:     NewDocPeeker(),
+		deleteModal:    NewDeleteModal(),
+		docModifier:    NewDocModifier(),
+		state:          defaultState,
+		stateMap:       make(map[string]mongo.CollectionState),
+		isMultiRowView: false,
 	}
 
 	c.SetAfterInitFunc(c.init)
@@ -123,6 +125,10 @@ func (c *Content) setKeybindings(ctx context.Context) {
 
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
+		case k.Contains(k.Root.Content.SwitchView, event.Name()):
+			c.isMultiRowView = !c.isMultiRowView
+			c.updateContent(ctx)
+			return nil
 		case k.Contains(k.Root.Content.PeekDocument, event.Name()):
 			err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
@@ -219,7 +225,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return nil
 		case k.Contains(k.Root.Content.CopyValue, event.Name()):
 			selectedDoc := c.Table.GetCell(c.Table.GetSelection()).Text
-			err := c.copyToClipboard(selectedDoc)
+			err := clipboard.WriteAll(selectedDoc)
 			if err != nil {
 				ShowErrorModal(c.app.Root, "Error copying document", err)
 			} else {
@@ -230,10 +236,6 @@ func (c *Content) setKeybindings(ctx context.Context) {
 
 		return event
 	})
-}
-
-func (c *Content) copyToClipboard(text string) error {
-	return clipboard.WriteAll(text)
 }
 
 func (c *Content) render(setFocus bool) {
@@ -345,11 +347,6 @@ func (c *Content) updateContent(ctx context.Context) error {
 		return err
 	}
 
-	parsedDocs, err := mongo.ParseRawDocuments(documents)
-	if err != nil {
-		return err
-	}
-
 	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.Page, c.state.Limit)
 	if c.state.Filter != "" {
 		headerInfo += fmt.Sprintf(", Filter: %v", c.state.Filter)
@@ -368,17 +365,96 @@ func (c *Content) updateContent(ctx context.Context) error {
 		c.Table.SetCell(2, 0, tview.NewTableCell("No documents found"))
 	}
 
-	for i, d := range parsedDocs {
-		dataCell := tview.NewTableCell(d)
-		dataCell.SetAlign(tview.AlignLeft)
-
-		c.Table.SetCell(i+2, 0, dataCell)
-		c.Table.Select(2, 0)
+	if c.isMultiRowView {
+		c.renderMultiRowView(documents)
+	} else {
+		c.renderSingleRowView(documents)
 	}
 
 	c.stateMap[c.state.Db+"."+c.state.Coll] = c.state
 
 	return nil
+}
+
+func (c *Content) renderSingleRowView(documents []primitive.M) {
+	parsedDocs, _ := mongo.ParseRawDocuments(documents)
+	row := 2
+	for _, d := range parsedDocs {
+		dataCell := tview.NewTableCell(d)
+		dataCell.SetAlign(tview.AlignLeft)
+		c.Table.SetCell(row, 0, dataCell)
+		row++
+	}
+	c.Table.Select(2, 0)
+}
+
+func (c *Content) renderMultiRowView(documents []primitive.M) {
+	row := 2
+	for _, doc := range documents {
+		c.multiRowDocument(doc, &row)
+	}
+	c.Table.Select(2, 0)
+}
+
+func (c *Content) multiRowDocument(doc primitive.M, row *int) {
+	jsoned, err := mongo.StringifyDocument(doc)
+	if err != nil {
+		log.Error().Err(err).Msg("Error stringifying document")
+		return
+	}
+	indentedJson, err := mongo.IndentJSON(jsoned)
+	if err != nil {
+		log.Error().Err(err).Msg("Error indenting JSON")
+		return
+	}
+
+	lines := strings.Split(indentedJson.String(), "\n")
+	currentParentKey := ""
+	currentValue := ""
+
+	for i, line := range lines {
+		if i == 0 || i == len(lines)-1 {
+			objCell := tview.NewTableCell(line).SetAlign(tview.AlignLeft).SetTextColor(tcell.ColorGreen).SetSelectable(false)
+			c.Table.SetCell(*row, 0, objCell)
+			*row++
+			continue
+		}
+		trimmedLine := strings.TrimSpace(line)
+		if strings.HasSuffix(trimmedLine, "{") || strings.HasSuffix(trimmedLine, "[") {
+			if currentParentKey != "" {
+				// Add the previous parent key and its value
+				c.Table.SetCell(*row, 0, tview.NewTableCell(currentParentKey+currentValue).SetAlign(tview.AlignLeft))
+				*row++
+			}
+			currentParentKey = line
+			currentValue = ""
+		} else if strings.HasPrefix(trimmedLine, "}") || strings.HasPrefix(trimmedLine, "]") {
+			// End of a parent key
+			if currentParentKey != "" {
+				currentValue += line
+				c.Table.SetCell(*row, 0, tview.NewTableCell(currentParentKey+currentValue).SetAlign(tview.AlignLeft))
+				*row++
+			}
+			currentParentKey = ""
+			currentValue = ""
+		} else {
+			// This is a value
+			if currentParentKey == "" {
+				// If there's no current parent key, treat this as a standalone line
+				c.Table.SetCell(*row, 0, tview.NewTableCell(line).SetAlign(tview.AlignLeft))
+				*row++
+			} else {
+				// Append to the current value, removing newlines
+				currentValue += " " + strings.TrimSpace(line)
+			}
+		}
+
+		// Handle the last line, it has to be } as it's end of document
+		if i == len(lines)-1 && currentParentKey != "" {
+			c.Table.SetCell(*row, 0, tview.NewTableCell(currentParentKey+currentValue).SetAlign(tview.AlignLeft))
+			*row++
+		}
+	}
 }
 
 func (c *Content) queryBarListener(ctx context.Context) {
@@ -453,7 +529,7 @@ func (c *Content) viewJson(jsonString string) error {
 
 	c.app.Root.AddPage(JsonViewComponent, c.View, true, true)
 
-	indentedJson, err := mongo.IndientJSON(jsonString)
+	indentedJson, err := mongo.IndentJSON(jsonString)
 	if err != nil {
 		return err
 	}

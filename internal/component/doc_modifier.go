@@ -141,7 +141,7 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, rawDo
 
 // openEditor opens the editor with the document and returns the edited document
 func (d *DocModifier) openEditor(rawDocument string) (string, error) {
-	prettyJsonBuffer, err := mongo.IndientJSON(rawDocument)
+	prettyJsonBuffer, err := mongo.IndentJSON(rawDocument)
 	if err != nil {
 		return "", fmt.Errorf("error indenting JSON: %v", err)
 	}
