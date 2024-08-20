@@ -126,7 +126,8 @@ func (c *Content) setKeybindings(ctx context.Context) {
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Root.Content.SwitchView, event.Name()):
-			c.switchView(ctx)
+			c.isMultiRowView = !c.isMultiRowView
+			c.updateContent(ctx)
 			return nil
 		case k.Contains(k.Root.Content.PeekDocument, event.Name()):
 			err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
@@ -235,13 +236,6 @@ func (c *Content) setKeybindings(ctx context.Context) {
 
 		return event
 	})
-}
-
-// switchView switch between view, where documents are displayed as JSON
-// in single row and in multiple rows, like in MongoDB Compass
-func (c *Content) switchView(ctx context.Context) {
-	c.isMultiRowView = !c.isMultiRowView
-	c.updateContent(ctx)
 }
 
 func (c *Content) render(setFocus bool) {
@@ -384,20 +378,22 @@ func (c *Content) updateContent(ctx context.Context) error {
 
 func (c *Content) renderSingleRowView(documents []primitive.M) {
 	parsedDocs, _ := mongo.ParseRawDocuments(documents)
-	for i, d := range parsedDocs {
+	row := 2
+	for _, d := range parsedDocs {
 		dataCell := tview.NewTableCell(d)
 		dataCell.SetAlign(tview.AlignLeft)
-		c.Table.SetCell(i+2, 0, dataCell)
+		c.Table.SetCell(row, 0, dataCell)
+		row++
 	}
 	c.Table.Select(2, 0)
 }
 
 func (c *Content) renderMultiRowView(documents []primitive.M) {
-	row := 3
+	row := 2
 	for _, doc := range documents {
 		c.multiRowDocument(doc, &row)
 	}
-	c.Table.Select(3, 0)
+	c.Table.Select(2, 0)
 }
 
 func (c *Content) multiRowDocument(doc primitive.M, row *int) {
