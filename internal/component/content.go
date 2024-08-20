@@ -32,16 +32,16 @@ type Content struct {
 	*Component
 	*tview.Flex
 
-	Table       *tview.Table
-	View        *tview.TextView
-	style       *config.ContentStyle
-	queryBar    *InputBar
-	sortBar     *InputBar
-	jsonPeeker  *DocPeeker
-	deleteModal *DeleteModal
-	docModifier *DocModifier
-	state       mongo.CollectionState
-	stateMap    map[string]mongo.CollectionState // New field to store states for each collection
+	Table          *tview.Table
+	View           *tview.TextView
+	style          *config.ContentStyle
+	queryBar       *InputBar
+	sortBar        *InputBar
+	jsonPeeker     *DocPeeker
+	deleteModal    *DeleteModal
+	docModifier    *DocModifier
+	state          mongo.CollectionState
+	stateMap       map[string]mongo.CollectionState // New field to store states for each collection
 	isMultiRowView bool
 }
 
@@ -49,17 +49,17 @@ type Content struct {
 // It also initializes all subcomponents
 func NewContent() *Content {
 	c := &Content{
-		Component:   NewComponent("Content"),
-		Table:       tview.NewTable(),
-		Flex:        tview.NewFlex(),
-		View:        tview.NewTextView(),
-		queryBar:    NewInputBar(QueryBarComponent, "Query"),
-		sortBar:     NewInputBar(SortBarComponent, "Sort"),
-		jsonPeeker:  NewDocPeeker(),
-		deleteModal: NewDeleteModal(),
-		docModifier: NewDocModifier(),
-		state:       defaultState,
-		stateMap:    make(map[string]mongo.CollectionState),
+		Component:      NewComponent("Content"),
+		Table:          tview.NewTable(),
+		Flex:           tview.NewFlex(),
+		View:           tview.NewTextView(),
+		queryBar:       NewInputBar(QueryBarComponent, "Query"),
+		sortBar:        NewInputBar(SortBarComponent, "Sort"),
+		jsonPeeker:     NewDocPeeker(),
+		deleteModal:    NewDeleteModal(),
+		docModifier:    NewDocModifier(),
+		state:          defaultState,
+		stateMap:       make(map[string]mongo.CollectionState),
 		isMultiRowView: false,
 	}
 
@@ -393,39 +393,69 @@ func (c *Content) renderSingleRowView(documents []primitive.M) {
 }
 
 func (c *Content) renderMultiRowView(documents []primitive.M) {
-	row := 2
+	row := 3
 	for _, doc := range documents {
-		c.renderDocument(doc, "", &row, 0)
-		row++ // Add an empty row between documents
+		c.multiRowDocument(doc, &row)
 	}
-	c.Table.Select(2, 0)
+	c.Table.Select(3, 0)
 }
 
-func (c *Content) renderDocument(doc primitive.M, prefix string, row *int, depth int) {
-	for key, value := range doc {
-		fullKey := key
-		if prefix != "" {
-			fullKey = prefix + "." + key
+func (c *Content) multiRowDocument(doc primitive.M, row *int) {
+	jsoned, err := mongo.StringifyDocument(doc)
+	if err != nil {
+		log.Error().Err(err).Msg("Error stringifying document")
+		return
+	}
+	indentedJson, err := mongo.IndentJSON(jsoned)
+	if err != nil {
+		log.Error().Err(err).Msg("Error indenting JSON")
+		return
+	}
+
+	lines := strings.Split(indentedJson.String(), "\n")
+	currentParentKey := ""
+	currentValue := ""
+
+	for i, line := range lines {
+		if i == 0 || i == len(lines)-1 {
+			objCell := tview.NewTableCell(line).SetAlign(tview.AlignLeft).SetTextColor(tcell.ColorGreen).SetSelectable(false)
+			c.Table.SetCell(*row, 0, objCell)
+			*row++
+			continue
 		}
-		
-		switch v := value.(type) {
-		case primitive.M:
-			c.Table.SetCell(*row, depth, tview.NewTableCell(fullKey+": {...}").SetAlign(tview.AlignLeft))
-			*row++
-			c.renderDocument(v, fullKey, row, depth+1)
-		case primitive.A:
-			c.Table.SetCell(*row, depth, tview.NewTableCell(fullKey+": [...]").SetAlign(tview.AlignLeft))
-			*row++
-			for i, item := range v {
-				if subDoc, ok := item.(primitive.M); ok {
-					c.renderDocument(subDoc, fmt.Sprintf("%s[%d]", fullKey, i), row, depth+1)
-				} else {
-					c.Table.SetCell(*row, depth+1, tview.NewTableCell(fmt.Sprintf("[%d]: %v", i, item)).SetAlign(tview.AlignLeft))
-					*row++
-				}
+		trimmedLine := strings.TrimSpace(line)
+		if strings.HasSuffix(trimmedLine, "{") || strings.HasSuffix(trimmedLine, "[") {
+			if currentParentKey != "" {
+				// Add the previous parent key and its value
+				c.Table.SetCell(*row, 0, tview.NewTableCell(currentParentKey+currentValue).SetAlign(tview.AlignLeft))
+				*row++
 			}
-		default:
-			c.Table.SetCell(*row, depth, tview.NewTableCell(fmt.Sprintf("%s: %v", fullKey, v)).SetAlign(tview.AlignLeft))
+			currentParentKey = line
+			currentValue = ""
+		} else if strings.HasPrefix(trimmedLine, "}") || strings.HasPrefix(trimmedLine, "]") {
+			// End of a parent key
+			if currentParentKey != "" {
+				currentValue += line
+				c.Table.SetCell(*row, 0, tview.NewTableCell(currentParentKey+currentValue).SetAlign(tview.AlignLeft))
+				*row++
+			}
+			currentParentKey = ""
+			currentValue = ""
+		} else {
+			// This is a value
+			if currentParentKey == "" {
+				// If there's no current parent key, treat this as a standalone line
+				c.Table.SetCell(*row, 0, tview.NewTableCell(line).SetAlign(tview.AlignLeft))
+				*row++
+			} else {
+				// Append to the current value, removing newlines
+				currentValue += " " + strings.TrimSpace(line)
+			}
+		}
+
+		// Handle the last line, it has to be } as it's end of document
+		if i == len(lines)-1 && currentParentKey != "" {
+			c.Table.SetCell(*row, 0, tview.NewTableCell(currentParentKey+currentValue).SetAlign(tview.AlignLeft))
 			*row++
 		}
 	}
@@ -503,7 +533,7 @@ func (c *Content) viewJson(jsonString string) error {
 
 	c.app.Root.AddPage(JsonViewComponent, c.View, true, true)
 
-	indentedJson, err := mongo.IndientJSON(jsonString)
+	indentedJson, err := mongo.IndentJSON(jsonString)
 	if err != nil {
 		return err
 	}

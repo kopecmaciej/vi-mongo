@@ -141,8 +141,8 @@ func ParseRawDocuments(documents []primitive.M) ([]string, error) {
 	return docs, nil
 }
 
-// IndientJSON indents a JSON string and returns a a buffer
-func IndientJSON(jsonString string) (bytes.Buffer, error) {
+// IndentJSON indents a JSON string and returns a a buffer
+func IndentJSON(jsonString string) (bytes.Buffer, error) {
 	var prettyJson bytes.Buffer
 	err := json.Indent(&prettyJson, []byte(jsonString), "", "  ")
 	if err != nil {

@@ -218,7 +218,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 
 	k.Root.Content = ContentKeys{
 		ExpandDocument: Key{
-			Runes:       []string{"e"},
+			Runes:       []string{"f"},
 			Description: "Expand document",
 		},
 		SwitchView: Key{
