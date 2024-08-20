@@ -42,6 +42,7 @@ type Content struct {
 	docModifier *DocModifier
 	state       mongo.CollectionState
 	stateMap    map[string]mongo.CollectionState // New field to store states for each collection
+	isMultiRowView bool
 }
 
 // NewContent creates a new Content component
@@ -59,6 +60,7 @@ func NewContent() *Content {
 		docModifier: NewDocModifier(),
 		state:       defaultState,
 		stateMap:    make(map[string]mongo.CollectionState),
+		isMultiRowView: false,
 	}
 
 	c.SetAfterInitFunc(c.init)
@@ -123,6 +125,9 @@ func (c *Content) setKeybindings(ctx context.Context) {
 
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
+		case k.Contains(k.Root.Content.SwitchView, event.Name()):
+			c.switchView(ctx)
+			return nil
 		case k.Contains(k.Root.Content.PeekDocument, event.Name()):
 			err := c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
@@ -219,7 +224,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return nil
 		case k.Contains(k.Root.Content.CopyValue, event.Name()):
 			selectedDoc := c.Table.GetCell(c.Table.GetSelection()).Text
-			err := c.copyToClipboard(selectedDoc)
+			err := clipboard.WriteAll(selectedDoc)
 			if err != nil {
 				ShowErrorModal(c.app.Root, "Error copying document", err)
 			} else {
@@ -232,8 +237,11 @@ func (c *Content) setKeybindings(ctx context.Context) {
 	})
 }
 
-func (c *Content) copyToClipboard(text string) error {
-	return clipboard.WriteAll(text)
+// switchView switch between view, where documents are displayed as JSON
+// in single row and in multiple rows, like in MongoDB Compass
+func (c *Content) switchView(ctx context.Context) {
+	c.isMultiRowView = !c.isMultiRowView
+	c.updateContent(ctx)
 }
 
 func (c *Content) render(setFocus bool) {
@@ -345,11 +353,6 @@ func (c *Content) updateContent(ctx context.Context) error {
 		return err
 	}
 
-	parsedDocs, err := mongo.ParseRawDocuments(documents)
-	if err != nil {
-		return err
-	}
-
 	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.Page, c.state.Limit)
 	if c.state.Filter != "" {
 		headerInfo += fmt.Sprintf(", Filter: %v", c.state.Filter)
@@ -368,17 +371,64 @@ func (c *Content) updateContent(ctx context.Context) error {
 		c.Table.SetCell(2, 0, tview.NewTableCell("No documents found"))
 	}
 
-	for i, d := range parsedDocs {
-		dataCell := tview.NewTableCell(d)
-		dataCell.SetAlign(tview.AlignLeft)
-
-		c.Table.SetCell(i+2, 0, dataCell)
-		c.Table.Select(2, 0)
+	if c.isMultiRowView {
+		c.renderMultiRowView(documents)
+	} else {
+		c.renderSingleRowView(documents)
 	}
 
 	c.stateMap[c.state.Db+"."+c.state.Coll] = c.state
 
 	return nil
+}
+
+func (c *Content) renderSingleRowView(documents []primitive.M) {
+	parsedDocs, _ := mongo.ParseRawDocuments(documents)
+	for i, d := range parsedDocs {
+		dataCell := tview.NewTableCell(d)
+		dataCell.SetAlign(tview.AlignLeft)
+		c.Table.SetCell(i+2, 0, dataCell)
+	}
+	c.Table.Select(2, 0)
+}
+
+func (c *Content) renderMultiRowView(documents []primitive.M) {
+	row := 2
+	for _, doc := range documents {
+		c.renderDocument(doc, "", &row, 0)
+		row++ // Add an empty row between documents
+	}
+	c.Table.Select(2, 0)
+}
+
+func (c *Content) renderDocument(doc primitive.M, prefix string, row *int, depth int) {
+	for key, value := range doc {
+		fullKey := key
+		if prefix != "" {
+			fullKey = prefix + "." + key
+		}
+		
+		switch v := value.(type) {
+		case primitive.M:
+			c.Table.SetCell(*row, depth, tview.NewTableCell(fullKey+": {...}").SetAlign(tview.AlignLeft))
+			*row++
+			c.renderDocument(v, fullKey, row, depth+1)
+		case primitive.A:
+			c.Table.SetCell(*row, depth, tview.NewTableCell(fullKey+": [...]").SetAlign(tview.AlignLeft))
+			*row++
+			for i, item := range v {
+				if subDoc, ok := item.(primitive.M); ok {
+					c.renderDocument(subDoc, fmt.Sprintf("%s[%d]", fullKey, i), row, depth+1)
+				} else {
+					c.Table.SetCell(*row, depth+1, tview.NewTableCell(fmt.Sprintf("[%d]: %v", i, item)).SetAlign(tview.AlignLeft))
+					*row++
+				}
+			}
+		default:
+			c.Table.SetCell(*row, depth, tview.NewTableCell(fmt.Sprintf("%s: %v", fullKey, v)).SetAlign(tview.AlignLeft))
+			*row++
+		}
+	}
 }
 
 func (c *Content) queryBarListener(ctx context.Context) {
