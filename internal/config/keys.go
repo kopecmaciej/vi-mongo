@@ -59,7 +59,6 @@ type (
 	}
 
 	ContentKeys struct {
-		ExpandDocument    Key      `json:"expandDocument"`
 		SwitchView        Key      `json:"switchView"`
 		PeekDocument      Key      `json:"peekDocument"`
 		ViewDocument      Key      `json:"viewDocument"`
@@ -67,7 +66,7 @@ type (
 		EditDocument      Key      `json:"editDocument"`
 		DuplicateDocument Key      `json:"duplicateDocument"`
 		DeleteDocument    Key      `json:"deleteDocument"`
-		CopyValue         Key      `json:"copyValue"`
+		CopyLine          Key      `json:"copyValue"`
 		Refresh           Key      `json:"refresh"`
 		ToggleQuery       Key      `json:"toggleQuery"`
 		NextPage          Key      `json:"nextPage"`
@@ -110,7 +109,7 @@ type (
 	DocPeekerKeys struct {
 		MoveToTop    Key `json:"moveToTop"`
 		MoveToBottom Key `json:"moveToBottom"`
-		CopyFullLine Key `json:"copyFullLine"`
+		CopyFullObj  Key `json:"copyFullObj"`
 		CopyValue    Key `json:"copyValue"`
 		Refresh      Key `json:"refresh"`
 	}
@@ -172,11 +171,11 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 
 	k.Root = RootKeys{
 		FocusNext: Key{
-			Keys:        []string{"Tab"},
+			Keys:        []string{"Tab", "Backtab"},
 			Description: "Focus next component",
 		},
 		HideDatabases: Key{
-			Keys:        []string{"Ctrl+S"},
+			Keys:        []string{"Ctrl+N"},
 			Description: "Hide databases",
 		},
 		OpenConnector: Key{
@@ -211,18 +210,14 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Add collection",
 		},
 		DeleteCollection: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"D"},
 			Description: "Delete collection",
 		},
 	}
 
 	k.Root.Content = ContentKeys{
-		ExpandDocument: Key{
-			Runes:       []string{"f"},
-			Description: "Expand document",
-		},
 		SwitchView: Key{
-			Runes:       []string{"g"},
+			Runes:       []string{"f"},
 			Description: "Switch view",
 		},
 		PeekDocument: Key{
@@ -247,15 +242,15 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Duplicate document",
 		},
 		DeleteDocument: Key{
-			Keys:        []string{"Ctrl+D"},
+			Runes:       []string{"D"},
 			Description: "Delete document",
 		},
-		CopyValue: Key{
+		CopyLine: Key{
 			Runes:       []string{"c"},
 			Description: "Copy value",
 		},
 		Refresh: Key{
-			Keys:        []string{"Ctrl+R"},
+			Runes:       []string{"R"},
 			Description: "Refresh",
 		},
 		ToggleQuery: Key{
@@ -267,11 +262,11 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Toggle sort",
 		},
 		NextPage: Key{
-			Keys:        []string{"Ctrl+N"},
+			Runes:       []string{"n"},
 			Description: "Next page",
 		},
 		PreviousPage: Key{
-			Keys:        []string{"Ctrl+B"},
+			Runes:       []string{"b"},
 			Description: "Previous page",
 		},
 	}
@@ -345,7 +340,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Runes:       []string{"G"},
 			Description: "Move to bottom",
 		},
-		CopyFullLine: Key{
+		CopyFullObj: Key{
 			Runes:       []string{"c"},
 			Description: "Copy full object",
 		},
@@ -354,7 +349,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Copy value",
 		},
 		Refresh: Key{
-			Keys:        []string{"Ctrl+R"},
+			Runes:       []string{"R"},
 			Description: "Refresh document",
 		},
 	}

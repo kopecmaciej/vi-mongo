@@ -96,7 +96,7 @@ func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocumen
 		return primitive.NilObjectID, nil
 	}
 
-	parsedDoc, err := mongo.ParseJSONDocument(duplicateDoc)
+	parsedDoc, err := mongo.ParseJsonToBson(duplicateDoc)
 	if err != nil {
 		return primitive.NilObjectID, fmt.Errorf("error parsing JSON: %v", err)
 	}
@@ -122,7 +122,7 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, rawDo
 		return fmt.Errorf("document cannot be empty")
 	}
 
-	parsedDoc, err := mongo.ParseJSONDocument(rawDocument)
+	parsedDoc, err := mongo.ParseJsonToBson(rawDocument)
 	if err != nil {
 		return fmt.Errorf("error parsing JSON: %v", err)
 	}
@@ -141,7 +141,7 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, rawDo
 
 // openEditor opens the editor with the document and returns the edited document
 func (d *DocModifier) openEditor(rawDocument string) (string, error) {
-	prettyJsonBuffer, err := mongo.IndentJSON(rawDocument)
+	prettyJsonBuffer, err := mongo.IndentJson(rawDocument)
 	if err != nil {
 		return "", fmt.Errorf("error indenting JSON: %v", err)
 	}

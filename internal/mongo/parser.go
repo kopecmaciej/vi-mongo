@@ -8,15 +8,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kopecmaciej/mongui/internal/utils"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// StringifyDocument converts a map to a JSON string
-func StringifyDocument(document map[string]interface{}) (string, error) {
+// ParseBsonDocument converts a map to a JSON string
+func ParseBsonDocument(document map[string]interface{}) (string, error) {
 	// convert id to oid
-	converted, err := ParseRawDocuments([]primitive.M{document})
+	converted, err := ParseBsonDocuments([]primitive.M{document})
 	if err != nil {
 		return "", err
 	}
@@ -30,11 +31,9 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 	if query == "" {
 		return map[string]interface{}{}, nil
 	}
-	query = strings.ReplaceAll(query, " ", "")
 
 	if strings.Contains(query, "$") {
-		re := regexp.MustCompile(`(\{|\,)(\$[a-zA-Z0-9_.]+)`)
-		query = re.ReplaceAllString(query, `$1"$2"`)
+		query = utils.QuoteUnquotedKeys(query)
 	}
 
 	query = strings.ReplaceAll(query, "ObjectId(\"", "{\"$oid\": \"")
@@ -54,8 +53,7 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("error parsing date: %w", parseError)
 	}
 
-	re := regexp.MustCompile(`(\{|\,)\s*([a-zA-Z0-9_.]+)\s*:`)
-	query = re.ReplaceAllString(query, `$1 "$2":`)
+	query = utils.QuoteUnquotedKeys(query)
 
 	var filter primitive.M
 	parseError = bson.UnmarshalExtJSON([]byte(query), true, &filter)
@@ -113,9 +111,9 @@ func GetIDFromDocument(document map[string]interface{}) (interface{}, error) {
 	return id, nil
 }
 
-// ParseRawDocuments converts a slice of documents to a slice of strings with
+// ParseBsonDocuments converts a slice of documents to a slice of strings with
 // mongo compatible JSON
-func ParseRawDocuments(documents []primitive.M) ([]string, error) {
+func ParseBsonDocuments(documents []primitive.M) ([]string, error) {
 	var docs []string
 	for _, doc := range documents {
 		for key, value := range doc {
@@ -141,8 +139,8 @@ func ParseRawDocuments(documents []primitive.M) ([]string, error) {
 	return docs, nil
 }
 
-// IndentJSON indents a JSON string and returns a a buffer
-func IndentJSON(jsonString string) (bytes.Buffer, error) {
+// IndentJson indents a JSON string and returns a a buffer
+func IndentJson(jsonString string) (bytes.Buffer, error) {
 	var prettyJson bytes.Buffer
 	err := json.Indent(&prettyJson, []byte(jsonString), "", "  ")
 	if err != nil {
@@ -153,40 +151,29 @@ func IndentJSON(jsonString string) (bytes.Buffer, error) {
 	return prettyJson, nil
 }
 
-// ParseJSONDocument converts a JSON string to a primitive.M document
-func ParseJSONDocument(jsonDoc string) (primitive.M, error) {
-	parsedDocs, err := ParseJSONDocuments([]string{jsonDoc})
+// ParseJsonToBson converts a JSON string to a primitive.M document
+func ParseJsonToBson(jsonDoc string) (primitive.M, error) {
+	var doc map[string]interface{}
+	err := json.Unmarshal([]byte(jsonDoc), &doc)
 	if err != nil {
-		return primitive.M{}, err
+		return primitive.M{}, fmt.Errorf("error unmarshaling JSON: %w", err)
 	}
-	return parsedDocs[0], nil
+
+	return convertToBson(doc)
 }
 
-// ParseJSONDocuments converts a slice of JSON strings to a slice of primitive.M documents
+// convertToBson converts a map[string]interface{} to a primitive.M document
 // with MongoDB-compatible types (ObjectId for $oid and DateTime for $date)
-func ParseJSONDocuments(jsonDocs []string) ([]primitive.M, error) {
-	var documents []primitive.M
-
-	for _, jsonDoc := range jsonDocs {
-		var doc map[string]interface{}
-		err := json.Unmarshal([]byte(jsonDoc), &doc)
+func convertToBson(doc map[string]interface{}) (primitive.M, error) {
+	convertedDoc := make(primitive.M)
+	for key, value := range doc {
+		convertedValue, err := convertValue(value)
 		if err != nil {
-			return nil, fmt.Errorf("error unmarshaling JSON: %w", err)
+			return nil, fmt.Errorf("error converting value for key %s: %w", key, err)
 		}
-
-		convertedDoc := make(primitive.M)
-		for key, value := range doc {
-			convertedValue, err := convertValue(value)
-			if err != nil {
-				return nil, fmt.Errorf("error converting value for key %s: %w", key, err)
-			}
-			convertedDoc[key] = convertedValue
-		}
-
-		documents = append(documents, convertedDoc)
+		convertedDoc[key] = convertedValue
 	}
-
-	return documents, nil
+	return convertedDoc, nil
 }
 
 // convertValue converts a value to a compatible MongoDB type

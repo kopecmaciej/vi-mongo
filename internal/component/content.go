@@ -10,6 +10,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
+	"github.com/kopecmaciej/mongui/internal/utils"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -21,11 +22,6 @@ const (
 	QueryBarComponent = "QueryBar"
 	SortBarComponent  = "SortBar"
 )
-
-var defaultState = mongo.CollectionState{
-	Page:  0,
-	Limit: 50,
-}
 
 // Content is a component that displays documents in a table
 type Content struct {
@@ -58,7 +54,7 @@ func NewContent() *Content {
 		jsonPeeker:     NewDocPeeker(),
 		deleteModal:    NewDeleteModal(),
 		docModifier:    NewDocModifier(),
-		state:          defaultState,
+		state:          mongo.CollectionState{},
 		stateMap:       make(map[string]mongo.CollectionState),
 		isMultiRowView: false,
 	}
@@ -163,7 +159,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 				ShowErrorModal(c.app.Root, "Error getting inserted document", err)
 				return nil
 			}
-			strDoc, err := mongo.StringifyDocument(insertedDoc)
+			strDoc, err := mongo.ParseBsonDocument(insertedDoc)
 			if err != nil {
 				ShowErrorModal(c.app.Root, "Error stringifying document", err)
 				return nil
@@ -196,7 +192,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 					c.app.SetFocus(c.Table)
 				})
 			}
-			strDoc, err := mongo.StringifyDocument(duplicatedDoc)
+			strDoc, err := mongo.ParseBsonDocument(duplicatedDoc)
 			if err != nil {
 				defer ShowErrorModalAndFocus(c.app.Root, "Error stringifying document", err, func() {
 					c.app.SetFocus(c.Table)
@@ -221,6 +217,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			c.render(true)
 			return nil
 		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
+			log.Debug().Msg(c.Table.GetCell(c.Table.GetSelection()).Text)
 			err := c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
 				defer ShowErrorModalAndFocus(c.app.Root, "Error deleting document", err, func() {
@@ -242,7 +239,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.PreviousPage, event.Name()):
 			c.goToPrevMongoPage(ctx)
 			return nil
-		case k.Contains(k.Root.Content.CopyValue, event.Name()):
+		case k.Contains(k.Root.Content.CopyLine, event.Name()):
 			selectedDoc := c.Table.GetCell(c.Table.GetSelection()).Text
 			err := clipboard.WriteAll(selectedDoc)
 			if err != nil {
@@ -278,8 +275,6 @@ func (c *Content) render(setFocus bool) {
 	}
 
 	c.Flex.AddItem(c.Table, 0, 1, true)
-	_, _, _, height := c.Table.GetInnerRect()
-	c.state.Limit = int64(height) - 4
 
 	if setFocus {
 		c.app.SetFocus(focusPrimitive)
@@ -351,12 +346,18 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 	c.sortBar.SetText("")
 
 	state, ok := c.stateMap[db+"."+coll]
-	if !ok {
-		state = defaultState
+	if ok {
+		c.state = state
+	} else {
+		state = mongo.CollectionState{
+			Page: 0,
+		}
+		_, _, _, height := c.Table.GetInnerRect()
+		state.Limit = int64(height) - 3
 		state.Db = db
 		state.Coll = coll
+		c.state = state
 	}
-	c.state = state
 	return c.updateContent(ctx)
 }
 
@@ -400,7 +401,7 @@ func (c *Content) updateContent(ctx context.Context) error {
 }
 
 func (c *Content) renderSingleRowView(documents []primitive.M) {
-	parsedDocs, _ := mongo.ParseRawDocuments(documents)
+	parsedDocs, _ := mongo.ParseBsonDocuments(documents)
 	row := 2
 	for _, d := range parsedDocs {
 		dataCell := tview.NewTableCell(d)
@@ -408,7 +409,7 @@ func (c *Content) renderSingleRowView(documents []primitive.M) {
 		c.Table.SetCell(row, 0, dataCell)
 		row++
 	}
-	c.Table.Select(2, 0)
+	c.Table.ScrollToBeginning()
 }
 
 func (c *Content) renderMultiRowView(documents []primitive.M) {
@@ -416,16 +417,16 @@ func (c *Content) renderMultiRowView(documents []primitive.M) {
 	for _, doc := range documents {
 		c.multiRowDocument(doc, &row)
 	}
-	c.Table.Select(2, 0)
+	c.Table.ScrollToBeginning()
 }
 
 func (c *Content) multiRowDocument(doc primitive.M, row *int) {
-	jsoned, err := mongo.StringifyDocument(doc)
+	jsoned, err := mongo.ParseBsonDocument(doc)
 	if err != nil {
 		log.Error().Err(err).Msg("Error stringifying document")
 		return
 	}
-	indentedJson, err := mongo.IndentJSON(jsoned)
+	indentedJson, err := mongo.IndentJson(jsoned)
 	if err != nil {
 		log.Error().Err(err).Msg("Error indenting JSON")
 		return
@@ -482,7 +483,7 @@ func (c *Content) multiRowDocument(doc primitive.M, row *int) {
 
 func (c *Content) queryBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.Filter = strings.ReplaceAll(text, " ", "")
+		c.state.Filter = utils.TrimJson(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		c.updateContent(ctx)
@@ -499,7 +500,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 
 func (c *Content) sortBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.Sort = strings.ReplaceAll(text, " ", "")
+		c.state.Sort = utils.TrimJson(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		c.updateContent(ctx)
@@ -551,7 +552,7 @@ func (c *Content) viewJson(jsonString string) error {
 
 	c.app.Root.AddPage(JsonViewComponent, c.View, true, true)
 
-	indentedJson, err := mongo.IndentJSON(jsonString)
+	indentedJson, err := mongo.IndentJson(jsonString)
 	if err != nil {
 		return err
 	}
@@ -629,11 +630,11 @@ func (c *Content) getMultiRowDocument() (string, error) {
 			idValue = strID
 		}
 		if idValue == value {
-			jsoned, err := mongo.StringifyDocument(doc)
+			jsoned, err := mongo.ParseBsonDocument(doc)
 			if err != nil {
 				return "", err
 			}
-			indentedJson, err := mongo.IndentJSON(jsoned)
+			indentedJson, err := mongo.IndentJson(jsoned)
 			if err != nil {
 				return "", err
 			}

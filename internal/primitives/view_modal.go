@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/internal/utils"
 	"github.com/kopecmaciej/tview"
 )
 
@@ -436,6 +437,9 @@ func (m *ModalView) MoveToBottom() {
 	}
 }
 
+// CopySelectedLine copies the selected line to the clipboard.
+// copyType can be "full" or "value". "full" will copy the entire highlighted lines,
+// while "value" will copy only the value of the highlighted line.
 func (m *ModalView) CopySelectedLine(copyFunc func(text string) error, copyType string) error {
 	_, _, width, _ := m.GetRect()
 	lines := tview.WordWrap(m.text.Content, width-4)
@@ -449,8 +453,7 @@ func (m *ModalView) CopySelectedLine(copyFunc func(text string) error, copyType 
 		switch copyType {
 		case "full":
 			textToCopy = strings.Join(highlightedLines, "\n")
-			textToCopy = strings.TrimSuffix(textToCopy, ",")
-			textToCopy = strings.ReplaceAll(textToCopy, " ", "")
+			textToCopy = utils.TrimJson(textToCopy)
 			textToCopy = strings.ReplaceAll(textToCopy, "{", "{ ")
 			textToCopy = strings.ReplaceAll(textToCopy, "}", " }")
 		case "value":
@@ -465,7 +468,9 @@ func (m *ModalView) CopySelectedLine(copyFunc func(text string) error, copyType 
 			textToCopy = strings.Join(highlightedLines, "\n")
 		}
 
-		return copyFunc(strings.TrimSpace(textToCopy))
+		textToCopy = strings.TrimSpace(textToCopy)
+		textToCopy = strings.TrimSuffix(textToCopy, ",")
+		return copyFunc(textToCopy)
 	}
 	return nil
 }

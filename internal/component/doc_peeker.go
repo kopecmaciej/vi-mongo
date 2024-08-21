@@ -91,7 +91,7 @@ func (dc *DocPeeker) setKeybindings(ctx context.Context) {
 		case k.Contains(k.DocPeeker.MoveToBottom, event.Name()):
 			dc.MoveToBottom()
 			return nil
-		case k.Contains(k.DocPeeker.CopyFullLine, event.Name()):
+		case k.Contains(k.DocPeeker.CopyFullObj, event.Name()):
 			if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "full"); err != nil {
 				ShowErrorModal(dc.app.Root, "Error copying full line", err)
 			}
