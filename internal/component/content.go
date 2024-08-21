@@ -278,7 +278,7 @@ func (c *Content) render(setFocus bool) {
 	}
 
 	c.Flex.AddItem(c.Table, 0, 1, true)
-	_, _, _, height := c.Flex.GetInnerRect()
+	_, _, _, height := c.Table.GetInnerRect()
 	c.state.Limit = int64(height) - 4
 
 	if setFocus {
@@ -483,7 +483,6 @@ func (c *Content) multiRowDocument(doc primitive.M, row *int) {
 func (c *Content) queryBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
 		c.state.Filter = strings.ReplaceAll(text, " ", "")
-		log.Info().Msgf("Filter: %v", c.state.Filter)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		c.updateContent(ctx)

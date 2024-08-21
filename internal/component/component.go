@@ -108,12 +108,12 @@ func (c *Component) GetIdentifier() manager.Component {
 	return c.identifier
 }
 
-// Subscribe subscribes the component to the global events.
+// Subscribe subscribes to the component events.
 func (c *Component) Subscribe() {
 	c.listener = c.app.Manager.Subscribe(c.identifier)
 }
 
-// SendEvent sends an event to the app.
+// Broadcast sends an event to all listeners.
 func (c *Component) BroadcastEvent(event manager.EventMsg) {
 	c.app.Manager.Broadcast(event)
 }

@@ -6,10 +6,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-const (
-	GlobalComponent = "Global"
-)
-
 type (
 	Component string
 	// EventMsg is a wrapper for tcell.EventKey that also contains
@@ -18,12 +14,6 @@ type (
 		*tcell.EventKey
 		Sender  Component
 		Message interface{}
-	}
-
-	// Listener
-	Listener struct {
-		Component Component
-		Channel   chan EventMsg
 	}
 
 	// ComponentManager is a helper to manage different Components
@@ -92,7 +82,7 @@ func (eh *ComponentManager) Unsubscribe(component Component, listener chan Event
 	delete(eh.listeners, component)
 }
 
-// Broadcast sends an event to a specific component
+// Broadcast sends an event to all listeners
 func (eh *ComponentManager) Broadcast(event EventMsg) {
 	eh.mutex.Lock()
 	defer eh.mutex.Unlock()
@@ -101,7 +91,7 @@ func (eh *ComponentManager) Broadcast(event EventMsg) {
 	}
 }
 
-// BroadcastTo sends an event to a specific component
+// SendTo sends an event to a specific component
 func (eh *ComponentManager) SendTo(component Component, event EventMsg) {
 	eh.mutex.Lock()
 	defer eh.mutex.Unlock()
