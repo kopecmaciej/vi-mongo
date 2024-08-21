@@ -16,10 +16,11 @@ import (
 )
 
 const (
-	ContentComponent  = "Content"
-	JsonViewComponent = "JsonView"
-	QueryBarComponent = "QueryBar"
-	SortBarComponent  = "SortBar"
+	ContentComponent    = "Content"
+	JsonViewComponent   = "JsonView"
+	QueryBarComponent   = "QueryBar"
+	SortBarComponent    = "SortBar"
+	CommandBarComponent = "CommandBar"
 )
 
 var defaultState = mongo.CollectionState{
@@ -37,6 +38,7 @@ type Content struct {
 	style          *config.ContentStyle
 	queryBar       *InputBar
 	sortBar        *InputBar
+	commandBar     *InputBar
 	jsonPeeker     *DocPeeker
 	deleteModal    *DeleteModal
 	docModifier    *DocModifier
@@ -55,6 +57,7 @@ func NewContent() *Content {
 		View:           tview.NewTextView(),
 		queryBar:       NewInputBar(QueryBarComponent, "Query"),
 		sortBar:        NewInputBar(SortBarComponent, "Sort"),
+		commandBar:     NewInputBar(CommandBarComponent, "Command"),
 		jsonPeeker:     NewDocPeeker(),
 		deleteModal:    NewDeleteModal(),
 		docModifier:    NewDocModifier(),
@@ -89,6 +92,9 @@ func (c *Content) init() error {
 	if err := c.sortBar.Init(c.app); err != nil {
 		return err
 	}
+	if err := c.commandBar.Init(c.app); err != nil {
+		return err
+	}
 
 	c.queryBar.EnableAutocomplete()
 	c.queryBar.EnableHistory()
@@ -101,6 +107,7 @@ func (c *Content) init() error {
 
 	c.queryBarListener(ctx)
 	c.sortBarListener(ctx)
+	c.commandBarListener(ctx)
 
 	return nil
 }
@@ -212,12 +219,16 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			}
 			c.render(true)
 			return nil
-		case k.Contains(k.Root.Content.ToggleSort, event.Name()):
+		case k.Contains(k.Root.Content.SortBar, event.Name()):
 			if c.state.Sort != "" {
 				c.sortBar.Toggle(c.state.Sort)
 			} else {
 				c.sortBar.Toggle("")
 			}
+			c.render(true)
+			return nil
+		case k.Contains(k.Root.Content.CommandBar, event.Name()):
+			c.commandBar.Toggle("")
 			c.render(true)
 			return nil
 		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
@@ -275,6 +286,11 @@ func (c *Content) render(setFocus bool) {
 	if c.sortBar.IsEnabled() {
 		c.Flex.AddItem(c.sortBar, 3, 0, false)
 		focusPrimitive = c.sortBar
+	}
+
+	if c.commandBar.IsEnabled() {
+		c.Flex.AddItem(c.commandBar, 3, 0, false)
+		focusPrimitive = c.commandBar
 	}
 
 	c.Flex.AddItem(c.Table, 0, 1, true)
@@ -512,6 +528,72 @@ func (c *Content) sortBarListener(ctx context.Context) {
 	}
 
 	c.sortBar.DoneFuncHandler(acceptFunc, rejectFunc)
+}
+
+func (c *Content) commandBarListener(ctx context.Context) {
+	acceptFunc := func(text string) {
+		err := c.executeCustomCommand(ctx, text)
+		if err != nil {
+			ShowErrorModalAndFocus(c.app.Root, "Error executing custom command", err, func() {
+				c.app.SetFocus(c.Table)
+			})
+		}
+		if c.Flex.HasItem(c.commandBar) {
+			c.Flex.RemoveItem(c.commandBar)
+		}
+	}
+	rejectFunc := func() {
+		c.render(true)
+	}
+
+	c.commandBar.DoneFuncHandler(acceptFunc, rejectFunc)
+}
+
+func (c *Content) executeCustomCommand(ctx context.Context, command string) error {
+	parsedCommand, err := mongo.ParseCommand(command)
+	if err != nil {
+		return err
+	}
+	log.Debug().Msgf("Parsed command: %v", parsedCommand)
+	result, err := c.dao.RunCommand(ctx, c.state.Db, parsedCommand)
+	if err != nil {
+		return err
+	}
+
+	c.Table.Clear()
+	c.displayCommandResult(result)
+	return nil
+}
+
+func (c *Content) displayCommandResult(result primitive.M) {
+	c.Table.SetCell(0, 0, tview.NewTableCell("Command Result").SetSelectable(false))
+
+	row := 1
+	var displayValue func(key string, value interface{}, indent int)
+	displayValue = func(key string, value interface{}, indent int) {
+		indentation := strings.Repeat("  ", indent)
+		switch v := value.(type) {
+		case primitive.M:
+			c.Table.SetCell(row, 0, tview.NewTableCell(fmt.Sprintf("%s%s:", indentation, key)).SetSelectable(false))
+			row++
+			for k, val := range v {
+				displayValue(k, val, indent+1)
+			}
+		case primitive.A:
+			c.Table.SetCell(row, 0, tview.NewTableCell(fmt.Sprintf("%s%s:", indentation, key)).SetSelectable(false))
+			row++
+			for i, val := range v {
+				displayValue(fmt.Sprintf("[%d]", i), val, indent+1)
+			}
+		default:
+			c.Table.SetCell(row, 0, tview.NewTableCell(fmt.Sprintf("%s%s: %v", indentation, key, v)).SetSelectable(false))
+			row++
+		}
+	}
+
+	for key, value := range result {
+		displayValue(key, value, 0)
+	}
 }
 
 // addCell adds a new cell to the table

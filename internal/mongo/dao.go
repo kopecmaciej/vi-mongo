@@ -217,6 +217,19 @@ func (d *Dao) ForceClose(ctx context.Context) error {
 	return nil
 }
 
+func (d *Dao) RunCommand(ctx context.Context, db string, command primitive.D) (primitive.M, error) {
+	results := primitive.M{}
+
+	err := d.client.Database(db).RunCommand(ctx, command).Decode(&results)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debug().Msgf("Command run, db: %v, command: %v, results: %v", db, command, results)
+
+	return results, nil
+}
+
 func (d *Dao) runAdminCommand(ctx context.Context, key string, value interface{}) (primitive.M, error) {
 	results := primitive.M{}
 	command := primitive.D{{Key: key, Value: value}}

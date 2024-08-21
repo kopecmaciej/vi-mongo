@@ -73,7 +73,8 @@ type (
 		NextPage          Key      `json:"nextPage"`
 		PreviousPage      Key      `json:"previousPage"`
 		QueryBar          QueryBar `json:"queryBar"`
-		ToggleSort        Key      `json:"toggleSort"`
+		SortBar           Key      `json:"sortBar"`
+		CommandBar        Key      `json:"commandBar"`
 	}
 
 	QueryBar struct {
@@ -262,9 +263,13 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Runes:       []string{"/"},
 			Description: "Toggle query",
 		},
-		ToggleSort: Key{
+		SortBar: Key{
 			Runes:       []string{"s"},
 			Description: "Toggle sort",
+		},
+		CommandBar: Key{
+			Runes:       []string{":"},
+			Description: "Toggle command bar",
 		},
 		NextPage: Key{
 			Keys:        []string{"Ctrl+N"},

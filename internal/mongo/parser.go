@@ -226,3 +226,26 @@ func convertValue(value interface{}) (interface{}, error) {
 		return v, nil
 	}
 }
+
+// ParseCommand converts a string command to a primitive.D
+func ParseCommand(command string) (primitive.D, error) {
+	// Trim spaces and remove newlines
+	command = strings.TrimSpace(command)
+	command = strings.ReplaceAll(command, "\n", " ")
+
+	log.Debug().Msgf("Parsed command: %v", command)
+	// Parse the command string into a map
+	var commandMap map[string]interface{}
+	err := json.Unmarshal([]byte(command), &commandMap)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing command: %w", err)
+	}
+
+	// Convert the map to a primitive.D
+	result := make(primitive.D, 0, len(commandMap))
+	for k, v := range commandMap {
+		result = append(result, primitive.E{Key: k, Value: v})
+	}
+
+	return result, nil
+}
