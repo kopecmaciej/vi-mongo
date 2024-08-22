@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	RootComponent manager.Component = "Root"
+	RootComponent = "Root"
 )
 
 // Root is a component that manages visaibility of other components
 type Root struct {
-	*Component
+	*BaseComponent
 	*tview.Pages
 
 	mainFlex  *tview.Flex
@@ -30,14 +30,14 @@ type Root struct {
 
 func NewRoot() *Root {
 	r := &Root{
-		Component: NewComponent(RootComponent),
-		Pages:     tview.NewPages(),
-		mainFlex:  tview.NewFlex(),
-		innerFlex: tview.NewFlex(),
-		connector: NewConnector(),
-		header:    NewHeader(),
-		databases: NewDatabases(),
-		content:   NewContent(),
+		BaseComponent: NewBaseComponent(RootComponent),
+		Pages:         tview.NewPages(),
+		mainFlex:      tview.NewFlex(),
+		innerFlex:     tview.NewFlex(),
+		connector:     NewConnector(),
+		header:        NewHeader(),
+		databases:     NewDatabases(),
+		content:       NewContent(),
 	}
 
 	return r

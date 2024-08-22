@@ -5,16 +5,15 @@ import (
 	"strings"
 
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/tview"
 )
 
 const (
-	WelcomeComponent = manager.Component("Welcome")
+	WelcomeComponent = "Welcome"
 )
 
 type Welcome struct {
-	*Component
+	*BaseComponent
 	*tview.Flex
 
 	// Form
@@ -26,9 +25,9 @@ type Welcome struct {
 
 func NewWelcome() *Welcome {
 	w := &Welcome{
-		Component: NewComponent(WelcomeComponent),
-		Flex:      tview.NewFlex(),
-		form:      tview.NewForm(),
+		BaseComponent: NewBaseComponent(WelcomeComponent),
+		Flex:          tview.NewFlex(),
+		form:          tview.NewForm(),
 	}
 
 	return w

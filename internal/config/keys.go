@@ -210,7 +210,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Add collection",
 		},
 		DeleteCollection: Key{
-			Keys:        []string{"D"},
+			Runes:       []string{"D"},
 			Description: "Delete collection",
 		},
 	}

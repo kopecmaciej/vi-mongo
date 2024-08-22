@@ -6,14 +6,13 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
 
 type InputBar struct {
-	*Component
+	*BaseComponent
 	*tview.InputField
 
 	historyModal   *HistoryModal
@@ -24,9 +23,9 @@ type InputBar struct {
 	defaultText    string
 }
 
-func NewInputBar(componentName manager.Component, label string) *InputBar {
+func NewInputBar(componentName string, label string) *InputBar {
 	i := &InputBar{
-		Component: NewComponent(manager.Component(componentName)),
+		BaseComponent: NewBaseComponent(componentName),
 		InputField: tview.NewInputField().
 			SetLabel(" " + label + ": "),
 		enabled:        false,
@@ -211,7 +210,7 @@ func (i *InputBar) displayHistoryModal() {
 
 // Draws default text if input is empty
 func (i *InputBar) Toggle(text string) {
-	i.Component.Toggle()
+	i.BaseComponent.Toggle()
 	if text == "" {
 		text = i.GetText()
 	}

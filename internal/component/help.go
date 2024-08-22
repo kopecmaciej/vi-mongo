@@ -5,17 +5,16 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/tview"
 )
 
 const (
-	HelpComponent manager.Component = "Help"
+	HelpComponent = "Help"
 )
 
 // Help is a component that provides a help screen for keybindings
 type Help struct {
-	*Component
+	*BaseComponent
 	*tview.Flex
 
 	Table *tview.Table
@@ -25,9 +24,9 @@ type Help struct {
 // NewHelp creates a new Help component
 func NewHelp() *Help {
 	h := &Help{
-		Component: NewComponent(HelpComponent),
-		Flex:      tview.NewFlex(),
-		Table:     tview.NewTable(),
+		BaseComponent: NewBaseComponent(HelpComponent),
+		Flex:          tview.NewFlex(),
+		Table:         tview.NewTable(),
 	}
 
 	h.SetAfterInitFunc(h.init)

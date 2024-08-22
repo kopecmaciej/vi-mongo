@@ -11,14 +11,14 @@ import (
 )
 
 const (
-	HistoryModalComponent manager.Component = "HistoryModal"
+	HistoryModalComponent = "HistoryModal"
 
 	maxHistory = 10
 )
 
 // HistoryModal is a modal with history of queries
 type HistoryModal struct {
-	*Component
+	*BaseComponent
 	*primitives.ListModal
 
 	style *config.HistoryStyle
@@ -26,8 +26,8 @@ type HistoryModal struct {
 
 func NewHistoryModal() *HistoryModal {
 	h := &HistoryModal{
-		Component: NewComponent(HistoryModalComponent),
-		ListModal: primitives.NewListModal(),
+		BaseComponent: NewBaseComponent(HistoryModalComponent),
+		ListModal:     primitives.NewListModal(),
 	}
 
 	h.SetAfterInitFunc(h.init)

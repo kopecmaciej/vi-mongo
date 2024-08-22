@@ -7,13 +7,12 @@ import (
 	"time"
 
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
 
 const (
-	HeaderComponent manager.Component = "Header"
+	HeaderComponent = "Header"
 )
 
 type (
@@ -29,7 +28,7 @@ type (
 	// Header is a component that displays information about the database
 	// in the header of the application
 	Header struct {
-		*Component
+		*BaseComponent
 		*tview.Table
 
 		style    *config.HeaderStyle
@@ -40,9 +39,9 @@ type (
 // NewHeader creates a new header component
 func NewHeader() *Header {
 	h := Header{
-		Component: NewComponent(HeaderComponent),
-		Table:     tview.NewTable(),
-		baseInfo:  make(BaseInfo),
+		BaseComponent: NewBaseComponent(HeaderComponent),
+		Table:         tview.NewTable(),
+		baseInfo:      make(BaseInfo),
 	}
 
 	h.SetAfterInitFunc(h.init)

@@ -25,7 +25,7 @@ const (
 
 // Content is a component that displays documents in a table
 type Content struct {
-	*Component
+	*BaseComponent
 	*tview.Flex
 
 	Table          *tview.Table
@@ -45,7 +45,7 @@ type Content struct {
 // It also initializes all subcomponents
 func NewContent() *Content {
 	c := &Content{
-		Component:      NewComponent("Content"),
+		BaseComponent:  NewBaseComponent("Content"),
 		Table:          tview.NewTable(),
 		Flex:           tview.NewFlex(),
 		View:           tview.NewTextView(),
@@ -217,7 +217,6 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			c.render(true)
 			return nil
 		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
-			log.Debug().Msg(c.Table.GetCell(c.Table.GetSelection()).Text)
 			err := c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
 				defer ShowErrorModalAndFocus(c.app.Root, "Error deleting document", err, func() {
@@ -240,14 +239,10 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			c.goToPrevMongoPage(ctx)
 			return nil
 		case k.Contains(k.Root.Content.CopyLine, event.Name()):
-			selectedDoc := c.Table.GetCell(c.Table.GetSelection()).Text
+			selectedDoc := utils.TrimJson(c.Table.GetCell(c.Table.GetSelection()).Text)
 			err := clipboard.WriteAll(selectedDoc)
 			if err != nil {
 				ShowErrorModalAndFocus(c.app.Root, "Error copying document", err, func() {
-					c.app.SetFocus(c.Table)
-				})
-			} else {
-				ShowInfoModalAndFocus(c.app.Root, "Value copied to clipboard", func() {
 					c.app.SetFocus(c.Table)
 				})
 			}

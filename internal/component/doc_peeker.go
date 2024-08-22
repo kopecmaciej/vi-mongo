@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/kopecmaciej/mongui/internal/primitives"
 
@@ -17,7 +16,7 @@ import (
 )
 
 const (
-	DocPeekerComponent manager.Component = "DocPeeker"
+	DocPeekerComponent = "DocPeeker"
 )
 
 // peekerState is used to store the state of the document being peeked at
@@ -28,7 +27,7 @@ type peekerState struct {
 
 // DocPeeker is a component that provides a modal view for peeking at a document
 type DocPeeker struct {
-	*Component
+	*BaseComponent
 	*primitives.ModalView
 
 	style       *config.DocPeekerStyle
@@ -39,9 +38,9 @@ type DocPeeker struct {
 // NewDocPeeker creates a new DocPeeker component
 func NewDocPeeker() *DocPeeker {
 	peekr := &DocPeeker{
-		Component:   NewComponent(DocPeekerComponent),
-		ModalView:   primitives.NewModalView(),
-		docModifier: NewDocModifier(),
+		BaseComponent: NewBaseComponent(DocPeekerComponent),
+		ModalView:     primitives.NewModalView(),
+		docModifier:   NewDocModifier(),
 	}
 
 	peekr.SetAfterInitFunc(peekr.init)

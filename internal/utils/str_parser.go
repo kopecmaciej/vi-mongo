@@ -7,11 +7,15 @@ import (
 )
 
 // TrimJson removes whitespace from a JSON string, except within quotes
+// and also removes comma from the end of the string
 func TrimJson(s string) string {
+	s = strings.TrimSuffix(s, ",")
+
 	var result strings.Builder
 	inQuotes := false
 	prevChar := ' '
 
+	// remove whitespace from a JSON string, except within quotes
 	for _, char := range s {
 		if char == '"' && prevChar != '\\' {
 			inQuotes = !inQuotes

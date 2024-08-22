@@ -9,24 +9,23 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
-	DocModifierComponent manager.Component = "DocModifier"
+	DocModifierComponent = "DocModifier"
 )
 
 // DocModifier is a component that allows editing JSON documents
 type DocModifier struct {
-	*Component
+	*BaseComponent
 }
 
 func NewDocModifier() *DocModifier {
 	return &DocModifier{
-		Component: NewComponent(DocModifierComponent),
+		BaseComponent: NewBaseComponent(DocModifierComponent),
 	}
 }
 

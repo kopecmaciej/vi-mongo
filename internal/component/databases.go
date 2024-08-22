@@ -17,7 +17,7 @@ const (
 
 // Databases is flex container for DatabaseTree and InputBar
 type Databases struct {
-	*Component
+	*BaseComponent
 	*tview.Flex
 
 	dbTree       *DatabaseTree
@@ -28,11 +28,11 @@ type Databases struct {
 
 func NewDatabases() *Databases {
 	s := &Databases{
-		Component: NewComponent(DatabasesComponent),
-		Flex:      tview.NewFlex(),
-		dbTree:    NewDatabaseTree(),
-		filterBar: NewInputBar(FilterBarComponent, "Filter"),
-		mutex:     sync.Mutex{},
+		BaseComponent: NewBaseComponent(DatabasesComponent),
+		Flex:          tview.NewFlex(),
+		dbTree:        NewDatabaseTree(),
+		filterBar:     NewInputBar(FilterBarComponent, "Filter"),
+		mutex:         sync.Mutex{},
 	}
 
 	s.SetAfterInitFunc(s.init)

@@ -7,10 +7,10 @@ import (
 	"github.com/kopecmaciej/mongui/internal/mongo"
 )
 
-// Component is a base struct for all components.
+// BaseComponent is a base struct for all components.
 // It contains all the basic fields and functions that are used by all components.
-// It also implements the Component interface.
-type Component struct {
+// It also implements the BaseComponent interface.
+type BaseComponent struct {
 	// enabled is a flag that indicates if the component is enabled.
 	enabled bool
 
@@ -35,16 +35,16 @@ type Component struct {
 	mutex sync.Mutex
 }
 
-// NewComponent is a constructor for the Component struct.
-func NewComponent(identifier manager.Component) *Component {
-	return &Component{
-		identifier: identifier,
+// NewBaseComponent is a constructor for the BaseComponent struct.
+func NewBaseComponent(identifier string) *BaseComponent {
+	return &BaseComponent{
+		identifier: manager.Component(identifier),
 	}
 }
 
 // Init is a function that is called when the component is initialized.
 // If custom initialization is needed, this function should be overriden.
-func (c *Component) Init(app *App) error {
+func (c *BaseComponent) Init(app *App) error {
 	if c.app != nil && c.identifier != "" {
 		return nil
 	}
@@ -62,7 +62,7 @@ func (c *Component) Init(app *App) error {
 }
 
 // Enable sets the enabled flag.
-func (c *Component) Enable() {
+func (c *BaseComponent) Enable() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.enabled = true
@@ -70,7 +70,7 @@ func (c *Component) Enable() {
 }
 
 // Disable unsets the enabled flag.
-func (c *Component) Disable() {
+func (c *BaseComponent) Disable() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.enabled = false
@@ -78,7 +78,7 @@ func (c *Component) Disable() {
 }
 
 // Toggle toggles the enabled flag.
-func (c *Component) Toggle() {
+func (c *BaseComponent) Toggle() {
 	if c.IsEnabled() {
 		c.Disable()
 	} else {
@@ -87,38 +87,38 @@ func (c *Component) Toggle() {
 }
 
 // IsEnabled returns the enabled flag.
-func (c *Component) IsEnabled() bool {
+func (c *BaseComponent) IsEnabled() bool {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	return c.enabled
 }
 
 // SetAfterInitFunc sets the optional function that will be run at the end of the Init function.
-func (c *Component) SetAfterInitFunc(afterInitFunc func() error) {
+func (c *BaseComponent) SetAfterInitFunc(afterInitFunc func() error) {
 	c.afterInitFunc = afterInitFunc
 }
 
 // GetComponent returns the component.
-func (c *Component) GetComponent() *Component {
+func (c *BaseComponent) GetComponent() *BaseComponent {
 	return c
 }
 
 // GetIdentifier returns the identifier of the component.
-func (c *Component) GetIdentifier() manager.Component {
+func (c *BaseComponent) GetIdentifier() manager.Component {
 	return c.identifier
 }
 
 // Subscribe subscribes to the component events.
-func (c *Component) Subscribe() {
+func (c *BaseComponent) Subscribe() {
 	c.listener = c.app.Manager.Subscribe(c.identifier)
 }
 
 // Broadcast sends an event to all listeners.
-func (c *Component) BroadcastEvent(event manager.EventMsg) {
+func (c *BaseComponent) BroadcastEvent(event manager.EventMsg) {
 	c.app.Manager.Broadcast(event)
 }
 
 // SendToComponent sends an event to the component.
-func (c *Component) SendToComponent(component manager.Component, event manager.EventMsg) {
+func (c *BaseComponent) SendToComponent(component manager.Component, event manager.EventMsg) {
 	c.app.Manager.SendTo(component, event)
 }

@@ -5,17 +5,16 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/tview"
 )
 
 const (
-	ConnectorComponent = manager.Component("Connector")
+	ConnectorComponent = "Connector"
 )
 
 // Connector is a view for connecting to mongodb using tview package
 type Connector struct {
-	*Component
+	*BaseComponent
 	*tview.Flex
 
 	// form is for creating new connection
@@ -31,10 +30,10 @@ type Connector struct {
 // NewConnector creates a new connection view
 func NewConnector() *Connector {
 	c := &Connector{
-		Component: NewComponent(ConnectorComponent),
-		Flex:      tview.NewFlex(),
-		form:      tview.NewForm(),
-		list:      tview.NewList(),
+		BaseComponent: NewBaseComponent(ConnectorComponent),
+		Flex:          tview.NewFlex(),
+		form:          tview.NewForm(),
+		list:          tview.NewList(),
 	}
 
 	return c

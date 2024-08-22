@@ -7,7 +7,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/kopecmaciej/mongui/internal/primitives"
 	"github.com/kopecmaciej/tview"
@@ -15,13 +14,13 @@ import (
 )
 
 const (
-	DatabaseTreeComponent manager.Component = "DatabaseTree"
-	InputModalComponent   manager.Component = "InputModal"
-	ConfirmModalComponent manager.Component = "ConfirmModal"
+	DatabaseTreeComponent = "DatabaseTree"
+	InputModalComponent   = "InputModal"
+	ConfirmModalComponent = "ConfirmModal"
 )
 
 type DatabaseTree struct {
-	*Component
+	*BaseComponent
 	*tview.TreeView
 
 	addModal    *primitives.InputModal
@@ -33,10 +32,10 @@ type DatabaseTree struct {
 
 func NewDatabaseTree() *DatabaseTree {
 	d := &DatabaseTree{
-		Component:   NewComponent(DatabaseTreeComponent),
-		TreeView:    tview.NewTreeView(),
-		addModal:    primitives.NewInputModal(),
-		deleteModal: tview.NewModal(),
+		BaseComponent: NewBaseComponent(DatabaseTreeComponent),
+		TreeView:      tview.NewTreeView(),
+		addModal:      primitives.NewInputModal(),
+		deleteModal:   tview.NewModal(),
 	}
 
 	d.SetAfterInitFunc(d.init)
