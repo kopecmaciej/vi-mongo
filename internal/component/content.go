@@ -130,9 +130,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			if c.isMultiRowView {
 				multiRowDoc, err := c.getMultiRowDocument()
 				if err != nil {
-					ShowErrorModalAndFocus(c.app.Root, "Error peeking document", err, func() {
-						c.app.SetFocus(c.Table)
-					})
+					ShowErrorModal(c.app.Root, "Error peeking document", err)
 					return nil
 				}
 				doc = multiRowDoc
@@ -169,9 +167,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.EditDocument, event.Name()):
 			updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
-				defer ShowErrorModalAndFocus(c.app.Root, "Error editing document", err, func() {
-					c.app.SetFocus(c.Table)
-				})
+				defer ShowErrorModal(c.app.Root, "Error editing document", err)
 				return nil
 			}
 			trimmed := regexp.MustCompile(`(?m)^\s+`).ReplaceAllString(updated, "")
@@ -182,21 +178,15 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.DuplicateDocument, event.Name()):
 			ID, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
-				defer ShowErrorModalAndFocus(c.app.Root, "Error duplicating document", err, func() {
-					c.app.SetFocus(c.Table)
-				})
+				defer ShowErrorModal(c.app.Root, "Error duplicating document", err)
 			}
 			duplicatedDoc, err := c.dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
 			if err != nil {
-				defer ShowErrorModalAndFocus(c.app.Root, "Error getting inserted document", err, func() {
-					c.app.SetFocus(c.Table)
-				})
+				defer ShowErrorModal(c.app.Root, "Error getting inserted document", err)
 			}
 			strDoc, err := mongo.ParseBsonDocument(duplicatedDoc)
 			if err != nil {
-				defer ShowErrorModalAndFocus(c.app.Root, "Error stringifying document", err, func() {
-					c.app.SetFocus(c.Table)
-				})
+				defer ShowErrorModal(c.app.Root, "Error stringifying document", err)
 			}
 			c.addCell(strDoc)
 			return nil
@@ -219,17 +209,13 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
 			err := c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
 			if err != nil {
-				defer ShowErrorModalAndFocus(c.app.Root, "Error deleting document", err, func() {
-					c.app.SetFocus(c.Table)
-				})
+				defer ShowErrorModal(c.app.Root, "Error deleting document", err)
 			}
 			return nil
 		case k.Contains(k.Root.Content.Refresh, event.Name()):
 			err := c.updateContent(ctx)
 			if err != nil {
-				defer ShowErrorModalAndFocus(c.app.Root, "Error refreshing documents", err, func() {
-					c.app.SetFocus(c.Table)
-				})
+				defer ShowErrorModal(c.app.Root, "Error refreshing documents", err)
 			}
 			return nil
 		case k.Contains(k.Root.Content.NextPage, event.Name()):
@@ -242,9 +228,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			selectedDoc := utils.TrimJson(c.Table.GetCell(c.Table.GetSelection()).Text)
 			err := clipboard.WriteAll(selectedDoc)
 			if err != nil {
-				ShowErrorModalAndFocus(c.app.Root, "Error copying document", err, func() {
-					c.app.SetFocus(c.Table)
-				})
+				ShowErrorModal(c.app.Root, "Error copying document", err)
 			}
 			return nil
 		}

@@ -222,17 +222,16 @@ func (r *Root) AddPage(component manager.Component, page tview.Primitive, resize
 		return r.Pages
 	}
 	r.app.Manager.PushComponent(component)
-	return r.Pages.AddPage(string(component), page, resize, visable)
+	r.app.SetPreviousFocus()
+	r.Pages.AddPage(string(component), page, resize, visable)
+	return r.Pages
 }
 
 // RemovePage is a wrapper for tview.Pages.RemovePage
 func (r *Root) RemovePage(component manager.Component) *tview.Pages {
 	r.app.Manager.PopComponent()
 	r.Pages.RemovePage(string(component))
-	if r.app.PreviousFocus != nil {
-		r.app.SetFocus(r.app.PreviousFocus)
-		r.app.PreviousFocus = nil
-	}
+	r.app.GetBackFocus()
 	return r.Pages
 }
 

@@ -82,7 +82,6 @@ func (a *App) setKeybindings() {
 				a.Root.RemovePage(HelpComponent)
 				return nil
 			}
-			a.PreviousFocus = a.GetFocus()
 			err := a.FullScreenHelp.Render(true)
 			if err != nil {
 				return event
@@ -109,4 +108,20 @@ func (a *App) setKeybindings() {
 		}
 		return event
 	})
+}
+
+func (a *App) SetPreviousFocus() {
+	a.PreviousFocus = a.GetFocus()
+}
+
+func (a *App) SetFocus(p tview.Primitive) {
+	a.PreviousFocus = a.GetFocus()
+	a.Application.SetFocus(p)
+}
+
+func (a *App) GetBackFocus() {
+	if a.PreviousFocus != nil {
+		a.SetFocus(a.PreviousFocus)
+		a.PreviousFocus = nil
+	}
 }

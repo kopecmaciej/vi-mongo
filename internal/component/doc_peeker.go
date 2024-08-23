@@ -153,7 +153,6 @@ func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 			dc.render(ctx)
 		} else if buttonLabel == "Close" || buttonLabel == "" {
 			root.RemovePage(dc.identifier)
-			dc.app.SetFocus(root.content)
 		}
 	})
 	return nil
