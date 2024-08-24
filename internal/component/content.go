@@ -126,21 +126,20 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			c.updateContent(ctx)
 			return nil
 		case k.Contains(k.Root.Content.PeekDocument, event.Name()):
-			var doc string
-			if c.isMultiRowView {
-				multiRowDoc, err := c.getMultiRowDocument()
-				if err != nil {
-					ShowErrorModal(c.app.Root, "Error peeking document", err)
-					return nil
-				}
-				doc = multiRowDoc
-			} else {
-				doc = c.Table.GetCell(c.Table.GetSelection()).Text
+			doc, err := c.getDocumentBasedOnView()
+			if err != nil {
+				ShowErrorModal(c.app.Root, "Error peeking document", err)
+				return nil
 			}
 			c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, doc)
 			return nil
 		case k.Contains(k.Root.Content.ViewDocument, event.Name()):
-			err := c.viewJson(c.Table.GetCell(c.Table.GetSelection()).Text)
+			doc, err := c.getDocumentBasedOnView()
+			if err != nil {
+				ShowErrorModal(c.app.Root, "Error viewing document", err)
+				return nil
+			}
+			err = c.viewJson(doc)
 			if err != nil {
 				ShowErrorModal(c.app.Root, "Error viewing document", err)
 				return nil
@@ -165,18 +164,27 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			c.addCell(strDoc)
 			return nil
 		case k.Contains(k.Root.Content.EditDocument, event.Name()):
-			updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			doc, err := c.getDocumentBasedOnView()
 			if err != nil {
-				defer ShowErrorModal(c.app.Root, "Error editing document", err)
+				ShowErrorModal(c.app.Root, "Error editing document", err)
 				return nil
 			}
-			trimmed := regexp.MustCompile(`(?m)^\s+`).ReplaceAllString(updated, "")
-			trimmed = regexp.MustCompile(`(?m):\s+`).ReplaceAllString(trimmed, ":")
-
-			c.refreshCell(trimmed)
+			updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, doc)
+			if err != nil {
+				ShowErrorModal(c.app.Root, "Error editing document", err)
+				return nil
+			}
+			if updated != "" {
+				c.refreshDocument(updated)
+			}
 			return nil
 		case k.Contains(k.Root.Content.DuplicateDocument, event.Name()):
-			ID, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, c.Table.GetCell(c.Table.GetSelection()).Text)
+			doc, err := c.getDocumentBasedOnView()
+			if err != nil {
+				ShowErrorModal(c.app.Root, "Error duplicating document", err)
+				return nil
+			}
+			ID, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, doc)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error duplicating document", err)
 			}
@@ -207,7 +215,12 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			c.render(true)
 			return nil
 		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
-			err := c.deleteDocument(ctx, c.Table.GetCell(c.Table.GetSelection()).Text)
+			doc, err := c.getDocumentBasedOnView()
+			if err != nil {
+				ShowErrorModal(c.app.Root, "Error deleting document", err)
+				return nil
+			}
+			err = c.deleteDocument(ctx, doc)
 			if err != nil {
 				defer ShowErrorModal(c.app.Root, "Error deleting document", err)
 			}
@@ -381,7 +394,7 @@ func (c *Content) updateContent(ctx context.Context) error {
 
 func (c *Content) renderSingleRowView(documents []primitive.M) {
 	parsedDocs, _ := mongo.ParseBsonDocuments(documents)
-	row := 2
+	row := 1
 	for _, d := range parsedDocs {
 		dataCell := tview.NewTableCell(d)
 		dataCell.SetAlign(tview.AlignLeft)
@@ -394,70 +407,50 @@ func (c *Content) renderSingleRowView(documents []primitive.M) {
 func (c *Content) renderMultiRowView(documents []primitive.M) {
 	row := 2
 	for _, doc := range documents {
-		c.multiRowDocument(doc, &row)
+		jsoned, err := mongo.ParseBsonDocument(doc)
+		if err != nil {
+			ShowErrorModal(c.app.Root, "Error stringifying document", err)
+			return
+		}
+		c.multiRowDocument(jsoned, &row)
 	}
 	c.Table.ScrollToBeginning()
 }
 
-func (c *Content) multiRowDocument(doc primitive.M, row *int) {
-	jsoned, err := mongo.ParseBsonDocument(doc)
-	if err != nil {
-		log.Error().Err(err).Msg("Error stringifying document")
-		return
-	}
-	indentedJson, err := mongo.IndentJson(jsoned)
+func (c *Content) multiRowDocument(doc string, row *int) {
+	indentedJson, err := mongo.IndentJson(doc)
 	if err != nil {
 		log.Error().Err(err).Msg("Error indenting JSON")
 		return
 	}
-
+	keyRegexWithIndent := regexp.MustCompile(`(?m)^\s{2}"([^"]+)":`)
 	lines := strings.Split(indentedJson.String(), "\n")
-	currentParentKey := ""
-	currentValue := ""
 
-	for i, line := range lines {
-		if i == 0 || i == len(lines)-1 {
-			objCell := tview.NewTableCell(line).SetAlign(tview.AlignLeft).SetTextColor(tcell.ColorGreen).SetSelectable(false)
-			c.Table.SetCell(*row, 0, objCell)
-			*row++
-			continue
-		}
-		trimmedLine := strings.TrimSpace(line)
-		if strings.HasSuffix(trimmedLine, "{") || strings.HasSuffix(trimmedLine, "[") {
-			if currentParentKey != "" {
-				// Add the previous parent key and its value
-				c.Table.SetCell(*row, 0, tview.NewTableCell(currentParentKey+currentValue).SetAlign(tview.AlignLeft))
+	c.Table.SetCell(*row, 0, tview.NewTableCell(lines[0]).SetAlign(tview.AlignLeft).SetTextColor(tcell.ColorGreen).SetSelectable(false))
+	*row++
+
+	currLine := ""
+	for i := 1; i < len(lines)-1; i++ {
+		line := lines[i]
+		if keyRegexWithIndent.MatchString(line) {
+			if currLine != "" {
+				c.Table.SetCell(*row, 0, tview.NewTableCell(currLine).SetAlign(tview.AlignLeft))
 				*row++
 			}
-			currentParentKey = line
-			currentValue = ""
-		} else if strings.HasPrefix(trimmedLine, "}") || strings.HasPrefix(trimmedLine, "]") {
-			// End of a parent key
-			if currentParentKey != "" {
-				currentValue += line
-				c.Table.SetCell(*row, 0, tview.NewTableCell(currentParentKey+currentValue).SetAlign(tview.AlignLeft))
-				*row++
-			}
-			currentParentKey = ""
-			currentValue = ""
+			currLine = line
 		} else {
-			// This is a value
-			if currentParentKey == "" {
-				// If there's no current parent key, treat this as a standalone line
-				c.Table.SetCell(*row, 0, tview.NewTableCell(line).SetAlign(tview.AlignLeft))
-				*row++
-			} else {
-				// Append to the current value, removing newlines
-				currentValue += " " + strings.TrimSpace(line)
-			}
-		}
-
-		// Handle the last line, it has to be } as it's end of document
-		if i == len(lines)-1 && currentParentKey != "" {
-			c.Table.SetCell(*row, 0, tview.NewTableCell(currentParentKey+currentValue).SetAlign(tview.AlignLeft))
-			*row++
+			line = utils.TrimMultipleSpaces(line)
+			currLine += line
 		}
 	}
+
+	if currLine != "" {
+		c.Table.SetCell(*row, 0, tview.NewTableCell(currLine).SetAlign(tview.AlignLeft))
+		*row++
+	}
+
+	c.Table.SetCell(*row, 0, tview.NewTableCell(lines[len(lines)-1]).SetAlign(tview.AlignLeft).SetTextColor(tcell.ColorGreen).SetSelectable(false))
+	*row++
 }
 
 func (c *Content) queryBarListener(ctx context.Context) {
@@ -492,6 +485,32 @@ func (c *Content) sortBarListener(ctx context.Context) {
 	}
 
 	c.sortBar.DoneFuncHandler(acceptFunc, rejectFunc)
+}
+
+// refreshDocument refreshes the document in the table
+func (c *Content) refreshDocument(doc string) {
+	if c.isMultiRowView {
+		c.refreshMultiRowDocument(doc)
+	} else {
+		trimmed := regexp.MustCompile(`(?m)^\s+`).ReplaceAllString(doc, "")
+		trimmed = regexp.MustCompile(`(?m):\s+`).ReplaceAllString(trimmed, ":")
+		c.refreshCell(trimmed)
+	}
+}
+
+func (c *Content) refreshMultiRowDocument(doc string) {
+	row, _ := c.Table.GetSelection()
+
+	for i := row; i >= 0; i-- {
+		if strings.HasPrefix(c.Table.GetCell(i, 0).Text, "{") {
+			row = i
+			break
+		}
+	}
+
+	doc = strings.TrimSpace(doc)
+
+	c.multiRowDocument(doc, &row)
 }
 
 // addCell adds a new cell to the table
@@ -580,6 +599,13 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 	c.app.Root.AddPage(c.deleteModal.GetIdentifier(), c.deleteModal, true, true)
 
 	return nil
+}
+
+func (c *Content) getDocumentBasedOnView() (string, error) {
+	if c.isMultiRowView {
+		return c.getMultiRowDocument()
+	}
+	return c.Table.GetCell(c.Table.GetSelection()).Text, nil
 }
 
 func (c *Content) getMultiRowDocument() (string, error) {

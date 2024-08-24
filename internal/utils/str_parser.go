@@ -38,3 +38,10 @@ func QuoteUnquotedKeys(s string) string {
 	re := regexp.MustCompile(`(\{|\,)\s*([a-zA-Z0-9_.]+)\s*:`)
 	return re.ReplaceAllString(s, `$1 "$2":`)
 }
+
+// TrimMultipleSpaces trims multiple spaces into a single space
+func TrimMultipleSpaces(s string) string {
+	// Then, replace multiple spaces with a single space
+	space := regexp.MustCompile(`\s+`)
+	return space.ReplaceAllString(s, " ")
+}
