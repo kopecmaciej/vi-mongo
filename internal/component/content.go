@@ -37,12 +37,10 @@ type Content struct {
 	deleteModal    *DeleteModal
 	docModifier    *DocModifier
 	state          mongo.CollectionState
-	stateMap       map[string]mongo.CollectionState // New field to store states for each collection
+	stateMap       map[string]mongo.CollectionState
 	isMultiRowView bool
 }
 
-// NewContent creates a new Content component
-// It also initializes all subcomponents
 func NewContent() *Content {
 	c := &Content{
 		BaseComponent:  NewBaseComponent("Content"),
@@ -115,11 +113,17 @@ func (c *Content) setStyle() {
 	c.Flex.SetDirection(tview.FlexRow)
 }
 
-// SetKeybindings sets keybindings for the component
 func (c *Content) setKeybindings(ctx context.Context) {
 	k := c.app.Keys
 
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		row, _ := c.Table.GetSelection()
+		if row == 3 {
+			c.Table.ScrollToBeginning()
+		}
+		if row == c.Table.GetRowCount()-2 {
+			c.Table.ScrollToEnd()
+		}
 		switch {
 		case k.Contains(k.Root.Content.SwitchView, event.Name()):
 			c.isMultiRowView = !c.isMultiRowView
@@ -394,7 +398,7 @@ func (c *Content) updateContent(ctx context.Context) error {
 
 func (c *Content) renderSingleRowView(documents []primitive.M) {
 	parsedDocs, _ := mongo.ParseBsonDocuments(documents)
-	row := 1
+	row := 2
 	for _, d := range parsedDocs {
 		dataCell := tview.NewTableCell(d)
 		dataCell.SetAlign(tview.AlignLeft)

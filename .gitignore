@@ -24,3 +24,5 @@ mongui.log
 history.txt
 config.yaml
 keybindings.json
+
+.vscode
