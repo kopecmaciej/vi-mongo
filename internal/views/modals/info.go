@@ -1,4 +1,4 @@
-package view
+package modals
 
 import (
 	"github.com/gdamore/tcell/v2"
@@ -11,7 +11,7 @@ const (
 	InfoView = "Info"
 )
 
-func NewInfoModal(message string) *tview.Modal {
+func NewInfo(message string) *tview.Modal {
 	log.Info().Msg(message)
 
 	message = "[White::b] " + message + " [::]"
@@ -27,9 +27,9 @@ func NewInfoModal(message string) *tview.Modal {
 	return infoModal
 }
 
-// ShowInfoModal shows a modal with an informational message
-func ShowInfoModal(page *core.Pages, message string) {
-	infoModal := NewInfoModal(message)
+// ShowInfo shows a modal with an informational message
+func ShowInfo(page *core.Pages, message string) {
+	infoModal := NewInfo(message)
 
 	infoModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
@@ -40,7 +40,7 @@ func ShowInfoModal(page *core.Pages, message string) {
 }
 
 func ShowInfoModalAndFocus(page *core.Pages, message string, setFocus func()) {
-	infoModal := NewInfoModal(message)
+	infoModal := NewInfo(message)
 	infoModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
 			page.RemovePage(InfoView)

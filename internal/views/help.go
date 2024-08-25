@@ -5,6 +5,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/mongui/internal/views/modals"
 	"github.com/kopecmaciej/tview"
 )
 
@@ -48,7 +49,7 @@ func (h *Help) Render(fullScreen bool) error {
 	currectView := h.app.Manager.CurrentView()
 	cKeys, err := h.app.Keys.GetKeysForView(string(currectView))
 	if err != nil {
-		ShowErrorModal(h.app.Pages, "No keys found for current view", err)
+		modals.ShowError(h.app.Pages, "No keys found for current view", err)
 		return err
 	}
 
@@ -57,14 +58,14 @@ func (h *Help) Render(fullScreen bool) error {
 
 	gKeys, err := h.app.Keys.GetKeysForView("Global")
 	if err != nil {
-		ShowErrorModal(h.app.Pages, "Error while getting keys for view", err)
+		modals.ShowError(h.app.Pages, "Error while getting keys for view", err)
 		return err
 	}
 	h.renderKeySection(gKeys, &row)
 
 	hKeys, err := h.app.Keys.GetKeysForView("Help")
 	if err != nil {
-		ShowErrorModal(h.app.Pages, "Error while getting keys for view", err)
+		modals.ShowError(h.app.Pages, "Error while getting keys for view", err)
 		return err
 	}
 	h.renderKeySection(hKeys, &row)

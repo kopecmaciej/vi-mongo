@@ -5,6 +5,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/mongui/internal/views/modals"
 	"github.com/kopecmaciej/tview"
 )
 
@@ -178,7 +179,7 @@ func (c *Connector) setConnections() {
 	connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
 	err := c.app.Config.SetCurrentConnection(connName)
 	if err != nil {
-		ShowErrorModal(c.app.Pages, "Failed to set current connection", err)
+		modals.ShowError(c.app.Pages, "Failed to set current connection", err)
 		return
 	}
 	c.app.Config.CurrentConnection = connName
@@ -209,7 +210,7 @@ func (c *Connector) saveButtonFunc() {
 	timeout := c.form.GetFormItemByLabel("Timeout").(*tview.InputField).GetText()
 	intTimeout, err := strconv.Atoi(timeout)
 	if err != nil {
-		ShowErrorModal(c.app.Pages, "Timeout must be a number", err)
+		modals.ShowError(c.app.Pages, "Timeout must be a number", err)
 		return
 	}
 	if url != "mongodb://" {
@@ -222,7 +223,7 @@ func (c *Connector) saveButtonFunc() {
 			Timeout: intTimeout,
 		})
 		if err != nil {
-			ShowErrorModal(c.app.Pages, "Failed to save connection", err)
+			modals.ShowError(c.app.Pages, "Failed to save connection", err)
 			c.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
 			return
 		}
@@ -231,7 +232,7 @@ func (c *Connector) saveButtonFunc() {
 		port := c.form.GetFormItemByLabel("Port").(*tview.InputField).GetText()
 		intPort, err := strconv.Atoi(port)
 		if err != nil {
-			ShowErrorModal(c.app.Pages, "Port must be a number", err)
+			modals.ShowError(c.app.Pages, "Port must be a number", err)
 			return
 		}
 		username := c.form.GetFormItemByLabel("Username").(*tview.InputField).GetText()
@@ -251,7 +252,7 @@ func (c *Connector) saveButtonFunc() {
 			Timeout:  intTimeout,
 		})
 		if err != nil {
-			ShowErrorModal(c.app.Pages, "Failed to save connection", err)
+			modals.ShowError(c.app.Pages, "Failed to save connection", err)
 			return
 		}
 	}

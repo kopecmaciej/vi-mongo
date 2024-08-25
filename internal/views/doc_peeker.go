@@ -8,6 +8,7 @@ import (
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/kopecmaciej/mongui/internal/primitives"
+	"github.com/kopecmaciej/mongui/internal/views/modals"
 
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
@@ -92,12 +93,12 @@ func (dc *DocPeeker) setKeybindings(ctx context.Context) {
 			return nil
 		case k.Contains(k.DocPeeker.CopyFullObj, event.Name()):
 			if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "full"); err != nil {
-				ShowErrorModal(dc.app.Pages, "Error copying full line", err)
+				modals.ShowError(dc.app.Pages, "Error copying full line", err)
 			}
 			return nil
 		case k.Contains(k.DocPeeker.CopyValue, event.Name()):
 			if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "value"); err != nil {
-				ShowErrorModal(dc.app.Pages, "Error copying value", err)
+				modals.ShowError(dc.app.Pages, "Error copying value", err)
 			}
 			return nil
 		case k.Contains(k.DocPeeker.Refresh, event.Name()):
@@ -146,7 +147,7 @@ func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 		if buttonLabel == "Edit" {
 			updatedDoc, err := dc.docModifier.Edit(ctx, db, coll, jsonString)
 			if err != nil {
-				ShowErrorModal(dc.app.Pages, "Error editing document", err)
+				modals.ShowError(dc.app.Pages, "Error editing document", err)
 				return
 			}
 			dc.state.rawDocument = updatedDoc

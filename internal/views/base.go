@@ -98,11 +98,6 @@ func (c *BaseView) SetAfterInitFunc(afterInitFunc func() error) {
 	c.afterInitFunc = afterInitFunc
 }
 
-// GetView returns the view.
-func (c *BaseView) GetView() *BaseView {
-	return c
-}
-
 // GetIdentifier returns the identifier of the view.
 func (c *BaseView) GetIdentifier() manager.ViewIdentifier {
 	return c.identifier

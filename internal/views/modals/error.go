@@ -1,4 +1,4 @@
-package view
+package modals
 
 import (
 	"github.com/gdamore/tcell/v2"
@@ -11,7 +11,7 @@ const (
 	ErrorView = "Error"
 )
 
-func NewErrorModal(message string, err error) *tview.Modal {
+func NewError(message string, err error) *tview.Modal {
 	if err != nil {
 		log.Error().Err(err).Msg(message)
 	}
@@ -29,10 +29,10 @@ func NewErrorModal(message string, err error) *tview.Modal {
 	return errModal
 }
 
-// ShowErrorModal shows a modal with an error message
+// ShowError shows a modal with an error message
 // and logs the error if it's passed
-func ShowErrorModal(page *core.Pages, message string, err error) {
-	errModal := NewErrorModal(message, err)
+func ShowError(page *core.Pages, message string, err error) {
+	errModal := NewError(message, err)
 
 	errModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
@@ -42,8 +42,8 @@ func ShowErrorModal(page *core.Pages, message string, err error) {
 	page.AddPage(ErrorView, errModal, true, true)
 }
 
-func ShowErrorModalAndFocus(page *core.Pages, message string, err error, setFocus func()) {
-	errModal := NewErrorModal(message, err)
+func ShowErrorAndSetFocus(page *core.Pages, message string, err error, setFocus func()) {
+	errModal := NewError(message, err)
 	errModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
 			page.RemovePage(ErrorView)

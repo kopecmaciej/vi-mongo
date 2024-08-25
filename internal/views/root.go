@@ -6,6 +6,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
+	"github.com/kopecmaciej/mongui/internal/views/modals"
 
 	"github.com/kopecmaciej/tview"
 )
@@ -187,7 +188,7 @@ func (r *Root) renderWelcome() error {
 		err := r.renderConnector()
 		if err != nil {
 			r.app.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
-			ShowErrorModal(r.app.Pages, "Error while connecting to the database", err)
+			modals.ShowError(r.app.Pages, "Error while connecting to the database", err)
 			return
 		}
 	})
@@ -202,7 +203,7 @@ func (r *Root) renderConnector() error {
 		err := r.renderMainView()
 		if err != nil {
 			r.app.Pages.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
-			ShowErrorModal(r.app.Pages, "Error while connecting to the database", err)
+			modals.ShowError(r.app.Pages, "Error while connecting to the database", err)
 		}
 	})
 

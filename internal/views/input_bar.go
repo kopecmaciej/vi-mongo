@@ -7,6 +7,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
+	"github.com/kopecmaciej/mongui/internal/views/modals"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
@@ -204,7 +205,7 @@ func (i *InputBar) LoadNewKeys(keys []string) {
 func (i *InputBar) displayHistoryModal() {
 	err := i.historyModal.Render()
 	if err != nil {
-		ShowErrorModal(i.app.Pages, "Error rendering history modal", err)
+		modals.ShowError(i.app.Pages, "Error rendering history modal", err)
 	}
 }
 
