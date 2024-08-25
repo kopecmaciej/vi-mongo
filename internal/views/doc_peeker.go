@@ -63,7 +63,7 @@ func (dc *DocPeeker) init() error {
 }
 
 func (dc *DocPeeker) setStyle() {
-	dc.style = &dc.app.Styles.DocPeeker
+	dc.style = &dc.app.GetStyles().DocPeeker
 	dc.SetBorder(true)
 	dc.SetTitle("Document Details")
 	dc.SetTitleAlign(tview.AlignLeft)
@@ -82,7 +82,7 @@ func (dc *DocPeeker) setStyle() {
 }
 
 func (dc *DocPeeker) setKeybindings(ctx context.Context) {
-	k := dc.app.Keys
+	k := dc.app.GetKeys()
 	dc.ModalView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.DocPeeker.MoveToTop, event.Name()):

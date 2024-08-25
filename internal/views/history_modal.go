@@ -44,7 +44,7 @@ func (h *HistoryModal) init() error {
 }
 
 func (h *HistoryModal) setStyle() {
-	h.style = &h.app.Styles.History
+	h.style = &h.app.GetStyles().History
 
 	h.SetTitle(" History ")
 	h.SetBorder(true)

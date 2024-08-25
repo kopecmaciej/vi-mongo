@@ -5,19 +5,14 @@ import (
 	"github.com/kopecmaciej/tview"
 )
 
-type app interface {
-	SetPreviousFocus()
-	GiveBackFocus()
-}
-
 type Pages struct {
 	*tview.Pages
 
 	manager *manager.ViewManager
-	app     app
+	app     *App
 }
 
-func NewPages(manager *manager.ViewManager, app app) *Pages {
+func NewPages(manager *manager.ViewManager, app *App) *Pages {
 	return &Pages{
 		Pages:   tview.NewPages(),
 		manager: manager,

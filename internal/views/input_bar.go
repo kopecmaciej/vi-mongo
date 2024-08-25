@@ -49,7 +49,7 @@ func (i *InputBar) init() error {
 }
 
 func (i *InputBar) setStyle() {
-	i.style = &i.app.Styles.InputBar
+	i.style = &i.app.GetStyles().InputBar
 	i.SetBorder(true)
 	i.SetFieldTextColor(i.style.InputColor.Color())
 
@@ -85,7 +85,7 @@ func (i *InputBar) setKeybindings() {
 			}
 		}
 
-		k := i.app.Keys
+		k := i.app.GetKeys()
 		switch {
 		case k.Contains(k.Root.Content.QueryBar.ShowHistory, event.Name()):
 			if i.historyModal != nil {

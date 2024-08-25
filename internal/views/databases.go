@@ -68,7 +68,7 @@ func (s *Databases) setStyle() {
 }
 
 func (s *Databases) setKeybindings() {
-	keys := s.app.Keys
+	keys := s.app.GetKeys()
 	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case keys.Contains(keys.Root.Databases.FilterBar, event.Name()):

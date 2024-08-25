@@ -47,7 +47,7 @@ func (h *Help) Render(fullScreen bool) error {
 	h.Table.Clear()
 
 	currectView := h.app.Manager.CurrentView()
-	cKeys, err := h.app.Keys.GetKeysForView(string(currectView))
+	cKeys, err := h.app.GetKeys().GetKeysForView(string(currectView))
 	if err != nil {
 		modals.ShowError(h.app.Pages, "No keys found for current view", err)
 		return err
@@ -56,14 +56,14 @@ func (h *Help) Render(fullScreen bool) error {
 	row := 0
 	h.renderKeySection(cKeys, &row)
 
-	gKeys, err := h.app.Keys.GetKeysForView("Global")
+	gKeys, err := h.app.GetKeys().GetKeysForView("Global")
 	if err != nil {
 		modals.ShowError(h.app.Pages, "Error while getting keys for view", err)
 		return err
 	}
 	h.renderKeySection(gKeys, &row)
 
-	hKeys, err := h.app.Keys.GetKeysForView("Help")
+	hKeys, err := h.app.GetKeys().GetKeysForView("Help")
 	if err != nil {
 		modals.ShowError(h.app.Pages, "Error while getting keys for view", err)
 		return err
@@ -126,7 +126,7 @@ func (h *Help) AddKeySection(name string, keys []config.Key, pos *int, col int) 
 }
 
 func (h *Help) setStyle() {
-	h.style = &h.app.Styles.Help
+	h.style = &h.app.GetStyles().Help
 	h.Table.SetBorder(true)
 	h.Table.SetTitle(" Help ")
 	h.Table.SetTitleAlign(tview.AlignLeft)
@@ -137,7 +137,7 @@ func (h *Help) setStyle() {
 }
 
 func (h *Help) setKeybindings() {
-	k := h.app.Keys
+	k := h.app.GetKeys()
 
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {

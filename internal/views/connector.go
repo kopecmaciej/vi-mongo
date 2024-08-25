@@ -5,6 +5,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/kopecmaciej/mongui/internal/views/modals"
 	"github.com/kopecmaciej/tview"
 )
@@ -41,7 +42,7 @@ func NewConnector() *Connector {
 }
 
 // Init overrides the Init function from the View struct
-func (c *Connector) Init(app *App) error {
+func (c *Connector) Init(app *core.App) error {
 	c.app = app
 
 	c.setStyle()
@@ -53,7 +54,7 @@ func (c *Connector) Init(app *App) error {
 }
 
 func (c *Connector) setStyle() {
-	style := c.app.Styles.Connector
+	style := c.app.GetStyles().Connector
 
 	c.SetBackgroundColor(style.BackgroundColor.Color())
 	c.form.SetTitle(" New connection ")
@@ -83,7 +84,7 @@ func (c *Connector) setStyle() {
 }
 
 func (c *Connector) setKeybindings() {
-	k := c.app.Keys
+	k := c.app.GetKeys()
 	c.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Connector.ConnectorForm.SaveConnection, event.Name()):
@@ -117,7 +118,7 @@ func (c *Connector) Render() {
 	// easy way to center the form
 	c.AddItem(tview.NewBox(), 0, 1, false)
 
-	if len(c.app.Config.Connections) > 0 {
+	if len(c.app.GetConfig().Connections) > 0 {
 		c.renderList()
 		defer c.app.SetFocus(c.list)
 	} else {
@@ -157,14 +158,14 @@ func (c *Connector) renderForm() *tview.Form {
 func (c *Connector) renderList() {
 	c.list.Clear()
 
-	for _, conn := range c.app.Config.Connections {
+	for _, conn := range c.app.GetConfig().Connections {
 		uri := "uri: " + conn.GetUri()
 		c.list.AddItem(conn.Name, uri, 0, func() {
 			c.setConnections()
 		})
 	}
 
-	c.list.AddItem("Click to add new connection", "or by pressing "+c.app.Keys.Connector.ConnectorList.FocusForm.String(), 0, func() {
+	c.list.AddItem("Click to add new connection", "or by pressing "+c.app.GetKeys().Connector.ConnectorList.FocusForm.String(), 0, func() {
 		c.app.SetFocus(c.form)
 	})
 
@@ -177,12 +178,12 @@ func (c *Connector) setConnections() {
 		return
 	}
 	connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
-	err := c.app.Config.SetCurrentConnection(connName)
+	err := c.app.GetConfig().SetCurrentConnection(connName)
 	if err != nil {
 		modals.ShowError(c.app.Pages, "Failed to set current connection", err)
 		return
 	}
-	c.app.Config.CurrentConnection = connName
+	c.app.GetConfig().CurrentConnection = connName
 	if c.onSubmit != nil {
 		c.onSubmit()
 	}
@@ -192,7 +193,7 @@ func (c *Connector) setConnections() {
 func (c *Connector) deleteCurrConnection() error {
 	currItem := c.list.GetCurrentItem()
 	currConn, _ := c.list.GetItemText(currItem)
-	err := c.app.Config.DeleteConnection(currConn)
+	err := c.app.GetConfig().DeleteConnection(currConn)
 	if err != nil {
 		return err
 	}
@@ -217,7 +218,7 @@ func (c *Connector) saveButtonFunc() {
 		if name == "" {
 			name = url
 		}
-		err := c.app.Config.AddConnectionFromUri(&config.MongoConfig{
+		err := c.app.GetConfig().AddConnectionFromUri(&config.MongoConfig{
 			Name:    name,
 			Uri:     url,
 			Timeout: intTimeout,

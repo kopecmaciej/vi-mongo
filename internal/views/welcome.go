@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/kopecmaciej/mongui/internal/views/modals"
 	"github.com/kopecmaciej/tview"
 )
@@ -34,7 +35,7 @@ func NewWelcome() *Welcome {
 	return w
 }
 
-func (w *Welcome) Init(app *App) error {
+func (w *Welcome) Init(app *core.App) error {
 	w.app = app
 
 	w.setStyle()
@@ -45,7 +46,7 @@ func (w *Welcome) Init(app *App) error {
 }
 
 func (w *Welcome) setStyle() {
-	style := w.app.Styles.Welcome
+	style := w.app.GetStyles().Welcome
 
 	w.form.SetBorder(true)
 	w.form.SetBackgroundColor(style.BackgroundColor.Color())
@@ -94,7 +95,7 @@ func (w *Welcome) renderForm() {
 	w.form.AddInputField("Log Level", "info", 30, nil, nil)
 	w.form.AddCheckbox("Show connection page", true, nil)
 	w.form.AddCheckbox("Show welcome page", false, nil)
-	w.form.AddTextView("Show help", fmt.Sprintf("Press %s to show help", w.app.Keys.Global.ToggleFullScreenHelp.String()), 60, 1, true, false)
+	w.form.AddTextView("Show help", fmt.Sprintf("Press %s to show help", w.app.GetKeys().Global.ToggleFullScreenHelp.String()), 60, 1, true, false)
 
 	w.form.AddButton(" Save and Connect ", func() {
 		err := w.saveConfig()
@@ -117,7 +118,7 @@ func (w *Welcome) saveConfig() error {
 	connPage := w.form.GetFormItemByLabel("Show connection page").(*tview.Checkbox).IsChecked()
 	welcomePage := w.form.GetFormItemByLabel("Show welcome page").(*tview.Checkbox).IsChecked()
 
-	c := w.app.Config
+	c := w.app.GetConfig()
 
 	splitedEditorCmd := strings.Split(editorCmd, "$")
 	if len(splitedEditorCmd) > 1 {
@@ -132,7 +133,7 @@ func (w *Welcome) saveConfig() error {
 	c.ShowConnectionPage = connPage
 	c.ShowWelcomePage = welcomePage
 
-	err := w.app.Config.UpdateConfig()
+	err := w.app.GetConfig().UpdateConfig()
 	if err != nil {
 		return err
 	}

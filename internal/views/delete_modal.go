@@ -38,7 +38,7 @@ func (d *DeleteModal) init() error {
 }
 
 func (d *DeleteModal) setStyle() {
-	d.style = &d.app.Styles.Others
+	d.style = &d.app.GetStyles().Others
 
 	d.SetBorder(true)
 	d.SetTitle(" Delete ")

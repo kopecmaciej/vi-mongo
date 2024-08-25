@@ -53,7 +53,7 @@ func (t *DatabaseTree) init() error {
 }
 
 func (t *DatabaseTree) setStyle() {
-	t.style = &t.app.Styles.Databases
+	t.style = &t.app.GetStyles().Databases
 	t.SetBorder(true)
 	t.SetTitle(" Databases ")
 	t.SetBorderPadding(0, 0, 1, 1)
@@ -75,7 +75,7 @@ func (t *DatabaseTree) setStyle() {
 }
 
 func (t *DatabaseTree) setKeybindings(ctx context.Context) {
-	k := t.app.Keys
+	k := t.app.GetKeys()
 	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Root.Databases.ExpandAll, event.Name()):

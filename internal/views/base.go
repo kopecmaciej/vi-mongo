@@ -5,6 +5,7 @@ import (
 
 	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/mongui/internal/mongo"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 )
 
 // BaseView is a base struct for all views.
@@ -19,7 +20,7 @@ type BaseView struct {
 	identifier manager.ViewIdentifier
 	// app is a pointer to the main app.
 	// It's used for accessing app focus, root page etc.
-	app *App
+	app *core.App
 
 	// dao is a pointer to the mongo dao.
 	dao *mongo.Dao
@@ -44,14 +45,14 @@ func NewBaseView(identifier string) *BaseView {
 
 // Init is a function that is called when the view is initialized.
 // If custom initialization is needed, this function should be overriden.
-func (c *BaseView) Init(app *App) error {
+func (c *BaseView) Init(app *core.App) error {
 	if c.app != nil && c.identifier != "" {
 		return nil
 	}
 
 	c.app = app
-	if app.Dao != nil {
-		c.dao = app.Dao
+	if app.GetDao() != nil {
+		c.dao = app.GetDao()
 	}
 
 	if c.afterInitFunc != nil {
@@ -66,7 +67,7 @@ func (c *BaseView) Enable() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.enabled = true
-	c.app.Manager.PushView(c.identifier)
+	c.app.GetManager().PushView(c.identifier)
 }
 
 // Disable unsets the enabled flag.
@@ -74,7 +75,7 @@ func (c *BaseView) Disable() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.enabled = false
-	c.app.Manager.PopView()
+	c.app.GetManager().PopView()
 }
 
 // Toggle toggles the enabled flag.
@@ -105,15 +106,15 @@ func (c *BaseView) GetIdentifier() manager.ViewIdentifier {
 
 // Subscribe subscribes to the view events.
 func (c *BaseView) Subscribe() {
-	c.listener = c.app.Manager.Subscribe(c.identifier)
+	c.listener = c.app.GetManager().Subscribe(c.identifier)
 }
 
 // Broadcast sends an event to all listeners.
 func (c *BaseView) BroadcastEvent(event manager.EventMsg) {
-	c.app.Manager.Broadcast(event)
+	c.app.GetManager().Broadcast(event)
 }
 
 // SendToView sends an event to the view.
 func (c *BaseView) SendToView(view manager.ViewIdentifier, event manager.EventMsg) {
-	c.app.Manager.SendTo(view, event)
+	c.app.GetManager().SendTo(view, event)
 }

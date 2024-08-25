@@ -5,65 +5,39 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/manager"
-	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/kopecmaciej/mongui/internal/views/core"
-	"github.com/kopecmaciej/tview"
-	"github.com/rs/zerolog/log"
 )
 
 type (
-	// TODO: remove from views package
-	// App is a main application struct
+	// App extends the core.App struct
 	App struct {
-		*tview.Application
-
-		Pages          *core.Pages
-		Dao            *mongo.Dao
-		Manager        *manager.ViewManager
+		*core.App
 		Root           *Root
 		FullScreenHelp *Help
-		Styles         *config.Styles
-		Config         *config.Config
-		Keys           *config.KeyBindings
-		PreviousFocus  tview.Primitive
 	}
 )
 
 func NewApp(appConfig *config.Config) *App {
-	styles, err := config.LoadStyles()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to load styles")
-	}
-	keyBindings, err := config.LoadKeybindings()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to load keybindings")
-	}
+	coreApp := core.NewApp(appConfig)
 
 	app := &App{
-		Application:    tview.NewApplication(),
+		App:            coreApp,
 		Root:           NewRoot(),
 		FullScreenHelp: NewHelp(),
-		Manager:        manager.NewViewManager(),
-		Styles:         styles,
-		Config:         appConfig,
-		Keys:           keyBindings,
 	}
-
-	app.Pages = core.NewPages(app.Manager, app)
 
 	return app
 }
 
 // Init initializes app
 func (a *App) Init() error {
-	a.Root.app = a
+	a.Root.app = a.App
 	if err := a.Root.Init(); err != nil {
 		return err
 	}
 	a.SetRoot(a.Pages, true).EnableMouse(true)
 
-	err := a.FullScreenHelp.Init(a)
+	err := a.FullScreenHelp.Init(a.App)
 	if err != nil {
 		return err
 	}
@@ -96,20 +70,4 @@ func (a *App) setKeybindings() {
 		}
 		return event
 	})
-}
-
-func (a *App) SetPreviousFocus() {
-	a.PreviousFocus = a.GetFocus()
-}
-
-func (a *App) SetFocus(p tview.Primitive) {
-	a.PreviousFocus = a.GetFocus()
-	a.Application.SetFocus(p)
-}
-
-func (a *App) GiveBackFocus() {
-	if a.PreviousFocus != nil {
-		a.SetFocus(a.PreviousFocus)
-		a.PreviousFocus = nil
-	}
 }

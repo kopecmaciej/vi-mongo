@@ -64,7 +64,7 @@ func (h *Header) init() error {
 }
 
 func (h *Header) setStyle() {
-	h.style = &h.app.Styles.Header
+	h.style = &h.app.GetStyles().Header
 	h.Table.SetBackgroundColor(h.style.BackgroundColor.Color())
 	h.Table.SetBorderColor(h.style.BorderColor.Color())
 	h.Table.SetSelectable(false, false)

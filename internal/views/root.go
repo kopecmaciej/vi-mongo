@@ -6,6 +6,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/kopecmaciej/mongui/internal/views/modals"
 
 	"github.com/kopecmaciej/tview"
@@ -51,13 +52,13 @@ func (r *Root) Init() error {
 	if err := r.connector.Init(r.app); err != nil {
 		return err
 	}
-	if r.app.Config.ShowWelcomePage {
+	if r.app.GetConfig().ShowWelcomePage {
 		if err := r.renderWelcome(); err != nil {
 			return err
 		}
 	} else {
-		currConn := r.app.Config.GetCurrentConnection()
-		if currConn == nil || r.app.Config.ShowConnectionPage {
+		currConn := r.app.GetConfig().GetCurrentConnection()
+		if currConn == nil || r.app.GetConfig().ShowConnectionPage {
 			if err := r.renderConnector(); err != nil {
 				return err
 			}
@@ -72,7 +73,7 @@ func (r *Root) Init() error {
 }
 
 func (r *Root) renderMainView() error {
-	currConn := r.app.Config.GetCurrentConnection()
+	currConn := r.app.GetConfig().GetCurrentConnection()
 	if r.app.Dao != nil && *r.app.Dao.Config == *currConn {
 		return nil
 	} else {
@@ -105,7 +106,7 @@ func (r *Root) renderMainView() error {
 }
 
 func (r *Root) initSubviews() error {
-	runWithDraw := func(f func(app *App) error) {
+	runWithDraw := func(f func(app *core.App) error) {
 		r.app.QueueUpdateDraw(func() {
 			if err := f(r.app); err != nil {
 				log.Error().Err(err).Msg("Error initializing views")
@@ -121,7 +122,7 @@ func (r *Root) initSubviews() error {
 }
 
 func (r *Root) setStyles() {
-	r.style = &r.app.Styles.Root
+	r.style = &r.app.GetStyles().Root
 	r.app.Pages.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.mainFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.innerFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
@@ -129,8 +130,8 @@ func (r *Root) setStyles() {
 
 // setKeybindings sets a key binding for the root View
 func (r *Root) setKeybindings() {
-	k := r.app.Keys
-	r.app.Root.mainFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	k := r.app.GetKeys()
+	r.mainFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Root.FocusNext, event.Name()):
 			focus := r.app.GetFocus()

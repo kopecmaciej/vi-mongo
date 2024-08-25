@@ -101,7 +101,7 @@ func (c *Content) init() error {
 }
 
 func (c *Content) setStyle() {
-	c.style = &c.app.Styles.Content
+	c.style = &c.app.GetStyles().Content
 	c.Table.SetBorder(true)
 	c.Table.SetTitle(" Content ")
 	c.Table.SetTitleAlign(tview.AlignLeft)
@@ -115,7 +115,7 @@ func (c *Content) setStyle() {
 }
 
 func (c *Content) setKeybindings(ctx context.Context) {
-	k := c.app.Keys
+	k := c.app.GetKeys()
 
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		row, _ := c.Table.GetSelection()
