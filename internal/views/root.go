@@ -18,7 +18,7 @@ const (
 
 // Root is a view that manages visaibility of other views
 type Root struct {
-	*BaseView
+	*core.BaseView
 
 	mainFlex  *tview.Flex
 	innerFlex *tview.Flex
@@ -31,7 +31,7 @@ type Root struct {
 
 func NewRoot() *Root {
 	r := &Root{
-		BaseView:  NewBaseView(RootView),
+		BaseView:  core.NewBaseView(RootView),
 		mainFlex:  tview.NewFlex(),
 		innerFlex: tview.NewFlex(),
 		connector: NewConnector(),
@@ -49,16 +49,16 @@ func (r *Root) Init() error {
 	r.setStyles()
 	r.setKeybindings()
 
-	if err := r.connector.Init(r.app); err != nil {
+	if err := r.connector.Init(r.App); err != nil {
 		return err
 	}
-	if r.app.GetConfig().ShowWelcomePage {
+	if r.App.GetConfig().ShowWelcomePage {
 		if err := r.renderWelcome(); err != nil {
 			return err
 		}
 	} else {
-		currConn := r.app.GetConfig().GetCurrentConnection()
-		if currConn == nil || r.app.GetConfig().ShowConnectionPage {
+		currConn := r.App.GetConfig().GetCurrentConnection()
+		if currConn == nil || r.App.GetConfig().ShowConnectionPage {
 			if err := r.renderConnector(); err != nil {
 				return err
 			}
@@ -73,8 +73,8 @@ func (r *Root) Init() error {
 }
 
 func (r *Root) renderMainView() error {
-	currConn := r.app.GetConfig().GetCurrentConnection()
-	if r.app.Dao != nil && *r.app.Dao.Config == *currConn {
+	currConn := r.App.GetConfig().GetCurrentConnection()
+	if r.App.Dao != nil && *r.App.Dao.Config == *currConn {
 		return nil
 	} else {
 		// TODO: find the correct way to refresh those views
@@ -91,7 +91,7 @@ func (r *Root) renderMainView() error {
 			return err
 		}
 
-		r.app.Dao = mongo.NewDao(client.Client, client.Config)
+		r.App.Dao = mongo.NewDao(client.Client, client.Config)
 
 		if err := r.initSubviews(); err != nil {
 			return err
@@ -107,8 +107,8 @@ func (r *Root) renderMainView() error {
 
 func (r *Root) initSubviews() error {
 	runWithDraw := func(f func(app *core.App) error) {
-		r.app.QueueUpdateDraw(func() {
-			if err := f(r.app); err != nil {
+		r.App.QueueUpdateDraw(func() {
+			if err := f(r.App); err != nil {
 				log.Error().Err(err).Msg("Error initializing views")
 			}
 		})
@@ -122,29 +122,29 @@ func (r *Root) initSubviews() error {
 }
 
 func (r *Root) setStyles() {
-	r.style = &r.app.GetStyles().Root
-	r.app.Pages.SetBackgroundColor(r.style.BackgroundColor.Color())
+	r.style = &r.App.GetStyles().Root
+	r.App.Pages.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.mainFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.innerFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
 }
 
 // setKeybindings sets a key binding for the root View
 func (r *Root) setKeybindings() {
-	k := r.app.GetKeys()
+	k := r.App.GetKeys()
 	r.mainFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Root.FocusNext, event.Name()):
-			focus := r.app.GetFocus()
+			focus := r.App.GetFocus()
 			if focus == r.databases.dbTree {
-				r.app.SetFocus(r.content.Table)
+				r.App.SetFocus(r.content.Table)
 			} else {
-				r.app.SetFocus(r.databases.dbTree)
+				r.App.SetFocus(r.databases.dbTree)
 			}
 			return nil
 		case k.Contains(k.Root.HideDatabases, event.Name()):
 			if _, ok := r.mainFlex.GetItem(0).(*Databases); ok {
 				r.mainFlex.RemoveItem(r.databases)
-				r.app.SetFocus(r.content.Table)
+				r.App.SetFocus(r.content.Table)
 			} else {
 				r.mainFlex.Clear()
 				r.render()
@@ -171,8 +171,8 @@ func (r *Root) render() error {
 	r.innerFlex.AddItem(r.header, 4, 0, false)
 	r.innerFlex.AddItem(r.content, 0, 7, true)
 
-	r.app.Pages.AddPage(r.GetIdentifier(), r.mainFlex, true, true)
-	r.app.SetFocus(r.mainFlex)
+	r.App.Pages.AddPage(r.GetIdentifier(), r.mainFlex, true, true)
+	r.App.SetFocus(r.mainFlex)
 
 	return nil
 }
@@ -181,33 +181,33 @@ func (r *Root) render() error {
 func (r *Root) renderWelcome() error {
 	welcome := NewWelcome()
 
-	if err := welcome.Init(r.app); err != nil {
+	if err := welcome.Init(r.App); err != nil {
 		return err
 	}
 	welcome.SetOnSubmitFunc(func() {
-		r.app.Pages.RemovePage(welcome.GetIdentifier())
+		r.App.Pages.RemovePage(welcome.GetIdentifier())
 		err := r.renderConnector()
 		if err != nil {
-			r.app.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
-			modals.ShowError(r.app.Pages, "Error while connecting to the database", err)
+			r.App.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
+			modals.ShowError(r.App.Pages, "Error while connecting to the database", err)
 			return
 		}
 	})
-	r.app.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
+	r.App.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
 	return nil
 }
 
 // renderConnector renders connector view
 func (r *Root) renderConnector() error {
 	r.connector.SetOnSubmitFunc(func() {
-		r.app.Pages.RemovePage(r.connector.GetIdentifier())
+		r.App.Pages.RemovePage(r.connector.GetIdentifier())
 		err := r.renderMainView()
 		if err != nil {
-			r.app.Pages.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
-			modals.ShowError(r.app.Pages, "Error while connecting to the database", err)
+			r.App.Pages.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
+			modals.ShowError(r.App.Pages, "Error while connecting to the database", err)
 		}
 	})
 
-	r.app.Pages.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
+	r.App.Pages.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
 	return nil
 }

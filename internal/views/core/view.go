@@ -1,11 +1,10 @@
-package view
+package core
 
 import (
 	"sync"
 
 	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/mongui/internal/mongo"
-	"github.com/kopecmaciej/mongui/internal/views/core"
 )
 
 // BaseView is a base struct for all views.
@@ -18,19 +17,19 @@ type BaseView struct {
 	// name is the name of the view.
 	// It's used mainly for managing avaliable keybindings.
 	identifier manager.ViewIdentifier
-	// app is a pointer to the main app.
-	// It's used for accessing app focus, root page etc.
-	app *core.App
+	// App is a pointer to the main App.
+	// It's used for accessing App focus, root page etc.
+	App *App
 
 	// dao is a pointer to the mongo dao.
-	dao *mongo.Dao
+	Dao *mongo.Dao
 
-	// initFunc is a function that is called when the view is initialized.
+	// afterInitFunc is a function that is called when the view is initialized.
 	// It's main purpose is to run all the initialization functions of the subviews.
 	afterInitFunc func() error
 
-	// listener is a channel that is used to receive events from the app.
-	listener chan manager.EventMsg
+	// Listener is a channel that is used to receive events from the app.
+	Listener chan manager.EventMsg
 
 	// mutex is a mutex that is used to synchronize the view.
 	mutex sync.Mutex
@@ -45,14 +44,14 @@ func NewBaseView(identifier string) *BaseView {
 
 // Init is a function that is called when the view is initialized.
 // If custom initialization is needed, this function should be overriden.
-func (c *BaseView) Init(app *core.App) error {
-	if c.app != nil && c.identifier != "" {
+func (c *BaseView) Init(app *App) error {
+	if c.App != nil && c.identifier != "" {
 		return nil
 	}
 
-	c.app = app
+	c.App = app
 	if app.GetDao() != nil {
-		c.dao = app.GetDao()
+		c.Dao = app.GetDao()
 	}
 
 	if c.afterInitFunc != nil {
@@ -67,7 +66,7 @@ func (c *BaseView) Enable() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.enabled = true
-	c.app.GetManager().PushView(c.identifier)
+	c.App.GetManager().PushView(c.identifier)
 }
 
 // Disable unsets the enabled flag.
@@ -75,7 +74,7 @@ func (c *BaseView) Disable() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.enabled = false
-	c.app.GetManager().PopView()
+	c.App.GetManager().PopView()
 }
 
 // Toggle toggles the enabled flag.
@@ -99,6 +98,11 @@ func (c *BaseView) SetAfterInitFunc(afterInitFunc func() error) {
 	c.afterInitFunc = afterInitFunc
 }
 
+// GetAfterInitFunc returns the optional function that will be run at the end of the Init function.
+func (c *BaseView) GetAfterInitFunc() func() error {
+	return c.afterInitFunc
+}
+
 // GetIdentifier returns the identifier of the view.
 func (c *BaseView) GetIdentifier() manager.ViewIdentifier {
 	return c.identifier
@@ -106,15 +110,15 @@ func (c *BaseView) GetIdentifier() manager.ViewIdentifier {
 
 // Subscribe subscribes to the view events.
 func (c *BaseView) Subscribe() {
-	c.listener = c.app.GetManager().Subscribe(c.identifier)
+	c.Listener = c.App.GetManager().Subscribe(c.identifier)
 }
 
 // Broadcast sends an event to all listeners.
 func (c *BaseView) BroadcastEvent(event manager.EventMsg) {
-	c.app.GetManager().Broadcast(event)
+	c.App.GetManager().Broadcast(event)
 }
 
 // SendToView sends an event to the view.
 func (c *BaseView) SendToView(view manager.ViewIdentifier, event manager.EventMsg) {
-	c.app.GetManager().SendTo(view, event)
+	c.App.GetManager().SendTo(view, event)
 }

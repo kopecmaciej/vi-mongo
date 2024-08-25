@@ -7,13 +7,14 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/kopecmaciej/mongui/internal/views/modals"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
 
 type InputBar struct {
-	*BaseView
+	*core.BaseView
 	*tview.InputField
 
 	historyModal   *HistoryModal
@@ -26,7 +27,7 @@ type InputBar struct {
 
 func NewInputBar(viewName string, label string) *InputBar {
 	i := &InputBar{
-		BaseView: NewBaseView(viewName),
+		BaseView: core.NewBaseView(viewName),
 		InputField: tview.NewInputField().
 			SetLabel(" " + label + ": "),
 		enabled:        false,
@@ -49,7 +50,7 @@ func (i *InputBar) init() error {
 }
 
 func (i *InputBar) setStyle() {
-	i.style = &i.app.GetStyles().InputBar
+	i.style = &i.App.GetStyles().InputBar
 	i.SetBorder(true)
 	i.SetFieldTextColor(i.style.InputColor.Color())
 
@@ -85,7 +86,7 @@ func (i *InputBar) setKeybindings() {
 			}
 		}
 
-		k := i.app.GetKeys()
+		k := i.App.GetKeys()
 		switch {
 		case k.Contains(k.Root.Content.QueryBar.ShowHistory, event.Name()):
 			if i.historyModal != nil {
@@ -132,7 +133,7 @@ func (i *InputBar) DoneFuncHandler(accept func(string), reject func()) {
 func (i *InputBar) EnableHistory() {
 	i.historyModal = NewHistoryModal()
 
-	if err := i.historyModal.Init(i.app); err != nil {
+	if err := i.historyModal.Init(i.App); err != nil {
 		log.Error().Err(err).Msg("Error initializing history modal")
 	}
 }
@@ -205,7 +206,7 @@ func (i *InputBar) LoadNewKeys(keys []string) {
 func (i *InputBar) displayHistoryModal() {
 	err := i.historyModal.Render()
 	if err != nil {
-		modals.ShowError(i.app.Pages, "Error rendering history modal", err)
+		modals.ShowError(i.App.Pages, "Error rendering history modal", err)
 	}
 }
 
@@ -216,26 +217,26 @@ func (i *InputBar) Toggle(text string) {
 		text = i.GetText()
 	}
 	if text == "" {
-		go i.app.QueueUpdateDraw(func() {
+		go i.App.QueueUpdateDraw(func() {
 			i.SetWordAtCursor(i.defaultText)
 		})
 	}
 }
 
 func (i *InputBar) handleEvents() {
-	for event := range i.listener {
+	for event := range i.Listener {
 		sender, eventKey := event.Sender, event.EventKey
 		switch sender {
 		case i.historyModal.GetIdentifier():
 			switch eventKey.Key() {
 			case tcell.KeyEnter:
-				i.app.QueueUpdateDraw(func() {
+				i.App.QueueUpdateDraw(func() {
 					i.SetText(i.historyModal.GetText())
-					i.app.SetFocus(i)
+					i.App.SetFocus(i)
 				})
 			case tcell.KeyEsc, tcell.KeyCtrlY:
-				i.app.QueueUpdateDraw(func() {
-					i.app.SetFocus(i)
+				i.App.QueueUpdateDraw(func() {
+					i.App.SetFocus(i)
 				})
 			}
 		}

@@ -9,6 +9,7 @@ import (
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/kopecmaciej/mongui/internal/primitives"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
@@ -20,7 +21,7 @@ const (
 )
 
 type DatabaseTree struct {
-	*BaseView
+	*core.BaseView
 	*tview.TreeView
 
 	addModal    *primitives.InputModal
@@ -32,7 +33,7 @@ type DatabaseTree struct {
 
 func NewDatabaseTree() *DatabaseTree {
 	d := &DatabaseTree{
-		BaseView:    NewBaseView(DatabaseTreeView),
+		BaseView:    core.NewBaseView(DatabaseTreeView),
 		TreeView:    tview.NewTreeView(),
 		addModal:    primitives.NewInputModal(),
 		deleteModal: tview.NewModal(),
@@ -53,7 +54,7 @@ func (t *DatabaseTree) init() error {
 }
 
 func (t *DatabaseTree) setStyle() {
-	t.style = &t.app.GetStyles().Databases
+	t.style = &t.App.GetStyles().Databases
 	t.SetBorder(true)
 	t.SetTitle(" Databases ")
 	t.SetBorderPadding(0, 0, 1, 1)
@@ -75,7 +76,7 @@ func (t *DatabaseTree) setStyle() {
 }
 
 func (t *DatabaseTree) setKeybindings(ctx context.Context) {
-	k := t.app.GetKeys()
+	k := t.App.GetKeys()
 	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Root.Databases.ExpandAll, event.Name()):
@@ -149,24 +150,24 @@ func (t *DatabaseTree) addCollection(ctx context.Context) error {
 				return event
 			}
 			db, collectionName = t.removeSymbols(db, collectionName)
-			err := t.dao.AddCollection(ctx, db, collectionName)
+			err := t.Dao.AddCollection(ctx, db, collectionName)
 			if err != nil {
 				log.Error().Err(err).Msg("Error adding collection")
 				return nil
 			}
 			t.addChildNode(ctx, parent, collectionName, true)
 			t.addModal.SetText("")
-			t.app.Pages.RemovePage(InputModalView)
+			t.App.Pages.RemovePage(InputModalView)
 		}
 		if event.Key() == tcell.KeyEscape {
 			t.addModal.SetText("")
-			t.app.Pages.RemovePage(InputModalView)
+			t.App.Pages.RemovePage(InputModalView)
 		}
 
 		return event
 	})
 
-	t.app.Pages.AddPage(InputModalView, t.addModal, true, true)
+	t.App.Pages.AddPage(InputModalView, t.addModal, true, true)
 
 	return nil
 }
@@ -182,9 +183,9 @@ func (t *DatabaseTree) deleteCollection(ctx context.Context) error {
 	t.deleteModal.SetText(text)
 	db, coll = t.removeSymbols(db, coll)
 	t.deleteModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		defer t.app.Pages.RemovePage(ConfirmModalView)
+		defer t.App.Pages.RemovePage(ConfirmModalView)
 		if buttonIndex == 0 {
-			err := t.dao.DeleteCollection(ctx, db, coll)
+			err := t.Dao.DeleteCollection(ctx, db, coll)
 			if err != nil {
 				return
 			}
@@ -205,7 +206,7 @@ func (t *DatabaseTree) deleteCollection(ctx context.Context) error {
 		}
 	})
 
-	t.app.Pages.AddPage(ConfirmModalView, t.deleteModal, true, true)
+	t.App.Pages.AddPage(ConfirmModalView, t.deleteModal, true, true)
 
 	return nil
 }

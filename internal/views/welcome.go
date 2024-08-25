@@ -15,7 +15,7 @@ const (
 )
 
 type Welcome struct {
-	*BaseView
+	*core.BaseView
 	*tview.Flex
 
 	// Form
@@ -27,7 +27,7 @@ type Welcome struct {
 
 func NewWelcome() *Welcome {
 	w := &Welcome{
-		BaseView: NewBaseView(WelcomeView),
+		BaseView: core.NewBaseView(WelcomeView),
 		Flex:     tview.NewFlex(),
 		form:     tview.NewForm(),
 	}
@@ -36,7 +36,7 @@ func NewWelcome() *Welcome {
 }
 
 func (w *Welcome) Init(app *core.App) error {
-	w.app = app
+	w.App = app
 
 	w.setStyle()
 
@@ -46,7 +46,7 @@ func (w *Welcome) Init(app *core.App) error {
 }
 
 func (w *Welcome) setStyle() {
-	style := w.app.GetStyles().Welcome
+	style := w.App.GetStyles().Welcome
 
 	w.form.SetBorder(true)
 	w.form.SetBackgroundColor(style.BackgroundColor.Color())
@@ -67,7 +67,7 @@ func (w *Welcome) Render() {
 
 	w.AddItem(tview.NewBox(), 0, 1, false)
 
-	w.app.SetRoot(w.Flex, true)
+	w.App.SetRoot(w.Flex, true)
 }
 
 func (w *Welcome) SetOnSubmitFunc(onSubmit func()) {
@@ -83,7 +83,7 @@ func (w *Welcome) renderForm() {
 
 	configFile, err := config.GetConfigPath()
 	if err != nil {
-		modals.ShowError(w.app.Pages, "Error while getting config path", err)
+		modals.ShowError(w.App.Pages, "Error while getting config path", err)
 		return
 	}
 	welcomeText := "All configuration can be set in " + configFile + " file. You can also set it here."
@@ -95,19 +95,19 @@ func (w *Welcome) renderForm() {
 	w.form.AddInputField("Log Level", "info", 30, nil, nil)
 	w.form.AddCheckbox("Show connection page", true, nil)
 	w.form.AddCheckbox("Show welcome page", false, nil)
-	w.form.AddTextView("Show help", fmt.Sprintf("Press %s to show help", w.app.GetKeys().Global.ToggleFullScreenHelp.String()), 60, 1, true, false)
+	w.form.AddTextView("Show help", fmt.Sprintf("Press %s to show help", w.App.GetKeys().Global.ToggleFullScreenHelp.String()), 60, 1, true, false)
 
 	w.form.AddButton(" Save and Connect ", func() {
 		err := w.saveConfig()
 		if err != nil {
-			modals.ShowError(w.app.Pages, "Error while saving config", err)
+			modals.ShowError(w.App.Pages, "Error while saving config", err)
 			return
 		}
 		w.onSubmit()
 	})
 
 	w.form.AddButton(" Exit ", func() {
-		w.app.Stop()
+		w.App.Stop()
 	})
 }
 
@@ -118,7 +118,7 @@ func (w *Welcome) saveConfig() error {
 	connPage := w.form.GetFormItemByLabel("Show connection page").(*tview.Checkbox).IsChecked()
 	welcomePage := w.form.GetFormItemByLabel("Show welcome page").(*tview.Checkbox).IsChecked()
 
-	c := w.app.GetConfig()
+	c := w.App.GetConfig()
 
 	splitedEditorCmd := strings.Split(editorCmd, "$")
 	if len(splitedEditorCmd) > 1 {
@@ -133,7 +133,7 @@ func (w *Welcome) saveConfig() error {
 	c.ShowConnectionPage = connPage
 	c.ShowWelcomePage = welcomePage
 
-	err := w.app.GetConfig().UpdateConfig()
+	err := w.App.GetConfig().UpdateConfig()
 	if err != nil {
 		return err
 	}

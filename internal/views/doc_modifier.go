@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/kopecmaciej/mongui/internal/mongo"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -20,12 +21,12 @@ const (
 
 // DocModifier is a view that allows editing JSON documents
 type DocModifier struct {
-	*BaseView
+	*core.BaseView
 }
 
 func NewDocModifier() *DocModifier {
 	return &DocModifier{
-		BaseView: NewBaseView(DocModifierView),
+		BaseView: core.NewBaseView(DocModifierView),
 	}
 }
 
@@ -46,7 +47,7 @@ func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.Ob
 		return primitive.NilObjectID, fmt.Errorf("error unmarshaling JSON: %v", err)
 	}
 
-	rawID, err := d.dao.InsetDocument(ctx, db, coll, document)
+	rawID, err := d.Dao.InsetDocument(ctx, db, coll, document)
 	if err != nil {
 		return primitive.NilObjectID, fmt.Errorf("error inserting document: %v", err)
 	}
@@ -102,7 +103,7 @@ func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocumen
 
 	delete(parsedDoc, "_id")
 
-	rawID, err := d.dao.InsetDocument(ctx, db, coll, parsedDoc)
+	rawID, err := d.Dao.InsetDocument(ctx, db, coll, parsedDoc)
 	if err != nil {
 		return primitive.NilObjectID, fmt.Errorf("error inserting document: %v", err)
 	}
@@ -129,7 +130,7 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, rawDo
 	if err != nil {
 		return fmt.Errorf("error getting _id from document: %v", err)
 	}
-	err = d.dao.UpdateDocument(ctx, db, coll, id, parsedDoc)
+	err = d.Dao.UpdateDocument(ctx, db, coll, id, parsedDoc)
 	if err != nil {
 		log.Error().Msgf("error updating document: %v", err)
 		return nil
@@ -151,7 +152,7 @@ func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 	}
 	defer os.Remove(tmpFile.Name())
 
-	ed, err := d.app.GetConfig().GetEditorCmd()
+	ed, err := d.App.GetConfig().GetEditorCmd()
 	if err != nil {
 		return "", fmt.Errorf("error getting editor command: %v", err)
 	}
@@ -162,7 +163,7 @@ func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 
 	updatedDocument := ""
 
-	d.app.Suspend(func() {
+	d.App.Suspend(func() {
 		cmd := exec.Command(editor, tmpFile.Name())
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout

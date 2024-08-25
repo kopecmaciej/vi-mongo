@@ -5,6 +5,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/kopecmaciej/mongui/internal/views/modals"
 	"github.com/kopecmaciej/tview"
 )
@@ -15,7 +16,7 @@ const (
 
 // Help is a view that provides a help screen for keybindings
 type Help struct {
-	*BaseView
+	*core.BaseView
 	*tview.Flex
 
 	Table *tview.Table
@@ -25,7 +26,7 @@ type Help struct {
 // NewHelp creates a new Help view
 func NewHelp() *Help {
 	h := &Help{
-		BaseView: NewBaseView(HelpView),
+		BaseView: core.NewBaseView(HelpView),
 		Flex:     tview.NewFlex(),
 		Table:    tview.NewTable(),
 	}
@@ -46,26 +47,26 @@ func (h *Help) Render(fullScreen bool) error {
 	h.Clear()
 	h.Table.Clear()
 
-	currectView := h.app.Manager.CurrentView()
-	cKeys, err := h.app.GetKeys().GetKeysForView(string(currectView))
+	currectView := h.App.Manager.CurrentView()
+	cKeys, err := h.App.GetKeys().GetKeysForView(string(currectView))
 	if err != nil {
-		modals.ShowError(h.app.Pages, "No keys found for current view", err)
+		modals.ShowError(h.App.Pages, "No keys found for current view", err)
 		return err
 	}
 
 	row := 0
 	h.renderKeySection(cKeys, &row)
 
-	gKeys, err := h.app.GetKeys().GetKeysForView("Global")
+	gKeys, err := h.App.GetKeys().GetKeysForView("Global")
 	if err != nil {
-		modals.ShowError(h.app.Pages, "Error while getting keys for view", err)
+		modals.ShowError(h.App.Pages, "Error while getting keys for view", err)
 		return err
 	}
 	h.renderKeySection(gKeys, &row)
 
-	hKeys, err := h.app.GetKeys().GetKeysForView("Help")
+	hKeys, err := h.App.GetKeys().GetKeysForView("Help")
 	if err != nil {
-		modals.ShowError(h.app.Pages, "Error while getting keys for view", err)
+		modals.ShowError(h.App.Pages, "Error while getting keys for view", err)
 		return err
 	}
 	h.renderKeySection(hKeys, &row)
@@ -126,7 +127,7 @@ func (h *Help) AddKeySection(name string, keys []config.Key, pos *int, col int) 
 }
 
 func (h *Help) setStyle() {
-	h.style = &h.app.GetStyles().Help
+	h.style = &h.App.GetStyles().Help
 	h.Table.SetBorder(true)
 	h.Table.SetTitle(" Help ")
 	h.Table.SetTitleAlign(tview.AlignLeft)
@@ -137,12 +138,12 @@ func (h *Help) setStyle() {
 }
 
 func (h *Help) setKeybindings() {
-	k := h.app.GetKeys()
+	k := h.App.GetKeys()
 
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Help.Close, event.Name()):
-			h.app.Pages.RemovePage(HelpView)
+			h.App.Pages.RemovePage(HelpView)
 			return nil
 		}
 		return event

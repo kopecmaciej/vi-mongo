@@ -7,6 +7,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/mongo"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/kopecmaciej/tview"
 )
 
@@ -17,7 +18,7 @@ const (
 
 // Databases is flex container for DatabaseTree and InputBar
 type Databases struct {
-	*BaseView
+	*core.BaseView
 	*tview.Flex
 
 	dbTree       *DatabaseTree
@@ -28,7 +29,7 @@ type Databases struct {
 
 func NewDatabases() *Databases {
 	s := &Databases{
-		BaseView:  NewBaseView(DatabasesView),
+		BaseView:  core.NewBaseView(DatabasesView),
 		Flex:      tview.NewFlex(),
 		dbTree:    NewDatabaseTree(),
 		filterBar: NewInputBar(FilterBarView, "Filter"),
@@ -45,7 +46,7 @@ func (s *Databases) init() error {
 	s.setStyle()
 	s.setKeybindings()
 
-	if err := s.dbTree.Init(s.app); err != nil {
+	if err := s.dbTree.Init(s.App); err != nil {
 		return err
 	}
 
@@ -55,7 +56,7 @@ func (s *Databases) init() error {
 	if err := s.renderWithFilter(ctx, ""); err != nil {
 		return err
 	}
-	if err := s.filterBar.Init(s.app); err != nil {
+	if err := s.filterBar.Init(s.App); err != nil {
 		return err
 	}
 	s.filterBarListener(ctx)
@@ -68,7 +69,7 @@ func (s *Databases) setStyle() {
 }
 
 func (s *Databases) setKeybindings() {
-	keys := s.app.GetKeys()
+	keys := s.App.GetKeys()
 	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case keys.Contains(keys.Root.Databases.FilterBar, event.Name()):
@@ -90,7 +91,7 @@ func (s *Databases) render() error {
 		s.Flex.AddItem(s.filterBar, 3, 0, false)
 		primitive = s.filterBar
 	}
-	defer s.app.SetFocus(primitive)
+	defer s.App.SetFocus(primitive)
 
 	s.Flex.AddItem(s.dbTree, 0, 1, true)
 
@@ -162,7 +163,7 @@ func (s *Databases) renderWithFilter(ctx context.Context, filter string) error {
 }
 
 func (s *Databases) fetchDbsWithCollections(ctx context.Context, filter string) error {
-	dbsWitColls, err := s.dao.ListDbsWithCollections(ctx, filter)
+	dbsWitColls, err := s.Dao.ListDbsWithCollections(ctx, filter)
 	if err != nil {
 		return err
 	}

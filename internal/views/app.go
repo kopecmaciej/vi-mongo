@@ -31,7 +31,7 @@ func NewApp(appConfig *config.Config) *App {
 
 // Init initializes app
 func (a *App) Init() error {
-	a.Root.app = a.App
+	a.Root.App = a.App
 	if err := a.Root.Init(); err != nil {
 		return err
 	}

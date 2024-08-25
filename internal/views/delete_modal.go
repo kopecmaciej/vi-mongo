@@ -3,6 +3,7 @@ package view
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/kopecmaciej/tview"
 )
 
@@ -11,7 +12,7 @@ const (
 )
 
 type DeleteModal struct {
-	*BaseView
+	*core.BaseView
 	*tview.Modal
 
 	style *config.OthersStyle
@@ -19,7 +20,7 @@ type DeleteModal struct {
 
 func NewDeleteModal() *DeleteModal {
 	dm := &DeleteModal{
-		BaseView: NewBaseView(DeleteModalView),
+		BaseView: core.NewBaseView(DeleteModalView),
 		Modal:    tview.NewModal(),
 	}
 
@@ -38,7 +39,7 @@ func (d *DeleteModal) init() error {
 }
 
 func (d *DeleteModal) setStyle() {
-	d.style = &d.app.GetStyles().Others
+	d.style = &d.App.GetStyles().Others
 
 	d.SetBorder(true)
 	d.SetTitle(" Delete ")

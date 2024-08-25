@@ -8,6 +8,7 @@ import (
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/mongui/internal/primitives"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 )
 
 const (
@@ -18,7 +19,7 @@ const (
 
 // HistoryModal is a modal with history of queries
 type HistoryModal struct {
-	*BaseView
+	*core.BaseView
 	*primitives.ListModal
 
 	style *config.HistoryStyle
@@ -26,7 +27,7 @@ type HistoryModal struct {
 
 func NewHistoryModal() *HistoryModal {
 	h := &HistoryModal{
-		BaseView:  NewBaseView(HistoryModalView),
+		BaseView:  core.NewBaseView(HistoryModalView),
 		ListModal: primitives.NewListModal(),
 	}
 
@@ -44,7 +45,7 @@ func (h *HistoryModal) init() error {
 }
 
 func (h *HistoryModal) setStyle() {
-	h.style = &h.app.GetStyles().History
+	h.style = &h.App.GetStyles().History
 
 	h.SetTitle(" History ")
 	h.SetBorder(true)
@@ -67,7 +68,7 @@ func (h *HistoryModal) setKeybindings() {
 		case tcell.KeyEsc, tcell.KeyEnter, tcell.KeyCtrlY:
 			eventKey := manager.EventMsg{EventKey: event, Sender: h.GetIdentifier()}
 			h.SendToView(QueryBarView, eventKey)
-			h.app.Pages.RemovePage(h.GetIdentifier())
+			h.App.Pages.RemovePage(h.GetIdentifier())
 			return nil
 		}
 		return event
@@ -90,7 +91,7 @@ func (h *HistoryModal) Render() error {
 		h.AddItem(entry, "", int32(rune), nil)
 	}
 
-	h.app.Pages.AddPage(h.GetIdentifier(), h, true, true)
+	h.App.Pages.AddPage(h.GetIdentifier(), h, true, true)
 
 	return nil
 }

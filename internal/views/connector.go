@@ -16,7 +16,7 @@ const (
 
 // Connector is a view for connecting to mongodb using tview package
 type Connector struct {
-	*BaseView
+	*core.BaseView
 	*tview.Flex
 
 	// form is for creating new connection
@@ -32,7 +32,7 @@ type Connector struct {
 // NewConnector creates a new connection view
 func NewConnector() *Connector {
 	c := &Connector{
-		BaseView: NewBaseView(ConnectorView),
+		BaseView: core.NewBaseView(ConnectorView),
 		Flex:     tview.NewFlex(),
 		form:     tview.NewForm(),
 		list:     tview.NewList(),
@@ -43,7 +43,7 @@ func NewConnector() *Connector {
 
 // Init overrides the Init function from the View struct
 func (c *Connector) Init(app *core.App) error {
-	c.app = app
+	c.App = app
 
 	c.setStyle()
 	c.setKeybindings()
@@ -54,7 +54,7 @@ func (c *Connector) Init(app *core.App) error {
 }
 
 func (c *Connector) setStyle() {
-	style := c.app.GetStyles().Connector
+	style := c.App.GetStyles().Connector
 
 	c.SetBackgroundColor(style.BackgroundColor.Color())
 	c.form.SetTitle(" New connection ")
@@ -84,14 +84,14 @@ func (c *Connector) setStyle() {
 }
 
 func (c *Connector) setKeybindings() {
-	k := c.app.GetKeys()
+	k := c.App.GetKeys()
 	c.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Connector.ConnectorForm.SaveConnection, event.Name()):
 			c.saveButtonFunc()
 			return nil
 		case k.Contains(k.Connector.ConnectorForm.FocusList, event.Name()):
-			c.app.SetFocus(c.list)
+			c.App.SetFocus(c.list)
 			return nil
 		}
 
@@ -101,7 +101,7 @@ func (c *Connector) setKeybindings() {
 	c.list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Connector.ConnectorList.FocusForm, event.Name()):
-			c.app.SetFocus(c.form)
+			c.App.SetFocus(c.form)
 			return nil
 		case k.Contains(k.Connector.ConnectorList.DeleteConnection, event.Name()):
 			c.deleteCurrConnection()
@@ -118,11 +118,11 @@ func (c *Connector) Render() {
 	// easy way to center the form
 	c.AddItem(tview.NewBox(), 0, 1, false)
 
-	if len(c.app.GetConfig().Connections) > 0 {
+	if len(c.App.GetConfig().Connections) > 0 {
 		c.renderList()
-		defer c.app.SetFocus(c.list)
+		defer c.App.SetFocus(c.list)
 	} else {
-		defer c.app.SetFocus(c.form)
+		defer c.App.SetFocus(c.form)
 	}
 	c.renderForm()
 
@@ -158,15 +158,15 @@ func (c *Connector) renderForm() *tview.Form {
 func (c *Connector) renderList() {
 	c.list.Clear()
 
-	for _, conn := range c.app.GetConfig().Connections {
+	for _, conn := range c.App.GetConfig().Connections {
 		uri := "uri: " + conn.GetUri()
 		c.list.AddItem(conn.Name, uri, 0, func() {
 			c.setConnections()
 		})
 	}
 
-	c.list.AddItem("Click to add new connection", "or by pressing "+c.app.GetKeys().Connector.ConnectorList.FocusForm.String(), 0, func() {
-		c.app.SetFocus(c.form)
+	c.list.AddItem("Click to add new connection", "or by pressing "+c.App.GetKeys().Connector.ConnectorList.FocusForm.String(), 0, func() {
+		c.App.SetFocus(c.form)
 	})
 
 	c.AddItem(c.list, 50, 0, true)
@@ -178,12 +178,12 @@ func (c *Connector) setConnections() {
 		return
 	}
 	connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
-	err := c.app.GetConfig().SetCurrentConnection(connName)
+	err := c.App.GetConfig().SetCurrentConnection(connName)
 	if err != nil {
-		modals.ShowError(c.app.Pages, "Failed to set current connection", err)
+		modals.ShowError(c.App.Pages, "Failed to set current connection", err)
 		return
 	}
-	c.app.GetConfig().CurrentConnection = connName
+	c.App.GetConfig().CurrentConnection = connName
 	if c.onSubmit != nil {
 		c.onSubmit()
 	}
@@ -193,7 +193,7 @@ func (c *Connector) setConnections() {
 func (c *Connector) deleteCurrConnection() error {
 	currItem := c.list.GetCurrentItem()
 	currConn, _ := c.list.GetItemText(currItem)
-	err := c.app.GetConfig().DeleteConnection(currConn)
+	err := c.App.GetConfig().DeleteConnection(currConn)
 	if err != nil {
 		return err
 	}
@@ -211,20 +211,20 @@ func (c *Connector) saveButtonFunc() {
 	timeout := c.form.GetFormItemByLabel("Timeout").(*tview.InputField).GetText()
 	intTimeout, err := strconv.Atoi(timeout)
 	if err != nil {
-		modals.ShowError(c.app.Pages, "Timeout must be a number", err)
+		modals.ShowError(c.App.Pages, "Timeout must be a number", err)
 		return
 	}
 	if url != "mongodb://" {
 		if name == "" {
 			name = url
 		}
-		err := c.app.GetConfig().AddConnectionFromUri(&config.MongoConfig{
+		err := c.App.GetConfig().AddConnectionFromUri(&config.MongoConfig{
 			Name:    name,
 			Uri:     url,
 			Timeout: intTimeout,
 		})
 		if err != nil {
-			modals.ShowError(c.app.Pages, "Failed to save connection", err)
+			modals.ShowError(c.App.Pages, "Failed to save connection", err)
 			c.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
 			return
 		}
@@ -233,7 +233,7 @@ func (c *Connector) saveButtonFunc() {
 		port := c.form.GetFormItemByLabel("Port").(*tview.InputField).GetText()
 		intPort, err := strconv.Atoi(port)
 		if err != nil {
-			modals.ShowError(c.app.Pages, "Port must be a number", err)
+			modals.ShowError(c.App.Pages, "Port must be a number", err)
 			return
 		}
 		username := c.form.GetFormItemByLabel("Username").(*tview.InputField).GetText()
@@ -243,7 +243,7 @@ func (c *Connector) saveButtonFunc() {
 		if name == "" {
 			name = host + ":" + port
 		}
-		err = c.app.Config.AddConnection(&config.MongoConfig{
+		err = c.App.GetConfig().AddConnection(&config.MongoConfig{
 			Name:     name,
 			Host:     host,
 			Port:     intPort,
@@ -253,7 +253,7 @@ func (c *Connector) saveButtonFunc() {
 			Timeout:  intTimeout,
 		})
 		if err != nil {
-			modals.ShowError(c.app.Pages, "Failed to save connection", err)
+			modals.ShowError(c.App.Pages, "Failed to save connection", err)
 			return
 		}
 	}

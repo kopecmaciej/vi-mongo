@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
@@ -28,7 +29,7 @@ type (
 	// Header is a view that displays information about the database
 	// in the header of the application
 	Header struct {
-		*BaseView
+		*core.BaseView
 		*tview.Table
 
 		style    *config.HeaderStyle
@@ -39,7 +40,7 @@ type (
 // NewHeader creates a new header view
 func NewHeader() *Header {
 	h := Header{
-		BaseView: NewBaseView(HeaderView),
+		BaseView: core.NewBaseView(HeaderView),
 		Table:    tview.NewTable(),
 		baseInfo: make(BaseInfo),
 	}
@@ -64,7 +65,7 @@ func (h *Header) init() error {
 }
 
 func (h *Header) setStyle() {
-	h.style = &h.app.GetStyles().Header
+	h.style = &h.App.GetStyles().Header
 	h.Table.SetBackgroundColor(h.style.BackgroundColor.Color())
 	h.Table.SetBorderColor(h.style.BorderColor.Color())
 	h.Table.SetSelectable(false, false)
@@ -76,12 +77,12 @@ func (h *Header) setStyle() {
 // setBaseInfo sets the base information about the database
 // such as status, host, port, database, version, uptime, connections, memory etc.
 func (h *Header) setBaseInfo(ctx context.Context) error {
-	ss, err := h.dao.GetServerStatus(ctx)
+	ss, err := h.Dao.GetServerStatus(ctx)
 	if err != nil {
 		return err
 	}
 
-	port := strconv.Itoa(h.dao.Config.Port)
+	port := strconv.Itoa(h.Dao.Config.Port)
 
 	orElseNil := func(i int32) string {
 		if i == 0 {
@@ -92,9 +93,9 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 
 	h.baseInfo = BaseInfo{
 		0:  {"Status", h.style.ActiveSymbol.String()},
-		1:  {"Host", h.dao.Config.Host},
+		1:  {"Host", h.Dao.Config.Host},
 		2:  {"Port", port},
-		3:  {"Database", h.dao.Config.Database},
+		3:  {"Database", h.Dao.Config.Database},
 		4:  {"Version", ss.Version},
 		5:  {"Uptime", orElseNil(ss.Uptime)},
 		6:  {"Connections", orElseNil(ss.CurrentConns)},
@@ -126,7 +127,7 @@ func (h *Header) refresh() {
 				sleep += 5 * time.Second
 			}
 		}()
-		h.app.QueueUpdateDraw(func() {
+		h.App.QueueUpdateDraw(func() {
 			h.render()
 		})
 	}
