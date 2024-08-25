@@ -1,4 +1,4 @@
-package component
+package view
 
 import (
 	"context"
@@ -11,13 +11,13 @@ import (
 )
 
 const (
-	DatabasesComponent = "Databases"
-	FilterBarComponent = "FilterBar"
+	DatabasesView = "Databases"
+	FilterBarView = "FilterBar"
 )
 
 // Databases is flex container for DatabaseTree and InputBar
 type Databases struct {
-	*BaseComponent
+	*BaseView
 	*tview.Flex
 
 	dbTree       *DatabaseTree
@@ -28,11 +28,11 @@ type Databases struct {
 
 func NewDatabases() *Databases {
 	s := &Databases{
-		BaseComponent: NewBaseComponent(DatabasesComponent),
-		Flex:          tview.NewFlex(),
-		dbTree:        NewDatabaseTree(),
-		filterBar:     NewInputBar(FilterBarComponent, "Filter"),
-		mutex:         sync.Mutex{},
+		BaseView:  NewBaseView(DatabasesView),
+		Flex:      tview.NewFlex(),
+		dbTree:    NewDatabaseTree(),
+		filterBar: NewInputBar(FilterBarView, "Filter"),
+		mutex:     sync.Mutex{},
 	}
 
 	s.SetAfterInitFunc(s.init)

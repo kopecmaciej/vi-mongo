@@ -1,4 +1,4 @@
-package component
+package view
 
 import (
 	"fmt"
@@ -9,24 +9,24 @@ import (
 )
 
 const (
-	HelpComponent = "Help"
+	HelpView = "Help"
 )
 
-// Help is a component that provides a help screen for keybindings
+// Help is a view that provides a help screen for keybindings
 type Help struct {
-	*BaseComponent
+	*BaseView
 	*tview.Flex
 
 	Table *tview.Table
 	style *config.HelpStyle
 }
 
-// NewHelp creates a new Help component
+// NewHelp creates a new Help view
 func NewHelp() *Help {
 	h := &Help{
-		BaseComponent: NewBaseComponent(HelpComponent),
-		Flex:          tview.NewFlex(),
-		Table:         tview.NewTable(),
+		BaseView: NewBaseView(HelpView),
+		Flex:     tview.NewFlex(),
+		Table:    tview.NewTable(),
 	}
 
 	h.SetAfterInitFunc(h.init)
@@ -45,26 +45,26 @@ func (h *Help) Render(fullScreen bool) error {
 	h.Clear()
 	h.Table.Clear()
 
-	currectComponent := h.app.Manager.CurrentComponent()
-	cKeys, err := h.app.Keys.GetKeysForComponent(string(currectComponent))
+	currectView := h.app.Manager.CurrentView()
+	cKeys, err := h.app.Keys.GetKeysForView(string(currectView))
 	if err != nil {
-		ShowErrorModal(h.app.Root, "No keys found for current component", err)
+		ShowErrorModal(h.app.Pages, "No keys found for current view", err)
 		return err
 	}
 
 	row := 0
 	h.renderKeySection(cKeys, &row)
 
-	gKeys, err := h.app.Keys.GetKeysForComponent("Global")
+	gKeys, err := h.app.Keys.GetKeysForView("Global")
 	if err != nil {
-		ShowErrorModal(h.app.Root, "Error while getting keys for component", err)
+		ShowErrorModal(h.app.Pages, "Error while getting keys for view", err)
 		return err
 	}
 	h.renderKeySection(gKeys, &row)
 
-	hKeys, err := h.app.Keys.GetKeysForComponent("Help")
+	hKeys, err := h.app.Keys.GetKeysForView("Help")
 	if err != nil {
-		ShowErrorModal(h.app.Root, "Error while getting keys for component", err)
+		ShowErrorModal(h.app.Pages, "Error while getting keys for view", err)
 		return err
 	}
 	h.renderKeySection(hKeys, &row)
@@ -84,13 +84,13 @@ func (h *Help) Render(fullScreen bool) error {
 
 // Add this new method to render key sections
 func (h *Help) renderKeySection(keys []config.OrderedKeys, row *int) {
-	for _, componentKeys := range keys {
-		if componentKeys.Component == "Root" {
-			componentKeys.Component = "Main Layout"
+	for _, viewKeys := range keys {
+		if viewKeys.View == "Root" {
+			viewKeys.View = "Main Layout"
 		}
-		h.addHeaderSection(componentKeys.Component, *row, 0)
+		h.addHeaderSection(viewKeys.View, *row, 0)
 		*row += 2
-		h.AddKeySection(componentKeys.Component, componentKeys.Keys, row, 0)
+		h.AddKeySection(viewKeys.View, viewKeys.Keys, row, 0)
 		*row++
 	}
 }
@@ -135,14 +135,13 @@ func (h *Help) setStyle() {
 	h.Table.SetBorderColor(h.style.BorderColor.Color())
 }
 
-// setKeybindings sets a key binding for the help Component
 func (h *Help) setKeybindings() {
 	k := h.app.Keys
 
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Help.Close, event.Name()):
-			h.app.Root.RemovePage(HelpComponent)
+			h.app.Pages.RemovePage(HelpView)
 			return nil
 		}
 		return event

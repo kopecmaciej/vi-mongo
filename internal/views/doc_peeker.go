@@ -1,4 +1,4 @@
-package component
+package view
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	DocPeekerComponent = "DocPeeker"
+	DocPeekerView = "DocPeeker"
 )
 
 // peekerState is used to store the state of the document being peeked at
@@ -25,9 +25,9 @@ type peekerState struct {
 	rawDocument string
 }
 
-// DocPeeker is a component that provides a modal view for peeking at a document
+// DocPeeker is a view that provides a modal view for peeking at a document
 type DocPeeker struct {
-	*BaseComponent
+	*BaseView
 	*primitives.ModalView
 
 	style       *config.DocPeekerStyle
@@ -35,12 +35,12 @@ type DocPeeker struct {
 	state       peekerState
 }
 
-// NewDocPeeker creates a new DocPeeker component
+// NewDocPeeker creates a new DocPeeker view
 func NewDocPeeker() *DocPeeker {
 	peekr := &DocPeeker{
-		BaseComponent: NewBaseComponent(DocPeekerComponent),
-		ModalView:     primitives.NewModalView(),
-		docModifier:   NewDocModifier(),
+		BaseView:    NewBaseView(DocPeekerView),
+		ModalView:   primitives.NewModalView(),
+		docModifier: NewDocModifier(),
 	}
 
 	peekr.SetAfterInitFunc(peekr.init)
@@ -92,12 +92,12 @@ func (dc *DocPeeker) setKeybindings(ctx context.Context) {
 			return nil
 		case k.Contains(k.DocPeeker.CopyFullObj, event.Name()):
 			if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "full"); err != nil {
-				ShowErrorModal(dc.app.Root, "Error copying full line", err)
+				ShowErrorModal(dc.app.Pages, "Error copying full line", err)
 			}
 			return nil
 		case k.Contains(k.DocPeeker.CopyValue, event.Name()):
 			if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "value"); err != nil {
-				ShowErrorModal(dc.app.Root, "Error copying value", err)
+				ShowErrorModal(dc.app.Pages, "Error copying value", err)
 			}
 			return nil
 		case k.Contains(k.DocPeeker.Refresh, event.Name()):
@@ -140,13 +140,13 @@ func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 		Align:   tview.AlignLeft,
 	})
 
-	root := dc.app.Root
+	root := dc.app.Pages
 	root.AddPage(dc.identifier, dc.ModalView, true, true)
 	dc.ModalView.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Edit" {
 			updatedDoc, err := dc.docModifier.Edit(ctx, db, coll, jsonString)
 			if err != nil {
-				ShowErrorModal(dc.app.Root, "Error editing document", err)
+				ShowErrorModal(dc.app.Pages, "Error editing document", err)
 				return
 			}
 			dc.state.rawDocument = updatedDoc

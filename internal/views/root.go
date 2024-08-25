@@ -1,23 +1,22 @@
-package component
+package view
 
 import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/mongui/internal/mongo"
+
 	"github.com/kopecmaciej/tview"
 )
 
 const (
-	RootComponent = "Root"
+	RootView = "Root"
 )
 
-// Root is a component that manages visaibility of other components
+// Root is a view that manages visaibility of other views
 type Root struct {
-	*BaseComponent
-	*tview.Pages
+	*BaseView
 
 	mainFlex  *tview.Flex
 	innerFlex *tview.Flex
@@ -30,21 +29,20 @@ type Root struct {
 
 func NewRoot() *Root {
 	r := &Root{
-		BaseComponent: NewBaseComponent(RootComponent),
-		Pages:         tview.NewPages(),
-		mainFlex:      tview.NewFlex(),
-		innerFlex:     tview.NewFlex(),
-		connector:     NewConnector(),
-		header:        NewHeader(),
-		databases:     NewDatabases(),
-		content:       NewContent(),
+		BaseView:  NewBaseView(RootView),
+		mainFlex:  tview.NewFlex(),
+		innerFlex: tview.NewFlex(),
+		connector: NewConnector(),
+		header:    NewHeader(),
+		databases: NewDatabases(),
+		content:   NewContent(),
 	}
 
 	return r
 }
 
-// Init initializes root component and
-// initializes all subcomponents asynchronically
+// Init initializes root view and
+// initializes all subviews asynchronically
 func (r *Root) Init() error {
 	r.setStyles()
 	r.setKeybindings()
@@ -77,7 +75,7 @@ func (r *Root) renderMainView() error {
 	if r.app.Dao != nil && *r.app.Dao.Config == *currConn {
 		return nil
 	} else {
-		// TODO: find the correct way to refresh those components
+		// TODO: find the correct way to refresh those views
 		r.content = NewContent()
 		r.databases = NewDatabases()
 		r.header = NewHeader()
@@ -93,7 +91,7 @@ func (r *Root) renderMainView() error {
 
 		r.app.Dao = mongo.NewDao(client.Client, client.Config)
 
-		if err := r.initSubcomponents(); err != nil {
+		if err := r.initSubviews(); err != nil {
 			return err
 		}
 
@@ -105,11 +103,11 @@ func (r *Root) renderMainView() error {
 	}
 }
 
-func (r *Root) initSubcomponents() error {
+func (r *Root) initSubviews() error {
 	runWithDraw := func(f func(app *App) error) {
 		r.app.QueueUpdateDraw(func() {
 			if err := f(r.app); err != nil {
-				log.Error().Err(err).Msg("Error initializing components")
+				log.Error().Err(err).Msg("Error initializing views")
 			}
 		})
 	}
@@ -123,12 +121,12 @@ func (r *Root) initSubcomponents() error {
 
 func (r *Root) setStyles() {
 	r.style = &r.app.Styles.Root
-	r.Pages.SetBackgroundColor(r.style.BackgroundColor.Color())
+	r.app.Pages.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.mainFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.innerFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
 }
 
-// setKeybindings sets a key binding for the root Component
+// setKeybindings sets a key binding for the root View
 func (r *Root) setKeybindings() {
 	k := r.app.Keys
 	r.app.Root.mainFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -153,16 +151,12 @@ func (r *Root) setKeybindings() {
 		case k.Contains(k.Root.OpenConnector, event.Name()):
 			r.renderConnector()
 			return nil
-		case k.Contains(k.Root.HideFooterHelp, event.Name()):
-			if r.innerFlex.HasItem(r.app.FooterHelp) {
-				r.innerFlex.RemoveItem(r.app.FooterHelp)
-			}
 		}
 		return event
 	})
 }
 
-// render renders the root component and all subcomponents
+// render renders the root view and all subviews
 func (r *Root) render() error {
 	r.mainFlex.Clear()
 	r.innerFlex.Clear()
@@ -175,13 +169,13 @@ func (r *Root) render() error {
 	r.innerFlex.AddItem(r.header, 4, 0, false)
 	r.innerFlex.AddItem(r.content, 0, 7, true)
 
-	r.AddPage(r.GetIdentifier(), r.mainFlex, true, true)
+	r.app.Pages.AddPage(r.GetIdentifier(), r.mainFlex, true, true)
 	r.app.SetFocus(r.mainFlex)
 
 	return nil
 }
 
-// renderWelcome renders welcome component
+// renderWelcome renders welcome view
 func (r *Root) renderWelcome() error {
 	welcome := NewWelcome()
 
@@ -189,53 +183,29 @@ func (r *Root) renderWelcome() error {
 		return err
 	}
 	welcome.SetOnSubmitFunc(func() {
-		r.RemovePage(welcome.GetIdentifier())
+		r.app.Pages.RemovePage(welcome.GetIdentifier())
 		err := r.renderConnector()
 		if err != nil {
-			r.AddPage(welcome.GetIdentifier(), welcome, true, true)
-			ShowErrorModal(r, "Error while connecting to the database", err)
+			r.app.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
+			ShowErrorModal(r.app.Pages, "Error while connecting to the database", err)
 			return
 		}
 	})
-	r.AddPage(welcome.GetIdentifier(), welcome, true, true)
+	r.app.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
 	return nil
 }
 
-// renderConnector renders connector component
+// renderConnector renders connector view
 func (r *Root) renderConnector() error {
 	r.connector.SetOnSubmitFunc(func() {
-		r.RemovePage(r.connector.GetIdentifier())
+		r.app.Pages.RemovePage(r.connector.GetIdentifier())
 		err := r.renderMainView()
 		if err != nil {
-			r.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
-			ShowErrorModal(r, "Error while connecting to the database", err)
+			r.app.Pages.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
+			ShowErrorModal(r.app.Pages, "Error while connecting to the database", err)
 		}
 	})
 
-	r.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
+	r.app.Pages.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
 	return nil
-}
-
-// AddPage is a wrapper for tview.Pages.AddPage
-func (r *Root) AddPage(component manager.Component, page tview.Primitive, resize, visable bool) *tview.Pages {
-	if r.Pages.HasPage(string(component)) && r.app.Manager.CurrentComponent() == component {
-		return r.Pages
-	}
-	r.app.Manager.PushComponent(component)
-	r.app.SetPreviousFocus()
-	r.Pages.AddPage(string(component), page, resize, visable)
-	return r.Pages
-}
-
-// RemovePage is a wrapper for tview.Pages.RemovePage
-func (r *Root) RemovePage(component manager.Component) *tview.Pages {
-	r.app.Manager.PopComponent()
-	r.Pages.RemovePage(string(component))
-	r.app.GetBackFocus()
-	return r.Pages
-}
-
-// HasPage is a wrapper for tview.Pages.HasPage
-func (r *Root) HasPage(component manager.Component) bool {
-	return r.Pages.HasPage(string(component))
 }

@@ -12,8 +12,8 @@ import (
 
 type (
 	// KeyBindings is a way to define keybindings for the application
-	// There are components that have only keybindings and some have
-	// nested keybindings of their children components
+	// There are views that have only keybindings and some have
+	// nested keybindings of their children views
 	KeyBindings struct {
 		Global    GlobalKeys    `json:"global"`
 		Root      RootKeys      `json:"root"`
@@ -33,7 +33,7 @@ type (
 	}
 
 	// GlobalKeys is a struct that holds the global keybindings
-	// for the application, they can be triggered from any component
+	// for the application, they can be triggered from any view
 	// as keys are passed from top to bottom
 	GlobalKeys struct {
 		ToggleFullScreenHelp Key `json:"toggleFullScreenHelp"`
@@ -41,12 +41,11 @@ type (
 	}
 
 	RootKeys struct {
-		FocusNext      Key           `json:"focusNext"`
-		HideDatabases  Key           `json:"hideDatabases"`
-		OpenConnector  Key           `json:"openConnector"`
-		HideFooterHelp Key           `json:"closeFooterHelp"`
-		Databases      DatabasesKeys `json:"databases"`
-		Content        ContentKeys   `json:"content"`
+		FocusNext     Key           `json:"focusNext"`
+		HideDatabases Key           `json:"hideDatabases"`
+		OpenConnector Key           `json:"openConnector"`
+		Databases     DatabasesKeys `json:"databases"`
+		Content       ContentKeys   `json:"content"`
 	}
 
 	DatabasesKeys struct {
@@ -163,16 +162,12 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Runes:       []string{"?"},
 			Description: "Toggle full screen help",
 		},
-		ToggleHelpBarFooter: Key{
-			Keys:        []string{"Ctrl+?"},
-			Description: "Toggle help in footer",
-		},
 	}
 
 	k.Root = RootKeys{
 		FocusNext: Key{
 			Keys:        []string{"Tab", "Backtab"},
-			Description: "Focus next component",
+			Description: "Focus next view",
 		},
 		HideDatabases: Key{
 			Keys:        []string{"Ctrl+N"},
@@ -181,10 +176,6 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 		OpenConnector: Key{
 			Keys:        []string{"Ctrl+O"},
 			Description: "Open connector",
-		},
-		HideFooterHelp: Key{
-			Keys:        []string{"Esc"},
-			Description: "Hide footer help",
 		},
 	}
 
@@ -356,27 +347,27 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 }
 
 type OrderedKeys struct {
-	Component string
-	Keys      []Key
+	View string
+	Keys []Key
 }
 
-// GetKeysForComponent returns keys for component
-func (kb KeyBindings) GetKeysForComponent(component string) ([]OrderedKeys, error) {
+// GetKeysForView returns keys for view
+func (kb KeyBindings) GetKeysForView(view string) ([]OrderedKeys, error) {
 	keys := make([]OrderedKeys, 0)
-	if component == "" {
-		return nil, fmt.Errorf("component is empty")
+	if view == "" {
+		return nil, fmt.Errorf("view is empty")
 	}
 
 	v := reflect.ValueOf(kb)
-	field := v.FieldByName(component)
+	field := v.FieldByName(view)
 
 	if !field.IsValid() || field.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("field %s not found", component)
+		return nil, fmt.Errorf("field %s not found", view)
 	}
 
 	var iterateOverField func(field reflect.Value, c string)
 	iterateOverField = func(field reflect.Value, c string) {
-		key := OrderedKeys{Component: c, Keys: make([]Key, 0)}
+		key := OrderedKeys{View: c, Keys: make([]Key, 0)}
 		keys = append(keys, key)
 		for i := 0; i < field.NumField(); i++ {
 			keyField := field.Field(i)
@@ -388,7 +379,7 @@ func (kb KeyBindings) GetKeysForComponent(component string) ([]OrderedKeys, erro
 		}
 	}
 
-	iterateOverField(field, component)
+	iterateOverField(field, view)
 
 	return keys, nil
 }

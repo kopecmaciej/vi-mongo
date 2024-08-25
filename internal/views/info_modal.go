@@ -1,13 +1,14 @@
-package component
+package view
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
 
 const (
-	InfoComponent = "Info"
+	InfoView = "Info"
 )
 
 func NewInfoModal(message string) *tview.Modal {
@@ -27,24 +28,24 @@ func NewInfoModal(message string) *tview.Modal {
 }
 
 // ShowInfoModal shows a modal with an informational message
-func ShowInfoModal(page *Root, message string) {
+func ShowInfoModal(page *core.Pages, message string) {
 	infoModal := NewInfoModal(message)
 
 	infoModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
-			page.RemovePage(InfoComponent)
+			page.RemovePage(InfoView)
 		}
 	})
-	page.AddPage(InfoComponent, infoModal, true, true)
+	page.AddPage(InfoView, infoModal, true, true)
 }
 
-func ShowInfoModalAndFocus(page *Root, message string, setFocus func()) {
+func ShowInfoModalAndFocus(page *core.Pages, message string, setFocus func()) {
 	infoModal := NewInfoModal(message)
 	infoModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
-			page.RemovePage(InfoComponent)
+			page.RemovePage(InfoView)
 			setFocus()
 		}
 	})
-	page.AddPage(InfoComponent, infoModal, true, true)
+	page.AddPage(InfoView, infoModal, true, true)
 }

@@ -1,4 +1,4 @@
-package component
+package view
 
 import (
 	"strconv"
@@ -9,12 +9,12 @@ import (
 )
 
 const (
-	ConnectorComponent = "Connector"
+	ConnectorView = "Connector"
 )
 
 // Connector is a view for connecting to mongodb using tview package
 type Connector struct {
-	*BaseComponent
+	*BaseView
 	*tview.Flex
 
 	// form is for creating new connection
@@ -30,16 +30,16 @@ type Connector struct {
 // NewConnector creates a new connection view
 func NewConnector() *Connector {
 	c := &Connector{
-		BaseComponent: NewBaseComponent(ConnectorComponent),
-		Flex:          tview.NewFlex(),
-		form:          tview.NewForm(),
-		list:          tview.NewList(),
+		BaseView: NewBaseView(ConnectorView),
+		Flex:     tview.NewFlex(),
+		form:     tview.NewForm(),
+		list:     tview.NewList(),
 	}
 
 	return c
 }
 
-// Init overrides the Init function from the Component struct
+// Init overrides the Init function from the View struct
 func (c *Connector) Init(app *App) error {
 	c.app = app
 
@@ -109,7 +109,7 @@ func (c *Connector) setKeybindings() {
 	})
 }
 
-// Render renders the Component
+// Render renders the View
 func (c *Connector) Render() {
 	c.Clear()
 
@@ -178,7 +178,7 @@ func (c *Connector) setConnections() {
 	connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
 	err := c.app.Config.SetCurrentConnection(connName)
 	if err != nil {
-		ShowErrorModal(c.app.Root, "Failed to set current connection", err)
+		ShowErrorModal(c.app.Pages, "Failed to set current connection", err)
 		return
 	}
 	c.app.Config.CurrentConnection = connName
@@ -209,7 +209,7 @@ func (c *Connector) saveButtonFunc() {
 	timeout := c.form.GetFormItemByLabel("Timeout").(*tview.InputField).GetText()
 	intTimeout, err := strconv.Atoi(timeout)
 	if err != nil {
-		ShowErrorModal(c.app.Root, "Timeout must be a number", err)
+		ShowErrorModal(c.app.Pages, "Timeout must be a number", err)
 		return
 	}
 	if url != "mongodb://" {
@@ -222,7 +222,7 @@ func (c *Connector) saveButtonFunc() {
 			Timeout: intTimeout,
 		})
 		if err != nil {
-			ShowErrorModal(c.app.Root, "Failed to save connection", err)
+			ShowErrorModal(c.app.Pages, "Failed to save connection", err)
 			c.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
 			return
 		}
@@ -231,7 +231,7 @@ func (c *Connector) saveButtonFunc() {
 		port := c.form.GetFormItemByLabel("Port").(*tview.InputField).GetText()
 		intPort, err := strconv.Atoi(port)
 		if err != nil {
-			ShowErrorModal(c.app.Root, "Port must be a number", err)
+			ShowErrorModal(c.app.Pages, "Port must be a number", err)
 			return
 		}
 		username := c.form.GetFormItemByLabel("Username").(*tview.InputField).GetText()
@@ -251,7 +251,7 @@ func (c *Connector) saveButtonFunc() {
 			Timeout:  intTimeout,
 		})
 		if err != nil {
-			ShowErrorModal(c.app.Root, "Failed to save connection", err)
+			ShowErrorModal(c.app.Pages, "Failed to save connection", err)
 			return
 		}
 	}

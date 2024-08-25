@@ -1,4 +1,4 @@
-package component
+package view
 
 import (
 	"github.com/gdamore/tcell/v2"
@@ -7,11 +7,11 @@ import (
 )
 
 const (
-	DeleteModalComponent = "DeleteModal"
+	DeleteModalView = "DeleteModal"
 )
 
 type DeleteModal struct {
-	*BaseComponent
+	*BaseView
 	*tview.Modal
 
 	style *config.OthersStyle
@@ -19,8 +19,8 @@ type DeleteModal struct {
 
 func NewDeleteModal() *DeleteModal {
 	dm := &DeleteModal{
-		BaseComponent: NewBaseComponent(DeleteModalComponent),
-		Modal:         tview.NewModal(),
+		BaseView: NewBaseView(DeleteModalView),
+		Modal:    tview.NewModal(),
 	}
 
 	dm.SetAfterInitFunc(dm.init)

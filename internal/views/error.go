@@ -1,13 +1,14 @@
-package component
+package view
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
 
 const (
-	ErrorComponent = "Error"
+	ErrorView = "Error"
 )
 
 func NewErrorModal(message string, err error) *tview.Modal {
@@ -30,24 +31,24 @@ func NewErrorModal(message string, err error) *tview.Modal {
 
 // ShowErrorModal shows a modal with an error message
 // and logs the error if it's passed
-func ShowErrorModal(page *Root, message string, err error) {
+func ShowErrorModal(page *core.Pages, message string, err error) {
 	errModal := NewErrorModal(message, err)
 
 	errModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
-			page.RemovePage(ErrorComponent)
+			page.RemovePage(ErrorView)
 		}
 	})
-	page.AddPage(ErrorComponent, errModal, true, true)
+	page.AddPage(ErrorView, errModal, true, true)
 }
 
-func ShowErrorModalAndFocus(page *Root, message string, err error, setFocus func()) {
+func ShowErrorModalAndFocus(page *core.Pages, message string, err error, setFocus func()) {
 	errModal := NewErrorModal(message, err)
 	errModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
-			page.RemovePage(ErrorComponent)
+			page.RemovePage(ErrorView)
 			setFocus()
 		}
 	})
-	page.AddPage(ErrorComponent, errModal, true, true)
+	page.AddPage(ErrorView, errModal, true, true)
 }

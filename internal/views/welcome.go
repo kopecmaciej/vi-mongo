@@ -1,4 +1,4 @@
-package component
+package view
 
 import (
 	"fmt"
@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	WelcomeComponent = "Welcome"
+	WelcomeView = "Welcome"
 )
 
 type Welcome struct {
-	*BaseComponent
+	*BaseView
 	*tview.Flex
 
 	// Form
@@ -25,9 +25,9 @@ type Welcome struct {
 
 func NewWelcome() *Welcome {
 	w := &Welcome{
-		BaseComponent: NewBaseComponent(WelcomeComponent),
-		Flex:          tview.NewFlex(),
-		form:          tview.NewForm(),
+		BaseView: NewBaseView(WelcomeView),
+		Flex:     tview.NewFlex(),
+		form:     tview.NewForm(),
 	}
 
 	return w
@@ -81,7 +81,7 @@ func (w *Welcome) renderForm() {
 
 	configFile, err := config.GetConfigPath()
 	if err != nil {
-		ShowErrorModal(w.app.Root, "Error while getting config path", err)
+		ShowErrorModal(w.app.Pages, "Error while getting config path", err)
 		return
 	}
 	welcomeText := "All configuration can be set in " + configFile + " file. You can also set it here."
@@ -98,7 +98,7 @@ func (w *Welcome) renderForm() {
 	w.form.AddButton(" Save and Connect ", func() {
 		err := w.saveConfig()
 		if err != nil {
-			ShowErrorModal(w.app.Root, "Error while saving config", err)
+			ShowErrorModal(w.app.Pages, "Error while saving config", err)
 			return
 		}
 		w.onSubmit()

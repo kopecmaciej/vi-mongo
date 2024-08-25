@@ -1,4 +1,4 @@
-package component
+package view
 
 import (
 	"bytes"
@@ -15,17 +15,17 @@ import (
 )
 
 const (
-	DocModifierComponent = "DocModifier"
+	DocModifierView = "DocModifier"
 )
 
-// DocModifier is a component that allows editing JSON documents
+// DocModifier is a view that allows editing JSON documents
 type DocModifier struct {
-	*BaseComponent
+	*BaseView
 }
 
 func NewDocModifier() *DocModifier {
 	return &DocModifier{
-		BaseComponent: NewBaseComponent(DocModifierComponent),
+		BaseView: NewBaseView(DocModifierView),
 	}
 }
 

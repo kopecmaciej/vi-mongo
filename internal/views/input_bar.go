@@ -1,4 +1,4 @@
-package component
+package view
 
 import (
 	"regexp"
@@ -12,7 +12,7 @@ import (
 )
 
 type InputBar struct {
-	*BaseComponent
+	*BaseView
 	*tview.InputField
 
 	historyModal   *HistoryModal
@@ -23,9 +23,9 @@ type InputBar struct {
 	defaultText    string
 }
 
-func NewInputBar(componentName string, label string) *InputBar {
+func NewInputBar(viewName string, label string) *InputBar {
 	i := &InputBar{
-		BaseComponent: NewBaseComponent(componentName),
+		BaseView: NewBaseView(viewName),
 		InputField: tview.NewInputField().
 			SetLabel(" " + label + ": "),
 		enabled:        false,
@@ -204,13 +204,13 @@ func (i *InputBar) LoadNewKeys(keys []string) {
 func (i *InputBar) displayHistoryModal() {
 	err := i.historyModal.Render()
 	if err != nil {
-		ShowErrorModal(i.app.Root, "Error rendering history modal", err)
+		ShowErrorModal(i.app.Pages, "Error rendering history modal", err)
 	}
 }
 
 // Draws default text if input is empty
 func (i *InputBar) Toggle(text string) {
-	i.BaseComponent.Toggle()
+	i.BaseView.Toggle()
 	if text == "" {
 		text = i.GetText()
 	}

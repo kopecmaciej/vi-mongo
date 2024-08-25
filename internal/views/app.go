@@ -1,4 +1,4 @@
-package component
+package view
 
 import (
 	"strings"
@@ -7,20 +7,22 @@ import (
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/mongui/internal/mongo"
+	"github.com/kopecmaciej/mongui/internal/views/core"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
 
 type (
+	// TODO: remove from views package
 	// App is a main application struct
 	App struct {
 		*tview.Application
 
+		Pages          *core.Pages
 		Dao            *mongo.Dao
-		Manager        *manager.ComponentManager
+		Manager        *manager.ViewManager
 		Root           *Root
 		FullScreenHelp *Help
-		FooterHelp     *Help
 		Styles         *config.Styles
 		Config         *config.Config
 		Keys           *config.KeyBindings
@@ -28,7 +30,7 @@ type (
 	}
 )
 
-func NewApp(appConfig *config.Config) App {
+func NewApp(appConfig *config.Config) *App {
 	styles, err := config.LoadStyles()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load styles")
@@ -38,16 +40,17 @@ func NewApp(appConfig *config.Config) App {
 		log.Fatal().Err(err).Msg("Failed to load keybindings")
 	}
 
-	app := App{
+	app := &App{
 		Application:    tview.NewApplication(),
 		Root:           NewRoot(),
 		FullScreenHelp: NewHelp(),
-		FooterHelp:     NewHelp(),
-		Manager:        manager.NewComponentManager(),
+		Manager:        manager.NewViewManager(),
 		Styles:         styles,
 		Config:         appConfig,
 		Keys:           keyBindings,
 	}
+
+	app.Pages = core.NewPages(app.Manager, app)
 
 	return app
 }
@@ -58,13 +61,9 @@ func (a *App) Init() error {
 	if err := a.Root.Init(); err != nil {
 		return err
 	}
-	a.SetRoot(a.Root.Pages, true).EnableMouse(true)
+	a.SetRoot(a.Pages, true).EnableMouse(true)
 
 	err := a.FullScreenHelp.Init(a)
-	if err != nil {
-		return err
-	}
-	err = a.FooterHelp.Init(a)
 	if err != nil {
 		return err
 	}
@@ -78,32 +77,21 @@ func (a *App) setKeybindings() {
 		// TODO: This is temporary solution
 		switch {
 		case a.Keys.Contains(a.Keys.Global.ToggleFullScreenHelp, event.Name()):
-			if a.Root.HasPage(HelpComponent) {
-				a.Root.RemovePage(HelpComponent)
+			if a.Pages.HasPage(HelpView) {
+				a.Pages.RemovePage(HelpView)
 				return nil
 			}
 			err := a.FullScreenHelp.Render(true)
 			if err != nil {
 				return event
 			}
-			a.Root.AddPage(HelpComponent, a.FullScreenHelp, true, true)
+			a.Pages.AddPage(HelpView, a.FullScreenHelp, true, true)
 			return nil
 		case a.Keys.Contains(a.Keys.Global.ToggleHelpBarFooter, event.Name()):
 
-			if strings.Contains(string(a.Manager.CurrentComponent()), "Input") {
+			if strings.Contains(string(a.Manager.CurrentView()), "Input") {
 				return event
 			}
-
-			if a.Root.innerFlex.HasItem(a.FooterHelp) {
-				a.Root.innerFlex.RemoveItem(a.FooterHelp)
-				return nil
-			}
-			err := a.FooterHelp.Render(false)
-			if err != nil {
-				return event
-			}
-			a.Root.innerFlex.AddItem(a.FooterHelp, 10, 0, true)
-			a.SetFocus(a.FooterHelp)
 			return nil
 		}
 		return event
@@ -119,7 +107,7 @@ func (a *App) SetFocus(p tview.Primitive) {
 	a.Application.SetFocus(p)
 }
 
-func (a *App) GetBackFocus() {
+func (a *App) GiveBackFocus() {
 	if a.PreviousFocus != nil {
 		a.SetFocus(a.PreviousFocus)
 		a.PreviousFocus = nil

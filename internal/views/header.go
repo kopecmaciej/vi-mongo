@@ -1,4 +1,4 @@
-package component
+package view
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	HeaderComponent = "Header"
+	HeaderView = "Header"
 )
 
 type (
@@ -25,10 +25,10 @@ type (
 
 	BaseInfo map[order]info
 
-	// Header is a component that displays information about the database
+	// Header is a view that displays information about the database
 	// in the header of the application
 	Header struct {
-		*BaseComponent
+		*BaseView
 		*tview.Table
 
 		style    *config.HeaderStyle
@@ -36,12 +36,12 @@ type (
 	}
 )
 
-// NewHeader creates a new header component
+// NewHeader creates a new header view
 func NewHeader() *Header {
 	h := Header{
-		BaseComponent: NewBaseComponent(HeaderComponent),
-		Table:         tview.NewTable(),
-		baseInfo:      make(BaseInfo),
+		BaseView: NewBaseView(HeaderView),
+		Table:    tview.NewTable(),
+		baseInfo: make(BaseInfo),
 	}
 
 	h.SetAfterInitFunc(h.init)
@@ -107,7 +107,7 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 	return nil
 }
 
-// refresh refreshes the header component every 10 seconds
+// refresh refreshes the header view every 10 seconds
 // to display the most recent information about the database
 func (h *Header) refresh() {
 	sleep := 10 * time.Second
@@ -132,7 +132,7 @@ func (h *Header) refresh() {
 	}
 }
 
-// render renders the header component
+// render renders the header view
 func (h *Header) render() {
 	b := h.baseInfo
 

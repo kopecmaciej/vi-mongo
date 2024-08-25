@@ -1,4 +1,4 @@
-package component
+package view
 
 import (
 	"os"
@@ -11,14 +11,14 @@ import (
 )
 
 const (
-	HistoryModalComponent = "HistoryModal"
+	HistoryModalView = "HistoryModal"
 
 	maxHistory = 10
 )
 
 // HistoryModal is a modal with history of queries
 type HistoryModal struct {
-	*BaseComponent
+	*BaseView
 	*primitives.ListModal
 
 	style *config.HistoryStyle
@@ -26,8 +26,8 @@ type HistoryModal struct {
 
 func NewHistoryModal() *HistoryModal {
 	h := &HistoryModal{
-		BaseComponent: NewBaseComponent(HistoryModalComponent),
-		ListModal:     primitives.NewListModal(),
+		BaseView:  NewBaseView(HistoryModalView),
+		ListModal: primitives.NewListModal(),
 	}
 
 	h.SetAfterInitFunc(h.init)
@@ -66,8 +66,8 @@ func (h *HistoryModal) setKeybindings() {
 		switch event.Key() {
 		case tcell.KeyEsc, tcell.KeyEnter, tcell.KeyCtrlY:
 			eventKey := manager.EventMsg{EventKey: event, Sender: h.GetIdentifier()}
-			h.SendToComponent(QueryBarComponent, eventKey)
-			h.app.Root.RemovePage(h.GetIdentifier())
+			h.SendToView(QueryBarView, eventKey)
+			h.app.Pages.RemovePage(h.GetIdentifier())
 			return nil
 		}
 		return event
@@ -90,7 +90,7 @@ func (h *HistoryModal) Render() error {
 		h.AddItem(entry, "", int32(rune), nil)
 	}
 
-	h.app.Root.AddPage(h.GetIdentifier(), h, true, true)
+	h.app.Pages.AddPage(h.GetIdentifier(), h, true, true)
 
 	return nil
 }

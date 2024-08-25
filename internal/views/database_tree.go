@@ -1,4 +1,4 @@
-package component
+package view
 
 import (
 	"context"
@@ -14,13 +14,13 @@ import (
 )
 
 const (
-	DatabaseTreeComponent = "DatabaseTree"
-	InputModalComponent   = "InputModal"
-	ConfirmModalComponent = "ConfirmModal"
+	DatabaseTreeView = "DatabaseTree"
+	InputModalView   = "InputModal"
+	ConfirmModalView = "ConfirmModal"
 )
 
 type DatabaseTree struct {
-	*BaseComponent
+	*BaseView
 	*tview.TreeView
 
 	addModal    *primitives.InputModal
@@ -32,10 +32,10 @@ type DatabaseTree struct {
 
 func NewDatabaseTree() *DatabaseTree {
 	d := &DatabaseTree{
-		BaseComponent: NewBaseComponent(DatabaseTreeComponent),
-		TreeView:      tview.NewTreeView(),
-		addModal:      primitives.NewInputModal(),
-		deleteModal:   tview.NewModal(),
+		BaseView:    NewBaseView(DatabaseTreeView),
+		TreeView:    tview.NewTreeView(),
+		addModal:    primitives.NewInputModal(),
+		deleteModal: tview.NewModal(),
 	}
 
 	d.SetAfterInitFunc(d.init)
@@ -156,17 +156,17 @@ func (t *DatabaseTree) addCollection(ctx context.Context) error {
 			}
 			t.addChildNode(ctx, parent, collectionName, true)
 			t.addModal.SetText("")
-			t.app.Root.RemovePage(InputModalComponent)
+			t.app.Pages.RemovePage(InputModalView)
 		}
 		if event.Key() == tcell.KeyEscape {
 			t.addModal.SetText("")
-			t.app.Root.RemovePage(InputModalComponent)
+			t.app.Pages.RemovePage(InputModalView)
 		}
 
 		return event
 	})
 
-	t.app.Root.AddPage(InputModalComponent, t.addModal, true, true)
+	t.app.Pages.AddPage(InputModalView, t.addModal, true, true)
 
 	return nil
 }
@@ -182,7 +182,7 @@ func (t *DatabaseTree) deleteCollection(ctx context.Context) error {
 	t.deleteModal.SetText(text)
 	db, coll = t.removeSymbols(db, coll)
 	t.deleteModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		defer t.app.Root.RemovePage(ConfirmModalComponent)
+		defer t.app.Pages.RemovePage(ConfirmModalView)
 		if buttonIndex == 0 {
 			err := t.dao.DeleteCollection(ctx, db, coll)
 			if err != nil {
@@ -205,7 +205,7 @@ func (t *DatabaseTree) deleteCollection(ctx context.Context) error {
 		}
 	})
 
-	t.app.Root.AddPage(ConfirmModalComponent, t.deleteModal, true, true)
+	t.app.Pages.AddPage(ConfirmModalView, t.deleteModal, true, true)
 
 	return nil
 }
