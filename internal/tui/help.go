@@ -6,7 +6,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/tui/core"
-	"github.com/kopecmaciej/mongui/internal/tui/dialogs"
+	"github.com/kopecmaciej/mongui/internal/tui/modal"
 	"github.com/kopecmaciej/tview"
 )
 
@@ -50,7 +50,7 @@ func (h *Help) Render(fullScreen bool) error {
 	currectView := h.App.Manager.CurrentView()
 	cKeys, err := h.App.GetKeys().GetKeysForView(string(currectView))
 	if err != nil {
-		dialogs.ShowError(h.App.Pages, "No keys found for current view", err)
+		modal.ShowError(h.App.Pages, "No keys found for current view", err)
 		return err
 	}
 
@@ -59,14 +59,14 @@ func (h *Help) Render(fullScreen bool) error {
 
 	gKeys, err := h.App.GetKeys().GetKeysForView("Global")
 	if err != nil {
-		dialogs.ShowError(h.App.Pages, "Error while getting keys for view", err)
+		modal.ShowError(h.App.Pages, "Error while getting keys for view", err)
 		return err
 	}
 	h.renderKeySection(gKeys, &row)
 
 	hKeys, err := h.App.GetKeys().GetKeysForView("Help")
 	if err != nil {
-		dialogs.ShowError(h.App.Pages, "Error while getting keys for view", err)
+		modal.ShowError(h.App.Pages, "Error while getting keys for view", err)
 		return err
 	}
 	h.renderKeySection(hKeys, &row)

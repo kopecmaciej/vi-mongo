@@ -11,8 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const configPath = "config.yaml"
-
 type Client struct {
 	Client *mongo.Client
 	Config *config.MongoConfig

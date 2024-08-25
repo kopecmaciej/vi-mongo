@@ -8,7 +8,7 @@ import (
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/kopecmaciej/mongui/internal/tui/core"
-	"github.com/kopecmaciej/mongui/internal/tui/dialogs"
+	"github.com/kopecmaciej/mongui/internal/tui/modal"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )
@@ -17,7 +17,7 @@ type InputBar struct {
 	*core.BaseView
 	*tview.InputField
 
-	historyModal   *dialogs.HistoryModal
+	historyModal   *modal.HistoryModal
 	style          *config.InputBarStyle
 	enabled        bool
 	autocompleteOn bool
@@ -131,7 +131,7 @@ func (i *InputBar) DoneFuncHandler(accept func(string), reject func()) {
 
 // EnableHistory enables history modal
 func (i *InputBar) EnableHistory() {
-	i.historyModal = dialogs.NewHistoryModal()
+	i.historyModal = modal.NewHistoryModal()
 
 	if err := i.historyModal.Init(i.App); err != nil {
 		log.Error().Err(err).Msg("Error initializing history modal")
@@ -206,7 +206,7 @@ func (i *InputBar) LoadNewKeys(keys []string) {
 func (i *InputBar) displayHistoryModal() {
 	err := i.historyModal.Render()
 	if err != nil {
-		dialogs.ShowError(i.App.Pages, "Error rendering history modal", err)
+		modal.ShowError(i.App.Pages, "Error rendering history modal", err)
 	}
 }
 

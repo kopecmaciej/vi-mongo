@@ -1,4 +1,4 @@
-package dialogs
+package modal
 
 import (
 	"os"
@@ -7,8 +7,8 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/manager"
-	"github.com/kopecmaciej/mongui/internal/primitives"
 	"github.com/kopecmaciej/mongui/internal/tui/core"
+	"github.com/kopecmaciej/mongui/internal/tui/primitives"
 )
 
 const (

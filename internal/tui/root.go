@@ -7,7 +7,7 @@ import (
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/kopecmaciej/mongui/internal/tui/core"
-	"github.com/kopecmaciej/mongui/internal/tui/dialogs"
+	"github.com/kopecmaciej/mongui/internal/tui/modal"
 
 	"github.com/kopecmaciej/tview"
 )
@@ -189,7 +189,7 @@ func (r *Root) renderWelcome() error {
 		err := r.renderConnector()
 		if err != nil {
 			r.App.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
-			dialogs.ShowError(r.App.Pages, "Error while connecting to the database", err)
+			modal.ShowError(r.App.Pages, "Error while connecting to the database", err)
 			return
 		}
 	})
@@ -204,7 +204,7 @@ func (r *Root) renderConnector() error {
 		err := r.renderMainView()
 		if err != nil {
 			r.App.Pages.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
-			dialogs.ShowError(r.App.Pages, "Error while connecting to the database", err)
+			modal.ShowError(r.App.Pages, "Error while connecting to the database", err)
 		}
 	})
 

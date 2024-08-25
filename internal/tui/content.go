@@ -11,8 +11,8 @@ import (
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/kopecmaciej/mongui/internal/tui/core"
-	"github.com/kopecmaciej/mongui/internal/tui/dialogs"
-	"github.com/kopecmaciej/mongui/internal/utils"
+	"github.com/kopecmaciej/mongui/internal/tui/modal"
+	"github.com/kopecmaciej/mongui/internal/util"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -36,7 +36,7 @@ type Content struct {
 	queryBar       *InputBar
 	sortBar        *InputBar
 	jsonPeeker     *DocPeeker
-	deleteModal    *dialogs.DeleteModal
+	deleteModal    *modal.DeleteModal
 	docModifier    *DocModifier
 	state          mongo.CollectionState
 	stateMap       map[string]mongo.CollectionState
@@ -52,7 +52,7 @@ func NewContent() *Content {
 		queryBar:       NewInputBar(QueryBarView, "Query"),
 		sortBar:        NewInputBar(SortBarView, "Sort"),
 		jsonPeeker:     NewDocPeeker(),
-		deleteModal:    dialogs.NewDeleteModal(),
+		deleteModal:    modal.NewDeleteModal(),
 		docModifier:    NewDocModifier(),
 		state:          mongo.CollectionState{},
 		stateMap:       make(map[string]mongo.CollectionState),
@@ -112,6 +112,12 @@ func (c *Content) setStyle() {
 	c.Table.SetBackgroundColor(c.style.BackgroundColor.Color())
 	c.Table.SetBorderColor(c.style.BorderColor.Color())
 
+	c.View.SetBorder(true)
+	c.View.SetTitle(" JSON View ")
+	c.View.SetTitleAlign(tview.AlignCenter)
+	c.View.SetBorderPadding(2, 0, 6, 0)
+	c.View.SetBorderColor(c.style.BorderColor.Color())
+
 	c.Flex.SetDirection(tview.FlexRow)
 }
 
@@ -120,136 +126,43 @@ func (c *Content) setKeybindings(ctx context.Context) {
 
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		row, _ := c.Table.GetSelection()
-		if row == 3 {
-			c.Table.ScrollToBeginning()
-		}
-		if row == c.Table.GetRowCount()-2 {
-			c.Table.ScrollToEnd()
-		}
+		c.handleScrolling(row)
 		switch {
 		case k.Contains(k.Root.Content.SwitchView, event.Name()):
-			c.isMultiRowView = !c.isMultiRowView
-			c.updateContent(ctx)
-			return nil
+			return c.handleSwitchView(ctx)
 		case k.Contains(k.Root.Content.PeekDocument, event.Name()):
-			doc, err := c.getDocumentBasedOnView()
-			if err != nil {
-				dialogs.ShowError(c.App.Pages, "Error peeking document", err)
-				return nil
-			}
-			c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, doc)
-			return nil
+			return c.handlePeekDocument(ctx, row)
 		case k.Contains(k.Root.Content.ViewDocument, event.Name()):
-			doc, err := c.getDocumentBasedOnView()
-			if err != nil {
-				dialogs.ShowError(c.App.Pages, "Error viewing document", err)
-				return nil
-			}
-			err = c.viewJson(doc)
-			if err != nil {
-				dialogs.ShowError(c.App.Pages, "Error viewing document", err)
-				return nil
-			}
-			return nil
+			return c.handleViewDocument(row)
 		case k.Contains(k.Root.Content.AddDocument, event.Name()):
-			ID, err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
-			if err != nil {
-				dialogs.ShowError(c.App.Pages, "Error adding document", err)
-				return nil
-			}
-			insertedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
-			if err != nil {
-				dialogs.ShowError(c.App.Pages, "Error getting inserted document", err)
-				return nil
-			}
-			strDoc, err := mongo.ParseBsonDocument(insertedDoc)
-			if err != nil {
-				dialogs.ShowError(c.App.Pages, "Error stringifying document", err)
-				return nil
-			}
-			c.addCell(strDoc)
-			return nil
+			return c.handleAddDocument(ctx)
 		case k.Contains(k.Root.Content.EditDocument, event.Name()):
-			doc, err := c.getDocumentBasedOnView()
-			if err != nil {
-				dialogs.ShowError(c.App.Pages, "Error editing document", err)
-				return nil
-			}
-			updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, doc)
-			if err != nil {
-				dialogs.ShowError(c.App.Pages, "Error editing document", err)
-				return nil
-			}
-			if updated != "" {
-				c.refreshDocument(updated)
-			}
-			return nil
+			return c.handleEditDocument(ctx, row)
 		case k.Contains(k.Root.Content.DuplicateDocument, event.Name()):
-			doc, err := c.getDocumentBasedOnView()
-			if err != nil {
-				dialogs.ShowError(c.App.Pages, "Error duplicating document", err)
-				return nil
-			}
-			ID, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, doc)
-			if err != nil {
-				defer dialogs.ShowError(c.App.Pages, "Error duplicating document", err)
-			}
-			duplicatedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
-			if err != nil {
-				defer dialogs.ShowError(c.App.Pages, "Error getting inserted document", err)
-			}
-			strDoc, err := mongo.ParseBsonDocument(duplicatedDoc)
-			if err != nil {
-				defer dialogs.ShowError(c.App.Pages, "Error stringifying document", err)
-			}
-			c.addCell(strDoc)
-			return nil
-		case k.Contains(k.Root.Content.ToggleQuery, event.Name()):
-			if c.state.Filter != "" {
-				c.queryBar.Toggle(c.state.Filter)
-			} else {
-				c.queryBar.Toggle("")
-			}
-			c.render(true)
-			return nil
-		case k.Contains(k.Root.Content.ToggleSort, event.Name()):
-			if c.state.Sort != "" {
-				c.sortBar.Toggle(c.state.Sort)
-			} else {
-				c.sortBar.Toggle("")
-			}
-			c.render(true)
-			return nil
+			return c.handleDuplicateDocument(ctx, row)
 		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
-			doc, err := c.getDocumentBasedOnView()
-			if err != nil {
-				dialogs.ShowError(c.App.Pages, "Error deleting document", err)
-				return nil
-			}
-			err = c.deleteDocument(ctx, doc)
-			if err != nil {
-				defer dialogs.ShowError(c.App.Pages, "Error deleting document", err)
-			}
-			return nil
+			return c.handleDeleteDocument(ctx, row)
+		case k.Contains(k.Root.Content.ToggleQuery, event.Name()):
+			return c.handleToggleQuery()
+		case k.Contains(k.Root.Content.ToggleSort, event.Name()):
+			return c.handleToggleSort()
 		case k.Contains(k.Root.Content.Refresh, event.Name()):
-			err := c.updateContent(ctx)
-			if err != nil {
-				defer dialogs.ShowError(c.App.Pages, "Error refreshing documents", err)
-			}
-			return nil
+			return c.handleRefresh(ctx)
 		case k.Contains(k.Root.Content.NextPage, event.Name()):
-			c.goToNextMongoPage(ctx)
-			return nil
+			return c.handleNextPage(ctx)
+		case k.Contains(k.Root.Content.NextDocument, event.Name()):
+			return c.handleNextDocument(row)
+		case k.Contains(k.Root.Content.PreviousDocument, event.Name()):
+			return c.handlePreviousDocument(row)
 		case k.Contains(k.Root.Content.PreviousPage, event.Name()):
-			c.goToPrevMongoPage(ctx)
-			return nil
+			return c.handlePreviousPage(ctx)
+		// TODO: use this in multiple delete, think of other usage
+		case k.Contains(k.Root.Content.MultipleSelect, event.Name()):
+			return c.handleMultipleSelect(row)
+		case k.Contains(k.Root.Content.ClearSelection, event.Name()):
+			return c.handleClearSelection()
 		case k.Contains(k.Root.Content.CopyLine, event.Name()):
-			selectedDoc := utils.TrimJson(c.Table.GetCell(c.Table.GetSelection()).Text)
-			err := clipboard.WriteAll(selectedDoc)
-			if err != nil {
-				dialogs.ShowError(c.App.Pages, "Error copying document", err)
-			}
-			return nil
+			return c.handleCopyLine(row)
 		}
 
 		return event
@@ -415,7 +328,7 @@ func (c *Content) renderMultiRowView(documents []primitive.M) {
 	for _, doc := range documents {
 		jsoned, err := mongo.ParseBsonDocument(doc)
 		if err != nil {
-			dialogs.ShowError(c.App.Pages, "Error stringifying document", err)
+			modal.ShowError(c.App.Pages, "Error stringifying document", err)
 			return
 		}
 		c.multiRowDocument(jsoned, &row)
@@ -445,7 +358,7 @@ func (c *Content) multiRowDocument(doc string, row *int) {
 			}
 			currLine = line
 		} else {
-			line = utils.TrimMultipleSpaces(line)
+			line = util.TrimMultipleSpaces(line)
 			currLine += line
 		}
 	}
@@ -461,7 +374,7 @@ func (c *Content) multiRowDocument(doc string, row *int) {
 
 func (c *Content) queryBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.Filter = utils.TrimJson(text)
+		c.state.Filter = util.TrimJson(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		c.updateContent(ctx)
@@ -478,7 +391,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 
 func (c *Content) sortBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.Sort = utils.TrimJson(text)
+		c.state.Sort = util.TrimJson(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		c.updateContent(ctx)
@@ -595,7 +508,7 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 		if buttonIndex == 0 {
 			err = c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectID)
 			if err != nil {
-				defer dialogs.ShowError(c.App.Pages, "Error deleting document", err)
+				defer modal.ShowError(c.App.Pages, "Error deleting document", err)
 			}
 		}
 		c.App.Pages.RemovePage(c.deleteModal.GetIdentifier())
@@ -607,16 +520,14 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 	return nil
 }
 
-func (c *Content) getDocumentBasedOnView() (string, error) {
+func (c *Content) getDocumentBasedOnView(row int) (string, error) {
 	if c.isMultiRowView {
-		return c.getMultiRowDocument()
+		return c.getMultiRowDocument(row)
 	}
-	return c.Table.GetCell(c.Table.GetSelection()).Text, nil
+	return c.Table.GetCell(row, 0).Text, nil
 }
 
-func (c *Content) getMultiRowDocument() (string, error) {
-	row, _ := c.Table.GetSelection()
-
+func (c *Content) getMultiRowDocument(row int) (string, error) {
 	_id := ""
 
 	for i := row; i >= 0; i-- {
@@ -653,4 +564,203 @@ func (c *Content) getMultiRowDocument() (string, error) {
 		}
 	}
 	return "", fmt.Errorf("document not found")
+}
+
+// Helper functions (implement these separately)
+
+func (c *Content) handleScrolling(row int) {
+	if row == 3 {
+		c.Table.ScrollToBeginning()
+	}
+	if row == c.Table.GetRowCount()-2 {
+		c.Table.ScrollToEnd()
+	}
+}
+
+func (c *Content) handleSwitchView(ctx context.Context) *tcell.EventKey {
+	c.isMultiRowView = !c.isMultiRowView
+	c.updateContent(ctx)
+	return nil
+}
+
+func (c *Content) handlePeekDocument(ctx context.Context, row int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error peeking document", err)
+		return nil
+	}
+	c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, doc)
+	return nil
+}
+
+func (c *Content) handleViewDocument(row int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error viewing document", err)
+		return nil
+	}
+	err = c.viewJson(doc)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error viewing document", err)
+		return nil
+	}
+	return nil
+}
+
+func (c *Content) handleAddDocument(ctx context.Context) *tcell.EventKey {
+	ID, err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error adding document", err)
+		return nil
+	}
+	insertedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error getting inserted document", err)
+		return nil
+	}
+	strDoc, err := mongo.ParseBsonDocument(insertedDoc)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error stringifying document", err)
+		return nil
+	}
+	c.addCell(strDoc)
+	return nil
+}
+
+func (c *Content) handleEditDocument(ctx context.Context, row int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error editing document", err)
+		return nil
+	}
+	updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, doc)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error editing document", err)
+		return nil
+	}
+	if updated != "" {
+		c.refreshDocument(updated)
+	}
+	return nil
+}
+
+func (c *Content) handleDuplicateDocument(ctx context.Context, row int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error duplicating document", err)
+		return nil
+	}
+	ID, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, doc)
+	if err != nil {
+		defer modal.ShowError(c.App.Pages, "Error duplicating document", err)
+	}
+	duplicatedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
+	if err != nil {
+		defer modal.ShowError(c.App.Pages, "Error getting inserted document", err)
+	}
+	strDoc, err := mongo.ParseBsonDocument(duplicatedDoc)
+	if err != nil {
+		defer modal.ShowError(c.App.Pages, "Error stringifying document", err)
+	}
+	c.addCell(strDoc)
+	return nil
+}
+
+func (c *Content) handleToggleQuery() *tcell.EventKey {
+	if c.state.Filter != "" {
+		c.queryBar.Toggle(c.state.Filter)
+	} else {
+		c.queryBar.Toggle("")
+	}
+	c.render(true)
+	return nil
+}
+
+func (c *Content) handleToggleSort() *tcell.EventKey {
+	if c.state.Sort != "" {
+		c.sortBar.Toggle(c.state.Sort)
+	} else {
+		c.sortBar.Toggle("")
+	}
+	c.render(true)
+	return nil
+}
+
+func (c *Content) handleDeleteDocument(ctx context.Context, row int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error deleting document", err)
+		return nil
+	}
+	err = c.deleteDocument(ctx, doc)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error deleting document", err)
+		return nil
+	}
+	return nil
+}
+
+func (c *Content) handleRefresh(ctx context.Context) *tcell.EventKey {
+	err := c.updateContent(ctx)
+	if err != nil {
+		defer modal.ShowError(c.App.Pages, "Error refreshing documents", err)
+	}
+	return nil
+}
+
+func (c *Content) handleNextDocument(row int) *tcell.EventKey {
+	if c.isMultiRowView {
+		for i := row; i < c.Table.GetRowCount(); i++ {
+			if strings.HasPrefix(c.Table.GetCell(i, 0).Text, `{`) {
+				c.Table.Select(i, 0)
+				return nil
+			}
+		}
+	} else {
+		c.Table.MoveDown()
+	}
+	return nil
+}
+
+func (c *Content) handlePreviousDocument(row int) *tcell.EventKey {
+	if c.isMultiRowView {
+		for i := row; i >= 0; i-- {
+			if strings.HasPrefix(c.Table.GetCell(i, 0).Text, `}`) {
+				c.Table.Select(i-1, 0)
+				return nil
+			}
+		}
+	} else {
+		c.Table.MoveUp()
+	}
+	return nil
+}
+
+func (c *Content) handleNextPage(ctx context.Context) *tcell.EventKey {
+	c.goToNextMongoPage(ctx)
+	return nil
+}
+
+func (c *Content) handlePreviousPage(ctx context.Context) *tcell.EventKey {
+	c.goToPrevMongoPage(ctx)
+	return nil
+}
+
+func (c *Content) handleMultipleSelect(row int) *tcell.EventKey {
+	c.Table.ToggleRowSelection(row)
+	return nil
+}
+
+func (c *Content) handleClearSelection() *tcell.EventKey {
+	c.Table.ClearSelection()
+	return nil
+}
+
+func (c *Content) handleCopyLine(row int) *tcell.EventKey {
+	selectedDoc := util.TrimJson(c.Table.GetCell(row, 0).Text)
+	err := clipboard.WriteAll(selectedDoc)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error copying document", err)
+	}
+	return nil
 }

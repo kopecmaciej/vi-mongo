@@ -1,11 +1,13 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"regexp"
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/internal/util"
 	"github.com/kopecmaciej/tview"
 	"gopkg.in/yaml.v3"
 )
@@ -175,7 +177,7 @@ func LoadStyles() (*Styles, error) {
 	}
 
 	// Merge loaded styles with default styles
-	MergeConfigs(styles, defaultStyles)
+	util.MergeConfigs(styles, defaultStyles)
 	styles.loadMainStyles()
 
 	return styles, nil
@@ -242,8 +244,8 @@ func (s *Styles) loadDefaultStyles() {
 		BackgroundColor: "#0F172A",
 		BorderColor:     "#387D44",
 		NodeColor:       "#387D44",
-		LeafColor:       "#163694",
-		BranchColor:     "#387D44",
+		LeafColor:       "#4368da",
+		BranchColor:     "#44bb58",
 		NodeSymbol:      "📁",
 		LeafSymbol:      "📄",
 	}
@@ -320,6 +322,11 @@ func (s *Styles) loadColor(color Style) tcell.Color {
 // Color returns the tcell.Color of the style
 func (s *Style) Color() tcell.Color {
 	return tcell.GetColor(string(*s))
+}
+
+// SetColor sets the color of the style
+func (s *Style) GetWithColor(color tcell.Color) string {
+	return fmt.Sprintf("[%s]%s[%s]", color.String(), s.String(), tcell.ColorReset.String())
 }
 
 // String returns the string value of the style

@@ -2,6 +2,10 @@ module github.com/kopecmaciej/mongui
 
 go 1.22.1
 
+// use tview from local folder /home/cieju/projects/Go/tview
+
+replace github.com/kopecmaciej/tview => /home/cieju/projects/Go/tview
+
 require (
 	github.com/gdamore/tcell/v2 v2.7.1
 	github.com/kopecmaciej/tview v0.0.4

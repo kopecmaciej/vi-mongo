@@ -7,9 +7,9 @@ import (
 
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
-	"github.com/kopecmaciej/mongui/internal/primitives"
 	"github.com/kopecmaciej/mongui/internal/tui/core"
-	"github.com/kopecmaciej/mongui/internal/tui/dialogs"
+	"github.com/kopecmaciej/mongui/internal/tui/modal"
+	"github.com/kopecmaciej/mongui/internal/tui/primitives"
 
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
@@ -30,7 +30,7 @@ type peekerState struct {
 // DocPeeker is a view that provides a modal view for peeking at a document
 type DocPeeker struct {
 	*core.BaseView
-	*primitives.ModalView
+	*primitives.ViewModal
 
 	style       *config.DocPeekerStyle
 	docModifier *DocModifier
@@ -41,7 +41,7 @@ type DocPeeker struct {
 func NewDocPeeker() *DocPeeker {
 	peekr := &DocPeeker{
 		BaseView:    core.NewBaseView(DocPeekerView),
-		ModalView:   primitives.NewModalView(),
+		ViewModal:   primitives.NewViewModal(),
 		docModifier: NewDocModifier(),
 	}
 
@@ -79,12 +79,12 @@ func (dc *DocPeeker) setStyle() {
 		dc.style.ArrayColor.Color(),
 	)
 
-	dc.ModalView.AddButtons([]string{"Edit", "Close"})
+	dc.ViewModal.AddButtons([]string{"Edit", "Close"})
 }
 
 func (dc *DocPeeker) setKeybindings(ctx context.Context) {
 	k := dc.App.GetKeys()
-	dc.ModalView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	dc.ViewModal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.DocPeeker.MoveToTop, event.Name()):
 			dc.MoveToTop()
@@ -93,13 +93,13 @@ func (dc *DocPeeker) setKeybindings(ctx context.Context) {
 			dc.MoveToBottom()
 			return nil
 		case k.Contains(k.DocPeeker.CopyFullObj, event.Name()):
-			if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "full"); err != nil {
-				dialogs.ShowError(dc.App.Pages, "Error copying full line", err)
+			if err := dc.ViewModal.CopySelectedLine(clipboard.WriteAll, "full"); err != nil {
+				modal.ShowError(dc.App.Pages, "Error copying full line", err)
 			}
 			return nil
 		case k.Contains(k.DocPeeker.CopyValue, event.Name()):
-			if err := dc.ModalView.CopySelectedLine(clipboard.WriteAll, "value"); err != nil {
-				dialogs.ShowError(dc.App.Pages, "Error copying value", err)
+			if err := dc.ViewModal.CopySelectedLine(clipboard.WriteAll, "value"); err != nil {
+				modal.ShowError(dc.App.Pages, "Error copying value", err)
 			}
 			return nil
 		case k.Contains(k.DocPeeker.Refresh, event.Name()):
@@ -113,11 +113,11 @@ func (dc *DocPeeker) setKeybindings(ctx context.Context) {
 }
 
 func (dc *DocPeeker) MoveToTop() {
-	dc.ModalView.MoveToTop()
+	dc.ViewModal.MoveToTop()
 }
 
 func (dc *DocPeeker) MoveToBottom() {
-	dc.ModalView.MoveToBottom()
+	dc.ViewModal.MoveToBottom()
 }
 
 func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString string) error {
@@ -136,19 +136,19 @@ func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 	}
 	text := prettyJson.String()
 
-	dc.ModalView.SetText(primitives.Text{
+	dc.ViewModal.SetText(primitives.Text{
 		Content: text,
 		Color:   dc.style.ValueColor.Color(),
 		Align:   tview.AlignLeft,
 	})
 
 	root := dc.App.Pages
-	root.AddPage(dc.GetIdentifier(), dc.ModalView, true, true)
-	dc.ModalView.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+	root.AddPage(dc.GetIdentifier(), dc.ViewModal, true, true)
+	dc.ViewModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Edit" {
 			updatedDoc, err := dc.docModifier.Edit(ctx, db, coll, jsonString)
 			if err != nil {
-				dialogs.ShowError(dc.App.Pages, "Error editing document", err)
+				modal.ShowError(dc.App.Pages, "Error editing document", err)
 				return
 			}
 			dc.state.rawDocument = updatedDoc

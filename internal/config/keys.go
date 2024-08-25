@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/mongui/internal/util"
 )
 
 type (
@@ -65,9 +66,13 @@ type (
 		EditDocument      Key      `json:"editDocument"`
 		DuplicateDocument Key      `json:"duplicateDocument"`
 		DeleteDocument    Key      `json:"deleteDocument"`
+		MultipleSelect    Key      `json:"multipleSelect"`
+		ClearSelection    Key      `json:"clearSelection"`
 		CopyLine          Key      `json:"copyValue"`
 		Refresh           Key      `json:"refresh"`
 		ToggleQuery       Key      `json:"toggleQuery"`
+		NextDocument      Key      `json:"nextDocument"`
+		PreviousDocument  Key      `json:"previousDocument"`
 		NextPage          Key      `json:"nextPage"`
 		PreviousPage      Key      `json:"previousPage"`
 		QueryBar          QueryBar `json:"queryBar"`
@@ -151,7 +156,7 @@ func LoadKeybindings() (*KeyBindings, error) {
 		return nil, err
 	}
 
-	MergeConfigs(keybindings, defaultKeybindings)
+	util.MergeConfigs(keybindings, defaultKeybindings)
 
 	return keybindings, nil
 }
@@ -217,7 +222,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Peek document",
 		},
 		ViewDocument: Key{
-			Runes:       []string{"v"},
+			Runes:       []string{"y"},
 			Description: "View document",
 		},
 		AddDocument: Key{
@@ -236,6 +241,14 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Runes:       []string{"D"},
 			Description: "Delete document",
 		},
+		MultipleSelect: Key{
+			Runes:       []string{"v"},
+			Description: "Multiple select",
+		},
+		ClearSelection: Key{
+			Runes:       []string{"C"},
+			Description: "Clear selection",
+		},
 		CopyLine: Key{
 			Runes:       []string{"c"},
 			Description: "Copy value",
@@ -251,6 +264,14 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 		ToggleSort: Key{
 			Runes:       []string{"s"},
 			Description: "Toggle sort",
+		},
+		NextDocument: Key{
+			Runes:       []string{"]"},
+			Description: "Next document",
+		},
+		PreviousDocument: Key{
+			Runes:       []string{"["},
+			Description: "Previous document",
 		},
 		NextPage: Key{
 			Runes:       []string{"n"},

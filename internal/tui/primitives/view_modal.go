@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/mongui/internal/utils"
+	"github.com/kopecmaciej/mongui/internal/util"
 	"github.com/kopecmaciej/tview"
 )
 
@@ -17,10 +17,10 @@ type Text struct {
 	Align   int
 }
 
-// ModalView is a centered message window used to inform the user or prompt them
+// ViewModal is a centered message window used to inform the user or prompt them
 // for an immediate decision. It needs to have at least one button (added via
-// [ModalView.AddButtons]) or it will never disappear.
-type ModalView struct {
+// [ViewModal.AddButtons]) or it will never disappear.
+type ViewModal struct {
 	*tview.Box
 	// The frame embedded in the modal.
 	frame *tview.Frame
@@ -54,9 +54,9 @@ type ModalView struct {
 	keyColor, valueColor, bracketColor, arrayColor tcell.Color
 }
 
-// NewModalView returns a new modal message window.
-func NewModalView() *ModalView {
-	m := &ModalView{
+// NewViewModal returns a new modal message window.
+func NewViewModal() *ViewModal {
+	m := &ViewModal{
 		Box: tview.NewBox(),
 		text: Text{
 			Color: tview.Styles.PrimaryTextColor,
@@ -84,38 +84,38 @@ func NewModalView() *ModalView {
 }
 
 // SetBackgroundColor sets the color of the modal frame background.
-func (m *ModalView) SetBackgroundColor(color tcell.Color) *ModalView {
+func (m *ViewModal) SetBackgroundColor(color tcell.Color) *ViewModal {
 	m.form.SetBackgroundColor(color)
 	m.frame.SetBackgroundColor(color)
 	return m
 }
 
 // SetTextColor sets the color of the message text.
-func (m *ModalView) SetTextColor(color tcell.Color) *ModalView {
+func (m *ViewModal) SetTextColor(color tcell.Color) *ViewModal {
 	m.text.Color = color
 	return m
 }
 
 // SetButtonBackgroundColor sets the background color of the buttons.
-func (m *ModalView) SetButtonBackgroundColor(color tcell.Color) *ModalView {
+func (m *ViewModal) SetButtonBackgroundColor(color tcell.Color) *ViewModal {
 	m.form.SetButtonBackgroundColor(color)
 	return m
 }
 
 // SetButtonTextColor sets the color of the button texts.
-func (m *ModalView) SetButtonTextColor(color tcell.Color) *ModalView {
+func (m *ViewModal) SetButtonTextColor(color tcell.Color) *ViewModal {
 	m.form.SetButtonTextColor(color)
 	return m
 }
 
 // SetHighlightColor sets the color of the highlighted text.
-func (m *ModalView) SetHighlightColor(color tcell.Color) *ModalView {
+func (m *ViewModal) SetHighlightColor(color tcell.Color) *ViewModal {
 	m.highlightColor = color
 	return m
 }
 
 // SetDocumentColors sets the colors for document elements.
-func (m *ModalView) SetDocumentColors(keyColor, valueColor, bracketColor, arrayColor tcell.Color) *ModalView {
+func (m *ViewModal) SetDocumentColors(keyColor, valueColor, bracketColor, arrayColor tcell.Color) *ViewModal {
 	m.keyColor = keyColor
 	m.valueColor = valueColor
 	m.bracketColor = bracketColor
@@ -124,13 +124,13 @@ func (m *ModalView) SetDocumentColors(keyColor, valueColor, bracketColor, arrayC
 }
 
 // SetButtonStyle sets the style of the buttons when they are not focused.
-func (m *ModalView) SetButtonStyle(style tcell.Style) *ModalView {
+func (m *ViewModal) SetButtonStyle(style tcell.Style) *ViewModal {
 	m.form.SetButtonStyle(style)
 	return m
 }
 
 // SetButtonActivatedStyle sets the style of the buttons when they are focused.
-func (m *ModalView) SetButtonActivatedStyle(style tcell.Style) *ModalView {
+func (m *ViewModal) SetButtonActivatedStyle(style tcell.Style) *ViewModal {
 	m.form.SetButtonActivatedStyle(style)
 	return m
 }
@@ -139,14 +139,14 @@ func (m *ModalView) SetButtonActivatedStyle(style tcell.Style) *ModalView {
 // pressed. It receives the index of the button as well as its label text. The
 // handler is also called when the user presses the Escape key. The index will
 // then be negative and the label text an empty string.
-func (m *ModalView) SetDoneFunc(handler func(buttonIndex int, buttonLabel string)) *ModalView {
+func (m *ViewModal) SetDoneFunc(handler func(buttonIndex int, buttonLabel string)) *ViewModal {
 	m.done = handler
 	return m
 }
 
 // AddButtons adds buttons to the window. There must be at least one button and
 // a "done" handler so the window can be closed again.
-func (m *ModalView) AddButtons(labels []string) *ModalView {
+func (m *ViewModal) AddButtons(labels []string) *ViewModal {
 	for index, label := range labels {
 		func(i int, l string) {
 			m.form.AddButton(label, func() {
@@ -173,28 +173,28 @@ func (m *ModalView) AddButtons(labels []string) *ModalView {
 }
 
 // ClearButtons removes all buttons from the window.
-func (m *ModalView) ClearButtons() *ModalView {
+func (m *ViewModal) ClearButtons() *ViewModal {
 	m.form.ClearButtons()
 	return m
 }
 
 // SetFocus shifts the focus to the button with the given index.
-func (m *ModalView) SetFocus(index int) *ModalView {
+func (m *ViewModal) SetFocus(index int) *ViewModal {
 	m.form.SetFocus(index)
 	return m
 }
 
 // Focus is called when this primitive receives focus.
-func (m *ModalView) Focus(delegate func(p tview.Primitive)) {
+func (m *ViewModal) Focus(delegate func(p tview.Primitive)) {
 	delegate(m.form)
 }
 
 // HasFocus returns whether or not this primitive has focus.
-func (m *ModalView) HasFocus() bool {
+func (m *ViewModal) HasFocus() bool {
 	return m.form.HasFocus()
 }
 
-func (m *ModalView) Draw(screen tcell.Screen) {
+func (m *ViewModal) Draw(screen tcell.Screen) {
 	// Calculate the width of this modal.
 	screenWidth, screenHeight := screen.Size()
 	width := screenWidth / 3
@@ -251,7 +251,7 @@ func calculateIndent(line string) int {
 	return len(line) - len(strings.TrimLeft(line, " \t"))
 }
 
-func (m *ModalView) calculateNextLinesToHighlight(lines []string) int {
+func (m *ViewModal) calculateNextLinesToHighlight(lines []string) int {
 	currentIndent := calculateIndent(lines[m.selectedLine])
 	linesToHighlight := 0
 
@@ -295,7 +295,7 @@ func (m *ModalView) calculateNextLinesToHighlight(lines []string) int {
 	return linesToHighlight
 }
 
-func (m *ModalView) formatLine(line string, isFirstLine bool) string {
+func (m *ViewModal) formatLine(line string, isFirstLine bool) string {
 	if isFirstLine && strings.TrimSpace(line) == "{" {
 		return fmt.Sprintf("[%s]{[%s]", m.bracketColor.String(), m.valueColor.String())
 	}
@@ -319,7 +319,7 @@ func (m *ModalView) formatLine(line string, isFirstLine bool) string {
 	return line
 }
 
-func (m *ModalView) highlightLine(line string, withMark bool) string {
+func (m *ViewModal) highlightLine(line string, withMark bool) string {
 	if withMark {
 		return fmt.Sprintf("[-:%s:b]>%s[-:-:-]", m.highlightColor.String(), line)
 	}
@@ -327,14 +327,14 @@ func (m *ModalView) highlightLine(line string, withMark bool) string {
 }
 
 // Additional methods to handle scrolling
-func (m *ModalView) ScrollUp() {
+func (m *ViewModal) ScrollUp() {
 	if m.scrollPosition == 0 {
 		return
 	}
 	m.scrollPosition--
 }
 
-func (m *ModalView) ScrollDown() {
+func (m *ViewModal) ScrollDown() {
 	if m.scrollPosition == m.endPosition {
 		return
 	}
@@ -342,17 +342,17 @@ func (m *ModalView) ScrollDown() {
 }
 
 // TextAlignment sets the text alignment within the modal. This must be one of
-func (m *ModalView) SetText(text Text) *ModalView {
+func (m *ViewModal) SetText(text Text) *ViewModal {
 	m.text = text
 	return m
 }
-func (m *ModalView) TextAlignment(align int) *ModalView {
+func (m *ViewModal) TextAlignment(align int) *ViewModal {
 	m.text.Align = align
 	return m
 }
 
 // MouseHandler returns the mouse handler for this primitive.
-func (m *ModalView) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
+func (m *ViewModal) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
 	return m.WrapMouseHandler(func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
 		// Pass mouse events on to the form.
 		consumed, capture = m.form.MouseHandler()(action, event, setFocus)
@@ -365,7 +365,7 @@ func (m *ModalView) MouseHandler() func(action tview.MouseAction, event *tcell.E
 }
 
 // InputHandler returns the handler for this primitive.
-func (m *ModalView) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
+func (m *ViewModal) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return m.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		key := event.Key()
 
@@ -392,12 +392,12 @@ func (m *ModalView) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 	})
 }
 
-func (m *ModalView) SetScrollable(scrollable bool) *ModalView {
+func (m *ViewModal) SetScrollable(scrollable bool) *ViewModal {
 	m.scrollable = scrollable
 	return m
 }
 
-func (m *ModalView) MoveUp() {
+func (m *ViewModal) MoveUp() {
 	if m.selectedLine > 0 {
 		m.selectedLine--
 	} else if m.scrollPosition > 0 {
@@ -405,7 +405,7 @@ func (m *ModalView) MoveUp() {
 	}
 }
 
-func (m *ModalView) MoveDown() {
+func (m *ViewModal) MoveDown() {
 	_, _, width, height := m.GetRect()
 	maxLines := height - 6
 	totalLines := len(tview.WordWrap(m.text.Content, width-4))
@@ -417,12 +417,12 @@ func (m *ModalView) MoveDown() {
 	}
 }
 
-func (m *ModalView) MoveToTop() {
+func (m *ViewModal) MoveToTop() {
 	m.scrollPosition = 0
 	m.selectedLine = 0
 }
 
-func (m *ModalView) MoveToBottom() {
+func (m *ViewModal) MoveToBottom() {
 	_, _, width, height := m.GetRect()
 	maxLines := height - 6
 	lines := tview.WordWrap(m.text.Content, width-4)
@@ -440,7 +440,7 @@ func (m *ModalView) MoveToBottom() {
 // CopySelectedLine copies the selected line to the clipboard.
 // copyType can be "full" or "value". "full" will copy the entire highlighted lines,
 // while "value" will copy only the value of the highlighted line.
-func (m *ModalView) CopySelectedLine(copyFunc func(text string) error, copyType string) error {
+func (m *ViewModal) CopySelectedLine(copyFunc func(text string) error, copyType string) error {
 	_, _, width, _ := m.GetRect()
 	lines := tview.WordWrap(m.text.Content, width-4)
 	selectedLineIndex := m.scrollPosition + m.selectedLine
@@ -453,7 +453,7 @@ func (m *ModalView) CopySelectedLine(copyFunc func(text string) error, copyType 
 		switch copyType {
 		case "full":
 			textToCopy = strings.Join(highlightedLines, "\n")
-			textToCopy = utils.TrimJson(textToCopy)
+			textToCopy = util.TrimJson(textToCopy)
 			textToCopy = strings.ReplaceAll(textToCopy, "{", "{ ")
 			textToCopy = strings.ReplaceAll(textToCopy, "}", " }")
 		case "value":
