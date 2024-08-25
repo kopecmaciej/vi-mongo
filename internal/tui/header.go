@@ -1,4 +1,4 @@
-package view
+package tui
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/views/core"
+	"github.com/kopecmaciej/mongui/internal/tui/core"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 )

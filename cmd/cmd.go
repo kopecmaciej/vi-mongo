@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/views"
+	"github.com/kopecmaciej/mongui/internal/tui"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -74,7 +74,7 @@ func runApp(cmd *cobra.Command, args []string) {
 		log.Info().Msg("Debug mode enabled")
 	}
 	log.Info().Msg("Mongo UI started")
-	app := view.NewApp(cfg)
+	app := tui.NewApp(cfg)
 	err = app.Init()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error initializing app")

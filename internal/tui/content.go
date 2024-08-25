@@ -1,4 +1,4 @@
-package view
+package tui
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
+	"github.com/kopecmaciej/mongui/internal/tui/core"
+	"github.com/kopecmaciej/mongui/internal/tui/dialogs"
 	"github.com/kopecmaciej/mongui/internal/utils"
-	"github.com/kopecmaciej/mongui/internal/views/core"
-	"github.com/kopecmaciej/mongui/internal/views/modals"
 	"github.com/kopecmaciej/tview"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -36,7 +36,7 @@ type Content struct {
 	queryBar       *InputBar
 	sortBar        *InputBar
 	jsonPeeker     *DocPeeker
-	deleteModal    *DeleteModal
+	deleteModal    *dialogs.DeleteModal
 	docModifier    *DocModifier
 	state          mongo.CollectionState
 	stateMap       map[string]mongo.CollectionState
@@ -52,7 +52,7 @@ func NewContent() *Content {
 		queryBar:       NewInputBar(QueryBarView, "Query"),
 		sortBar:        NewInputBar(SortBarView, "Sort"),
 		jsonPeeker:     NewDocPeeker(),
-		deleteModal:    NewDeleteModal(),
+		deleteModal:    dialogs.NewDeleteModal(),
 		docModifier:    NewDocModifier(),
 		state:          mongo.CollectionState{},
 		stateMap:       make(map[string]mongo.CollectionState),
@@ -134,7 +134,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.PeekDocument, event.Name()):
 			doc, err := c.getDocumentBasedOnView()
 			if err != nil {
-				modals.ShowError(c.App.Pages, "Error peeking document", err)
+				dialogs.ShowError(c.App.Pages, "Error peeking document", err)
 				return nil
 			}
 			c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, doc)
@@ -142,29 +142,29 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.ViewDocument, event.Name()):
 			doc, err := c.getDocumentBasedOnView()
 			if err != nil {
-				modals.ShowError(c.App.Pages, "Error viewing document", err)
+				dialogs.ShowError(c.App.Pages, "Error viewing document", err)
 				return nil
 			}
 			err = c.viewJson(doc)
 			if err != nil {
-				modals.ShowError(c.App.Pages, "Error viewing document", err)
+				dialogs.ShowError(c.App.Pages, "Error viewing document", err)
 				return nil
 			}
 			return nil
 		case k.Contains(k.Root.Content.AddDocument, event.Name()):
 			ID, err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
 			if err != nil {
-				modals.ShowError(c.App.Pages, "Error adding document", err)
+				dialogs.ShowError(c.App.Pages, "Error adding document", err)
 				return nil
 			}
 			insertedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
 			if err != nil {
-				modals.ShowError(c.App.Pages, "Error getting inserted document", err)
+				dialogs.ShowError(c.App.Pages, "Error getting inserted document", err)
 				return nil
 			}
 			strDoc, err := mongo.ParseBsonDocument(insertedDoc)
 			if err != nil {
-				modals.ShowError(c.App.Pages, "Error stringifying document", err)
+				dialogs.ShowError(c.App.Pages, "Error stringifying document", err)
 				return nil
 			}
 			c.addCell(strDoc)
@@ -172,12 +172,12 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.EditDocument, event.Name()):
 			doc, err := c.getDocumentBasedOnView()
 			if err != nil {
-				modals.ShowError(c.App.Pages, "Error editing document", err)
+				dialogs.ShowError(c.App.Pages, "Error editing document", err)
 				return nil
 			}
 			updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, doc)
 			if err != nil {
-				modals.ShowError(c.App.Pages, "Error editing document", err)
+				dialogs.ShowError(c.App.Pages, "Error editing document", err)
 				return nil
 			}
 			if updated != "" {
@@ -187,20 +187,20 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.DuplicateDocument, event.Name()):
 			doc, err := c.getDocumentBasedOnView()
 			if err != nil {
-				modals.ShowError(c.App.Pages, "Error duplicating document", err)
+				dialogs.ShowError(c.App.Pages, "Error duplicating document", err)
 				return nil
 			}
 			ID, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, doc)
 			if err != nil {
-				defer modals.ShowError(c.App.Pages, "Error duplicating document", err)
+				defer dialogs.ShowError(c.App.Pages, "Error duplicating document", err)
 			}
 			duplicatedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
 			if err != nil {
-				defer modals.ShowError(c.App.Pages, "Error getting inserted document", err)
+				defer dialogs.ShowError(c.App.Pages, "Error getting inserted document", err)
 			}
 			strDoc, err := mongo.ParseBsonDocument(duplicatedDoc)
 			if err != nil {
-				defer modals.ShowError(c.App.Pages, "Error stringifying document", err)
+				defer dialogs.ShowError(c.App.Pages, "Error stringifying document", err)
 			}
 			c.addCell(strDoc)
 			return nil
@@ -223,18 +223,18 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
 			doc, err := c.getDocumentBasedOnView()
 			if err != nil {
-				modals.ShowError(c.App.Pages, "Error deleting document", err)
+				dialogs.ShowError(c.App.Pages, "Error deleting document", err)
 				return nil
 			}
 			err = c.deleteDocument(ctx, doc)
 			if err != nil {
-				defer modals.ShowError(c.App.Pages, "Error deleting document", err)
+				defer dialogs.ShowError(c.App.Pages, "Error deleting document", err)
 			}
 			return nil
 		case k.Contains(k.Root.Content.Refresh, event.Name()):
 			err := c.updateContent(ctx)
 			if err != nil {
-				defer modals.ShowError(c.App.Pages, "Error refreshing documents", err)
+				defer dialogs.ShowError(c.App.Pages, "Error refreshing documents", err)
 			}
 			return nil
 		case k.Contains(k.Root.Content.NextPage, event.Name()):
@@ -247,7 +247,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			selectedDoc := utils.TrimJson(c.Table.GetCell(c.Table.GetSelection()).Text)
 			err := clipboard.WriteAll(selectedDoc)
 			if err != nil {
-				modals.ShowError(c.App.Pages, "Error copying document", err)
+				dialogs.ShowError(c.App.Pages, "Error copying document", err)
 			}
 			return nil
 		}
@@ -415,7 +415,7 @@ func (c *Content) renderMultiRowView(documents []primitive.M) {
 	for _, doc := range documents {
 		jsoned, err := mongo.ParseBsonDocument(doc)
 		if err != nil {
-			modals.ShowError(c.App.Pages, "Error stringifying document", err)
+			dialogs.ShowError(c.App.Pages, "Error stringifying document", err)
 			return
 		}
 		c.multiRowDocument(jsoned, &row)
@@ -595,7 +595,7 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 		if buttonIndex == 0 {
 			err = c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectID)
 			if err != nil {
-				defer modals.ShowError(c.App.Pages, "Error deleting document", err)
+				defer dialogs.ShowError(c.App.Pages, "Error deleting document", err)
 			}
 		}
 		c.App.Pages.RemovePage(c.deleteModal.GetIdentifier())

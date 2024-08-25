@@ -1,4 +1,4 @@
-package view
+package tui
 
 import (
 	"github.com/rs/zerolog/log"
@@ -6,8 +6,8 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/mongo"
-	"github.com/kopecmaciej/mongui/internal/views/core"
-	"github.com/kopecmaciej/mongui/internal/views/modals"
+	"github.com/kopecmaciej/mongui/internal/tui/core"
+	"github.com/kopecmaciej/mongui/internal/tui/dialogs"
 
 	"github.com/kopecmaciej/tview"
 )
@@ -189,7 +189,7 @@ func (r *Root) renderWelcome() error {
 		err := r.renderConnector()
 		if err != nil {
 			r.App.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
-			modals.ShowError(r.App.Pages, "Error while connecting to the database", err)
+			dialogs.ShowError(r.App.Pages, "Error while connecting to the database", err)
 			return
 		}
 	})
@@ -204,7 +204,7 @@ func (r *Root) renderConnector() error {
 		err := r.renderMainView()
 		if err != nil {
 			r.App.Pages.AddPage(r.connector.GetIdentifier(), r.connector, true, true)
-			modals.ShowError(r.App.Pages, "Error while connecting to the database", err)
+			dialogs.ShowError(r.App.Pages, "Error while connecting to the database", err)
 		}
 	})
 

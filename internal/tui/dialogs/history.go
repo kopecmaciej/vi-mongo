@@ -1,4 +1,4 @@
-package view
+package dialogs
 
 import (
 	"os"
@@ -8,11 +8,12 @@ import (
 	"github.com/kopecmaciej/mongui/internal/config"
 	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/mongui/internal/primitives"
-	"github.com/kopecmaciej/mongui/internal/views/core"
+	"github.com/kopecmaciej/mongui/internal/tui/core"
 )
 
 const (
 	HistoryModalView = "HistoryModal"
+	QueryBarView     = "QueryBar"
 
 	maxHistory = 10
 )

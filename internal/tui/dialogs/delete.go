@@ -1,9 +1,9 @@
-package view
+package dialogs
 
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/views/core"
+	"github.com/kopecmaciej/mongui/internal/tui/core"
 	"github.com/kopecmaciej/tview"
 )
 

@@ -1,12 +1,12 @@
-package view
+package tui
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/views/core"
-	"github.com/kopecmaciej/mongui/internal/views/modals"
+	"github.com/kopecmaciej/mongui/internal/tui/core"
+	"github.com/kopecmaciej/mongui/internal/tui/dialogs"
 	"github.com/kopecmaciej/tview"
 )
 
@@ -83,7 +83,7 @@ func (w *Welcome) renderForm() {
 
 	configFile, err := config.GetConfigPath()
 	if err != nil {
-		modals.ShowError(w.App.Pages, "Error while getting config path", err)
+		dialogs.ShowError(w.App.Pages, "Error while getting config path", err)
 		return
 	}
 	welcomeText := "All configuration can be set in " + configFile + " file. You can also set it here."
@@ -100,7 +100,7 @@ func (w *Welcome) renderForm() {
 	w.form.AddButton(" Save and Connect ", func() {
 		err := w.saveConfig()
 		if err != nil {
-			modals.ShowError(w.App.Pages, "Error while saving config", err)
+			dialogs.ShowError(w.App.Pages, "Error while saving config", err)
 			return
 		}
 		w.onSubmit()

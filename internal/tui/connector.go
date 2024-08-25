@@ -1,12 +1,12 @@
-package view
+package tui
 
 import (
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/views/core"
-	"github.com/kopecmaciej/mongui/internal/views/modals"
+	"github.com/kopecmaciej/mongui/internal/tui/core"
+	"github.com/kopecmaciej/mongui/internal/tui/dialogs"
 	"github.com/kopecmaciej/tview"
 )
 
@@ -180,7 +180,7 @@ func (c *Connector) setConnections() {
 	connName, _ := c.list.GetItemText(c.list.GetCurrentItem())
 	err := c.App.GetConfig().SetCurrentConnection(connName)
 	if err != nil {
-		modals.ShowError(c.App.Pages, "Failed to set current connection", err)
+		dialogs.ShowError(c.App.Pages, "Failed to set current connection", err)
 		return
 	}
 	c.App.GetConfig().CurrentConnection = connName
@@ -211,7 +211,7 @@ func (c *Connector) saveButtonFunc() {
 	timeout := c.form.GetFormItemByLabel("Timeout").(*tview.InputField).GetText()
 	intTimeout, err := strconv.Atoi(timeout)
 	if err != nil {
-		modals.ShowError(c.App.Pages, "Timeout must be a number", err)
+		dialogs.ShowError(c.App.Pages, "Timeout must be a number", err)
 		return
 	}
 	if url != "mongodb://" {
@@ -224,7 +224,7 @@ func (c *Connector) saveButtonFunc() {
 			Timeout: intTimeout,
 		})
 		if err != nil {
-			modals.ShowError(c.App.Pages, "Failed to save connection", err)
+			dialogs.ShowError(c.App.Pages, "Failed to save connection", err)
 			c.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
 			return
 		}
@@ -233,7 +233,7 @@ func (c *Connector) saveButtonFunc() {
 		port := c.form.GetFormItemByLabel("Port").(*tview.InputField).GetText()
 		intPort, err := strconv.Atoi(port)
 		if err != nil {
-			modals.ShowError(c.App.Pages, "Port must be a number", err)
+			dialogs.ShowError(c.App.Pages, "Port must be a number", err)
 			return
 		}
 		username := c.form.GetFormItemByLabel("Username").(*tview.InputField).GetText()
@@ -253,7 +253,7 @@ func (c *Connector) saveButtonFunc() {
 			Timeout:  intTimeout,
 		})
 		if err != nil {
-			modals.ShowError(c.App.Pages, "Failed to save connection", err)
+			dialogs.ShowError(c.App.Pages, "Failed to save connection", err)
 			return
 		}
 	}
