@@ -17,6 +17,10 @@ func NewError(message string, err error) *tview.Modal {
 	}
 
 	message = "[White::b] " + message + " [::]"
+	errMsg := err.Error()
+	if errMsg != "" {
+		message += "\n" + errMsg
+	}
 
 	errModal := tview.NewModal()
 	errModal.SetTitle(" Error ")
