@@ -6,14 +6,15 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/page"
 )
 
 type (
 	// App extends the core.App struct
 	App struct {
 		*core.App
-		Root           *Root
-		FullScreenHelp *Help
+		Root           *page.Root
+		FullScreenHelp *page.Help
 	}
 )
 
@@ -22,8 +23,8 @@ func NewApp(appConfig *config.Config) *App {
 
 	app := &App{
 		App:            coreApp,
-		Root:           NewRoot(),
-		FullScreenHelp: NewHelp(),
+		Root:           page.NewRoot(),
+		FullScreenHelp: page.NewHelp(),
 	}
 
 	return app
@@ -51,15 +52,15 @@ func (a *App) setKeybindings() {
 		// TODO: This is temporary solution
 		switch {
 		case a.Keys.Contains(a.Keys.Global.ToggleFullScreenHelp, event.Name()):
-			if a.Pages.HasPage(HelpView) {
-				a.Pages.RemovePage(HelpView)
+			if a.Pages.HasPage(page.HelpPage) {
+				a.Pages.RemovePage(page.HelpPage)
 				return nil
 			}
 			err := a.FullScreenHelp.Render(true)
 			if err != nil {
 				return event
 			}
-			a.Pages.AddPage(HelpView, a.FullScreenHelp, true, true)
+			a.Pages.AddPage(page.HelpPage, a.FullScreenHelp, true, true)
 			return nil
 		case a.Keys.Contains(a.Keys.Global.ToggleHelpBarFooter, event.Name()):
 

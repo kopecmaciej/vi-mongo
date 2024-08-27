@@ -1,4 +1,4 @@
-package tui
+package component
 
 import (
 	"context"
@@ -170,4 +170,17 @@ func (s *Databases) fetchDbsWithCollections(ctx context.Context, filter string) 
 	s.dbsWithColls = dbsWitColls
 
 	return nil
+}
+
+func (s *Databases) SetSelectFunc(f func(ctx context.Context, db string, coll string) error) {
+	s.dbTree.SetSelectFunc(f)
+}
+
+func (s *Databases) ToggleFocus() {
+	focus := s.App.GetFocus()
+	if focus == s.dbTree {
+		s.App.SetFocus(s.filterBar)
+	} else {
+		s.App.SetFocus(s.dbTree)
+	}
 }

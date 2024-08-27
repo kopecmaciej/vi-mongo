@@ -1,4 +1,4 @@
-package tui
+package page
 
 import (
 	"github.com/rs/zerolog/log"
@@ -6,6 +6,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/component"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 
@@ -24,9 +25,9 @@ type Root struct {
 	innerFlex *tview.Flex
 	style     *config.RootStyle
 	connector *Connector
-	header    *Header
-	databases *Databases
-	content   *Content
+	header    *component.Header
+	databases *component.Databases
+	content   *component.Content
 }
 
 func NewRoot() *Root {
@@ -35,9 +36,9 @@ func NewRoot() *Root {
 		mainFlex:  tview.NewFlex(),
 		innerFlex: tview.NewFlex(),
 		connector: NewConnector(),
-		header:    NewHeader(),
-		databases: NewDatabases(),
-		content:   NewContent(),
+		header:    component.NewHeader(),
+		databases: component.NewDatabases(),
+		content:   component.NewContent(),
 	}
 
 	return r
@@ -78,9 +79,9 @@ func (r *Root) renderMainView() error {
 		return nil
 	} else {
 		// TODO: find the correct way to refresh those views
-		r.content = NewContent()
-		r.databases = NewDatabases()
-		r.header = NewHeader()
+		r.content = component.NewContent()
+		r.databases = component.NewDatabases()
+		r.header = component.NewHeader()
 		client := mongo.NewClient(currConn)
 		err := client.Connect()
 		if err != nil {
@@ -97,7 +98,7 @@ func (r *Root) renderMainView() error {
 			return err
 		}
 
-		r.databases.dbTree.NodeSelectFunc = r.content.HandleDatabaseSelection
+		r.databases.SetSelectFunc(r.content.HandleDatabaseSelection)
 
 		r.render()
 
@@ -134,15 +135,10 @@ func (r *Root) setKeybindings() {
 	r.mainFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Root.FocusNext, event.Name()):
-			focus := r.App.GetFocus()
-			if focus == r.databases.dbTree {
-				r.App.SetFocus(r.content.Table)
-			} else {
-				r.App.SetFocus(r.databases.dbTree)
-			}
+			r.databases.ToggleFocus()
 			return nil
 		case k.Contains(k.Root.HideDatabases, event.Name()):
-			if _, ok := r.mainFlex.GetItem(0).(*Databases); ok {
+			if _, ok := r.mainFlex.GetItem(0).(*component.Databases); ok {
 				r.mainFlex.RemoveItem(r.databases)
 				r.App.SetFocus(r.content.Table)
 			} else {

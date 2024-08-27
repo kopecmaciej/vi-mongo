@@ -1,4 +1,4 @@
-package tui
+package component
 
 import (
 	"context"
@@ -28,7 +28,7 @@ type DatabaseTree struct {
 	deleteModal *tview.Modal
 	style       *config.DatabasesStyle
 
-	NodeSelectFunc func(ctx context.Context, db string, coll string) error
+	nodeSelectFunc func(ctx context.Context, db string, coll string) error
 }
 
 func NewDatabaseTree() *DatabaseTree {
@@ -211,13 +211,17 @@ func (t *DatabaseTree) deleteCollection(ctx context.Context) error {
 	return nil
 }
 
+func (t *DatabaseTree) SetSelectFunc(f func(ctx context.Context, db string, coll string) error) {
+	t.nodeSelectFunc = f
+}
+
 func (t *DatabaseTree) addChildNode(ctx context.Context, parent *tview.TreeNode, collectionName string, expand bool) {
 	collNode := t.collNode(collectionName)
 	parent.AddChild(collNode).SetExpanded(expand)
 	collNode.SetReference(parent)
 	collNode.SetSelectedFunc(func() {
 		db, coll := t.removeSymbols(parent.GetText(), collNode.GetText())
-		t.NodeSelectFunc(ctx, db, coll)
+		t.nodeSelectFunc(ctx, db, coll)
 	})
 }
 

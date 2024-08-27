@@ -1,4 +1,4 @@
-package tui
+package page
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	HelpView = "Help"
+	HelpPage = "Help"
 )
 
 // Help is a view that provides a help screen for keybindings
@@ -26,7 +26,7 @@ type Help struct {
 // NewHelp creates a new Help view
 func NewHelp() *Help {
 	h := &Help{
-		BaseView: core.NewBaseView(HelpView),
+		BaseView: core.NewBaseView(HelpPage),
 		Flex:     tview.NewFlex(),
 		Table:    tview.NewTable(),
 	}
@@ -143,7 +143,7 @@ func (h *Help) setKeybindings() {
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Help.Close, event.Name()):
-			h.App.Pages.RemovePage(HelpView)
+			h.App.Pages.RemovePage(HelpPage)
 			return nil
 		}
 		return event

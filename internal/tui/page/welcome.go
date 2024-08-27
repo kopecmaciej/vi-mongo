@@ -1,4 +1,4 @@
-package tui
+package page
 
 import (
 	"fmt"
@@ -93,9 +93,6 @@ func (w *Welcome) renderForm() {
 	w.form.AddTextView("Logs", "Requires restart if changed", 60, 1, true, false)
 	w.form.AddInputField("Log File", "/tmp/vi-mongo.log", 30, nil, nil)
 	w.form.AddInputField("Log Level", "info", 30, nil, nil)
-	w.form.AddTextView("Clipboard commands", "Set system clipboard commands", 60, 1, true, false)
-	w.form.AddInputField("Copy command", "copy", 30, nil, nil)
-	w.form.AddInputField("Paste command", "paste", 30, nil, nil)
 	w.form.AddCheckbox("Show connection page", true, nil)
 	w.form.AddCheckbox("Show welcome page", false, nil)
 	w.form.AddTextView("Show help", fmt.Sprintf("Press %s to show help", w.App.GetKeys().Global.ToggleFullScreenHelp.String()), 60, 1, true, false)
