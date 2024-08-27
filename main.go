@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/kopecmaciej/mongui/cmd"
+	"github.com/kopecmaciej/vi-mongo/cmd"
 )
 
 func main() {

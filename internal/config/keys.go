@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/mongui/internal/util"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 )
 
 type (

@@ -3,8 +3,8 @@ package cmd
 import (
 	"os"
 
-	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/tui"
+	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/tui"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -17,7 +17,7 @@ var (
 	showWelcomePage    bool
 	showConnectionPage bool
 	rootCmd            = &cobra.Command{
-		Use:   "mongui",
+		Use:   "vi-mongo",
 		Short: "MongoDB TUI client",
 		Long:  `A Terminal User Interface (TUI) client for MongoDB`,
 		Run:   runApp,
@@ -33,7 +33,7 @@ func Execute() error {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/mongui/config.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/vi-mongo/config.yaml)")
 	rootCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug mode")
 	rootCmd.Flags().BoolVar(&showWelcomePage, "show-welcome-page", false, "Show welcome page on startup")
 	rootCmd.Flags().BoolVar(&showConnectionPage, "show-connection-page", false, "Show connection page on startup")

@@ -9,8 +9,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/kopecmaciej/mongui/internal/mongo"
-	"github.com/kopecmaciej/mongui/internal/tui/core"
+	"github.com/kopecmaciej/vi-mongo/internal/mongo"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

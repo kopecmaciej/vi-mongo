@@ -2,9 +2,9 @@ package modal
 
 import (
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/tui/core"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 )
 
 const (

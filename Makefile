@@ -1,5 +1,5 @@
 BUILD_DIR := .build
-SVC_NAME := mongui
+SVC_NAME := vi-mongo
 
 .PHONY: build run
 

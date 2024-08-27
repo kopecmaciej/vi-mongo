@@ -1,4 +1,4 @@
-module github.com/kopecmaciej/mongui
+module github.com/kopecmaciej/vi-mongo
 
 go 1.22.1
 

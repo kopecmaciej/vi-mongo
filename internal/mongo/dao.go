@@ -3,7 +3,7 @@ package mongo
 import (
 	"context"
 
-	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/config"
 
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"

@@ -12,7 +12,9 @@ import (
 )
 
 const (
-	ConfigDirName = "mongui"
+	ConfigDirName  = "vi-mongo"
+	ConfigFileName = "config.yaml"
+	LogPath        = "/tmp/vi-mongo.log"
 )
 
 type MongoConfig struct {
@@ -37,6 +39,11 @@ type EditorConfig struct {
 	Env     string `yaml:"env"`
 }
 
+type Clipboard struct {
+	CopyCommand  string `yaml:"copyCommand"`
+	PasteCommand string `yaml:"pasteCommand"`
+}
+
 type Config struct {
 	Version            string        `yaml:"version"`
 	Log                LogConfig     `yaml:"log"`
@@ -46,6 +53,7 @@ type Config struct {
 	ShowWelcomePage    bool          `yaml:"showWelcomePage"`
 	CurrentConnection  string        `yaml:"currentConnection"`
 	Connections        []MongoConfig `yaml:"connections"`
+	Clipboard          Clipboard     `yaml:"clipboard"`
 }
 
 // LoadConfig loads the config file
@@ -90,7 +98,7 @@ func LoadConfig() (*Config, error) {
 func (c *Config) loadDefaultConfig() {
 	c = &Config{
 		Log: LogConfig{
-			Path:        "/tmp/mongui.log",
+			Path:        LogPath,
 			Level:       "info",
 			PrettyPrint: true,
 		},
@@ -134,7 +142,7 @@ func GetConfigPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s/config.yaml", configPath), nil
+	return fmt.Sprintf("%s/%s", configPath, ConfigFileName), nil
 }
 
 // UpdateConfig updates the config file with the new settings

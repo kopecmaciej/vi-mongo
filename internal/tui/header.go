@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/tui/core"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/rs/zerolog/log"
 )
 

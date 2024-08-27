@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/tui/core"
-	"github.com/kopecmaciej/mongui/internal/tui/modal"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 )
 
 const (
@@ -91,8 +91,11 @@ func (w *Welcome) renderForm() {
 	w.form.AddTextView("Editor info", "Set command (vim, nano etc) or env variable ($ENV) to open editor", 60, 2, true, false)
 	w.form.AddInputField("Editor", "$EDITOR", 30, nil, nil)
 	w.form.AddTextView("Logs", "Requires restart if changed", 60, 1, true, false)
-	w.form.AddInputField("Log File", "/tmp/mongui.log", 30, nil, nil)
+	w.form.AddInputField("Log File", "/tmp/vi-mongo.log", 30, nil, nil)
 	w.form.AddInputField("Log Level", "info", 30, nil, nil)
+	w.form.AddTextView("Clipboard commands", "Set system clipboard commands", 60, 1, true, false)
+	w.form.AddInputField("Copy command", "copy", 30, nil, nil)
+	w.form.AddInputField("Paste command", "paste", 30, nil, nil)
 	w.form.AddCheckbox("Show connection page", true, nil)
 	w.form.AddCheckbox("Show welcome page", false, nil)
 	w.form.AddTextView("Show help", fmt.Sprintf("Press %s to show help", w.App.GetKeys().Global.ToggleFullScreenHelp.String()), 60, 1, true, false)

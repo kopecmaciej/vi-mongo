@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kopecmaciej/mongui/internal/util"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"

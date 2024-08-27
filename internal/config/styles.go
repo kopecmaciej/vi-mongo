@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/mongui/internal/util"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"gopkg.in/yaml.v3"
 )
 

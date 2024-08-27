@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/kopecmaciej/mongui/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/rs/zerolog/log"
 
 	"go.mongodb.org/mongo-driver/mongo"

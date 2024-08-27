@@ -1,10 +1,10 @@
 package core
 
 import (
-	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/manager"
-	"github.com/kopecmaciej/mongui/internal/mongo"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
+	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/rs/zerolog/log"
 )
 

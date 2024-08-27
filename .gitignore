@@ -20,7 +20,6 @@
 
 # Go workspace file
 go.work
-mongui.log
 history.txt
 config.yaml
 keybindings.json

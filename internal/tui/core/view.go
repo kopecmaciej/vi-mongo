@@ -3,8 +3,8 @@ package core
 import (
 	"sync"
 
-	"github.com/kopecmaciej/mongui/internal/manager"
-	"github.com/kopecmaciej/mongui/internal/mongo"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
+	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 )
 
 // BaseView is a base struct for all views.

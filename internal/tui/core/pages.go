@@ -1,8 +1,8 @@
 package core
 
 import (
-	"github.com/kopecmaciej/mongui/internal/manager"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 )
 
 type Pages struct {

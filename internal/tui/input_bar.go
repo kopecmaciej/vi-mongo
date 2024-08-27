@@ -4,12 +4,13 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/mongui/internal/config"
-	"github.com/kopecmaciej/mongui/internal/mongo"
-	"github.com/kopecmaciej/mongui/internal/tui/core"
-	"github.com/kopecmaciej/mongui/internal/tui/modal"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/mongo"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/rs/zerolog/log"
 )
 
@@ -45,6 +46,24 @@ func (i *InputBar) init() error {
 
 	i.Subscribe()
 	go i.handleEvents()
+
+	if i.App.GetConfig().Clipboard.CopyCommand != "" && i.App.GetConfig().Clipboard.PasteCommand != "" {
+		cpFunc := func(text string) {
+			err := clipboard.WriteAll(text)
+			if err != nil {
+				log.Error().Err(err).Msg("Error writing to clipboard")
+			}
+		}
+		pasteFunc := func() string {
+			text, err := clipboard.ReadAll()
+			if err != nil {
+				log.Error().Err(err).Msg("Error reading from clipboard")
+				return ""
+			}
+			return strings.TrimSpace(text)
+		}
+		i.SetClipboard(cpFunc, pasteFunc)
+	}
 
 	return nil
 }
