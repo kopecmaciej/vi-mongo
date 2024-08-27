@@ -39,11 +39,6 @@ type EditorConfig struct {
 	Env     string `yaml:"env"`
 }
 
-type Clipboard struct {
-	CopyCommand  string `yaml:"copyCommand"`
-	PasteCommand string `yaml:"pasteCommand"`
-}
-
 type Config struct {
 	Version            string        `yaml:"version"`
 	Log                LogConfig     `yaml:"log"`
@@ -53,7 +48,6 @@ type Config struct {
 	ShowWelcomePage    bool          `yaml:"showWelcomePage"`
 	CurrentConnection  string        `yaml:"currentConnection"`
 	Connections        []MongoConfig `yaml:"connections"`
-	Clipboard          Clipboard     `yaml:"clipboard"`
 }
 
 // LoadConfig loads the config file

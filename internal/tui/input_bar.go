@@ -47,23 +47,21 @@ func (i *InputBar) init() error {
 	i.Subscribe()
 	go i.handleEvents()
 
-	if i.App.GetConfig().Clipboard.CopyCommand != "" && i.App.GetConfig().Clipboard.PasteCommand != "" {
-		cpFunc := func(text string) {
-			err := clipboard.WriteAll(text)
-			if err != nil {
-				log.Error().Err(err).Msg("Error writing to clipboard")
-			}
+	cpFunc := func(text string) {
+		err := clipboard.WriteAll(text)
+		if err != nil {
+			log.Error().Err(err).Msg("Error writing to clipboard")
 		}
-		pasteFunc := func() string {
-			text, err := clipboard.ReadAll()
-			if err != nil {
-				log.Error().Err(err).Msg("Error reading from clipboard")
-				return ""
-			}
-			return strings.TrimSpace(text)
-		}
-		i.SetClipboard(cpFunc, pasteFunc)
 	}
+	pasteFunc := func() string {
+		text, err := clipboard.ReadAll()
+		if err != nil {
+			log.Error().Err(err).Msg("Error reading from clipboard")
+			return ""
+		}
+		return strings.TrimSpace(text)
+	}
+	i.SetClipboard(cpFunc, pasteFunc)
 
 	return nil
 }
