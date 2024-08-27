@@ -21,12 +21,12 @@ const (
 
 // DocModifier is a view that allows editing JSON documents
 type DocModifier struct {
-	*core.BaseView
+	*core.BaseElement
 }
 
 func NewDocModifier() *DocModifier {
 	return &DocModifier{
-		BaseView: core.NewBaseView(DocModifierView),
+		BaseElement: core.NewBaseElement(DocModifierView),
 	}
 }
 

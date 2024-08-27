@@ -15,7 +15,7 @@ import (
 )
 
 type InputBar struct {
-	*core.BaseView
+	*core.BaseElement
 	*tview.InputField
 
 	historyModal   *modal.HistoryModal
@@ -28,7 +28,7 @@ type InputBar struct {
 
 func NewInputBar(viewName string, label string) *InputBar {
 	i := &InputBar{
-		BaseView: core.NewBaseView(viewName),
+		BaseElement: core.NewBaseElement(viewName),
 		InputField: tview.NewInputField().
 			SetLabel(" " + label + ": "),
 		enabled:        false,
@@ -229,7 +229,7 @@ func (i *InputBar) displayHistoryModal() {
 
 // Draws default text if input is empty
 func (i *InputBar) Toggle(text string) {
-	i.BaseView.Toggle()
+	i.BaseElement.Toggle()
 	if text == "" {
 		text = i.GetText()
 	}

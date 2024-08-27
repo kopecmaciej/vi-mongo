@@ -16,7 +16,7 @@ const (
 
 // Connector is a view for connecting to mongodb using tview package
 type Connector struct {
-	*core.BaseView
+	*core.BaseElement
 	*tview.Flex
 
 	// form is for creating new connection
@@ -32,10 +32,10 @@ type Connector struct {
 // NewConnector creates a new connection view
 func NewConnector() *Connector {
 	c := &Connector{
-		BaseView: core.NewBaseView(ConnectorView),
-		Flex:     tview.NewFlex(),
-		form:     tview.NewForm(),
-		list:     tview.NewList(),
+		BaseElement: core.NewBaseElement(ConnectorView),
+		Flex:        tview.NewFlex(),
+		form:        tview.NewForm(),
+		list:        tview.NewList(),
 	}
 
 	return c

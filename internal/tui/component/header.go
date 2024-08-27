@@ -29,7 +29,7 @@ type (
 	// Header is a view that displays information about the database
 	// in the header of the application
 	Header struct {
-		*core.BaseView
+		*core.BaseElement
 		*tview.Table
 
 		style    *config.HeaderStyle
@@ -40,9 +40,9 @@ type (
 // NewHeader creates a new header view
 func NewHeader() *Header {
 	h := Header{
-		BaseView: core.NewBaseView(HeaderView),
-		Table:    tview.NewTable(),
-		baseInfo: make(BaseInfo),
+		BaseElement: core.NewBaseElement(HeaderView),
+		Table:       tview.NewTable(),
+		baseInfo:    make(BaseInfo),
 	}
 
 	h.SetAfterInitFunc(h.init)

@@ -27,7 +27,7 @@ const (
 
 // Content is a view that displays documents in a table
 type Content struct {
-	*core.BaseView
+	*core.BaseElement
 	*tview.Flex
 
 	Table          *tview.Table
@@ -45,7 +45,7 @@ type Content struct {
 
 func NewContent() *Content {
 	c := &Content{
-		BaseView:       core.NewBaseView("Content"),
+		BaseElement:    core.NewBaseElement("Content"),
 		Table:          tview.NewTable(),
 		Flex:           tview.NewFlex(),
 		View:           tview.NewTextView(),

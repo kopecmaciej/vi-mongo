@@ -20,7 +20,7 @@ const (
 
 // HistoryModal is a modal with history of queries
 type HistoryModal struct {
-	*core.BaseView
+	*core.BaseElement
 	*primitives.ListModal
 
 	style *config.HistoryStyle
@@ -28,8 +28,8 @@ type HistoryModal struct {
 
 func NewHistoryModal() *HistoryModal {
 	h := &HistoryModal{
-		BaseView:  core.NewBaseView(HistoryModalView),
-		ListModal: primitives.NewListModal(),
+		BaseElement: core.NewBaseElement(HistoryModalView),
+		ListModal:   primitives.NewListModal(),
 	}
 
 	h.SetAfterInitFunc(h.init)

@@ -29,7 +29,7 @@ type peekerState struct {
 
 // DocPeeker is a view that provides a modal view for peeking at a document
 type DocPeeker struct {
-	*core.BaseView
+	*core.BaseElement
 	*primitives.ViewModal
 
 	style       *config.DocPeekerStyle
@@ -40,7 +40,7 @@ type DocPeeker struct {
 // NewDocPeeker creates a new DocPeeker view
 func NewDocPeeker() *DocPeeker {
 	peekr := &DocPeeker{
-		BaseView:    core.NewBaseView(DocPeekerView),
+		BaseElement: core.NewBaseElement(DocPeekerView),
 		ViewModal:   primitives.NewViewModal(),
 		docModifier: NewDocModifier(),
 	}

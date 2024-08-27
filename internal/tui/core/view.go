@@ -7,16 +7,15 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 )
 
-// BaseView is a base struct for all views.
-// It contains all the basic fields and functions that are used by all views.
-// It also implements the BaseView interface.
-type BaseView struct {
+// BaseElement is a base struct for all visable elements.
+// It contains all the basic fields and functions that are used by all visable elements.
+type BaseElement struct {
 	// enabled is a flag that indicates if the view is enabled.
 	enabled bool
 
 	// name is the name of the view.
 	// It's used mainly for managing avaliable keybindings.
-	identifier manager.ViewIdentifier
+	identifier manager.ElementId
 	// App is a pointer to the main App.
 	// It's used for accessing App focus, root page etc.
 	App *App
@@ -35,16 +34,16 @@ type BaseView struct {
 	mutex sync.Mutex
 }
 
-// NewBaseView is a constructor for the BaseView struct.
-func NewBaseView(identifier string) *BaseView {
-	return &BaseView{
-		identifier: manager.ViewIdentifier(identifier),
+// NewBaseElement is a constructor for the BaseElement struct.
+func NewBaseElement(identifier string) *BaseElement {
+	return &BaseElement{
+		identifier: manager.ElementId(identifier),
 	}
 }
 
 // Init is a function that is called when the view is initialized.
 // If custom initialization is needed, this function should be overriden.
-func (c *BaseView) Init(app *App) error {
+func (c *BaseElement) Init(app *App) error {
 	if c.App != nil && c.identifier != "" {
 		return nil
 	}
@@ -62,23 +61,23 @@ func (c *BaseView) Init(app *App) error {
 }
 
 // Enable sets the enabled flag.
-func (c *BaseView) Enable() {
+func (c *BaseElement) Enable() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.enabled = true
-	c.App.GetManager().PushView(c.identifier)
+	c.App.GetManager().PushElement(c.identifier)
 }
 
 // Disable unsets the enabled flag.
-func (c *BaseView) Disable() {
+func (c *BaseElement) Disable() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.enabled = false
-	c.App.GetManager().PopView()
+	c.App.GetManager().PopElement()
 }
 
 // Toggle toggles the enabled flag.
-func (c *BaseView) Toggle() {
+func (c *BaseElement) Toggle() {
 	if c.IsEnabled() {
 		c.Disable()
 	} else {
@@ -87,38 +86,38 @@ func (c *BaseView) Toggle() {
 }
 
 // IsEnabled returns the enabled flag.
-func (c *BaseView) IsEnabled() bool {
+func (c *BaseElement) IsEnabled() bool {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	return c.enabled
 }
 
 // SetAfterInitFunc sets the optional function that will be run at the end of the Init function.
-func (c *BaseView) SetAfterInitFunc(afterInitFunc func() error) {
+func (c *BaseElement) SetAfterInitFunc(afterInitFunc func() error) {
 	c.afterInitFunc = afterInitFunc
 }
 
 // GetAfterInitFunc returns the optional function that will be run at the end of the Init function.
-func (c *BaseView) GetAfterInitFunc() func() error {
+func (c *BaseElement) GetAfterInitFunc() func() error {
 	return c.afterInitFunc
 }
 
 // GetIdentifier returns the identifier of the view.
-func (c *BaseView) GetIdentifier() manager.ViewIdentifier {
+func (c *BaseElement) GetIdentifier() manager.ElementId {
 	return c.identifier
 }
 
 // Subscribe subscribes to the view events.
-func (c *BaseView) Subscribe() {
+func (c *BaseElement) Subscribe() {
 	c.Listener = c.App.GetManager().Subscribe(c.identifier)
 }
 
 // Broadcast sends an event to all listeners.
-func (c *BaseView) BroadcastEvent(event manager.EventMsg) {
+func (c *BaseElement) BroadcastEvent(event manager.EventMsg) {
 	c.App.GetManager().Broadcast(event)
 }
 
 // SendToView sends an event to the view.
-func (c *BaseView) SendToView(view manager.ViewIdentifier, event manager.EventMsg) {
+func (c *BaseElement) SendToView(view manager.ElementId, event manager.EventMsg) {
 	c.App.GetManager().SendTo(view, event)
 }

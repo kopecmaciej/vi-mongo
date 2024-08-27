@@ -21,7 +21,7 @@ const (
 )
 
 type DatabaseTree struct {
-	*core.BaseView
+	*core.BaseElement
 	*tview.TreeView
 
 	addModal    *primitives.InputModal
@@ -33,7 +33,7 @@ type DatabaseTree struct {
 
 func NewDatabaseTree() *DatabaseTree {
 	d := &DatabaseTree{
-		BaseView:    core.NewBaseView(DatabaseTreeView),
+		BaseElement: core.NewBaseElement(DatabaseTreeView),
 		TreeView:    tview.NewTreeView(),
 		addModal:    primitives.NewInputModal(),
 		deleteModal: tview.NewModal(),

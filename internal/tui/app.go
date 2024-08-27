@@ -64,7 +64,7 @@ func (a *App) setKeybindings() {
 			return nil
 		case a.Keys.Contains(a.Keys.Global.ToggleHelpBarFooter, event.Name()):
 
-			if strings.Contains(string(a.Manager.CurrentView()), "Input") {
+			if strings.Contains(string(a.Manager.CurrentElement()), "Input") {
 				return event
 			}
 			return nil

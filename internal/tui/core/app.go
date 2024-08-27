@@ -15,7 +15,7 @@ type (
 
 		Pages         *Pages
 		Dao           *mongo.Dao
-		Manager       *manager.ViewManager
+		Manager       *manager.ElementManager
 		Styles        *config.Styles
 		Config        *config.Config
 		Keys          *config.KeyBindings
@@ -35,7 +35,7 @@ func NewApp(appConfig *config.Config) *App {
 
 	app := &App{
 		Application: tview.NewApplication(),
-		Manager:     manager.NewViewManager(),
+		Manager:     manager.NewElementManager(),
 		Styles:      styles,
 		Config:      appConfig,
 		Keys:        keyBindings,
@@ -68,7 +68,7 @@ func (a *App) GetDao() *mongo.Dao {
 }
 
 // GetManager implements model.AppInterface
-func (a *App) GetManager() *manager.ViewManager {
+func (a *App) GetManager() *manager.ElementManager {
 	return a.Manager
 }
 

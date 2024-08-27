@@ -15,7 +15,7 @@ const (
 )
 
 type Welcome struct {
-	*core.BaseView
+	*core.BaseElement
 	*tview.Flex
 
 	// Form
@@ -27,9 +27,9 @@ type Welcome struct {
 
 func NewWelcome() *Welcome {
 	w := &Welcome{
-		BaseView: core.NewBaseView(WelcomeView),
-		Flex:     tview.NewFlex(),
-		form:     tview.NewForm(),
+		BaseElement: core.NewBaseElement(WelcomeView),
+		Flex:        tview.NewFlex(),
+		form:        tview.NewForm(),
 	}
 
 	return w

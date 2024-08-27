@@ -19,7 +19,7 @@ const (
 
 // Root is a view that manages visaibility of other views
 type Root struct {
-	*core.BaseView
+	*core.BaseElement
 
 	mainFlex  *tview.Flex
 	innerFlex *tview.Flex
@@ -32,13 +32,13 @@ type Root struct {
 
 func NewRoot() *Root {
 	r := &Root{
-		BaseView:  core.NewBaseView(RootView),
-		mainFlex:  tview.NewFlex(),
-		innerFlex: tview.NewFlex(),
-		connector: NewConnector(),
-		header:    component.NewHeader(),
-		databases: component.NewDatabases(),
-		content:   component.NewContent(),
+		BaseElement: core.NewBaseElement(RootView),
+		mainFlex:    tview.NewFlex(),
+		innerFlex:   tview.NewFlex(),
+		connector:   NewConnector(),
+		header:      component.NewHeader(),
+		databases:   component.NewDatabases(),
+		content:     component.NewContent(),
 	}
 
 	return r

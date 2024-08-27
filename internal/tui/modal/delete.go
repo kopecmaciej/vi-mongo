@@ -12,7 +12,7 @@ const (
 )
 
 type DeleteModal struct {
-	*core.BaseView
+	*core.BaseElement
 	*tview.Modal
 
 	style *config.OthersStyle
@@ -20,8 +20,8 @@ type DeleteModal struct {
 
 func NewDeleteModal() *DeleteModal {
 	dm := &DeleteModal{
-		BaseView: core.NewBaseView(DeleteModalView),
-		Modal:    tview.NewModal(),
+		BaseElement: core.NewBaseElement(DeleteModalView),
+		Modal:       tview.NewModal(),
 	}
 
 	dm.SetAfterInitFunc(dm.init)

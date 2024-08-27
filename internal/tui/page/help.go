@@ -16,7 +16,7 @@ const (
 
 // Help is a view that provides a help screen for keybindings
 type Help struct {
-	*core.BaseView
+	*core.BaseElement
 	*tview.Flex
 
 	Table *tview.Table
@@ -26,9 +26,9 @@ type Help struct {
 // NewHelp creates a new Help view
 func NewHelp() *Help {
 	h := &Help{
-		BaseView: core.NewBaseView(HelpPage),
-		Flex:     tview.NewFlex(),
-		Table:    tview.NewTable(),
+		BaseElement: core.NewBaseElement(HelpPage),
+		Flex:        tview.NewFlex(),
+		Table:       tview.NewTable(),
 	}
 
 	h.SetAfterInitFunc(h.init)
@@ -47,7 +47,7 @@ func (h *Help) Render(fullScreen bool) error {
 	h.Clear()
 	h.Table.Clear()
 
-	currectView := h.App.Manager.CurrentView()
+	currectView := h.App.Manager.CurrentElement()
 	cKeys, err := h.App.GetKeys().GetKeysForView(string(currectView))
 	if err != nil {
 		modal.ShowError(h.App.Pages, "No keys found for current view", err)
