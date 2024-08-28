@@ -8,19 +8,19 @@ import (
 )
 
 const (
-	DeleteModalView = "DeleteModal"
+	DeleteModal = "DeleteModal"
 )
 
-type DeleteModal struct {
+type Delete struct {
 	*core.BaseElement
 	*tview.Modal
 
 	style *config.OthersStyle
 }
 
-func NewDeleteModal() *DeleteModal {
-	dm := &DeleteModal{
-		BaseElement: core.NewBaseElement(DeleteModalView),
+func NewDeleteModal() *Delete {
+	dm := &Delete{
+		BaseElement: core.NewBaseElement(DeleteModal),
 		Modal:       tview.NewModal(),
 	}
 
@@ -29,7 +29,7 @@ func NewDeleteModal() *DeleteModal {
 	return dm
 }
 
-func (d *DeleteModal) init() error {
+func (d *Delete) init() error {
 	d.setStyle()
 	d.setKeybindings()
 
@@ -38,7 +38,7 @@ func (d *DeleteModal) init() error {
 	return nil
 }
 
-func (d *DeleteModal) setStyle() {
+func (d *Delete) setStyle() {
 	d.style = &d.App.GetStyles().Others
 
 	d.SetBorder(true)
@@ -48,7 +48,7 @@ func (d *DeleteModal) setStyle() {
 	d.SetButtonBackgroundColor(d.style.ButtonsBackgroundColor.Color())
 }
 
-func (d *DeleteModal) setKeybindings() {
+func (d *Delete) setKeybindings() {
 	d.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case 'h':

@@ -12,23 +12,23 @@ import (
 )
 
 const (
-	HistoryModalView = "HistoryModal"
-	QueryBarView     = "QueryBar"
+	HistoryModal = "HistoryModal"
+	QueryBar     = "QueryBar"
 
 	maxHistory = 10
 )
 
-// HistoryModal is a modal with history of queries
-type HistoryModal struct {
+// History is a modal with history of queries
+type History struct {
 	*core.BaseElement
 	*primitives.ListModal
 
 	style *config.HistoryStyle
 }
 
-func NewHistoryModal() *HistoryModal {
-	h := &HistoryModal{
-		BaseElement: core.NewBaseElement(HistoryModalView),
+func NewHistoryModal() *History {
+	h := &History{
+		BaseElement: core.NewBaseElement(HistoryModal),
 		ListModal:   primitives.NewListModal(),
 	}
 
@@ -38,14 +38,14 @@ func NewHistoryModal() *HistoryModal {
 }
 
 // Init initializes HistoryModal
-func (h *HistoryModal) init() error {
+func (h *History) init() error {
 	h.setStyle()
 	h.setKeybindings()
 
 	return nil
 }
 
-func (h *HistoryModal) setStyle() {
+func (h *History) setStyle() {
 	h.style = &h.App.GetStyles().History
 
 	h.SetTitle(" History ")
@@ -63,7 +63,7 @@ func (h *HistoryModal) setStyle() {
 	h.SetSelectedStyle(selectedStyle)
 }
 
-func (h *HistoryModal) setKeybindings() {
+func (h *History) setKeybindings() {
 	keys := h.App.GetKeys()
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
@@ -78,15 +78,15 @@ func (h *HistoryModal) setKeybindings() {
 	})
 }
 
-func (h *HistoryModal) sendEventAndClose(event *tcell.EventKey) *tcell.EventKey {
+func (h *History) sendEventAndClose(event *tcell.EventKey) *tcell.EventKey {
 	eventKey := manager.EventMsg{EventKey: event, Sender: h.GetIdentifier()}
-	h.SendToView(QueryBarView, eventKey)
+	h.SendToView(QueryBar, eventKey)
 	h.App.Pages.RemovePage(h.GetIdentifier())
 
 	return nil
 }
 
-func (h *HistoryModal) clearHistory() *tcell.EventKey {
+func (h *History) clearHistory() *tcell.EventKey {
 	err := os.WriteFile(getHisotryFilePath(), []byte{}, 0644)
 	if err != nil {
 		ShowError(h.App.Pages, "Failed to clear history", err)
@@ -98,7 +98,7 @@ func (h *HistoryModal) clearHistory() *tcell.EventKey {
 }
 
 // Render loads history from file and renders it
-func (h *HistoryModal) Render() error {
+func (h *History) Render() error {
 	history, err := h.loadHistory()
 	if err != nil {
 		return err
@@ -120,7 +120,7 @@ func (h *HistoryModal) Render() error {
 
 // SaveToHistory saves text to history file, if it's not already there.
 // It will overwrite oldest entry if history is full.
-func (h *HistoryModal) SaveToHistory(text string) error {
+func (h *History) SaveToHistory(text string) error {
 	history, err := h.loadHistory()
 	if err != nil {
 		return err
@@ -154,14 +154,14 @@ func (h *HistoryModal) SaveToHistory(text string) error {
 }
 
 // GetText returns text from selected item
-func (h *HistoryModal) GetText() string {
+func (h *History) GetText() string {
 	text := h.ListModal.GetText()
 
 	return strings.TrimSpace(text)
 }
 
 // loadHistory loads history from history file
-func (h *HistoryModal) loadHistory() ([]string, error) {
+func (h *History) loadHistory() ([]string, error) {
 	bytes, err := os.ReadFile(getHisotryFilePath())
 	if err != nil {
 		if os.IsNotExist(err) {

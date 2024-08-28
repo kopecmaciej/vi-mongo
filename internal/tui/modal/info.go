@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	InfoView = "Info"
+	InfoModal = "Info"
 )
 
 func NewInfo(message string) *tview.Modal {
@@ -33,19 +33,19 @@ func ShowInfo(page *core.Pages, message string) {
 
 	infoModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
-			page.RemovePage(InfoView)
+			page.RemovePage(InfoModal)
 		}
 	})
-	page.AddPage(InfoView, infoModal, true, true)
+	page.AddPage(InfoModal, infoModal, true, true)
 }
 
 func ShowInfoModalAndFocus(page *core.Pages, message string, setFocus func()) {
 	infoModal := NewInfo(message)
 	infoModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
-			page.RemovePage(InfoView)
+			page.RemovePage(InfoModal)
 			setFocus()
 		}
 	})
-	page.AddPage(InfoView, infoModal, true, true)
+	page.AddPage(InfoModal, infoModal, true, true)
 }

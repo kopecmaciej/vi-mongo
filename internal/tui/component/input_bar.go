@@ -18,7 +18,7 @@ type InputBar struct {
 	*core.BaseElement
 	*tview.InputField
 
-	historyModal   *modal.HistoryModal
+	historyModal   *modal.History
 	style          *config.InputBarStyle
 	enabled        bool
 	autocompleteOn bool

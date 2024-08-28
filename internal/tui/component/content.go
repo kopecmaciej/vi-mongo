@@ -36,7 +36,7 @@ type Content struct {
 	queryBar       *InputBar
 	sortBar        *InputBar
 	jsonPeeker     *DocPeeker
-	deleteModal    *modal.DeleteModal
+	deleteModal    *modal.Delete
 	docModifier    *DocModifier
 	state          mongo.CollectionState
 	stateMap       map[string]mongo.CollectionState

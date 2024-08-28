@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	ErrorView = "Error"
+	ErrorModal = "Error"
 )
 
 func NewError(message string, err error) *tview.Modal {
@@ -40,19 +40,19 @@ func ShowError(page *core.Pages, message string, err error) {
 
 	errModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
-			page.RemovePage(ErrorView)
+			page.RemovePage(ErrorModal)
 		}
 	})
-	page.AddPage(ErrorView, errModal, true, true)
+	page.AddPage(ErrorModal, errModal, true, true)
 }
 
 func ShowErrorAndSetFocus(page *core.Pages, message string, err error, setFocus func()) {
 	errModal := NewError(message, err)
 	errModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Ok" {
-			page.RemovePage(ErrorView)
+			page.RemovePage(ErrorModal)
 			setFocus()
 		}
 	})
-	page.AddPage(ErrorView, errModal, true, true)
+	page.AddPage(ErrorModal, errModal, true, true)
 }
