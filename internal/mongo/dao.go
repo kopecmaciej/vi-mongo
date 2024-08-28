@@ -88,16 +88,7 @@ type Filter struct {
 	Value string
 }
 
-func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState) ([]primitive.M, int64, error) {
-	filter, err := ParseStringQuery(state.Filter)
-	if err != nil {
-		return nil, 0, err
-	}
-	sort, err := ParseStringQuery(state.Sort)
-	if err != nil {
-		return nil, 0, err
-	}
-
+func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter primitive.M, sort primitive.M) ([]primitive.M, int64, error) {
 	count, err := d.client.Database(state.Db).Collection(state.Coll).CountDocuments(ctx, filter)
 	if err != nil {
 		return nil, 0, err

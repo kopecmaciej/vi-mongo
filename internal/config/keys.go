@@ -12,6 +12,10 @@ import (
 )
 
 type (
+	OrderedKeys struct {
+		View string
+		Keys []Key
+	}
 	// KeyBindings is a way to define keybindings for the application
 	// There are views that have only keybindings and some have
 	// nested keybindings of their children views
@@ -22,6 +26,7 @@ type (
 		Welcome   WelcomeKeys   `json:"welcome"`
 		Help      HelpKeys      `json:"help"`
 		DocPeeker DocPeekerKeys `json:"docPeeker"`
+		History   HistoryKeys   `json:"history"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -117,49 +122,13 @@ type (
 		CopyValue    Key `json:"copyValue"`
 		Refresh      Key `json:"refresh"`
 	}
+
+	HistoryKeys struct {
+		ClearHistory Key `json:"clearHistory"`
+		AcceptEntry  Key `json:"acceptEntry"`
+		CloseHistory Key `json:"closeHistory"`
+	}
 )
-
-// LoadKeybindings loads keybindings from the config file
-// if the file does not exist it creates a new one with default keybindings
-func LoadKeybindings() (*KeyBindings, error) {
-	keybindings := &KeyBindings{}
-	defaultKeybindings := &KeyBindings{}
-	defaultKeybindings.loadDefaultKeybindings()
-
-	keybindingsPath, err := getKeybindingsPath()
-	if err != nil {
-		return nil, err
-	}
-
-	bytes, err := os.ReadFile(keybindingsPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			err := ensureConfigDirExist()
-			if err != nil {
-				return nil, err
-			}
-			bytes, err = json.Marshal(defaultKeybindings)
-			if err != nil {
-				return nil, err
-			}
-			err = os.WriteFile(keybindingsPath, bytes, 0644)
-			if err != nil {
-				return nil, err
-			}
-			return defaultKeybindings, nil
-		}
-		return nil, err
-	}
-
-	err = json.Unmarshal(bytes, keybindings)
-	if err != nil {
-		return nil, err
-	}
-
-	util.MergeConfigs(keybindings, defaultKeybindings)
-
-	return keybindings, nil
-}
 
 func (k *KeyBindings) loadDefaultKeybindings() {
 	k.Global = GlobalKeys{
@@ -222,15 +191,15 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Peek document",
 		},
 		ViewDocument: Key{
-			Runes:       []string{"y"},
+			Runes:       []string{"Y"},
 			Description: "View document",
 		},
 		AddDocument: Key{
-			Runes:       []string{"a"},
+			Runes:       []string{"A"},
 			Description: "Add document",
 		},
 		EditDocument: Key{
-			Runes:       []string{"e"},
+			Runes:       []string{"E"},
 			Description: "Edit document",
 		},
 		DuplicateDocument: Key{
@@ -305,14 +274,14 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Save connection",
 		},
 		FocusList: Key{
-			Keys:        []string{"Esc", "Ctrl+Left"},
+			Keys:        []string{"Ctrl+H", "Ctrl+Left"},
 			Description: "Focus Connection List",
 		},
 	}
 
 	k.Connector.ConnectorList = ConnectorListKeys{
 		FocusForm: Key{
-			Keys:        []string{"Ctrl+A", "Ctrl+Right"},
+			Keys:        []string{"Ctrl+L", "Ctrl+Right"},
 			Description: "Move focus to form",
 		},
 		DeleteConnection: Key{
@@ -365,11 +334,64 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Refresh document",
 		},
 	}
+
+	k.History = HistoryKeys{
+		ClearHistory: Key{
+			Runes:       []string{"C"},
+			Description: "Clear history",
+		},
+		AcceptEntry: Key{
+			Keys:        []string{"Enter", "Space"},
+			Description: "Accept entry",
+		},
+		CloseHistory: Key{
+			Keys:        []string{"Ctrl+Y"},
+			Runes:       []string{"Esc"},
+			Description: "Close history",
+		},
+	}
 }
 
-type OrderedKeys struct {
-	View string
-	Keys []Key
+// LoadKeybindings loads keybindings from the config file
+// if the file does not exist it creates a new one with default keybindings
+func LoadKeybindings() (*KeyBindings, error) {
+	keybindings := &KeyBindings{}
+	defaultKeybindings := &KeyBindings{}
+	defaultKeybindings.loadDefaultKeybindings()
+
+	keybindingsPath, err := getKeybindingsPath()
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err := os.ReadFile(keybindingsPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err := ensureConfigDirExist()
+			if err != nil {
+				return nil, err
+			}
+			bytes, err = json.Marshal(defaultKeybindings)
+			if err != nil {
+				return nil, err
+			}
+			err = os.WriteFile(keybindingsPath, bytes, 0644)
+			if err != nil {
+				return nil, err
+			}
+			return defaultKeybindings, nil
+		}
+		return nil, err
+	}
+
+	err = json.Unmarshal(bytes, keybindings)
+	if err != nil {
+		return nil, err
+	}
+
+	util.MergeConfigs(keybindings, defaultKeybindings)
+
+	return keybindings, nil
 }
 
 // GetKeysForView returns keys for view
@@ -417,8 +439,13 @@ func (kb *KeyBindings) ConvertStrKeyToTcellKey(key string) (tcell.Key, bool) {
 
 // Contains checks if the keybindings contains the key
 func (kb *KeyBindings) Contains(configKey Key, namedKey string) bool {
+	// some hacks for couple of keys
 	if namedKey == "Rune[ ]" {
 		namedKey = "Space"
+	}
+	// in some terminals ctrl+H often is seen as backspace
+	if namedKey == "Backspace" {
+		namedKey = "Ctrl+H"
 	}
 
 	if strings.HasPrefix(namedKey, "Rune") {

@@ -114,39 +114,30 @@ func (s *Databases) filter(ctx context.Context, text string) {
 	expand := false
 	filtered := []mongo.DBsWithCollections{}
 	if text == "" {
-		return
-	}
-	for _, db := range dbsWitColls {
-		re := regexp.MustCompile(`(?i)` + text)
-		if re.MatchString(db.DB) {
-			contain := false
-			for _, f := range filtered {
-				if f.DB == db.DB {
-					contain = true
-					break
+		filtered = dbsWitColls
+		expand = false
+	} else {
+		re := regexp.MustCompile(`(?i)` + regexp.QuoteMeta(text))
+		for _, db := range dbsWitColls {
+			matchedDB := re.MatchString(db.DB)
+			matchedCollections := []string{}
+
+			for _, coll := range db.Collections {
+				if re.MatchString(coll) {
+					matchedCollections = append(matchedCollections, coll)
 				}
 			}
-			if !contain {
-				filtered = append(filtered, db)
-			}
-		}
-		for _, coll := range db.Collections {
-			if re.MatchString(coll) {
-				contain := false
-				for _, f := range filtered {
-					if f.DB == db.DB {
-						f.Collections = append(f.Collections, coll)
-						contain = true
-						break
-					}
+
+			if matchedDB || len(matchedCollections) > 0 {
+				filteredDB := mongo.DBsWithCollections{
+					DB:          db.DB,
+					Collections: matchedCollections,
 				}
-				if !contain {
-					expand = true
-					filtered = append(filtered, mongo.DBsWithCollections{
-						DB:          db.DB,
-						Collections: []string{coll},
-					})
+				if matchedDB {
+					filteredDB.Collections = db.Collections
 				}
+				filtered = append(filtered, filteredDB)
+				expand = expand || len(matchedCollections) > 0
 			}
 		}
 	}

@@ -193,7 +193,16 @@ func (c *Content) render(setFocus bool) {
 }
 
 func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, int64, error) {
-	documents, count, err := c.Dao.ListDocuments(ctx, &c.state)
+	filter, err := mongo.ParseStringQuery(c.state.Filter)
+	if err != nil {
+		return nil, 0, err
+	}
+	sort, err := mongo.ParseStringQuery(c.state.Sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	documents, count, err := c.Dao.ListDocuments(ctx, &c.state, filter, sort)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -377,7 +386,10 @@ func (c *Content) queryBarListener(ctx context.Context) {
 		c.state.Filter = util.TrimJson(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
-		c.updateContent(ctx)
+		err := c.updateContent(ctx)
+		if err != nil {
+			modal.ShowError(c.App.Pages, "Error updating content", err)
+		}
 		if c.Flex.HasItem(c.queryBar) {
 			c.Flex.RemoveItem(c.queryBar)
 		}

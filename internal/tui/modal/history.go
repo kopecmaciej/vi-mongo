@@ -64,16 +64,37 @@ func (h *HistoryModal) setStyle() {
 }
 
 func (h *HistoryModal) setKeybindings() {
+	keys := h.App.GetKeys()
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyEsc, tcell.KeyEnter, tcell.KeyCtrlY:
-			eventKey := manager.EventMsg{EventKey: event, Sender: h.GetIdentifier()}
-			h.SendToView(QueryBarView, eventKey)
-			h.App.Pages.RemovePage(h.GetIdentifier())
-			return nil
+		switch {
+		case keys.Contains(keys.History.AcceptEntry, event.Name()):
+			return h.sendEventAndClose(event)
+		case keys.Contains(keys.History.CloseHistory, event.Name()):
+			return h.sendEventAndClose(event)
+		case keys.Contains(keys.History.ClearHistory, event.Name()):
+			return h.clearHistory()
 		}
 		return event
 	})
+}
+
+func (h *HistoryModal) sendEventAndClose(event *tcell.EventKey) *tcell.EventKey {
+	eventKey := manager.EventMsg{EventKey: event, Sender: h.GetIdentifier()}
+	h.SendToView(QueryBarView, eventKey)
+	h.App.Pages.RemovePage(h.GetIdentifier())
+
+	return nil
+}
+
+func (h *HistoryModal) clearHistory() *tcell.EventKey {
+	err := os.WriteFile(getHisotryFilePath(), []byte{}, 0644)
+	if err != nil {
+		ShowError(h.App.Pages, "Failed to clear history", err)
+	}
+	h.App.Pages.RemovePage(h.GetIdentifier())
+	ShowInfo(h.App.Pages, "History cleared")
+
+	return nil
 }
 
 // Render loads history from file and renders it

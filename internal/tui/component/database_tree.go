@@ -10,6 +10,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/primitives"
 	"github.com/rs/zerolog/log"
 )
@@ -221,7 +222,10 @@ func (t *DatabaseTree) addChildNode(ctx context.Context, parent *tview.TreeNode,
 	collNode.SetReference(parent)
 	collNode.SetSelectedFunc(func() {
 		db, coll := t.removeSymbols(parent.GetText(), collNode.GetText())
-		t.nodeSelectFunc(ctx, db, coll)
+		err := t.nodeSelectFunc(ctx, db, coll)
+		if err != nil {
+			modal.ShowError(t.App.Pages, "Error selecting node", err)
+		}
 	})
 }
 
