@@ -134,13 +134,23 @@ func (r *Root) setKeybindings() {
 	k := r.App.GetKeys()
 	r.mainFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Root.FocusNext, event.Name()):
-			r.databases.ToggleFocus()
+		case k.Contains(k.Root.ToggleFocus, event.Name()):
+			if r.App.GetFocus() == r.databases.DbTree {
+				r.App.SetFocus(r.content)
+			} else {
+				r.App.SetFocus(r.databases)
+			}
+			return nil
+		case k.Contains(k.Root.FocusDatabases, event.Name()):
+			r.App.SetFocus(r.databases)
+			return nil
+		case k.Contains(k.Root.FocusContent, event.Name()):
+			r.App.SetFocus(r.content)
 			return nil
 		case k.Contains(k.Root.HideDatabases, event.Name()):
 			if _, ok := r.mainFlex.GetItem(0).(*component.Databases); ok {
 				r.mainFlex.RemoveItem(r.databases)
-				r.App.SetFocus(r.content.Table)
+				r.App.SetFocus(r.content)
 			} else {
 				r.mainFlex.Clear()
 				r.render()

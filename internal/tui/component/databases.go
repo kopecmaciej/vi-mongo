@@ -21,7 +21,7 @@ type Databases struct {
 	*core.BaseElement
 	*tview.Flex
 
-	dbTree       *DatabaseTree
+	DbTree       *DatabaseTree
 	filterBar    *InputBar
 	mutex        sync.Mutex
 	dbsWithColls []mongo.DBsWithCollections
@@ -31,7 +31,7 @@ func NewDatabases() *Databases {
 	s := &Databases{
 		BaseElement: core.NewBaseElement(DatabasesView),
 		Flex:        tview.NewFlex(),
-		dbTree:      NewDatabaseTree(),
+		DbTree:      NewDatabaseTree(),
 		filterBar:   NewInputBar(FilterBarView, "Filter"),
 		mutex:       sync.Mutex{},
 	}
@@ -46,7 +46,7 @@ func (s *Databases) init() error {
 	s.setStyle()
 	s.setKeybindings()
 
-	if err := s.dbTree.Init(s.App); err != nil {
+	if err := s.DbTree.Init(s.App); err != nil {
 		return err
 	}
 
@@ -85,7 +85,7 @@ func (s *Databases) render() error {
 	s.Flex.Clear()
 
 	var primitive tview.Primitive
-	primitive = s.dbTree
+	primitive = s.DbTree
 
 	if s.filterBar.IsEnabled() {
 		s.Flex.AddItem(s.filterBar, 3, 0, false)
@@ -93,7 +93,7 @@ func (s *Databases) render() error {
 	}
 	defer s.App.SetFocus(primitive)
 
-	s.Flex.AddItem(s.dbTree, 0, 1, true)
+	s.Flex.AddItem(s.DbTree, 0, 1, true)
 
 	return nil
 }
@@ -141,14 +141,14 @@ func (s *Databases) filter(ctx context.Context, text string) {
 			}
 		}
 	}
-	s.dbTree.Render(ctx, filtered, expand)
+	s.DbTree.Render(ctx, filtered, expand)
 }
 
 func (s *Databases) renderWithFilter(ctx context.Context, filter string) error {
 	if err := s.fetchDbsWithCollections(ctx, filter); err != nil {
 		return err
 	}
-	s.dbTree.Render(ctx, s.dbsWithColls, false)
+	s.DbTree.Render(ctx, s.dbsWithColls, false)
 
 	return nil
 }
@@ -164,14 +164,5 @@ func (s *Databases) fetchDbsWithCollections(ctx context.Context, filter string) 
 }
 
 func (s *Databases) SetSelectFunc(f func(ctx context.Context, db string, coll string) error) {
-	s.dbTree.SetSelectFunc(f)
-}
-
-func (s *Databases) ToggleFocus() {
-	focus := s.App.GetFocus()
-	if focus == s.dbTree {
-		s.App.SetFocus(s.filterBar)
-	} else {
-		s.App.SetFocus(s.dbTree)
-	}
+	s.DbTree.SetSelectFunc(f)
 }

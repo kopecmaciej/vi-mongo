@@ -47,11 +47,13 @@ type (
 	}
 
 	RootKeys struct {
-		FocusNext     Key           `json:"focusNext"`
-		HideDatabases Key           `json:"hideDatabases"`
-		OpenConnector Key           `json:"openConnector"`
-		Databases     DatabasesKeys `json:"databases"`
-		Content       ContentKeys   `json:"content"`
+		ToggleFocus    Key           `json:"toggleFocus"`
+		FocusDatabases Key           `json:"focusDatabases"`
+		FocusContent   Key           `json:"focusContent"`
+		HideDatabases  Key           `json:"hideDatabases"`
+		OpenConnector  Key           `json:"openConnector"`
+		Databases      DatabasesKeys `json:"databases"`
+		Content        ContentKeys   `json:"content"`
 	}
 
 	DatabasesKeys struct {
@@ -139,7 +141,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 	}
 
 	k.Root = RootKeys{
-		FocusNext: Key{
+		ToggleFocus: Key{
 			Keys:        []string{"Tab", "Backtab"},
 			Description: "Focus next view",
 		},
@@ -150,6 +152,14 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 		OpenConnector: Key{
 			Keys:        []string{"Ctrl+O"},
 			Description: "Open connector",
+		},
+		FocusDatabases: Key{
+			Keys:        []string{"Ctrl+H"},
+			Description: "Focus databases",
+		},
+		FocusContent: Key{
+			Keys:        []string{"Ctrl+L"},
+			Description: "Focus content",
 		},
 	}
 

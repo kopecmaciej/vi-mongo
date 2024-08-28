@@ -30,16 +30,7 @@ func ParseBsonDocuments(documents []primitive.M) ([]string, error) {
 	var docs []string
 	for _, doc := range documents {
 		for key, value := range doc {
-			switch v := value.(type) {
-			case primitive.ObjectID:
-				doc[key] = primitive.M{
-					"$oid": v.Hex(),
-				}
-			case primitive.DateTime:
-				doc[key] = primitive.M{
-					"$date": v.Time(),
-				}
-			}
+			doc[key] = ParseBsonValue(value)
 		}
 		jsonBytes, err := json.Marshal(doc)
 		if err != nil {
@@ -50,6 +41,26 @@ func ParseBsonDocuments(documents []primitive.M) ([]string, error) {
 	}
 
 	return docs, nil
+}
+
+func ParseBsonValue(value interface{}) interface{} {
+	var parsed interface{}
+	switch v := value.(type) {
+	case primitive.ObjectID:
+		parsed = primitive.M{
+			"$oid": v.Hex(),
+		}
+	case primitive.DateTime:
+		parsed = primitive.M{
+			"$date": v.Time(),
+		}
+	}
+
+	if parsed == nil {
+		return value
+	}
+
+	return parsed
 }
 
 // ParseStringQuery transforms a query string with ObjectId into a filter map compatible with MongoDB's BSON.
@@ -120,7 +131,7 @@ func ParseJsonToBson(jsonDoc string) (primitive.M, error) {
 func convertToBson(doc map[string]interface{}) (primitive.M, error) {
 	convertedDoc := make(primitive.M)
 	for key, value := range doc {
-		convertedValue, err := convertValue(value)
+		convertedValue, err := ParseJsonValue(value)
 		if err != nil {
 			return nil, fmt.Errorf("error converting value for key %s: %w", key, err)
 		}
@@ -129,8 +140,8 @@ func convertToBson(doc map[string]interface{}) (primitive.M, error) {
 	return convertedDoc, nil
 }
 
-// convertValue converts a value to a compatible MongoDB type
-func convertValue(value interface{}) (interface{}, error) {
+// ParseJsonValue converts a value to a compatible MongoDB type
+func ParseJsonValue(value interface{}) (interface{}, error) {
 	switch v := value.(type) {
 	case map[string]interface{}:
 		if oid, ok := v["$oid"]; ok {
@@ -145,7 +156,7 @@ func convertValue(value interface{}) (interface{}, error) {
 		}
 		convertedMap := make(map[string]interface{})
 		for k, v := range v {
-			convertedValue, err := convertValue(v)
+			convertedValue, err := ParseJsonValue(v)
 			if err != nil {
 				return nil, err
 			}
@@ -155,7 +166,7 @@ func convertValue(value interface{}) (interface{}, error) {
 	case []interface{}:
 		convertedArray := make([]interface{}, len(v))
 		for i, elem := range v {
-			convertedElem, err := convertValue(elem)
+			convertedElem, err := ParseJsonValue(elem)
 			if err != nil {
 				return nil, err
 			}

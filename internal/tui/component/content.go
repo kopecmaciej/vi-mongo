@@ -2,8 +2,10 @@ package component
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/atotto/clipboard"
@@ -41,6 +43,7 @@ type Content struct {
 	state          mongo.CollectionState
 	stateMap       map[string]mongo.CollectionState
 	isMultiRowView bool
+	isTableView    bool
 }
 
 func NewContent() *Content {
@@ -57,6 +60,7 @@ func NewContent() *Content {
 		state:          mongo.CollectionState{},
 		stateMap:       make(map[string]mongo.CollectionState),
 		isMultiRowView: false,
+		isTableView:    false,
 	}
 
 	c.SetAfterInitFunc(c.init)
@@ -309,7 +313,9 @@ func (c *Content) updateContent(ctx context.Context) error {
 		c.Table.SetCell(2, 0, tview.NewTableCell("No documents found"))
 	}
 
-	if c.isMultiRowView {
+	if c.isTableView {
+		c.renderTableView(documents)
+	} else if c.isMultiRowView {
 		c.renderMultiRowView(documents)
 	} else {
 		c.renderSingleRowView(documents)
@@ -343,6 +349,56 @@ func (c *Content) renderMultiRowView(documents []primitive.M) {
 		c.multiRowDocument(jsoned, &row)
 	}
 	c.Table.ScrollToBeginning()
+}
+
+func (c *Content) renderTableView(documents []primitive.M) {
+	if len(documents) == 0 {
+		return
+	}
+
+	// Get all unique keys from the documents
+	keys := make(map[string]bool)
+	for _, doc := range documents {
+		for k := range doc {
+			keys[k] = true
+		}
+	}
+
+	// Sort the keys for consistent column order
+	sortedKeys := make([]string, 0, len(keys))
+	for k := range keys {
+		sortedKeys = append(sortedKeys, k)
+	}
+	sort.Strings(sortedKeys)
+
+	// Set the header row
+	for col, key := range sortedKeys {
+		c.Table.SetCell(2, col, tview.NewTableCell(key).
+			SetTextColor(tcell.ColorYellow).
+			SetSelectable(false).
+			SetAlign(tview.AlignCenter))
+	}
+
+	// Populate the table with document values
+	for row, doc := range documents {
+		for col, key := range sortedKeys {
+			var cellText string
+			if val, ok := doc[key]; ok {
+				parsedValue := mongo.ParseBsonValue(val)
+				jsoned, err := json.Marshal(parsedValue)
+				if err != nil {
+					modal.ShowError(c.App.Pages, "Error stringifying document", err)
+					return
+				} else {
+					cellText = string(jsoned)
+				}
+			} else {
+				cellText = "null"
+			}
+			c.Table.SetCell(row+3, col, tview.NewTableCell(cellText).
+				SetAlign(tview.AlignLeft))
+		}
+	}
 }
 
 func (c *Content) multiRowDocument(doc string, row *int) {
@@ -535,18 +591,32 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 func (c *Content) getDocumentBasedOnView(row int) (string, error) {
 	if c.isMultiRowView {
 		return c.getMultiRowDocument(row)
+	} else if c.isTableView {
+		return c.getTableViewDocument(row)
 	}
 	return c.Table.GetCell(row, 0).Text, nil
 }
 
 func (c *Content) getMultiRowDocument(row int) (string, error) {
 	_id := ""
+	docStartAtRow := row
 
 	for i := row; i >= 0; i-- {
+		cell := c.Table.GetCell(i, 0)
+		if cell.Text == `{` {
+			docStartAtRow = i
+			break
+		}
+	}
+
+	for i := docStartAtRow; i < c.Table.GetRowCount(); i++ {
 		cell := c.Table.GetCell(i, 0)
 		if strings.Contains(cell.Text, `"_id":`) {
 			_id = cell.Text
 			break
+		}
+		if cell.Text == `}` {
+			return "", fmt.Errorf("document not found")
 		}
 	}
 
@@ -578,6 +648,25 @@ func (c *Content) getMultiRowDocument(row int) (string, error) {
 	return "", fmt.Errorf("document not found")
 }
 
+func (c *Content) getTableViewDocument(row int) (string, error) {
+	doc := make(map[string]interface{})
+	for col := 0; col < c.Table.GetColumnCount(); col++ {
+		key := c.Table.GetCell(0, col).Text
+		value := c.Table.GetCell(row, col).Text
+		var jsonValue interface{}
+		err := json.Unmarshal([]byte(value), &jsonValue)
+		if err != nil {
+			return "", fmt.Errorf("error parsing JSON value: %v", err)
+		}
+		doc[key] = jsonValue
+	}
+	jsonDoc, err := json.MarshalIndent(doc, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("error marshaling document: %v", err)
+	}
+	return string(jsonDoc), nil
+}
+
 // Helper functions (implement these separately)
 
 func (c *Content) handleScrolling(row int) {
@@ -590,7 +679,14 @@ func (c *Content) handleScrolling(row int) {
 }
 
 func (c *Content) handleSwitchView(ctx context.Context) *tcell.EventKey {
-	c.isMultiRowView = !c.isMultiRowView
+	if c.isMultiRowView {
+		c.isMultiRowView = false
+		c.isTableView = true
+	} else if c.isTableView {
+		c.isTableView = false
+	} else {
+		c.isMultiRowView = true
+	}
 	c.updateContent(ctx)
 	return nil
 }
