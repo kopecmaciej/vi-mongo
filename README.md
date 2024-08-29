@@ -81,18 +81,19 @@ different directories (more information here:
 - [x] Query History
 - [x] Switching between multiple Connections
 - [x] Help page
-- [ ] Improve Content by adding other possibilities of viewing
+- [x] Improve Content by adding other possibilities of viewing
+- [x] Move autocomplete keys to json file, so that it can be easily modified
+- [ ] Hash passwords in config
 - [ ] Multiple styles
 - [ ] Managing Indexes
 - [ ] Aggregation Pipeline
 - [ ] Exporting/Importing Documents
-- [x] Move autocomplete keys to json file, so that it can be easily modified
 
 ## Issues
 
 - [x] Searching collection on databases not expanding tree
-- [ ] No clearing history
+- [x] No clearing history
+- [x] No view with shortcuts
 - [ ] Header not updated after changing database/collection
-- [ ] No view with shortcuts
 - [ ] Content not updated after editing from picker
 - [ ] Performance issue while loading large bson files

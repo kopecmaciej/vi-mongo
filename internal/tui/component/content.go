@@ -32,7 +32,7 @@ type Content struct {
 	*core.BaseElement
 	*tview.Flex
 
-	Table          *tview.Table
+	Table          *core.Table
 	View           *tview.TextView
 	style          *config.ContentStyle
 	queryBar       *InputBar
@@ -49,7 +49,7 @@ type Content struct {
 func NewContent() *Content {
 	c := &Content{
 		BaseElement:    core.NewBaseElement("Content"),
-		Table:          tview.NewTable(),
+		Table:          core.NewTable(),
 		Flex:           tview.NewFlex(),
 		View:           tview.NewTextView(),
 		queryBar:       NewInputBar(QueryBarView, "Query"),
@@ -112,7 +112,6 @@ func (c *Content) setStyle() {
 	c.Table.SetTitleAlign(tview.AlignLeft)
 	c.Table.SetBorderPadding(0, 0, 1, 1)
 	c.Table.SetFixed(1, 1)
-	c.Table.SetSelectable(true, false)
 	c.Table.SetBackgroundColor(c.style.BackgroundColor.Color())
 	c.Table.SetBorderColor(c.style.BorderColor.Color())
 
@@ -313,6 +312,7 @@ func (c *Content) updateContent(ctx context.Context) error {
 		c.Table.SetCell(2, 0, tview.NewTableCell("No documents found"))
 	}
 
+	c.Table.SetSelectable(true, c.isTableView)
 	if c.isTableView {
 		c.renderTableView(documents)
 	} else if c.isMultiRowView {
@@ -818,12 +818,9 @@ func (c *Content) handleRefresh(ctx context.Context) *tcell.EventKey {
 
 func (c *Content) handleNextDocument(row int) *tcell.EventKey {
 	if c.isMultiRowView {
-		for i := row; i < c.Table.GetRowCount(); i++ {
-			if strings.HasPrefix(c.Table.GetCell(i, 0).Text, `{`) {
-				c.Table.Select(i, 0)
-				return nil
-			}
-		}
+		c.Table.MoveDownUntil(func(row int, cell *tview.TableCell) bool {
+			return strings.HasPrefix(cell.Text, `{`)
+		})
 	} else {
 		c.Table.MoveDown()
 	}
@@ -832,12 +829,9 @@ func (c *Content) handleNextDocument(row int) *tcell.EventKey {
 
 func (c *Content) handlePreviousDocument(row int) *tcell.EventKey {
 	if c.isMultiRowView {
-		for i := row; i >= 0; i-- {
-			if strings.HasPrefix(c.Table.GetCell(i, 0).Text, `}`) {
-				c.Table.Select(i-1, 0)
-				return nil
-			}
-		}
+		c.Table.MoveUpUntil(func(row int, cell *tview.TableCell) bool {
+			return strings.HasPrefix(cell.Text, `}`)
+		})
 	} else {
 		c.Table.MoveUp()
 	}
