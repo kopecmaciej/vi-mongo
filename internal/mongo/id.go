@@ -54,3 +54,15 @@ func GetIDFromDocument(document map[string]interface{}) (interface{}, error) {
 
 	return id, nil
 }
+
+// StringifyId converts the _id field of a document to a string
+func StringifyId(id interface{}) string {
+	switch v := id.(type) {
+	case primitive.ObjectID:
+		return v.Hex()
+	case string:
+		return v
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}

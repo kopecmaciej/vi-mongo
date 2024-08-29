@@ -252,6 +252,9 @@ func calculateIndent(line string) int {
 }
 
 func (m *ViewModal) calculateNextLinesToHighlight(lines []string) int {
+	if len(lines) < m.selectedLine {
+		return 0
+	}
 	currentIndent := calculateIndent(lines[m.selectedLine])
 	linesToHighlight := 0
 

@@ -128,23 +128,23 @@ func (c *Content) setKeybindings(ctx context.Context) {
 	k := c.App.GetKeys()
 
 	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		row, _ := c.Table.GetSelection()
+		row, coll := c.Table.GetSelection()
 		c.handleScrolling(row)
 		switch {
 		case k.Contains(k.Root.Content.SwitchView, event.Name()):
 			return c.handleSwitchView(ctx)
 		case k.Contains(k.Root.Content.PeekDocument, event.Name()):
-			return c.handlePeekDocument(ctx, row)
+			return c.handlePeekDocument(ctx, row, coll)
 		case k.Contains(k.Root.Content.ViewDocument, event.Name()):
-			return c.handleViewDocument(row)
+			return c.handleViewDocument(row, coll)
 		case k.Contains(k.Root.Content.AddDocument, event.Name()):
 			return c.handleAddDocument(ctx)
 		case k.Contains(k.Root.Content.EditDocument, event.Name()):
-			return c.handleEditDocument(ctx, row)
+			return c.handleEditDocument(ctx, row, coll)
 		case k.Contains(k.Root.Content.DuplicateDocument, event.Name()):
-			return c.handleDuplicateDocument(ctx, row)
+			return c.handleDuplicateDocument(ctx, row, coll)
 		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
-			return c.handleDeleteDocument(ctx, row)
+			return c.handleDeleteDocument(ctx, row, coll)
 		case k.Contains(k.Root.Content.ToggleQuery, event.Name()):
 			return c.handleToggleQuery()
 		case k.Contains(k.Root.Content.ToggleSort, event.Name()):
@@ -154,9 +154,9 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.NextPage, event.Name()):
 			return c.handleNextPage(ctx)
 		case k.Contains(k.Root.Content.NextDocument, event.Name()):
-			return c.handleNextDocument(row)
+			return c.handleNextDocument(row, coll)
 		case k.Contains(k.Root.Content.PreviousDocument, event.Name()):
-			return c.handlePreviousDocument(row)
+			return c.handlePreviousDocument(row, coll)
 		case k.Contains(k.Root.Content.PreviousPage, event.Name()):
 			return c.handlePreviousPage(ctx)
 		// TODO: use this in multiple delete, think of other usage
@@ -165,7 +165,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Root.Content.ClearSelection, event.Name()):
 			return c.handleClearSelection()
 		case k.Contains(k.Root.Content.CopyLine, event.Name()):
-			return c.handleCopyLine(row)
+			return c.handleCopyLine(row, coll)
 		}
 
 		return event
@@ -214,7 +214,7 @@ func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, int64, erro
 	}
 
 	c.state.Count = count
-	c.state.Docs = documents
+	c.state.PopulateDocs(documents)
 
 	c.loadAutocompleteKeys(documents)
 
@@ -338,24 +338,7 @@ func (c *Content) renderSingleRowView(documents []primitive.M) {
 	c.Table.ScrollToBeginning()
 }
 
-func (c *Content) renderMultiRowView(documents []primitive.M) {
-	row := 2
-	for _, doc := range documents {
-		jsoned, err := mongo.ParseBsonDocument(doc)
-		if err != nil {
-			modal.ShowError(c.App.Pages, "Error stringifying document", err)
-			return
-		}
-		c.multiRowDocument(jsoned, &row)
-	}
-	c.Table.ScrollToBeginning()
-}
-
 func (c *Content) renderTableView(documents []primitive.M) {
-	if len(documents) == 0 {
-		return
-	}
-
 	// Get all unique keys from the documents
 	keys := make(map[string]bool)
 	for _, doc := range documents {
@@ -395,13 +378,32 @@ func (c *Content) renderTableView(documents []primitive.M) {
 			} else {
 				cellText = "null"
 			}
+			// for column let's set reference to _id
 			c.Table.SetCell(row+3, col, tview.NewTableCell(cellText).
 				SetAlign(tview.AlignLeft))
+			// we'll set reference to _id for first column to not repeat the same _id in whole row
+			if col == 0 {
+				c.Table.SetCell(row+3, col, tview.NewTableCell(doc["_id"].(string)).SetAlign(tview.AlignLeft))
+			}
 		}
 	}
 }
 
-func (c *Content) multiRowDocument(doc string, row *int) {
+func (c *Content) renderMultiRowView(documents []primitive.M) {
+	row := 2
+	for _, doc := range documents {
+		_id := doc["_id"]
+		jsoned, err := mongo.ParseBsonDocument(doc)
+		if err != nil {
+			modal.ShowError(c.App.Pages, "Error stringifying document", err)
+			return
+		}
+		c.multiRowDocument(jsoned, &row, _id)
+	}
+	c.Table.ScrollToBeginning()
+}
+
+func (c *Content) multiRowDocument(doc string, row *int, id interface{}) {
 	indentedJson, err := mongo.IndentJson(doc)
 	if err != nil {
 		log.Error().Err(err).Msg("Error indenting JSON")
@@ -410,7 +412,14 @@ func (c *Content) multiRowDocument(doc string, row *int) {
 	keyRegexWithIndent := regexp.MustCompile(`(?m)^\s{2}"([^"]+)":`)
 	lines := strings.Split(indentedJson.String(), "\n")
 
-	c.Table.SetCell(*row, 0, tview.NewTableCell(lines[0]).SetAlign(tview.AlignLeft).SetTextColor(tcell.ColorGreen).SetSelectable(false))
+	// we'll set reference of _id to first row of document, to not repeat the same _id in whole row
+	c.Table.SetCell(*row, 0, tview.
+		NewTableCell(lines[0]).
+		SetAlign(tview.AlignLeft).
+		SetTextColor(tcell.ColorGreen).
+		SetSelectable(false).
+		SetReference(id))
+
 	*row++
 
 	currLine := ""
@@ -433,7 +442,13 @@ func (c *Content) multiRowDocument(doc string, row *int) {
 		*row++
 	}
 
-	c.Table.SetCell(*row, 0, tview.NewTableCell(lines[len(lines)-1]).SetAlign(tview.AlignLeft).SetTextColor(tcell.ColorGreen).SetSelectable(false))
+	c.Table.SetCell(*row, 0, tview.
+		NewTableCell(lines[len(lines)-1]).
+		SetAlign(tview.AlignLeft).
+		SetTextColor(tcell.ColorGreen).
+		SetSelectable(false).
+		SetReference(id))
+
 	*row++
 }
 
@@ -487,6 +502,7 @@ func (c *Content) refreshDocument(doc string) {
 
 func (c *Content) refreshMultiRowDocument(doc string) {
 	row, _ := c.Table.GetSelection()
+	_id := c.Table.GetCell(row, 0).GetReference()
 
 	for i := row; i >= 0; i-- {
 		if strings.HasPrefix(c.Table.GetCell(i, 0).Text, "{") {
@@ -497,7 +513,7 @@ func (c *Content) refreshMultiRowDocument(doc string) {
 
 	doc = strings.TrimSpace(doc)
 
-	c.multiRowDocument(doc, &row)
+	c.multiRowDocument(doc, &row, _id)
 }
 
 // addCell adds a new cell to the table
@@ -563,13 +579,7 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 		return err
 	}
 
-	var stringifyId string
-	if objectID, ok := objectID.(primitive.ObjectID); ok {
-		stringifyId = objectID.Hex()
-	}
-	if strID, ok := objectID.(string); ok {
-		stringifyId = strID
-	}
+	stringifyId := mongo.StringifyId(objectID)
 
 	c.deleteModal.SetText("Are you sure you want to delete document of ID: [blue]" + stringifyId)
 	c.deleteModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
@@ -588,86 +598,27 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 	return nil
 }
 
-func (c *Content) getDocumentBasedOnView(row int) (string, error) {
+func (c *Content) getDocumentBasedOnView(row, coll int) (string, error) {
 	if c.isMultiRowView {
-		return c.getMultiRowDocument(row)
+		return c.getMultiRowDocument(row, coll)
 	} else if c.isTableView {
-		return c.getTableViewDocument(row)
+		return c.getTableViewDocument(row, coll)
 	}
-	return c.Table.GetCell(row, 0).Text, nil
+	return c.Table.GetCell(row, coll).Text, nil
 }
 
-func (c *Content) getMultiRowDocument(row int) (string, error) {
-	_id := ""
-	docStartAtRow := row
-
-	for i := row; i >= 0; i-- {
-		cell := c.Table.GetCell(i, 0)
-		if cell.Text == `{` {
-			docStartAtRow = i
-			break
-		}
-	}
-
-	for i := docStartAtRow; i < c.Table.GetRowCount(); i++ {
-		cell := c.Table.GetCell(i, 0)
-		if strings.Contains(cell.Text, `"_id":`) {
-			_id = cell.Text
-			break
-		}
-		if cell.Text == `}` {
-			return "", fmt.Errorf("document not found")
-		}
-	}
-
-	var value string
-	if strings.Contains(_id, `"$oid"`) {
-		value = strings.Split(_id, `"`)[5]
-	} else {
-		value = strings.Split(_id, `"`)[3]
-	}
-	for _, doc := range c.state.Docs {
-		var idValue string
-		if doc_id, ok := doc["_id"].(primitive.M); ok {
-			idValue = doc_id["$oid"].(string)
-		} else if strID, ok := doc["_id"].(string); ok {
-			idValue = strID
-		}
-		if idValue == value {
-			jsoned, err := mongo.ParseBsonDocument(doc)
-			if err != nil {
-				return "", err
-			}
-			indentedJson, err := mongo.IndentJson(jsoned)
-			if err != nil {
-				return "", err
-			}
-			return indentedJson.String(), nil
-		}
-	}
-	return "", fmt.Errorf("document not found")
+func (c *Content) getMultiRowDocument(row, coll int) (string, error) {
+	forWithReference := c.Table.GetCellAboveThatMatch(row, coll, func(cell *tview.TableCell) bool {
+		return strings.HasPrefix(cell.Text, `{`)
+	})
+	_id := forWithReference.GetReference()
+	return c.state.GetJsonDocById(_id)
 }
 
-func (c *Content) getTableViewDocument(row int) (string, error) {
-	doc := make(map[string]interface{})
-	for col := 0; col < c.Table.GetColumnCount(); col++ {
-		key := c.Table.GetCell(0, col).Text
-		value := c.Table.GetCell(row, col).Text
-		var jsonValue interface{}
-		err := json.Unmarshal([]byte(value), &jsonValue)
-		if err != nil {
-			return "", fmt.Errorf("error parsing JSON value: %v", err)
-		}
-		doc[key] = jsonValue
-	}
-	jsonDoc, err := json.MarshalIndent(doc, "", "  ")
-	if err != nil {
-		return "", fmt.Errorf("error marshaling document: %v", err)
-	}
-	return string(jsonDoc), nil
+func (c *Content) getTableViewDocument(row, coll int) (string, error) {
+	_id := c.Table.GetCell(row, coll).GetReference()
+	return c.state.GetJsonDocById(_id)
 }
-
-// Helper functions (implement these separately)
 
 func (c *Content) handleScrolling(row int) {
 	if row == 3 {
@@ -691,8 +642,8 @@ func (c *Content) handleSwitchView(ctx context.Context) *tcell.EventKey {
 	return nil
 }
 
-func (c *Content) handlePeekDocument(ctx context.Context, row int) *tcell.EventKey {
-	doc, err := c.getDocumentBasedOnView(row)
+func (c *Content) handlePeekDocument(ctx context.Context, row, coll int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row, coll)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error peeking document", err)
 		return nil
@@ -701,8 +652,8 @@ func (c *Content) handlePeekDocument(ctx context.Context, row int) *tcell.EventK
 	return nil
 }
 
-func (c *Content) handleViewDocument(row int) *tcell.EventKey {
-	doc, err := c.getDocumentBasedOnView(row)
+func (c *Content) handleViewDocument(row, coll int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row, coll)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error viewing document", err)
 		return nil
@@ -735,8 +686,8 @@ func (c *Content) handleAddDocument(ctx context.Context) *tcell.EventKey {
 	return nil
 }
 
-func (c *Content) handleEditDocument(ctx context.Context, row int) *tcell.EventKey {
-	doc, err := c.getDocumentBasedOnView(row)
+func (c *Content) handleEditDocument(ctx context.Context, row, coll int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row, coll)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error editing document", err)
 		return nil
@@ -752,8 +703,8 @@ func (c *Content) handleEditDocument(ctx context.Context, row int) *tcell.EventK
 	return nil
 }
 
-func (c *Content) handleDuplicateDocument(ctx context.Context, row int) *tcell.EventKey {
-	doc, err := c.getDocumentBasedOnView(row)
+func (c *Content) handleDuplicateDocument(ctx context.Context, row, coll int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row, coll)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error duplicating document", err)
 		return nil
@@ -794,8 +745,8 @@ func (c *Content) handleToggleSort() *tcell.EventKey {
 	return nil
 }
 
-func (c *Content) handleDeleteDocument(ctx context.Context, row int) *tcell.EventKey {
-	doc, err := c.getDocumentBasedOnView(row)
+func (c *Content) handleDeleteDocument(ctx context.Context, row, coll int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row, coll)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error deleting document", err)
 		return nil
@@ -816,9 +767,9 @@ func (c *Content) handleRefresh(ctx context.Context) *tcell.EventKey {
 	return nil
 }
 
-func (c *Content) handleNextDocument(row int) *tcell.EventKey {
+func (c *Content) handleNextDocument(row, col int) *tcell.EventKey {
 	if c.isMultiRowView {
-		c.Table.MoveDownUntil(func(row int, cell *tview.TableCell) bool {
+		c.Table.MoveDownUntil(row, col, func(cell *tview.TableCell) bool {
 			return strings.HasPrefix(cell.Text, `{`)
 		})
 	} else {
@@ -827,9 +778,9 @@ func (c *Content) handleNextDocument(row int) *tcell.EventKey {
 	return nil
 }
 
-func (c *Content) handlePreviousDocument(row int) *tcell.EventKey {
+func (c *Content) handlePreviousDocument(row, col int) *tcell.EventKey {
 	if c.isMultiRowView {
-		c.Table.MoveUpUntil(func(row int, cell *tview.TableCell) bool {
+		c.Table.MoveUpUntil(row, col, func(cell *tview.TableCell) bool {
 			return strings.HasPrefix(cell.Text, `}`)
 		})
 	} else {
@@ -858,8 +809,8 @@ func (c *Content) handleClearSelection() *tcell.EventKey {
 	return nil
 }
 
-func (c *Content) handleCopyLine(row int) *tcell.EventKey {
-	selectedDoc := util.TrimJson(c.Table.GetCell(row, 0).Text)
+func (c *Content) handleCopyLine(row, col int) *tcell.EventKey {
+	selectedDoc := util.TrimJson(c.Table.GetCell(row, col).Text)
 	err := clipboard.WriteAll(selectedDoc)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error copying document", err)

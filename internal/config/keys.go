@@ -295,7 +295,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Move focus to form",
 		},
 		DeleteConnection: Key{
-			Keys:        []string{"Ctrl+D"},
+			Runes:       []string{"D"},
 			Description: "Delete selected connection",
 		},
 		SetConnection: Key{

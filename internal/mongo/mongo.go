@@ -32,5 +32,29 @@ type CollectionState struct {
 	Count  int64
 	Sort   string
 	Filter string
-	Docs   []primitive.M
+	Docs   map[string]primitive.M
+}
+
+func (c *CollectionState) GetDocById(id interface{}) primitive.M {
+	return c.Docs[StringifyId(id)]
+}
+
+func (c *CollectionState) GetJsonDocById(id interface{}) (string, error) {
+	doc := c.GetDocById(id)
+	jsoned, err := ParseBsonDocument(doc)
+	if err != nil {
+		return "", err
+	}
+	indentedJson, err := IndentJson(jsoned)
+	if err != nil {
+		return "", err
+	}
+	return indentedJson.String(), nil
+}
+
+func (c *CollectionState) PopulateDocs(docs []primitive.M) {
+	c.Docs = make(map[string]primitive.M)
+	for _, doc := range docs {
+		c.Docs[StringifyId(doc["_id"])] = doc
+	}
 }
