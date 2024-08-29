@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
@@ -275,6 +276,12 @@ func (m *MongoConfig) GetUri() string {
 	}
 
 	return uri
+}
+
+// GetSafeUri returns the URI with the password replaced by asterisks
+func (m *MongoConfig) GetSafeUri() string {
+	uri := m.GetUri()
+	return util.HidePasswordInUri(uri)
 }
 
 func ParseMongoDBURI(uri string) (host, port, db string, err error) {

@@ -45,3 +45,10 @@ func TrimMultipleSpaces(s string) string {
 	space := regexp.MustCompile(`\s+`)
 	return space.ReplaceAllString(s, " ")
 }
+
+// HidePasswordInUri redacts the password in a connection string
+func HidePasswordInUri(s string) string {
+	re := regexp.MustCompile(`://([^:]+):([^@]+)(@.*)`)
+
+	return re.ReplaceAllString(s, "://$1:********$3")
+}

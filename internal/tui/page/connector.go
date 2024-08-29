@@ -159,7 +159,7 @@ func (c *Connector) renderList() {
 	c.list.Clear()
 
 	for _, conn := range c.App.GetConfig().Connections {
-		uri := "uri: " + conn.GetUri()
+		uri := "uri: " + conn.GetSafeUri()
 		c.list.AddItem(conn.Name, uri, 0, func() {
 			c.setConnections()
 		})
