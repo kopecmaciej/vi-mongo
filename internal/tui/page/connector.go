@@ -32,16 +32,18 @@ type Connector struct {
 // NewConnector creates a new connection view
 func NewConnector() *Connector {
 	c := &Connector{
-		BaseElement: core.NewBaseElement(ConnectorView),
+		BaseElement: core.NewBaseElement(),
 		Flex:        tview.NewFlex(),
 		form:        tview.NewForm(),
 		list:        tview.NewList(),
 	}
 
+	c.SetIdentifier(ConnectorView)
+
 	return c
 }
 
-// Init overrides the Init function from the View struct
+// Init overrides the Init function from the BaseElement struct
 func (c *Connector) Init(app *core.App) error {
 	c.App = app
 

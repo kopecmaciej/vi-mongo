@@ -34,12 +34,14 @@ type DatabaseTree struct {
 
 func NewDatabaseTree() *DatabaseTree {
 	d := &DatabaseTree{
-		BaseElement: core.NewBaseElement(DatabaseTreeView),
+		BaseElement: core.NewBaseElement(),
 		TreeView:    tview.NewTreeView(),
 		addModal:    primitives.NewInputModal(),
 		deleteModal: tview.NewModal(),
 	}
 
+	d.SetIdentifier(DatabaseTreeView)
+	d.SetIdentifierFunc(d.GetIdentifier)
 	d.SetAfterInitFunc(d.init)
 
 	return d

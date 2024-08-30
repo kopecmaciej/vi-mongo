@@ -29,13 +29,15 @@ type Databases struct {
 
 func NewDatabases() *Databases {
 	s := &Databases{
-		BaseElement: core.NewBaseElement(DatabasesView),
+		BaseElement: core.NewBaseElement(),
 		Flex:        tview.NewFlex(),
 		DbTree:      NewDatabaseTree(),
 		filterBar:   NewInputBar(FilterBarView, "Filter"),
 		mutex:       sync.Mutex{},
 	}
 
+	s.SetIdentifier(DatabasesView)
+	s.SetIdentifierFunc(s.GetIdentifier)
 	s.SetAfterInitFunc(s.init)
 
 	return s

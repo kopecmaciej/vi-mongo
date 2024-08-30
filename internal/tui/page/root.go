@@ -20,8 +20,8 @@ const (
 // Root is a view that manages visaibility of other views
 type Root struct {
 	*core.BaseElement
+	*tview.Flex
 
-	mainFlex  *tview.Flex
 	innerFlex *tview.Flex
 	style     *config.RootStyle
 	connector *Connector
@@ -32,14 +32,16 @@ type Root struct {
 
 func NewRoot() *Root {
 	r := &Root{
-		BaseElement: core.NewBaseElement(RootView),
-		mainFlex:    tview.NewFlex(),
+		BaseElement: core.NewBaseElement(),
+		Flex:        tview.NewFlex(),
 		innerFlex:   tview.NewFlex(),
 		connector:   NewConnector(),
 		header:      component.NewHeader(),
 		databases:   component.NewDatabases(),
 		content:     component.NewContent(),
 	}
+
+	r.SetIdentifier(RootView)
 
 	return r
 }
@@ -125,14 +127,14 @@ func (r *Root) initSubviews() error {
 func (r *Root) setStyles() {
 	r.style = &r.App.GetStyles().Root
 	r.App.Pages.SetBackgroundColor(r.style.BackgroundColor.Color())
-	r.mainFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
+	r.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.innerFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
 }
 
 // setKeybindings sets a key binding for the root View
 func (r *Root) setKeybindings() {
 	k := r.App.GetKeys()
-	r.mainFlex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	r.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Root.ToggleFocus, event.Name()):
 			if r.App.GetFocus() == r.databases.DbTree {
@@ -148,11 +150,11 @@ func (r *Root) setKeybindings() {
 			r.App.SetFocus(r.content)
 			return nil
 		case k.Contains(k.Root.HideDatabases, event.Name()):
-			if _, ok := r.mainFlex.GetItem(0).(*component.Databases); ok {
-				r.mainFlex.RemoveItem(r.databases)
+			if _, ok := r.GetItem(0).(*component.Databases); ok {
+				r.RemoveItem(r.databases)
 				r.App.SetFocus(r.content)
 			} else {
-				r.mainFlex.Clear()
+				r.Clear()
 				r.render()
 			}
 			return nil
@@ -166,19 +168,19 @@ func (r *Root) setKeybindings() {
 
 // render renders the root view and all subviews
 func (r *Root) render() error {
-	r.mainFlex.Clear()
+	r.Clear()
 	r.innerFlex.Clear()
 
 	r.innerFlex.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.innerFlex.SetDirection(tview.FlexRow)
 
-	r.mainFlex.AddItem(r.databases, 30, 0, true)
-	r.mainFlex.AddItem(r.innerFlex, 0, 7, false)
+	r.AddItem(r.databases, 30, 0, true)
+	r.AddItem(r.innerFlex, 0, 7, false)
 	r.innerFlex.AddItem(r.header, 4, 0, false)
 	r.innerFlex.AddItem(r.content, 0, 7, true)
 
-	r.App.Pages.AddPage(r.GetIdentifier(), r.mainFlex, true, true)
-	r.App.SetFocus(r.mainFlex)
+	r.App.Pages.AddPage(r.GetIdentifier(), r, true, true)
+	r.App.SetFocus(r)
 
 	return nil
 }

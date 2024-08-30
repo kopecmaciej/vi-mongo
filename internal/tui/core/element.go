@@ -3,6 +3,7 @@ package core
 import (
 	"sync"
 
+	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 )
@@ -13,9 +14,9 @@ type BaseElement struct {
 	// enabled is a flag that indicates if the view is enabled.
 	enabled bool
 
-	// name is the name of the view.
-	// It's used mainly for managing avaliable keybindings.
-	identifier manager.ElementId
+	// getIdentifier returns the identifier of the view.
+	getIdentifier func() tview.Identifier
+
 	// App is a pointer to the main App.
 	// It's used for accessing App focus, root page etc.
 	App *App
@@ -35,16 +36,14 @@ type BaseElement struct {
 }
 
 // NewBaseElement is a constructor for the BaseElement struct.
-func NewBaseElement(identifier string) *BaseElement {
-	return &BaseElement{
-		identifier: manager.ElementId(identifier),
-	}
+func NewBaseElement() *BaseElement {
+	return &BaseElement{}
 }
 
 // Init is a function that is called when the view is initialized.
 // If custom initialization is needed, this function should be overriden.
 func (c *BaseElement) Init(app *App) error {
-	if c.App != nil && c.identifier != "" {
+	if c.App != nil {
 		return nil
 	}
 
@@ -65,7 +64,6 @@ func (c *BaseElement) Enable() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.enabled = true
-	c.App.GetManager().PushElement(c.identifier)
 }
 
 // Disable unsets the enabled flag.
@@ -73,7 +71,6 @@ func (c *BaseElement) Disable() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.enabled = false
-	c.App.GetManager().PopElement()
 }
 
 // Toggle toggles the enabled flag.
@@ -92,32 +89,27 @@ func (c *BaseElement) IsEnabled() bool {
 	return c.enabled
 }
 
-// SetAfterInitFunc sets the optional function that will be run at the end of the Init function.
-func (c *BaseElement) SetAfterInitFunc(afterInitFunc func() error) {
-	c.afterInitFunc = afterInitFunc
-}
-
-// GetAfterInitFunc returns the optional function that will be run at the end of the Init function.
-func (c *BaseElement) GetAfterInitFunc() func() error {
-	return c.afterInitFunc
-}
-
-// GetIdentifier returns the identifier of the view.
-func (c *BaseElement) GetIdentifier() manager.ElementId {
-	return c.identifier
-}
-
-// Subscribe subscribes to the view events.
-func (c *BaseElement) Subscribe() {
-	c.Listener = c.App.GetManager().Subscribe(c.identifier)
-}
-
 // Broadcast sends an event to all listeners.
 func (c *BaseElement) BroadcastEvent(event manager.EventMsg) {
 	c.App.GetManager().Broadcast(event)
 }
 
-// SendToView sends an event to the view.
-func (c *BaseElement) SendToView(view manager.ElementId, event manager.EventMsg) {
-	c.App.GetManager().SendTo(view, event)
+// SendToElement sends an event to the element.
+func (c *BaseElement) SendToElement(element tview.Identifier, event manager.EventMsg) {
+	c.App.GetManager().SendTo(element, event)
+}
+
+// SetAfterInitFunc sets the optional function that will be run at the end of the Init function.
+func (c *BaseElement) SetAfterInitFunc(afterInitFunc func() error) {
+	c.afterInitFunc = afterInitFunc
+}
+
+// SetIdentifierFunc sets the function that returns the identifier of the view.
+func (c *BaseElement) SetIdentifierFunc(getIdentifier func() tview.Identifier) {
+	c.getIdentifier = getIdentifier
+}
+
+// Subscribe subscribes to the view events.
+func (c *BaseElement) Subscribe() {
+	c.Listener = c.App.GetManager().Subscribe(c.getIdentifier())
 }

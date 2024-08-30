@@ -40,11 +40,12 @@ type (
 // NewHeader creates a new header view
 func NewHeader() *Header {
 	h := Header{
-		BaseElement: core.NewBaseElement(HeaderView),
+		BaseElement: core.NewBaseElement(),
 		Table:       tview.NewTable(),
 		baseInfo:    make(BaseInfo),
 	}
 
+	h.SetIdentifier(HeaderView)
 	h.SetAfterInitFunc(h.init)
 
 	return &h

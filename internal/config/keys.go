@@ -13,8 +13,8 @@ import (
 
 type (
 	OrderedKeys struct {
-		View string
-		Keys []Key
+		Element string
+		Keys    []Key
 	}
 	// KeyBindings is a way to define keybindings for the application
 	// There are views that have only keybindings and some have
@@ -193,7 +193,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 	k.Root.Content = ContentKeys{
 		SwitchView: Key{
 			Runes:       []string{"f"},
-			Description: "Switch view",
+			Description: "Switch table visualisation",
 		},
 		PeekDocument: Key{
 			Runes:       []string{"p"},
@@ -404,35 +404,61 @@ func LoadKeybindings() (*KeyBindings, error) {
 	return keybindings, nil
 }
 
-// GetKeysForView returns keys for view
-func (kb KeyBindings) GetKeysForView(view string) ([]OrderedKeys, error) {
-	keys := make([]OrderedKeys, 0)
-	if view == "" {
-		return nil, fmt.Errorf("view is empty")
-	}
+// extractKeysFromStruct extracts all Key structs from a reflect.Value
+func extractKeysFromStruct(val reflect.Value) []Key {
+	var keys []Key
 
-	v := reflect.ValueOf(kb)
-	field := v.FieldByName(view)
-
-	if !field.IsValid() || field.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("field %s not found", view)
-	}
-
-	var iterateOverField func(field reflect.Value, c string)
-	iterateOverField = func(field reflect.Value, c string) {
-		key := OrderedKeys{View: c, Keys: make([]Key, 0)}
-		keys = append(keys, key)
-		for i := 0; i < field.NumField(); i++ {
-			keyField := field.Field(i)
-			if keyField.Type() == reflect.TypeOf(Key{}) {
-				keys[len(keys)-1].Keys = append(keys[len(keys)-1].Keys, keyField.Interface().(Key))
-			} else {
-				iterateOverField(keyField, field.Type().Field(i).Name)
-			}
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		if field.Type() == reflect.TypeOf(Key{}) {
+			keys = append(keys, field.Interface().(Key))
+		} else if field.Kind() == reflect.Struct {
+			keys = append(keys, extractKeysFromStruct(field)...)
 		}
 	}
 
-	iterateOverField(field, view)
+	return keys
+}
+
+// GetAvaliableKeys returns all keys
+func (kb KeyBindings) GetAvaliableKeys() []OrderedKeys {
+	var keys []OrderedKeys
+
+	v := reflect.ValueOf(kb)
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldName := t.Field(i).Name
+
+		orderedKeys := OrderedKeys{
+			Element: fieldName,
+			Keys:    extractKeysFromStruct(field),
+		}
+
+		keys = append(keys, orderedKeys)
+	}
+
+	return keys
+}
+
+// GetKeysForElement returns keys for element
+func (kb KeyBindings) GetKeysForElement(elementId string) ([]OrderedKeys, error) {
+	if elementId == "" {
+		return nil, fmt.Errorf("element is empty")
+	}
+
+	v := reflect.ValueOf(kb)
+	field := v.FieldByName(elementId)
+
+	if !field.IsValid() || field.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("field %s not found", elementId)
+	}
+
+	keys := []OrderedKeys{{
+		Element: elementId,
+		Keys:    extractKeysFromStruct(field),
+	}}
 
 	return keys, nil
 }

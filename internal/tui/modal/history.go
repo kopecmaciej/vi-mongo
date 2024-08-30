@@ -28,10 +28,11 @@ type History struct {
 
 func NewHistoryModal() *History {
 	h := &History{
-		BaseElement: core.NewBaseElement(HistoryModal),
+		BaseElement: core.NewBaseElement(),
 		ListModal:   primitives.NewListModal(),
 	}
 
+	h.SetIdentifier(HistoryModal)
 	h.SetAfterInitFunc(h.init)
 
 	return h
@@ -80,7 +81,7 @@ func (h *History) setKeybindings() {
 
 func (h *History) sendEventAndClose(event *tcell.EventKey) *tcell.EventKey {
 	eventKey := manager.EventMsg{EventKey: event, Sender: h.GetIdentifier()}
-	h.SendToView(QueryBar, eventKey)
+	h.SendToElement(QueryBar, eventKey)
 	h.App.Pages.RemovePage(h.GetIdentifier())
 
 	return nil

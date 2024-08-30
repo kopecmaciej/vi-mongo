@@ -27,10 +27,12 @@ type Welcome struct {
 
 func NewWelcome() *Welcome {
 	w := &Welcome{
-		BaseElement: core.NewBaseElement(WelcomeView),
+		BaseElement: core.NewBaseElement(),
 		Flex:        tview.NewFlex(),
 		form:        tview.NewForm(),
 	}
+
+	w.SetIdentifier(WelcomeView)
 
 	return w
 }

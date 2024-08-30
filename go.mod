@@ -2,13 +2,9 @@ module github.com/kopecmaciej/vi-mongo
 
 go 1.22.1
 
-// use tview from local folder /home/cieju/projects/Go/tview
-
-replace github.com/kopecmaciej/tview => /home/cieju/projects/Go/tview
-
 require (
 	github.com/gdamore/tcell/v2 v2.7.1
-	github.com/kopecmaciej/tview v0.0.4
+	github.com/kopecmaciej/tview v0.0.6
 	github.com/rs/zerolog v1.32.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0

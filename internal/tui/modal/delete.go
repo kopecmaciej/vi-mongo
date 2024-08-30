@@ -20,10 +20,11 @@ type Delete struct {
 
 func NewDeleteModal() *Delete {
 	dm := &Delete{
-		BaseElement: core.NewBaseElement(DeleteModal),
+		BaseElement: core.NewBaseElement(),
 		Modal:       tview.NewModal(),
 	}
 
+	dm.SetIdentifier(DeleteModal)
 	dm.SetAfterInitFunc(dm.init)
 
 	return dm

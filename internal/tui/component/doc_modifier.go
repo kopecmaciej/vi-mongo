@@ -26,7 +26,7 @@ type DocModifier struct {
 
 func NewDocModifier() *DocModifier {
 	return &DocModifier{
-		BaseElement: core.NewBaseElement(DocModifierView),
+		BaseElement: core.NewBaseElement(),
 	}
 }
 

@@ -40,7 +40,7 @@ type DocPeeker struct {
 // NewDocPeeker creates a new DocPeeker view
 func NewDocPeeker() *DocPeeker {
 	peekr := &DocPeeker{
-		BaseElement: core.NewBaseElement(DocPeekerView),
+		BaseElement: core.NewBaseElement(),
 		ViewModal:   primitives.NewViewModal(),
 		docModifier: NewDocModifier(),
 	}

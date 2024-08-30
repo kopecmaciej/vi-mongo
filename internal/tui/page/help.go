@@ -7,7 +7,6 @@ import (
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
-	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 )
 
 const (
@@ -17,20 +16,21 @@ const (
 // Help is a view that provides a help screen for keybindings
 type Help struct {
 	*core.BaseElement
-	*tview.Flex
+	*tview.Table
 
-	Table *tview.Table
 	style *config.HelpStyle
+
+	keyWidth, descWidth int
 }
 
 // NewHelp creates a new Help view
 func NewHelp() *Help {
 	h := &Help{
-		BaseElement: core.NewBaseElement(HelpPage),
-		Flex:        tview.NewFlex(),
+		BaseElement: core.NewBaseElement(),
 		Table:       tview.NewTable(),
 	}
 
+	h.SetIdentifier(HelpPage)
 	h.SetAfterInitFunc(h.init)
 
 	return h
@@ -43,56 +43,65 @@ func (h *Help) init() error {
 	return nil
 }
 
-func (h *Help) Render(fullScreen bool) error {
+func (h *Help) Render() error {
 	h.Clear()
 	h.Table.Clear()
 
-	currectView := h.App.Manager.CurrentElement()
-	cKeys, err := h.App.GetKeys().GetKeysForView(string(currectView))
-	if err != nil {
-		modal.ShowError(h.App.Pages, "No keys found for current view", err)
-		return err
+	allKeys := h.App.GetKeys().GetAvaliableKeys()
+	if h.keyWidth == 0 || h.descWidth == 0 {
+		h.keyWidth, h.descWidth = h.calculateMaxWidth(allKeys)
 	}
 
+	secondRowElements := []config.OrderedKeys{}
 	row := 0
-	h.renderKeySection(cKeys, &row)
-
-	gKeys, err := h.App.GetKeys().GetKeysForView("Global")
-	if err != nil {
-		modal.ShowError(h.App.Pages, "Error while getting keys for view", err)
-		return err
+	for _, viewKeys := range allKeys {
+		if viewKeys.Element == "Global" || viewKeys.Element == "Help" {
+			secondRowElements = append(secondRowElements, viewKeys)
+		} else {
+			h.renderKeySection([]config.OrderedKeys{viewKeys}, &row, 0)
+		}
 	}
-	h.renderKeySection(gKeys, &row)
 
-	hKeys, err := h.App.GetKeys().GetKeysForView("Help")
-	if err != nil {
-		modal.ShowError(h.App.Pages, "Error while getting keys for view", err)
-		return err
+	row = 0
+	col := 2
+	for _, viewKeys := range secondRowElements {
+		h.renderKeySection([]config.OrderedKeys{viewKeys}, &row, col)
 	}
-	h.renderKeySection(hKeys, &row)
 
 	h.Table.ScrollToBeginning()
-
-	if fullScreen {
-		h.Flex.AddItem(tview.NewBox(), 0, 1, false)
-		h.Flex.AddItem(h.Table, 0, 3, true)
-		h.Flex.AddItem(tview.NewBox(), 0, 1, false)
-	} else {
-		h.Flex.AddItem(h.Table, 0, 1, true)
-	}
 
 	return nil
 }
 
-// Add this new method to render key sections
-func (h *Help) renderKeySection(keys []config.OrderedKeys, row *int) {
+// calculateMaxWidth calculates the maximum width of the row
+func (h *Help) calculateMaxWidth(keys []config.OrderedKeys) (int, int) {
+	keyWidth, descWidth := 0, 0
 	for _, viewKeys := range keys {
-		if viewKeys.View == "Root" {
-			viewKeys.View = "Main Layout"
+		for _, key := range viewKeys.Keys {
+			if len(key.Keys) > 0 {
+				keyWidth = len(key.Keys)
+			} else {
+				keyWidth = len(key.Runes)
+			}
+
+			if len(key.Description) > descWidth {
+				descWidth = len(key.Description)
+			}
 		}
-		h.addHeaderSection(viewKeys.View, *row, 0)
+	}
+	return keyWidth, descWidth
+}
+
+// Add this new method to render key sections
+func (h *Help) renderKeySection(keys []config.OrderedKeys, row *int, col int) {
+	for _, viewKeys := range keys {
+		viewName := viewKeys.Element
+		if viewName == "Root" {
+			viewName = "Main Layout"
+		}
+		h.addHeaderSection(viewName, *row, col)
 		*row += 2
-		h.AddKeySection(viewKeys.View, viewKeys.Keys, row, 0)
+		h.AddKeySection(viewName, viewKeys.Keys, row, col)
 		*row++
 	}
 }
@@ -100,6 +109,9 @@ func (h *Help) renderKeySection(keys []config.OrderedKeys, row *int) {
 func (h *Help) addHeaderSection(name string, row, col int) {
 	h.Table.SetCell(row+0, col, tview.NewTableCell(name).SetTextColor(h.style.TitleColor.Color()))
 	h.Table.SetCell(row+1, col, tview.NewTableCell("-------").SetTextColor(h.style.DescriptionColor.Color()))
+	// let's fill blank cells with empty strings
+	h.Table.SetCell(row+0, col+1, tview.NewTableCell("").SetTextColor(h.style.TitleColor.Color()))
+	h.Table.SetCell(row+1, col+1, tview.NewTableCell("").SetTextColor(h.style.DescriptionColor.Color()))
 }
 
 func (h *Help) AddKeySection(name string, keys []config.Key, pos *int, col int) {
@@ -120,8 +132,7 @@ func (h *Help) AddKeySection(name string, keys []config.Key, pos *int, col int) 
 		}
 
 		h.Table.SetCell(*pos, col, tview.NewTableCell(keyString).SetTextColor(h.style.KeyColor.Color()))
-		h.Table.SetCell(*pos, col+1, tview.NewTableCell(" - ").SetTextColor(h.style.DescriptionColor.Color()))
-		h.Table.SetCell(*pos, col+2, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
+		h.Table.SetCell(*pos, col+1, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
 		*pos += 1
 	}
 }
@@ -130,11 +141,13 @@ func (h *Help) setStyle() {
 	h.style = &h.App.GetStyles().Help
 	h.Table.SetBorder(true)
 	h.Table.SetTitle(" Help ")
-	h.Table.SetTitleAlign(tview.AlignLeft)
-	h.Table.SetBorderPadding(0, 0, 1, 1)
-	h.Table.SetSelectable(true, false) // Allow row selection for scrolling
+	h.Table.SetBorderPadding(1, 1, 3, 3)
+	h.Table.SetSelectable(false, false)
 	h.Table.SetBackgroundColor(h.style.BackgroundColor.Color())
 	h.Table.SetBorderColor(h.style.BorderColor.Color())
+	h.Table.SetTitleColor(h.style.TitleColor.Color())
+	h.Table.SetTitleAlign(tview.AlignLeft)
+	h.Table.SetEvaluateAllRows(true)
 }
 
 func (h *Help) setKeybindings() {

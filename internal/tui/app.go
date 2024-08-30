@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"strings"
-
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
@@ -56,17 +54,11 @@ func (a *App) setKeybindings() {
 				a.Pages.RemovePage(page.HelpPage)
 				return nil
 			}
-			err := a.FullScreenHelp.Render(true)
+			err := a.FullScreenHelp.Render()
 			if err != nil {
 				return event
 			}
 			a.Pages.AddPage(page.HelpPage, a.FullScreenHelp, true, true)
-			return nil
-		case a.Keys.Contains(a.Keys.Global.ToggleHelpBarFooter, event.Name()):
-
-			if strings.Contains(string(a.Manager.CurrentElement()), "Input") {
-				return event
-			}
 			return nil
 		}
 		return event

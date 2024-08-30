@@ -21,25 +21,20 @@ func NewPages(manager *manager.ElementManager, app *App) *Pages {
 }
 
 // AddPage is a wrapper for tview.Pages.AddPage
-func (r *Pages) AddPage(view manager.ElementId, page tview.Primitive, resize, visable bool) *tview.Pages {
-	if r.Pages.HasPage(string(view)) && r.manager.CurrentElement() == view {
-		return r.Pages
-	}
-	r.manager.PushElement(view)
+func (r *Pages) AddPage(view tview.Identifier, page tview.Primitive, resize, visable bool) *tview.Pages {
 	r.app.SetPreviousFocus()
 	r.Pages.AddPage(string(view), page, resize, visable)
 	return r.Pages
 }
 
 // RemovePage is a wrapper for tview.Pages.RemovePage
-func (r *Pages) RemovePage(view manager.ElementId) *tview.Pages {
-	r.manager.PopElement()
+func (r *Pages) RemovePage(view tview.Identifier) *tview.Pages {
 	r.Pages.RemovePage(string(view))
 	r.app.GiveBackFocus()
 	return r.Pages
 }
 
 // HasPage is a wrapper for tview.Pages.HasPage
-func (r *Pages) HasPage(view manager.ElementId) bool {
+func (r *Pages) HasPage(view tview.Identifier) bool {
 	return r.Pages.HasPage(string(view))
 }

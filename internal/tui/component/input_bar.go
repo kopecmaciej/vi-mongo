@@ -26,15 +26,17 @@ type InputBar struct {
 	defaultText    string
 }
 
-func NewInputBar(viewName string, label string) *InputBar {
+func NewInputBar(barId tview.Identifier, label string) *InputBar {
 	i := &InputBar{
-		BaseElement: core.NewBaseElement(viewName),
+		BaseElement: core.NewBaseElement(),
 		InputField: tview.NewInputField().
 			SetLabel(" " + label + ": "),
 		enabled:        false,
 		autocompleteOn: false,
 	}
 
+	i.SetIdentifier(barId)
+	i.SetIdentifierFunc(i.GetIdentifier)
 	i.SetAfterInitFunc(i.init)
 
 	return i

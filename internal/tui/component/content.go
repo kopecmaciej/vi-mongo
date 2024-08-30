@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	ContentView  = "Content"
-	JsonViewView = "JsonView"
-	QueryBarView = "QueryBar"
-	SortBarView  = "SortBar"
+	ContentComponent  = "Content"
+	JsonViewComponent = "JsonView"
+	QueryBarComponent = "QueryBar"
+	SortBarComponent  = "SortBar"
 )
 
 // Content is a view that displays documents in a table
@@ -48,12 +48,13 @@ type Content struct {
 
 func NewContent() *Content {
 	c := &Content{
-		BaseElement:    core.NewBaseElement("Content"),
+		BaseElement: core.NewBaseElement(),
+		Flex:        tview.NewFlex(),
+
 		Table:          core.NewTable(),
-		Flex:           tview.NewFlex(),
 		View:           tview.NewTextView(),
-		queryBar:       NewInputBar(QueryBarView, "Query"),
-		sortBar:        NewInputBar(SortBarView, "Sort"),
+		queryBar:       NewInputBar(QueryBarComponent, "Query"),
+		sortBar:        NewInputBar(SortBarComponent, "Sort"),
 		jsonPeeker:     NewDocPeeker(),
 		deleteModal:    modal.NewDeleteModal(),
 		docModifier:    NewDocModifier(),
@@ -63,6 +64,8 @@ func NewContent() *Content {
 		isTableView:    false,
 	}
 
+	c.SetIdentifier(ContentComponent)
+	c.SetIdentifierFunc(c.GetIdentifier)
 	c.SetAfterInitFunc(c.init)
 
 	return c
@@ -551,7 +554,7 @@ func (c *Content) goToPrevMongoPage(ctx context.Context) {
 func (c *Content) viewJson(jsonString string) error {
 	c.View.Clear()
 
-	c.App.Pages.AddPage(JsonViewView, c.View, true, true)
+	c.App.Pages.AddPage(JsonViewComponent, c.View, true, true)
 
 	indentedJson, err := mongo.IndentJson(jsonString)
 	if err != nil {
@@ -564,7 +567,7 @@ func (c *Content) viewJson(jsonString string) error {
 	c.View.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEsc:
-			c.App.Pages.RemovePage(JsonViewView)
+			c.App.Pages.RemovePage(JsonViewComponent)
 			c.App.SetFocus(c.Table)
 		}
 		return event
