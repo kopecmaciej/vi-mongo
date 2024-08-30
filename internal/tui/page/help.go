@@ -53,18 +53,28 @@ func (h *Help) Render() error {
 	}
 
 	secondRowElements := []config.OrderedKeys{}
+	thirdRowElements := []config.OrderedKeys{}
 	row := 0
+	col := 0
 	for _, viewKeys := range allKeys {
 		if viewKeys.Element == "Global" || viewKeys.Element == "Help" {
+			thirdRowElements = append(thirdRowElements, viewKeys)
+		} else if viewKeys.Element == "Welcome" || viewKeys.Element == "Connector" {
 			secondRowElements = append(secondRowElements, viewKeys)
 		} else {
-			h.renderKeySection([]config.OrderedKeys{viewKeys}, &row, 0)
+			h.renderKeySection([]config.OrderedKeys{viewKeys}, &row, col)
 		}
 	}
 
 	row = 0
-	col := 2
+	col = 2
 	for _, viewKeys := range secondRowElements {
+		h.renderKeySection([]config.OrderedKeys{viewKeys}, &row, col)
+	}
+
+	row = 0
+	col = 4
+	for _, viewKeys := range thirdRowElements {
 		h.renderKeySection([]config.OrderedKeys{viewKeys}, &row, col)
 	}
 
