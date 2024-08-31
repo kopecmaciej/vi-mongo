@@ -107,11 +107,11 @@ func (i *InputBar) setKeybindings() {
 
 		k := i.App.GetKeys()
 		switch {
-		case k.Contains(k.Root.Content.QueryBar.ShowHistory, event.Name()):
+		case k.Contains(k.Content.QueryBar.ShowHistory, event.Name()):
 			if i.historyModal != nil {
 				i.displayHistoryModal()
 			}
-		case k.Contains(k.Root.Content.QueryBar.ClearInput, event.Name()):
+		case k.Contains(k.Content.QueryBar.ClearInput, event.Name()):
 			i.SetText("")
 			i.SetWordAtCursor(i.defaultText)
 		}

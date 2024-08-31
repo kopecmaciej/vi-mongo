@@ -68,7 +68,6 @@ func (dc *DocPeeker) setStyle() {
 	dc.SetBorder(true)
 	dc.SetTitle("Document Details")
 	dc.SetTitleAlign(tview.AlignLeft)
-	dc.SetTitleColor(dc.style.TitleColor.Color())
 	dc.SetBackgroundColor(dc.style.BackgroundColor.Color())
 	dc.SetBorderColor(dc.style.BorderColor.Color())
 	dc.SetHighlightColor(dc.style.HighlightColor.Color())

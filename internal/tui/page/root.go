@@ -23,7 +23,7 @@ type Root struct {
 	*tview.Flex
 
 	innerFlex *tview.Flex
-	style     *config.RootStyle
+	style     *config.GlobalStyles
 	connector *Connector
 	header    *component.Header
 	databases *component.Databases
@@ -125,7 +125,7 @@ func (r *Root) initSubviews() error {
 }
 
 func (r *Root) setStyles() {
-	r.style = &r.App.GetStyles().Root
+	r.style = &r.App.GetStyles().Global
 	r.App.Pages.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.SetBackgroundColor(r.style.BackgroundColor.Color())
 	r.innerFlex.SetBackgroundColor(r.style.BackgroundColor.Color())

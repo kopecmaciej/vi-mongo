@@ -2,10 +2,8 @@ package component
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 
 	"github.com/atotto/clipboard"
@@ -32,18 +30,20 @@ type Content struct {
 	*core.BaseElement
 	*tview.Flex
 
-	Table          *core.Table
-	View           *tview.TextView
-	style          *config.ContentStyle
-	queryBar       *InputBar
-	sortBar        *InputBar
-	jsonPeeker     *DocPeeker
-	deleteModal    *modal.Delete
-	docModifier    *DocModifier
-	state          mongo.CollectionState
-	stateMap       map[string]mongo.CollectionState
-	isMultiRowView bool
-	isTableView    bool
+	tableFlex   *tview.Flex
+	tableHeader *tview.TextView
+	table       *core.Table
+	view        *tview.TextView
+	style       *config.ContentStyle
+	queryBar    *InputBar
+	sortBar     *InputBar
+	jsonPeeker  *DocPeeker
+	deleteModal *modal.Delete
+	docModifier *DocModifier
+	state       mongo.CollectionState
+	stateMap    map[string]mongo.CollectionState
+	isJsonView  bool
+	isTableView bool
 }
 
 func NewContent() *Content {
@@ -51,17 +51,19 @@ func NewContent() *Content {
 		BaseElement: core.NewBaseElement(),
 		Flex:        tview.NewFlex(),
 
-		Table:          core.NewTable(),
-		View:           tview.NewTextView(),
-		queryBar:       NewInputBar(QueryBarComponent, "Query"),
-		sortBar:        NewInputBar(SortBarComponent, "Sort"),
-		jsonPeeker:     NewDocPeeker(),
-		deleteModal:    modal.NewDeleteModal(),
-		docModifier:    NewDocModifier(),
-		state:          mongo.CollectionState{},
-		stateMap:       make(map[string]mongo.CollectionState),
-		isMultiRowView: false,
-		isTableView:    false,
+		tableFlex:   tview.NewFlex(),
+		tableHeader: tview.NewTextView(),
+		table:       core.NewTable(),
+		view:        tview.NewTextView(),
+		queryBar:    NewInputBar(QueryBarComponent, "Query"),
+		sortBar:     NewInputBar(SortBarComponent, "Sort"),
+		jsonPeeker:  NewDocPeeker(),
+		deleteModal: modal.NewDeleteModal(),
+		docModifier: NewDocModifier(),
+		state:       mongo.CollectionState{},
+		stateMap:    make(map[string]mongo.CollectionState),
+		isJsonView:  false,
+		isTableView: false,
 	}
 
 	c.SetIdentifier(ContentComponent)
@@ -110,19 +112,29 @@ func (c *Content) init() error {
 
 func (c *Content) setStyle() {
 	c.style = &c.App.GetStyles().Content
-	c.Table.SetBorder(true)
-	c.Table.SetTitle(" Content ")
-	c.Table.SetTitleAlign(tview.AlignLeft)
-	c.Table.SetBorderPadding(0, 0, 1, 1)
-	c.Table.SetFixed(1, 1)
-	c.Table.SetBackgroundColor(c.style.BackgroundColor.Color())
-	c.Table.SetBorderColor(c.style.BorderColor.Color())
 
-	c.View.SetBorder(true)
-	c.View.SetTitle(" JSON View ")
-	c.View.SetTitleAlign(tview.AlignCenter)
-	c.View.SetBorderPadding(2, 0, 6, 0)
-	c.View.SetBorderColor(c.style.BorderColor.Color())
+	c.tableFlex.SetBorder(true)
+	c.tableFlex.SetBorderColor(c.style.BorderColor.Color())
+	c.tableFlex.SetDirection(tview.FlexRow)
+	c.tableFlex.SetTitle(" Content ")
+	c.tableFlex.SetTitleAlign(tview.AlignCenter)
+	c.tableFlex.AddItem(c.tableHeader, 2, 0, false)
+	c.tableFlex.AddItem(c.table, 0, 1, true)
+	c.tableFlex.SetBackgroundColor(tcell.ColorYellow)
+	c.tableFlex.SetBorderPadding(0, 0, 1, 1)
+
+	c.tableHeader.SetText("Documents: 0, Page: 0, Limit: 0")
+	c.tableHeader.SetTextColor(c.style.StatusTextColor.Color())
+	c.tableHeader.SetBackgroundColor(c.style.BackgroundColor.Color())
+
+	c.table.SetFixed(1, 0)
+	c.table.SetBackgroundColor(c.style.BackgroundColor.Color())
+
+	c.view.SetBorder(true)
+	c.view.SetTitle(" JSON View ")
+	c.view.SetTitleAlign(tview.AlignCenter)
+	c.view.SetBorderPadding(2, 0, 6, 0)
+	c.view.SetBorderColor(c.style.BorderColor.Color())
 
 	c.Flex.SetDirection(tview.FlexRow)
 }
@@ -130,44 +142,44 @@ func (c *Content) setStyle() {
 func (c *Content) setKeybindings(ctx context.Context) {
 	k := c.App.GetKeys()
 
-	c.Table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		row, coll := c.Table.GetSelection()
+	c.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		row, coll := c.table.GetSelection()
 		c.handleScrolling(row)
 		switch {
-		case k.Contains(k.Root.Content.SwitchView, event.Name()):
+		case k.Contains(k.Content.ChangeView, event.Name()):
 			return c.handleSwitchView(ctx)
-		case k.Contains(k.Root.Content.PeekDocument, event.Name()):
+		case k.Contains(k.Content.PeekDocument, event.Name()):
 			return c.handlePeekDocument(ctx, row, coll)
-		case k.Contains(k.Root.Content.ViewDocument, event.Name()):
+		case k.Contains(k.Content.ViewDocument, event.Name()):
 			return c.handleViewDocument(row, coll)
-		case k.Contains(k.Root.Content.AddDocument, event.Name()):
+		case k.Contains(k.Content.AddDocument, event.Name()):
 			return c.handleAddDocument(ctx)
-		case k.Contains(k.Root.Content.EditDocument, event.Name()):
+		case k.Contains(k.Content.EditDocument, event.Name()):
 			return c.handleEditDocument(ctx, row, coll)
-		case k.Contains(k.Root.Content.DuplicateDocument, event.Name()):
+		case k.Contains(k.Content.DuplicateDocument, event.Name()):
 			return c.handleDuplicateDocument(ctx, row, coll)
-		case k.Contains(k.Root.Content.DeleteDocument, event.Name()):
+		case k.Contains(k.Content.DeleteDocument, event.Name()):
 			return c.handleDeleteDocument(ctx, row, coll)
-		case k.Contains(k.Root.Content.ToggleQuery, event.Name()):
+		case k.Contains(k.Content.ToggleQuery, event.Name()):
 			return c.handleToggleQuery()
-		case k.Contains(k.Root.Content.ToggleSort, event.Name()):
+		case k.Contains(k.Content.ToggleSort, event.Name()):
 			return c.handleToggleSort()
-		case k.Contains(k.Root.Content.Refresh, event.Name()):
+		case k.Contains(k.Content.Refresh, event.Name()):
 			return c.handleRefresh(ctx)
-		case k.Contains(k.Root.Content.NextPage, event.Name()):
+		case k.Contains(k.Content.NextPage, event.Name()):
 			return c.handleNextPage(ctx)
-		case k.Contains(k.Root.Content.NextDocument, event.Name()):
+		case k.Contains(k.Content.NextDocument, event.Name()):
 			return c.handleNextDocument(row, coll)
-		case k.Contains(k.Root.Content.PreviousDocument, event.Name()):
+		case k.Contains(k.Content.PreviousDocument, event.Name()):
 			return c.handlePreviousDocument(row, coll)
-		case k.Contains(k.Root.Content.PreviousPage, event.Name()):
+		case k.Contains(k.Content.PreviousPage, event.Name()):
 			return c.handlePreviousPage(ctx)
 		// TODO: use this in multiple delete, think of other usage
-		case k.Contains(k.Root.Content.MultipleSelect, event.Name()):
+		case k.Contains(k.Content.MultipleSelect, event.Name()):
 			return c.handleMultipleSelect(row)
-		case k.Contains(k.Root.Content.ClearSelection, event.Name()):
+		case k.Contains(k.Content.ClearSelection, event.Name()):
 			return c.handleClearSelection()
-		case k.Contains(k.Root.Content.CopyLine, event.Name()):
+		case k.Contains(k.Content.CopyLine, event.Name()):
 			return c.handleCopyLine(row, coll)
 		}
 
@@ -191,7 +203,7 @@ func (c *Content) render(setFocus bool) {
 		focusPrimitive = c.sortBar
 	}
 
-	c.Flex.AddItem(c.Table, 0, 1, true)
+	c.Flex.AddItem(c.tableFlex, 0, 1, true)
 
 	if setFocus {
 		c.App.SetFocus(focusPrimitive)
@@ -224,6 +236,7 @@ func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, int64, erro
 	return documents, count, nil
 }
 
+// loadAutocompleteKeys loads the autocomplete keys for the query and sort bars
 func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 	uniqueKeys := make(map[string]bool)
 
@@ -278,7 +291,7 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 		state = mongo.CollectionState{
 			Page: 0,
 		}
-		_, _, _, height := c.Table.GetInnerRect()
+		_, _, _, height := c.table.GetInnerRect()
 		state.Limit = int64(height) - 3
 		state.Db = db
 		state.Coll = coll
@@ -288,8 +301,8 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 }
 
 func (c *Content) updateContent(ctx context.Context) error {
-	c.Table.Clear()
-	c.App.SetFocus(c.Table)
+	c.table.Clear()
+	c.App.SetFocus(c.table)
 
 	documents, count, err := c.listDocuments(ctx)
 	if err != nil {
@@ -298,30 +311,28 @@ func (c *Content) updateContent(ctx context.Context) error {
 	}
 
 	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.Page, c.state.Limit)
+
 	if c.state.Filter != "" {
-		headerInfo += fmt.Sprintf(", Filter: %v", c.state.Filter)
+		headerInfo += fmt.Sprintf(" | Filter: %s", c.state.Filter)
 	}
 	if c.state.Sort != "" {
-		headerInfo += fmt.Sprintf(", Sort: %v", c.state.Sort)
+		headerInfo += fmt.Sprintf(" | Sort: %s", c.state.Sort)
 	}
-	headerCell := tview.NewTableCell(headerInfo).
-		SetAlign(tview.AlignLeft).
-		SetSelectable(false)
-
-	c.Table.SetCell(0, 0, headerCell)
+	c.tableHeader.SetText(headerInfo)
 
 	if count == 0 {
 		// TODO: find why if selectable is set to false, program crashes
-		c.Table.SetCell(2, 0, tview.NewTableCell("No documents found"))
+		c.table.SetCell(2, 0, tview.NewTableCell("No documents found"))
 	}
 
-	c.Table.SetSelectable(true, c.isTableView)
+	c.table.SetSelectable(true, c.isTableView)
+	startRow := 0
 	if c.isTableView {
-		c.renderTableView(documents)
-	} else if c.isMultiRowView {
-		c.renderMultiRowView(documents)
+		c.renderTableView(startRow, documents)
+	} else if c.isJsonView {
+		c.renderJsonView(startRow, documents)
 	} else {
-		c.renderSingleRowView(documents)
+		c.renderSingleRowView(startRow, documents)
 	}
 
 	c.stateMap[c.state.Db+"."+c.state.Coll] = c.state
@@ -329,71 +340,58 @@ func (c *Content) updateContent(ctx context.Context) error {
 	return nil
 }
 
-func (c *Content) renderSingleRowView(documents []primitive.M) {
+func (c *Content) renderSingleRowView(startRow int, documents []primitive.M) {
 	parsedDocs, _ := mongo.ParseBsonDocuments(documents)
-	row := 2
+	row := startRow
 	for _, d := range parsedDocs {
 		dataCell := tview.NewTableCell(d)
 		dataCell.SetAlign(tview.AlignLeft)
-		c.Table.SetCell(row, 0, dataCell)
+		c.table.SetCell(row, 0, dataCell)
 		row++
 	}
-	c.Table.ScrollToBeginning()
+	c.table.ScrollToBeginning()
 }
 
-func (c *Content) renderTableView(documents []primitive.M) {
-	// Get all unique keys from the documents
-	keys := make(map[string]bool)
-	for _, doc := range documents {
-		for k := range doc {
-			keys[k] = true
-		}
-	}
+func (c *Content) renderTableView(startRow int, documents []primitive.M) {
+	sortedKeys := util.GetSortedKeysWithTypes(documents, c.style.ColumnTypeColor.Color().String())
 
-	// Sort the keys for consistent column order
-	sortedKeys := make([]string, 0, len(keys))
-	for k := range keys {
-		sortedKeys = append(sortedKeys, k)
-	}
-	sort.Strings(sortedKeys)
-
+	c.table.SetBordersColor(c.style.SeparatorColor.Color())
+	c.table.SetSeparator(c.style.SeparatorSymbol.Rune())
 	// Set the header row
 	for col, key := range sortedKeys {
-		c.Table.SetCell(2, col, tview.NewTableCell(key).
-			SetTextColor(tcell.ColorYellow).
+		c.table.SetCell(startRow, col, tview.NewTableCell(key).
+			SetTextColor(c.style.ColumnKeyColor.Color()).
 			SetSelectable(false).
+			SetBackgroundColor(c.style.HeaderRowBackgroundColor.Color()).
 			SetAlign(tview.AlignCenter))
 	}
+	startRow++
 
 	// Populate the table with document values
 	for row, doc := range documents {
 		for col, key := range sortedKeys {
 			var cellText string
-			if val, ok := doc[key]; ok {
-				parsedValue := mongo.ParseBsonValue(val)
-				jsoned, err := json.Marshal(parsedValue)
-				if err != nil {
-					modal.ShowError(c.App.Pages, "Error stringifying document", err)
-					return
-				} else {
-					cellText = string(jsoned)
-				}
+			if val, ok := doc[strings.Split(key, " ")[0]]; ok {
+				cellText = util.GetValueByType(val)
 			} else {
-				cellText = "null"
+				cellText = ""
 			}
-			// for column let's set reference to _id
-			c.Table.SetCell(row+3, col, tview.NewTableCell(cellText).
-				SetAlign(tview.AlignLeft))
+
+			cell := tview.NewTableCell(cellText).
+				SetAlign(tview.AlignLeft).
+				SetMaxWidth(30)
+
 			// we'll set reference to _id for first column to not repeat the same _id in whole row
 			if col == 0 {
-				c.Table.SetCell(row+3, col, tview.NewTableCell(doc["_id"].(string)).SetAlign(tview.AlignLeft))
+				cell.SetReference(doc["_id"])
 			}
+			c.table.SetCell(startRow+row, col, cell)
 		}
 	}
 }
 
-func (c *Content) renderMultiRowView(documents []primitive.M) {
-	row := 2
+func (c *Content) renderJsonView(startRow int, documents []primitive.M) {
+	row := startRow
 	for _, doc := range documents {
 		_id := doc["_id"]
 		jsoned, err := mongo.ParseBsonDocument(doc)
@@ -403,7 +401,7 @@ func (c *Content) renderMultiRowView(documents []primitive.M) {
 		}
 		c.multiRowDocument(jsoned, &row, _id)
 	}
-	c.Table.ScrollToBeginning()
+	c.table.ScrollToBeginning()
 }
 
 func (c *Content) multiRowDocument(doc string, row *int, id interface{}) {
@@ -416,7 +414,7 @@ func (c *Content) multiRowDocument(doc string, row *int, id interface{}) {
 	lines := strings.Split(indentedJson.String(), "\n")
 
 	// we'll set reference of _id to first row of document, to not repeat the same _id in whole row
-	c.Table.SetCell(*row, 0, tview.
+	c.table.SetCell(*row, 0, tview.
 		NewTableCell(lines[0]).
 		SetAlign(tview.AlignLeft).
 		SetTextColor(tcell.ColorGreen).
@@ -430,7 +428,7 @@ func (c *Content) multiRowDocument(doc string, row *int, id interface{}) {
 		line := lines[i]
 		if keyRegexWithIndent.MatchString(line) {
 			if currLine != "" {
-				c.Table.SetCell(*row, 0, tview.NewTableCell(currLine).SetAlign(tview.AlignLeft))
+				c.table.SetCell(*row, 0, tview.NewTableCell(currLine).SetAlign(tview.AlignLeft))
 				*row++
 			}
 			currLine = line
@@ -441,11 +439,11 @@ func (c *Content) multiRowDocument(doc string, row *int, id interface{}) {
 	}
 
 	if currLine != "" {
-		c.Table.SetCell(*row, 0, tview.NewTableCell(currLine).SetAlign(tview.AlignLeft))
+		c.table.SetCell(*row, 0, tview.NewTableCell(currLine).SetAlign(tview.AlignLeft))
 		*row++
 	}
 
-	c.Table.SetCell(*row, 0, tview.
+	c.table.SetCell(*row, 0, tview.
 		NewTableCell(lines[len(lines)-1]).
 		SetAlign(tview.AlignLeft).
 		SetTextColor(tcell.ColorGreen).
@@ -494,7 +492,7 @@ func (c *Content) sortBarListener(ctx context.Context) {
 
 // refreshDocument refreshes the document in the table
 func (c *Content) refreshDocument(doc string) {
-	if c.isMultiRowView {
+	if c.isJsonView {
 		c.refreshMultiRowDocument(doc)
 	} else {
 		trimmed := regexp.MustCompile(`(?m)^\s+`).ReplaceAllString(doc, "")
@@ -504,11 +502,11 @@ func (c *Content) refreshDocument(doc string) {
 }
 
 func (c *Content) refreshMultiRowDocument(doc string) {
-	row, _ := c.Table.GetSelection()
-	_id := c.Table.GetCell(row, 0).GetReference()
+	row, _ := c.table.GetSelection()
+	_id := c.table.GetCell(row, 0).GetReference()
 
 	for i := row; i >= 0; i-- {
-		if strings.HasPrefix(c.Table.GetCell(i, 0).Text, "{") {
+		if strings.HasPrefix(c.table.GetCell(i, 0).Text, "{") {
 			row = i
 			break
 		}
@@ -521,54 +519,34 @@ func (c *Content) refreshMultiRowDocument(doc string) {
 
 // addCell adds a new cell to the table
 func (c *Content) addCell(content string) {
-	maxRow := c.Table.GetRowCount()
-	c.Table.SetCell(maxRow, 0, tview.NewTableCell(content).SetAlign(tview.AlignLeft))
+	maxRow := c.table.GetRowCount()
+	c.table.SetCell(maxRow, 0, tview.NewTableCell(content).SetAlign(tview.AlignLeft))
 }
 
 // refreshCell refreshes the cell with the new content
 func (c *Content) refreshCell(content string) {
-	row, col := c.Table.GetSelection()
-	c.Table.SetCell(row, col, tview.NewTableCell(content).SetAlign(tview.AlignLeft))
-}
-
-func (c *Content) goToNextMongoPage(ctx context.Context) {
-	if c.state.Page+c.state.Limit >= c.state.Count {
-		return
-	}
-	c.state.Page += c.state.Limit
-	collectionKey := c.state.Db + "." + c.state.Coll
-	c.stateMap[collectionKey] = c.state
-	c.updateContent(ctx)
-}
-
-func (c *Content) goToPrevMongoPage(ctx context.Context) {
-	if c.state.Page == 0 {
-		return
-	}
-	c.state.Page -= c.state.Limit
-	collectionKey := c.state.Db + "." + c.state.Coll
-	c.stateMap[collectionKey] = c.state
-	c.updateContent(ctx)
+	row, col := c.table.GetSelection()
+	c.table.SetCell(row, col, tview.NewTableCell(content).SetAlign(tview.AlignLeft))
 }
 
 func (c *Content) viewJson(jsonString string) error {
-	c.View.Clear()
+	c.view.Clear()
 
-	c.App.Pages.AddPage(JsonViewComponent, c.View, true, true)
+	c.App.Pages.AddPage(JsonViewComponent, c.view, true, true)
 
 	indentedJson, err := mongo.IndentJson(jsonString)
 	if err != nil {
 		return err
 	}
 
-	c.View.SetText(indentedJson.String())
-	c.View.ScrollToBeginning()
+	c.view.SetText(indentedJson.String())
+	c.view.ScrollToBeginning()
 
-	c.View.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	c.view.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEsc:
 			c.App.Pages.RemovePage(JsonViewComponent)
-			c.App.SetFocus(c.Table)
+			c.App.SetFocus(c.table)
 		}
 		return event
 	})
@@ -602,16 +580,16 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 }
 
 func (c *Content) getDocumentBasedOnView(row, coll int) (string, error) {
-	if c.isMultiRowView {
+	if c.isJsonView {
 		return c.getMultiRowDocument(row, coll)
 	} else if c.isTableView {
-		return c.getTableViewDocument(row, coll)
+		return c.getTableViewDocument(row, 0)
 	}
-	return c.Table.GetCell(row, coll).Text, nil
+	return c.table.GetCell(row, coll).Text, nil
 }
 
 func (c *Content) getMultiRowDocument(row, coll int) (string, error) {
-	forWithReference := c.Table.GetCellAboveThatMatch(row, coll, func(cell *tview.TableCell) bool {
+	forWithReference := c.table.GetCellAboveThatMatch(row, coll, func(cell *tview.TableCell) bool {
 		return strings.HasPrefix(cell.Text, `{`)
 	})
 	_id := forWithReference.GetReference()
@@ -619,27 +597,28 @@ func (c *Content) getMultiRowDocument(row, coll int) (string, error) {
 }
 
 func (c *Content) getTableViewDocument(row, coll int) (string, error) {
-	_id := c.Table.GetCell(row, coll).GetReference()
+	_id := c.table.GetCell(row, coll).GetReference()
 	return c.state.GetJsonDocById(_id)
 }
 
 func (c *Content) handleScrolling(row int) {
 	if row == 3 {
-		c.Table.ScrollToBeginning()
+		c.table.ScrollToBeginning()
 	}
-	if row == c.Table.GetRowCount()-2 {
-		c.Table.ScrollToEnd()
+	if row == c.table.GetRowCount()-2 {
+		c.table.ScrollToEnd()
 	}
 }
 
 func (c *Content) handleSwitchView(ctx context.Context) *tcell.EventKey {
-	if c.isMultiRowView {
-		c.isMultiRowView = false
+	switch {
+	case c.isJsonView:
+		c.isJsonView = false
 		c.isTableView = true
-	} else if c.isTableView {
+	case c.isTableView:
 		c.isTableView = false
-	} else {
-		c.isMultiRowView = true
+	default:
+		c.isJsonView = true
 	}
 	c.updateContent(ctx)
 	return nil
@@ -771,49 +750,61 @@ func (c *Content) handleRefresh(ctx context.Context) *tcell.EventKey {
 }
 
 func (c *Content) handleNextDocument(row, col int) *tcell.EventKey {
-	if c.isMultiRowView {
-		c.Table.MoveDownUntil(row, col, func(cell *tview.TableCell) bool {
+	if c.isJsonView {
+		c.table.MoveDownUntil(row, col, func(cell *tview.TableCell) bool {
 			return strings.HasPrefix(cell.Text, `{`)
 		})
 	} else {
-		c.Table.MoveDown()
+		c.table.MoveDown()
 	}
 	return nil
 }
 
 func (c *Content) handlePreviousDocument(row, col int) *tcell.EventKey {
-	if c.isMultiRowView {
-		c.Table.MoveUpUntil(row, col, func(cell *tview.TableCell) bool {
+	if c.isJsonView {
+		c.table.MoveUpUntil(row, col, func(cell *tview.TableCell) bool {
 			return strings.HasPrefix(cell.Text, `}`)
 		})
 	} else {
-		c.Table.MoveUp()
+		c.table.MoveUp()
 	}
 	return nil
 }
 
 func (c *Content) handleNextPage(ctx context.Context) *tcell.EventKey {
-	c.goToNextMongoPage(ctx)
+	if c.state.Page+c.state.Limit >= c.state.Count {
+		return nil
+	}
+	c.state.Page += c.state.Limit
+	collectionKey := c.state.Db + "." + c.state.Coll
+	c.stateMap[collectionKey] = c.state
+	c.updateContent(ctx)
 	return nil
 }
 
 func (c *Content) handlePreviousPage(ctx context.Context) *tcell.EventKey {
-	c.goToPrevMongoPage(ctx)
+	if c.state.Page == 0 {
+		return nil
+	}
+	c.state.Page -= c.state.Limit
+	collectionKey := c.state.Db + "." + c.state.Coll
+	c.stateMap[collectionKey] = c.state
+	c.updateContent(ctx)
 	return nil
 }
 
 func (c *Content) handleMultipleSelect(row int) *tcell.EventKey {
-	c.Table.ToggleRowSelection(row)
+	c.table.ToggleRowSelection(row)
 	return nil
 }
 
 func (c *Content) handleClearSelection() *tcell.EventKey {
-	c.Table.ClearSelection()
+	c.table.ClearSelection()
 	return nil
 }
 
 func (c *Content) handleCopyLine(row, col int) *tcell.EventKey {
-	selectedDoc := util.TrimJson(c.Table.GetCell(row, col).Text)
+	selectedDoc := util.TrimJson(c.table.GetCell(row, col).Text)
 	err := clipboard.WriteAll(selectedDoc)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error copying document", err)

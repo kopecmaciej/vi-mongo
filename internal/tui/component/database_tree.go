@@ -82,20 +82,20 @@ func (t *DatabaseTree) setKeybindings(ctx context.Context) {
 	k := t.App.GetKeys()
 	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Root.Databases.ExpandAll, event.Name()):
+		case k.Contains(k.Databases.ExpandAll, event.Name()):
 			t.GetRoot().ExpandAll()
 			return nil
-		case k.Contains(k.Root.Databases.CollapseAll, event.Name()):
+		case k.Contains(k.Databases.CollapseAll, event.Name()):
 			t.GetRoot().CollapseAll()
 			t.GetRoot().SetExpanded(true)
 			return nil
-		case k.Contains(k.Root.Databases.AddCollection, event.Name()):
+		case k.Contains(k.Databases.AddCollection, event.Name()):
 			t.addCollection(ctx)
 			return nil
-		case k.Contains(k.Root.Databases.DeleteCollection, event.Name()):
+		case k.Contains(k.Databases.DeleteCollection, event.Name()):
 			t.deleteCollection(ctx)
 			return nil
-		case k.Contains(k.Root.Databases.ToggleExpand, event.Name()):
+		case k.Contains(k.Databases.ToggleExpand, event.Name()):
 			t.GetCurrentNode().SetExpanded(!t.GetCurrentNode().IsExpanded())
 			return nil
 		}

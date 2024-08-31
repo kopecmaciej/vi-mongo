@@ -117,10 +117,10 @@ func (h *Help) renderKeySection(keys []config.OrderedKeys, row *int, col int) {
 }
 
 func (h *Help) addHeaderSection(name string, row, col int) {
-	h.Table.SetCell(row+0, col, tview.NewTableCell(name).SetTextColor(h.style.TitleColor.Color()))
+	h.Table.SetCell(row+0, col, tview.NewTableCell(name).SetTextColor(h.style.HeaderColor.Color()))
 	h.Table.SetCell(row+1, col, tview.NewTableCell("-------").SetTextColor(h.style.DescriptionColor.Color()))
 	// let's fill blank cells with empty strings
-	h.Table.SetCell(row+0, col+1, tview.NewTableCell("").SetTextColor(h.style.TitleColor.Color()))
+	h.Table.SetCell(row+0, col+1, tview.NewTableCell("").SetTextColor(h.style.HeaderColor.Color()))
 	h.Table.SetCell(row+1, col+1, tview.NewTableCell("").SetTextColor(h.style.DescriptionColor.Color()))
 }
 
@@ -155,7 +155,6 @@ func (h *Help) setStyle() {
 	h.Table.SetSelectable(false, false)
 	h.Table.SetBackgroundColor(h.style.BackgroundColor.Color())
 	h.Table.SetBorderColor(h.style.BorderColor.Color())
-	h.Table.SetTitleColor(h.style.TitleColor.Color())
 	h.Table.SetTitleAlign(tview.AlignLeft)
 	h.Table.SetEvaluateAllRows(true)
 }

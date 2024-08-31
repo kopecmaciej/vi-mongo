@@ -21,10 +21,12 @@ type (
 	// nested keybindings of their children views
 	KeyBindings struct {
 		Global    GlobalKeys    `json:"global"`
-		Root      RootKeys      `json:"root"`
-		Connector ConnectorKeys `json:"connector"`
-		Welcome   WelcomeKeys   `json:"welcome"`
 		Help      HelpKeys      `json:"help"`
+		Welcome   WelcomeKeys   `json:"welcome"`
+		Connector ConnectorKeys `json:"connector"`
+		Root      RootKeys      `json:"root"`
+		Databases DatabasesKeys `json:"databases"`
+		Content   ContentKeys   `json:"content"`
 		DocPeeker DocPeekerKeys `json:"docPeeker"`
 		History   HistoryKeys   `json:"history"`
 	}
@@ -43,17 +45,14 @@ type (
 	// as keys are passed from top to bottom
 	GlobalKeys struct {
 		ToggleFullScreenHelp Key `json:"toggleFullScreenHelp"`
-		ToggleHelpBarFooter  Key `json:"toggleHelpBarFooter"`
 	}
 
 	RootKeys struct {
-		ToggleFocus    Key           `json:"toggleFocus"`
-		FocusDatabases Key           `json:"focusDatabases"`
-		FocusContent   Key           `json:"focusContent"`
-		HideDatabases  Key           `json:"hideDatabases"`
-		OpenConnector  Key           `json:"openConnector"`
-		Databases      DatabasesKeys `json:"databases"`
-		Content        ContentKeys   `json:"content"`
+		ToggleFocus    Key `json:"toggleFocus"`
+		FocusDatabases Key `json:"focusDatabases"`
+		FocusContent   Key `json:"focusContent"`
+		HideDatabases  Key `json:"hideDatabases"`
+		OpenConnector  Key `json:"openConnector"`
 	}
 
 	DatabasesKeys struct {
@@ -66,7 +65,7 @@ type (
 	}
 
 	ContentKeys struct {
-		SwitchView        Key      `json:"switchView"`
+		ChangeView        Key      `json:"switchView"`
 		PeekDocument      Key      `json:"peekDocument"`
 		ViewDocument      Key      `json:"viewDocument"`
 		AddDocument       Key      `json:"addDocument"`
@@ -163,7 +162,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 		},
 	}
 
-	k.Root.Databases = DatabasesKeys{
+	k.Databases = DatabasesKeys{
 		FilterBar: Key{
 			Runes:       []string{"/"},
 			Description: "Focus filter bar",
@@ -190,10 +189,10 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 		},
 	}
 
-	k.Root.Content = ContentKeys{
-		SwitchView: Key{
+	k.Content = ContentKeys{
+		ChangeView: Key{
 			Runes:       []string{"f"},
-			Description: "Switch table visualisation",
+			Description: "Change table view",
 		},
 		PeekDocument: Key{
 			Runes:       []string{"p"},
@@ -201,7 +200,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Peek document",
 		},
 		ViewDocument: Key{
-			Runes:       []string{"Y"},
+			Runes:       []string{"P"},
 			Description: "View document",
 		},
 		AddDocument: Key{
@@ -262,7 +261,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 		},
 	}
 
-	k.Root.Content.QueryBar = QueryBar{
+	k.Content.QueryBar = QueryBar{
 		ShowHistory: Key{
 			Keys:        []string{"Ctrl+Y"},
 			Description: "Show history",
@@ -355,8 +354,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Accept entry",
 		},
 		CloseHistory: Key{
-			Keys:        []string{"Ctrl+Y"},
-			Runes:       []string{"Esc"},
+			Keys:        []string{"Esc, Ctrl+Y"},
 			Description: "Close history",
 		},
 	}
