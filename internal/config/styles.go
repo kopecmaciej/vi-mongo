@@ -43,7 +43,6 @@ type (
 
 	// WelcomeStyle is a struct that contains all the styles for the welcome screen
 	WelcomeStyle struct {
-		BackgroundColor          Style `yaml:"backgroundColor"`
 		TextColor                Style `yaml:"textColor"`
 		FormLabelColor           Style `yaml:"formLabelColor"`
 		FormInputColor           Style `yaml:"formInputColor"`
@@ -52,7 +51,6 @@ type (
 
 	// ConnectorStyle is a struct that contains all the styles for the connector
 	ConnectorStyle struct {
-		BackgroundColor              Style `yaml:"backgroundColor"`
 		FormLabelColor               Style `yaml:"formLabelColor"`
 		FormInputBackgroundColor     Style `yaml:"formInputBackgroundColor"`
 		FormInputColor               Style `yaml:"formInputColor"`
@@ -66,26 +64,23 @@ type (
 
 	// HeaderStyle is a struct that contains all the styles for the header
 	HeaderStyle struct {
-		BackgroundColor Style `yaml:"backgroundColor"`
-		KeyColor        Style `yaml:"keyColor"`
-		ValueColor      Style `yaml:"valueColor"`
-		ActiveSymbol    Style `yaml:"activeSymbol"`
-		InactiveSymbol  Style `yaml:"inactiveSymbol"`
+		KeyColor       Style `yaml:"keyColor"`
+		ValueColor     Style `yaml:"valueColor"`
+		ActiveSymbol   Style `yaml:"activeSymbol"`
+		InactiveSymbol Style `yaml:"inactiveSymbol"`
 	}
 
 	// DatabasesStyle is a struct that contains all the styles for the databases
 	DatabasesStyle struct {
-		BackgroundColor Style `yaml:"backgroundColor"`
-		NodeColor       Style `yaml:"nodeColor"`
-		NodeSymbol      Style `yaml:"nodeSymbol"`
-		LeafColor       Style `yaml:"leafColor"`
-		LeafSymbol      Style `yaml:"leafSymbol"`
-		BranchColor     Style `yaml:"branchColor"`
+		NodeColor   Style `yaml:"nodeColor"`
+		NodeSymbol  Style `yaml:"nodeSymbol"`
+		LeafColor   Style `yaml:"leafColor"`
+		LeafSymbol  Style `yaml:"leafSymbol"`
+		BranchColor Style `yaml:"branchColor"`
 	}
 
 	// ContentStyle is a struct that contains all the styles for the content
 	ContentStyle struct {
-		BackgroundColor          Style `yaml:"backgroundColor"`
 		StatusTextColor          Style `yaml:"docInfoTextColor"`
 		HeaderRowBackgroundColor Style `yaml:"headerRowColor"`
 		ColumnKeyColor           Style `yaml:"columnKeyColor"`
@@ -99,20 +94,18 @@ type (
 
 	// DocPeekerStyle is a struct that contains all the styles for the json peeker
 	DocPeekerStyle struct {
-		BackgroundColor Style `yaml:"backgroundColor"`
-		KeyColor        Style `yaml:"keyColor"`
-		ValueColor      Style `yaml:"valueColor"`
-		BracketColor    Style `yaml:"bracketColor"`
-		ArrayColor      Style `yaml:"arrayColor"`
-		HighlightColor  Style `yaml:"highlightColor"`
+		KeyColor       Style `yaml:"keyColor"`
+		ValueColor     Style `yaml:"valueColor"`
+		BracketColor   Style `yaml:"bracketColor"`
+		ArrayColor     Style `yaml:"arrayColor"`
+		HighlightColor Style `yaml:"highlightColor"`
 	}
 
 	// InputBarStyle is a struct that contains all the styles for the filter bar
 	InputBarStyle struct {
-		BackgroundColor Style             `yaml:"backgroundColor"`
-		LabelColor      Style             `yaml:"labelColor"`
-		InputColor      Style             `yaml:"inputColor"`
-		Autocomplete    AutocompleteStyle `yaml:"autocomplete"`
+		LabelColor   Style             `yaml:"labelColor"`
+		InputColor   Style             `yaml:"inputColor"`
+		Autocomplete AutocompleteStyle `yaml:"autocomplete"`
 	}
 
 	AutocompleteStyle struct {
@@ -124,14 +117,12 @@ type (
 	}
 
 	HistoryStyle struct {
-		BackgroundColor         Style `yaml:"backgroundColor"`
 		TextColor               Style `yaml:"textColor"`
 		SelectedTextColor       Style `yaml:"selectedTextColor"`
 		SelectedBackgroundColor Style `yaml:"selectedBackgroundColor"`
 	}
 
 	HelpStyle struct {
-		BackgroundColor  Style `yaml:"backgroundColor"`
 		HeaderColor      Style `yaml:"headerColor"`
 		KeyColor         Style `yaml:"keyColor"`
 		DescriptionColor Style `yaml:"descriptionColor"`
@@ -155,7 +146,6 @@ func (s *Styles) loadDefaultStyles() {
 	}
 
 	s.Welcome = WelcomeStyle{
-		BackgroundColor:          "#0F172A",
 		TextColor:                "#F1FA8C",
 		FormLabelColor:           "#F1FA8C",
 		FormInputColor:           "#F1FA8C",
@@ -163,7 +153,6 @@ func (s *Styles) loadDefaultStyles() {
 	}
 
 	s.Connector = ConnectorStyle{
-		BackgroundColor:             "#0F172A",
 		FormLabelColor:              "#F1FA8C",
 		FormInputBackgroundColor:    "#163694",
 		FormInputColor:              "#F1FA8C",
@@ -175,24 +164,21 @@ func (s *Styles) loadDefaultStyles() {
 	}
 
 	s.Header = HeaderStyle{
-		BackgroundColor: "#0F172A",
-		KeyColor:        "#F1FA8C",
-		ValueColor:      "#387D44",
-		ActiveSymbol:    "●",
-		InactiveSymbol:  "○",
+		KeyColor:       "#F1FA8C",
+		ValueColor:     "#387D44",
+		ActiveSymbol:   "●",
+		InactiveSymbol: "○",
 	}
 
 	s.Databases = DatabasesStyle{
-		BackgroundColor: "#0F172A",
-		NodeColor:       "#387D44",
-		LeafColor:       "#4368da",
-		BranchColor:     "#44bb58",
-		NodeSymbol:      "📁",
-		LeafSymbol:      "📄",
+		NodeColor:   "#387D44",
+		LeafColor:   "#4368da",
+		BranchColor: "#44bb58",
+		NodeSymbol:  "📁",
+		LeafSymbol:  "📄",
 	}
 
 	s.Content = ContentStyle{
-		BackgroundColor:          "#0F172A",
 		StatusTextColor:          "#F1FA8C",
 		HeaderRowBackgroundColor: "#163694",
 		ColumnKeyColor:           "#F1FA8C",
@@ -205,18 +191,16 @@ func (s *Styles) loadDefaultStyles() {
 	}
 
 	s.DocPeeker = DocPeekerStyle{
-		BackgroundColor: "#0F172A",
-		KeyColor:        "#387D44",
-		ValueColor:      "#FFFFFF",
-		ArrayColor:      "#387D44",
-		HighlightColor:  "#163694",
-		BracketColor:    "#FF5555",
+		KeyColor:       "#387D44",
+		ValueColor:     "#FFFFFF",
+		ArrayColor:     "#387D44",
+		HighlightColor: "#163694",
+		BracketColor:   "#FF5555",
 	}
 
 	s.InputBar = InputBarStyle{
-		BackgroundColor: "#0F172A",
-		LabelColor:      "#F1FA8C",
-		InputColor:      "#FFFFFF",
+		LabelColor: "#F1FA8C",
+		InputColor: "#FFFFFF",
 		Autocomplete: AutocompleteStyle{
 			BackgroundColor:       "#163694",
 			TextColor:             "#F1FA8C",
@@ -227,14 +211,12 @@ func (s *Styles) loadDefaultStyles() {
 	}
 
 	s.History = HistoryStyle{
-		BackgroundColor:         "#0F172A",
 		TextColor:               "#F1FA8C",
 		SelectedTextColor:       "#50FA7B",
 		SelectedBackgroundColor: "#163694",
 	}
 
 	s.Help = HelpStyle{
-		BackgroundColor:  "#0F172A",
 		HeaderColor:      "#F1FA8C",
 		KeyColor:         "#F1FA8C",
 		DescriptionColor: "#FFFFFF",

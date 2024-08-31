@@ -51,10 +51,8 @@ func (w *Welcome) setStyle() {
 	style := w.App.GetStyles().Welcome
 
 	w.form.SetBorder(true)
-	w.form.SetBackgroundColor(style.BackgroundColor.Color())
 	w.form.SetFieldTextColor(style.FormInputColor.Color())
 	w.form.SetFieldBackgroundColor(style.FormInputBackgroundColor.Color())
-	w.SetBackgroundColor(style.BackgroundColor.Color())
 	w.SetBorder(false)
 }
 

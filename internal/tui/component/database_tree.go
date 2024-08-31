@@ -63,7 +63,6 @@ func (t *DatabaseTree) setStyle() {
 	t.SetBorderPadding(0, 0, 1, 1)
 	t.SetGraphics(false)
 
-	t.SetBackgroundColor(t.style.BackgroundColor.Color())
 	t.SetGraphicsColor(t.style.BranchColor.Color())
 	t.SetSelectedFunc(func(node *tview.TreeNode) {
 		t.SetCurrentNode(node)

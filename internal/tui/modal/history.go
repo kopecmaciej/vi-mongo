@@ -48,14 +48,14 @@ func (h *History) init() error {
 
 func (h *History) setStyle() {
 	h.style = &h.App.GetStyles().History
+	globalBackground := h.App.GetStyles().Global.BackgroundColor.Color()
 
 	h.SetTitle(" History ")
 	h.SetBorder(true)
 	h.ShowSecondaryText(false)
-	h.SetBackgroundColor(h.style.BackgroundColor.Color())
 	mainStyle := tcell.StyleDefault.
 		Foreground(h.style.TextColor.Color()).
-		Background(h.style.BackgroundColor.Color())
+		Background(globalBackground)
 	h.SetMainTextStyle(mainStyle)
 
 	selectedStyle := tcell.StyleDefault.

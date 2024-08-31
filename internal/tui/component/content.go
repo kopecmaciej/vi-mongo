@@ -119,15 +119,12 @@ func (c *Content) setStyle() {
 	c.tableFlex.SetTitleAlign(tview.AlignCenter)
 	c.tableFlex.AddItem(c.tableHeader, 2, 0, false)
 	c.tableFlex.AddItem(c.table, 0, 1, true)
-	c.tableFlex.SetBackgroundColor(c.style.BackgroundColor.Color())
 	c.tableFlex.SetBorderPadding(0, 0, 1, 1)
 
 	c.tableHeader.SetText("Documents: 0, Page: 0, Limit: 0")
 	c.tableHeader.SetTextColor(c.style.StatusTextColor.Color())
-	c.tableHeader.SetBackgroundColor(c.style.BackgroundColor.Color())
 
 	c.table.SetFixed(1, 0)
-	c.table.SetBackgroundColor(c.style.BackgroundColor.Color())
 
 	c.view.SetBorder(true)
 	c.view.SetTitle(" JSON View ")

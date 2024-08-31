@@ -354,7 +354,7 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Description: "Accept entry",
 		},
 		CloseHistory: Key{
-			Keys:        []string{"Esc, Ctrl+Y"},
+			Keys:        []string{"Esc", "Ctrl+Y"},
 			Description: "Close history",
 		},
 	}

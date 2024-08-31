@@ -247,13 +247,13 @@ func (i *InputBar) handleEvents() {
 		sender, eventKey := event.Sender, event.EventKey
 		switch sender {
 		case i.historyModal.GetIdentifier():
-			switch eventKey.Key() {
-			case tcell.KeyEnter:
+			switch {
+			case i.App.Keys.Contains(i.App.Keys.History.AcceptEntry, eventKey.Name()):
 				i.App.QueueUpdateDraw(func() {
 					i.SetText(i.historyModal.GetText())
 					i.App.SetFocus(i)
 				})
-			case tcell.KeyEsc, tcell.KeyCtrlY:
+			case i.App.Keys.Contains(i.App.Keys.History.CloseHistory, eventKey.Name()):
 				i.App.QueueUpdateDraw(func() {
 					i.App.SetFocus(i)
 				})

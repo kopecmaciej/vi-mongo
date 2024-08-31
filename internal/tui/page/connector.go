@@ -58,29 +58,27 @@ func (c *Connector) Init(app *core.App) error {
 func (c *Connector) setStyle() {
 	style := c.App.GetStyles().Connector
 
-	c.SetBackgroundColor(style.BackgroundColor.Color())
 	c.form.SetTitle(" New connection ")
 	c.form.SetBorder(true)
-	c.form.SetBackgroundColor(style.BackgroundColor.Color())
 	c.form.SetFieldTextColor(style.FormInputColor.Color())
 	c.form.SetFieldBackgroundColor(style.FormInputBackgroundColor.Color())
 
 	c.list.SetTitle(" Saved connections ")
 	c.list.SetBorder(true)
-	c.list.SetBackgroundColor(style.BackgroundColor.Color())
 	c.list.ShowSecondaryText(true)
 	c.list.SetWrapText(true)
 	c.list.SetBorderPadding(1, 1, 1, 1)
 	c.list.SetItemGap(1)
 
+	globalBackground := c.App.GetStyles().Global.BackgroundColor.Color()
 	mainStyle := tcell.StyleDefault.
 		Foreground(style.ListTextColor.Color()).
-		Background(style.BackgroundColor.Color())
+		Background(globalBackground)
 	c.list.SetMainTextStyle(mainStyle)
 
 	secondaryStyle := tcell.StyleDefault.
 		Foreground(style.ListSecondaryTextColor.Color()).
-		Background(style.BackgroundColor.Color()).
+		Background(globalBackground).
 		Italic(true)
 	c.list.SetSecondaryTextStyle(secondaryStyle)
 }

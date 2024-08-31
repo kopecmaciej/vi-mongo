@@ -67,7 +67,6 @@ func (h *Header) init() error {
 
 func (h *Header) setStyle() {
 	h.style = &h.App.GetStyles().Header
-	h.Table.SetBackgroundColor(h.style.BackgroundColor.Color())
 	h.Table.SetSelectable(false, false)
 	h.Table.SetBorder(true)
 	h.Table.SetBorderPadding(0, 0, 1, 1)
@@ -167,7 +166,6 @@ func (h *Header) setInactiveBaseInfo(err error) {
 
 func (h *Header) keyCell(text string) *tview.TableCell {
 	cell := tview.NewTableCell(text + ":")
-	cell.SetBackgroundColor(h.style.BackgroundColor.Color())
 	cell.SetTextColor(h.style.KeyColor.Color())
 
 	return cell
@@ -175,7 +173,6 @@ func (h *Header) keyCell(text string) *tview.TableCell {
 
 func (h *Header) valueCell(text string) *tview.TableCell {
 	cell := tview.NewTableCell(text)
-	cell.SetBackgroundColor(h.style.BackgroundColor.Color())
 	cell.SetTextColor(h.style.ValueColor.Color())
 
 	return cell
