@@ -12,11 +12,11 @@ import (
 )
 
 var (
-	cfgFile            string
-	debug              bool
-	showWelcomePage    bool
-	showConnectionPage bool
-	rootCmd            = &cobra.Command{
+	cfgFile        string
+	debug          bool
+	welcomePage    bool
+	connectionPage bool
+	rootCmd        = &cobra.Command{
 		Use:   "vi-mongo",
 		Short: "MongoDB TUI client",
 		Long:  `A Terminal User Interface (TUI) client for MongoDB`,
@@ -35,8 +35,8 @@ func Execute() error {
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/vi-mongo/config.yaml)")
 	rootCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug mode")
-	rootCmd.Flags().BoolVar(&showWelcomePage, "show-welcome-page", false, "Show welcome page on startup")
-	rootCmd.Flags().BoolVar(&showConnectionPage, "show-connection-page", false, "Show connection page on startup")
+	rootCmd.Flags().BoolVar(&welcomePage, "welcome-page", false, "Show welcome page on startup")
+	rootCmd.Flags().BoolVar(&connectionPage, "connection-page", false, "Show connection page on startup")
 }
 
 func runApp(cmd *cobra.Command, args []string) {
@@ -50,10 +50,10 @@ func runApp(cmd *cobra.Command, args []string) {
 		switch f.Name {
 		case "debug":
 			cfg.Debug = debug
-		case "show-welcome-page":
-			cfg.ShowWelcomePage = showWelcomePage
-		case "show-connection-page":
-			cfg.ShowConnectionPage = showConnectionPage
+		case "welcome-page":
+			cfg.ShowWelcomePage = welcomePage
+		case "connection-page":
+			cfg.ShowConnectionPage = connectionPage
 		}
 	})
 
@@ -74,6 +74,11 @@ func runApp(cmd *cobra.Command, args []string) {
 		log.Info().Msg("Debug mode enabled")
 	}
 	log.Info().Msg("Mongo UI started")
+
+	if os.Getenv("ENV") == "vi-dev" {
+		log.Info().Msg("Dev mode enabled, keys and styles will be loaded from default values")
+	}
+
 	app := tui.NewApp(cfg)
 	err = app.Init()
 	if err != nil {

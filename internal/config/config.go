@@ -264,6 +264,7 @@ func (c *Config) DeleteConnection(name string) error {
 	return os.WriteFile(configPath, updatedConfig, 0644)
 }
 
+// GetUri returns the URI or builds it from the config
 func (m *MongoConfig) GetUri() string {
 	var uri string
 	if m.Uri != "" {

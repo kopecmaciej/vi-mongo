@@ -44,7 +44,6 @@ func (h *Help) init() error {
 }
 
 func (h *Help) Render() error {
-	h.Clear()
 	h.Table.Clear()
 
 	allKeys := h.App.GetKeys().GetAvaliableKeys()
@@ -124,7 +123,7 @@ func (h *Help) addHeaderSection(name string, row, col int) {
 	h.Table.SetCell(row+1, col+1, tview.NewTableCell("").SetTextColor(h.style.DescriptionColor.Color()))
 }
 
-func (h *Help) AddKeySection(name string, keys []config.Key, pos *int, col int) {
+func (h *Help) AddKeySection(name string, keys []config.Key, row *int, col int) {
 	for _, key := range keys {
 		var keyString string
 		var iter []string
@@ -141,9 +140,12 @@ func (h *Help) AddKeySection(name string, keys []config.Key, pos *int, col int) 
 			}
 		}
 
-		h.Table.SetCell(*pos, col, tview.NewTableCell(keyString).SetTextColor(h.style.KeyColor.Color()))
-		h.Table.SetCell(*pos, col+1, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
-		*pos += 1
+		h.Table.SetCell(*row, col, tview.NewTableCell(keyString).SetTextColor(h.style.KeyColor.Color()))
+		h.Table.SetCell(*row, col+1, tview.NewTableCell(key.Description).SetTextColor(h.style.DescriptionColor.Color()))
+		*row++
+		// remove blank cells
+		h.Table.SetCell(*row, col, tview.NewTableCell(""))
+		h.Table.SetCell(*row, col+1, tview.NewTableCell(""))
 	}
 }
 

@@ -9,7 +9,7 @@ build:
 	go build -ldflags="-s -w" -o $(BUILD_DIR)/$(SVC_NAME) .
 
 run:
-	$(BUILD_DIR)/$(SVC_NAME)
+	env $$(cat .env) $(BUILD_DIR)/$(SVC_NAME)
 
 test:
 	go test -v ./...

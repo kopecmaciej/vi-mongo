@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -180,7 +181,7 @@ func (s *Styles) loadDefaultStyles() {
 
 	s.Content = ContentStyle{
 		StatusTextColor:          "#F1FA8C",
-		HeaderRowBackgroundColor: "#163694",
+		HeaderRowBackgroundColor: "#162036",
 		ColumnKeyColor:           "#F1FA8C",
 		ColumnTypeColor:          "#689e76",
 		CellTextColor:            "#387D44",
@@ -242,7 +243,22 @@ func LoadStyles() (*Styles, error) {
 	bytes, err := os.ReadFile(stylePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// Use default styles if file doesn't exist
+			// just for easy development
+			if os.Getenv("ENV") == "vi-dev" {
+				return defaultStyles, nil
+			}
+			err := ensureConfigDirExist()
+			if err != nil {
+				return nil, err
+			}
+			bytes, err = json.Marshal(defaultStyles)
+			if err != nil {
+				return nil, err
+			}
+			err = os.WriteFile(stylePath, bytes, 0644)
+			if err != nil {
+				return nil, err
+			}
 			return defaultStyles, nil
 		}
 		return nil, err

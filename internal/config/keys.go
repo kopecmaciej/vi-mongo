@@ -144,14 +144,6 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 			Keys:        []string{"Tab", "Backtab"},
 			Description: "Focus next view",
 		},
-		HideDatabases: Key{
-			Keys:        []string{"Ctrl+N"},
-			Description: "Hide databases",
-		},
-		OpenConnector: Key{
-			Keys:        []string{"Ctrl+O"},
-			Description: "Open connector",
-		},
 		FocusDatabases: Key{
 			Keys:        []string{"Ctrl+H"},
 			Description: "Focus databases",
@@ -159,6 +151,14 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 		FocusContent: Key{
 			Keys:        []string{"Ctrl+L"},
 			Description: "Focus content",
+		},
+		HideDatabases: Key{
+			Keys:        []string{"Ctrl+N"},
+			Description: "Hide databases",
+		},
+		OpenConnector: Key{
+			Keys:        []string{"Ctrl+O"},
+			Description: "Open connector",
 		},
 	}
 
@@ -375,6 +375,10 @@ func LoadKeybindings() (*KeyBindings, error) {
 	bytes, err := os.ReadFile(keybindingsPath)
 	if err != nil {
 		if os.IsNotExist(err) {
+			// just for easy development
+			if os.Getenv("ENV") == "vi-dev" {
+				return defaultKeybindings, nil
+			}
 			err := ensureConfigDirExist()
 			if err != nil {
 				return nil, err

@@ -25,6 +25,14 @@ const (
 	SortBarComponent  = "SortBar"
 )
 
+type ViewType int
+
+const (
+	TableView ViewType = iota
+	JsonView
+	SingleLineView
+)
+
 // Content is a view that displays documents in a table
 type Content struct {
 	*core.BaseElement
@@ -42,8 +50,7 @@ type Content struct {
 	docModifier *DocModifier
 	state       mongo.CollectionState
 	stateMap    map[string]mongo.CollectionState
-	isJsonView  bool
-	isTableView bool
+	currentView ViewType
 }
 
 func NewContent() *Content {
@@ -62,8 +69,7 @@ func NewContent() *Content {
 		docModifier: NewDocModifier(),
 		state:       mongo.CollectionState{},
 		stateMap:    make(map[string]mongo.CollectionState),
-		isJsonView:  false,
-		isTableView: false,
+		currentView: TableView,
 	}
 
 	c.SetIdentifier(ContentComponent)
@@ -182,6 +188,29 @@ func (c *Content) setKeybindings(ctx context.Context) {
 	})
 }
 
+// HandleDatabaseSelection is called when a database/collection is selected in the DatabaseTree
+func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) error {
+	c.queryBar.SetText("")
+	c.sortBar.SetText("")
+
+	state, ok := c.stateMap[db+"."+coll]
+	if ok {
+		c.state = state
+	} else {
+		state = mongo.CollectionState{
+			Page: 0,
+		}
+		_, _, _, height := c.table.GetInnerRect()
+		state.Limit = int64(height) - 3
+		state.Db = db
+		state.Coll = coll
+		c.state = state
+	}
+	return c.updateContent(ctx)
+}
+
+// Rendering methods
+
 func (c *Content) render(setFocus bool) {
 	c.Flex.Clear()
 
@@ -203,6 +232,70 @@ func (c *Content) render(setFocus bool) {
 	if setFocus {
 		c.App.SetFocus(focusPrimitive)
 	}
+}
+
+func (c *Content) renderTableView(startRow int, documents []primitive.M) {
+	sortedKeys := util.GetSortedKeysWithTypes(documents, c.style.ColumnTypeColor.Color().String())
+
+	c.table.SetBordersColor(c.style.SeparatorColor.Color())
+	c.table.SetSeparator(c.style.SeparatorSymbol.Rune())
+	// Set the header row
+	for col, key := range sortedKeys {
+		c.table.SetCell(startRow, col, tview.NewTableCell(key).
+			SetTextColor(c.style.ColumnKeyColor.Color()).
+			SetSelectable(false).
+			SetBackgroundColor(c.style.HeaderRowBackgroundColor.Color()).
+			SetAlign(tview.AlignCenter))
+	}
+	startRow++
+
+	// Populate the table with document values
+	for row, doc := range documents {
+		for col, key := range sortedKeys {
+			var cellText string
+			if val, ok := doc[strings.Split(key, " ")[0]]; ok {
+				cellText = util.GetValueByType(val)
+			} else {
+				cellText = ""
+			}
+
+			cell := tview.NewTableCell(cellText).
+				SetAlign(tview.AlignLeft).
+				SetMaxWidth(30)
+
+			// we'll set reference to _id for first column to not repeat the same _id in whole row
+			if col == 0 {
+				cell.SetReference(doc["_id"])
+			}
+			c.table.SetCell(startRow+row, col, cell)
+		}
+	}
+}
+
+func (c *Content) renderJsonView(startRow int, documents []primitive.M) {
+	row := startRow
+	for _, doc := range documents {
+		_id := doc["_id"]
+		jsoned, err := mongo.ParseBsonDocument(doc)
+		if err != nil {
+			modal.ShowError(c.App.Pages, "Error stringifying document", err)
+			return
+		}
+		c.multiRowDocument(jsoned, &row, _id)
+	}
+	c.table.ScrollToBeginning()
+}
+
+func (c *Content) renderSingleRowView(startRow int, documents []primitive.M) {
+	parsedDocs, _ := mongo.ParseBsonDocuments(documents)
+	row := startRow
+	for _, d := range parsedDocs {
+		dataCell := tview.NewTableCell(d)
+		dataCell.SetAlign(tview.AlignLeft)
+		c.table.SetCell(row, 0, dataCell)
+		row++
+	}
+	c.table.ScrollToBeginning()
 }
 
 func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, int64, error) {
@@ -274,27 +367,6 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 	c.sortBar.LoadNewKeys(autocompleteKeys)
 }
 
-// HandleDatabaseSelection is called when a database/collection is selected in the DatabaseTree
-func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) error {
-	c.queryBar.SetText("")
-	c.sortBar.SetText("")
-
-	state, ok := c.stateMap[db+"."+coll]
-	if ok {
-		c.state = state
-	} else {
-		state = mongo.CollectionState{
-			Page: 0,
-		}
-		_, _, _, height := c.table.GetInnerRect()
-		state.Limit = int64(height) - 3
-		state.Db = db
-		state.Coll = coll
-		c.state = state
-	}
-	return c.updateContent(ctx)
-}
-
 func (c *Content) updateContent(ctx context.Context) error {
 	c.table.Clear()
 	c.App.SetFocus(c.table)
@@ -320,83 +392,20 @@ func (c *Content) updateContent(ctx context.Context) error {
 		c.table.SetCell(2, 0, tview.NewTableCell("No documents found"))
 	}
 
-	c.table.SetSelectable(true, c.isTableView)
+	c.table.SetSelectable(true, c.currentView == TableView)
 	startRow := 0
-	if c.isTableView {
+	switch c.currentView {
+	case TableView:
 		c.renderTableView(startRow, documents)
-	} else if c.isJsonView {
+	case JsonView:
 		c.renderJsonView(startRow, documents)
-	} else {
+	case SingleLineView:
 		c.renderSingleRowView(startRow, documents)
 	}
 
 	c.stateMap[c.state.Db+"."+c.state.Coll] = c.state
 
 	return nil
-}
-
-func (c *Content) renderSingleRowView(startRow int, documents []primitive.M) {
-	parsedDocs, _ := mongo.ParseBsonDocuments(documents)
-	row := startRow
-	for _, d := range parsedDocs {
-		dataCell := tview.NewTableCell(d)
-		dataCell.SetAlign(tview.AlignLeft)
-		c.table.SetCell(row, 0, dataCell)
-		row++
-	}
-	c.table.ScrollToBeginning()
-}
-
-func (c *Content) renderTableView(startRow int, documents []primitive.M) {
-	sortedKeys := util.GetSortedKeysWithTypes(documents, c.style.ColumnTypeColor.Color().String())
-
-	c.table.SetBordersColor(c.style.SeparatorColor.Color())
-	c.table.SetSeparator(c.style.SeparatorSymbol.Rune())
-	// Set the header row
-	for col, key := range sortedKeys {
-		c.table.SetCell(startRow, col, tview.NewTableCell(key).
-			SetTextColor(c.style.ColumnKeyColor.Color()).
-			SetSelectable(false).
-			SetBackgroundColor(c.style.HeaderRowBackgroundColor.Color()).
-			SetAlign(tview.AlignCenter))
-	}
-	startRow++
-
-	// Populate the table with document values
-	for row, doc := range documents {
-		for col, key := range sortedKeys {
-			var cellText string
-			if val, ok := doc[strings.Split(key, " ")[0]]; ok {
-				cellText = util.GetValueByType(val)
-			} else {
-				cellText = ""
-			}
-
-			cell := tview.NewTableCell(cellText).
-				SetAlign(tview.AlignLeft).
-				SetMaxWidth(30)
-
-			// we'll set reference to _id for first column to not repeat the same _id in whole row
-			if col == 0 {
-				cell.SetReference(doc["_id"])
-			}
-			c.table.SetCell(startRow+row, col, cell)
-		}
-	}
-}
-
-func (c *Content) renderJsonView(startRow int, documents []primitive.M) {
-	row := startRow
-	for _, doc := range documents {
-		_id := doc["_id"]
-		jsoned, err := mongo.ParseBsonDocument(doc)
-		if err != nil {
-			modal.ShowError(c.App.Pages, "Error stringifying document", err)
-			return
-		}
-		c.multiRowDocument(jsoned, &row, _id)
-	}
-	c.table.ScrollToBeginning()
 }
 
 func (c *Content) multiRowDocument(doc string, row *int, id interface{}) {
@@ -487,7 +496,7 @@ func (c *Content) sortBarListener(ctx context.Context) {
 
 // refreshDocument refreshes the document in the table
 func (c *Content) refreshDocument(doc string) {
-	if c.isJsonView {
+	if c.currentView == JsonView {
 		c.refreshMultiRowDocument(doc)
 	} else {
 		trimmed := regexp.MustCompile(`(?m)^\s+`).ReplaceAllString(doc, "")
@@ -575,12 +584,16 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 }
 
 func (c *Content) getDocumentBasedOnView(row, coll int) (string, error) {
-	if c.isJsonView {
+	switch c.currentView {
+	case JsonView:
 		return c.getMultiRowDocument(row, coll)
-	} else if c.isTableView {
+	case TableView:
 		return c.getTableViewDocument(row, 0)
+	case SingleLineView:
+		return c.table.GetCell(row, coll).Text, nil
+	default:
+		return "", fmt.Errorf("unknown view type")
 	}
-	return c.table.GetCell(row, coll).Text, nil
 }
 
 func (c *Content) getMultiRowDocument(row, coll int) (string, error) {
@@ -596,6 +609,8 @@ func (c *Content) getTableViewDocument(row, coll int) (string, error) {
 	return c.state.GetJsonDocById(_id)
 }
 
+// Event handlers
+
 func (c *Content) handleScrolling(row int) {
 	if row == 3 {
 		c.table.ScrollToBeginning()
@@ -606,14 +621,13 @@ func (c *Content) handleScrolling(row int) {
 }
 
 func (c *Content) handleSwitchView(ctx context.Context) *tcell.EventKey {
-	switch {
-	case c.isJsonView:
-		c.isJsonView = false
-		c.isTableView = true
-	case c.isTableView:
-		c.isTableView = false
-	default:
-		c.isJsonView = true
+	switch c.currentView {
+	case TableView:
+		c.currentView = JsonView
+	case JsonView:
+		c.currentView = SingleLineView
+	case SingleLineView:
+		c.currentView = TableView
 	}
 	c.updateContent(ctx)
 	return nil
@@ -745,7 +759,7 @@ func (c *Content) handleRefresh(ctx context.Context) *tcell.EventKey {
 }
 
 func (c *Content) handleNextDocument(row, col int) *tcell.EventKey {
-	if c.isJsonView {
+	if c.currentView == JsonView {
 		c.table.MoveDownUntil(row, col, func(cell *tview.TableCell) bool {
 			return strings.HasPrefix(cell.Text, `{`)
 		})
@@ -756,7 +770,7 @@ func (c *Content) handleNextDocument(row, col int) *tcell.EventKey {
 }
 
 func (c *Content) handlePreviousDocument(row, col int) *tcell.EventKey {
-	if c.isJsonView {
+	if c.currentView == JsonView {
 		c.table.MoveUpUntil(row, col, func(cell *tview.TableCell) bool {
 			return strings.HasPrefix(cell.Text, `}`)
 		})
