@@ -68,7 +68,6 @@ func (h *Header) init() error {
 func (h *Header) setStyle() {
 	h.style = &h.App.GetStyles().Header
 	h.Table.SetBackgroundColor(h.style.BackgroundColor.Color())
-	h.Table.SetBorderColor(h.style.BorderColor.Color())
 	h.Table.SetSelectable(false, false)
 	h.Table.SetBorder(true)
 	h.Table.SetBorderPadding(0, 0, 1, 1)

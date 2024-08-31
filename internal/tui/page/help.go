@@ -154,7 +154,6 @@ func (h *Help) setStyle() {
 	h.Table.SetBorderPadding(1, 1, 3, 3)
 	h.Table.SetSelectable(false, false)
 	h.Table.SetBackgroundColor(h.style.BackgroundColor.Color())
-	h.Table.SetBorderColor(h.style.BorderColor.Color())
 	h.Table.SetTitleAlign(tview.AlignLeft)
 	h.Table.SetEvaluateAllRows(true)
 }

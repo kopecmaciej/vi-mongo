@@ -28,6 +28,7 @@ func NewApp(appConfig *config.Config) *App {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load styles")
 	}
+	styles.LoadMainStyles()
 	keyBindings, err := config.LoadKeybindings()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load keybindings")

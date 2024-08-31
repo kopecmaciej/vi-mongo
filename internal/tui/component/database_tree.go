@@ -64,7 +64,6 @@ func (t *DatabaseTree) setStyle() {
 	t.SetGraphics(false)
 
 	t.SetBackgroundColor(t.style.BackgroundColor.Color())
-	t.SetBorderColor(t.style.BorderColor.Color())
 	t.SetGraphicsColor(t.style.BranchColor.Color())
 	t.SetSelectedFunc(func(node *tview.TreeNode) {
 		t.SetCurrentNode(node)
