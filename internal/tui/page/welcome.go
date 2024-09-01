@@ -63,7 +63,7 @@ func (w *Welcome) Render() {
 	w.AddItem(tview.NewBox(), 0, 1, false)
 
 	w.renderForm()
-	w.Flex.AddItem(w.form, 80, 0, true)
+	w.Flex.AddItem(w.form, 0, 3, true)
 
 	w.AddItem(tview.NewBox(), 0, 1, false)
 
@@ -78,7 +78,7 @@ func (w *Welcome) renderForm() {
 	w.form.Clear(true)
 
 	w.form.SetBorder(true)
-	w.form.SetTitle(" Welcome to MongoUI ")
+	w.form.SetTitle(" Welcome to Vi Mongo ")
 	w.form.SetTitleAlign(tview.AlignCenter)
 
 	configFile, err := config.GetConfigPath()
@@ -87,14 +87,16 @@ func (w *Welcome) renderForm() {
 		return
 	}
 	welcomeText := "All configuration can be set in " + configFile + " file. You can also set it here."
-	w.form.AddTextView("Welcome", welcomeText, 60, 2, true, false)
-	w.form.AddTextView("Editor info", "Set command (vim, nano etc) or env variable ($ENV) to open editor", 60, 2, true, false)
-	w.form.AddInputField("Editor", "$EDITOR", 30, nil, nil)
-	w.form.AddTextView("Logs", "Requires restart if changed", 60, 1, true, false)
+	w.form.AddTextView("Welcome info", welcomeText, 0, 2, true, false)
+	w.form.AddTextView(" ", "-------------------------------------------", 0, 1, true, false)
+	w.form.AddTextView("Editor", "Set command (vim, nano etc) or env variable ($ENV) to open editor", 0, 2, true, false)
+	w.form.AddInputField("Set editor", "$EDITOR", 30, nil, nil)
+	w.form.AddTextView("Logs", "Requires restart if changed", 0, 1, true, false)
 	w.form.AddInputField("Log File", "/tmp/vi-mongo.log", 30, nil, nil)
 	w.form.AddInputField("Log Level", "info", 30, nil, nil)
-	w.form.AddCheckbox("Show connection page", true, nil)
-	w.form.AddCheckbox("Show welcome page", false, nil)
+	w.form.AddTextView("Show on start", "Set pages to show on every start", 60, 1, true, false)
+	w.form.AddCheckbox("Connection page", true, nil)
+	w.form.AddCheckbox("Welcome page", false, nil)
 	w.form.AddTextView("Show help", fmt.Sprintf("Press %s to show help", w.App.GetKeys().Global.ToggleFullScreenHelp.String()), 60, 1, true, false)
 
 	w.form.AddButton(" Save and Connect ", func() {

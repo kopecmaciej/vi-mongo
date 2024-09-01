@@ -23,3 +23,13 @@ debug:
 
 lint:
 	golangci-lint run
+
+release: check-version
+	git tag -a v$(VERSION) -m "Release v$(VERSION)"
+	git push origin v$(VERSION)
+
+check-version:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION is not set"; \
+		exit 1; \
+	fi

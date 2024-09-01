@@ -101,11 +101,6 @@ func (c *Config) loadDefaultConfig() {
 			Command: "",
 			Env:     "EDITOR",
 		},
-		Debug:              false,
-		ShowConnectionPage: true,
-		ShowWelcomePage:    true,
-		CurrentConnection:  "",
-		Connections:        []MongoConfig{},
 	}
 }
 
