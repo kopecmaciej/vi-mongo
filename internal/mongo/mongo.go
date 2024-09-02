@@ -1,6 +1,10 @@
 package mongo
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"sort"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type ServerStatus struct {
 	Ok             int32  `bson:"ok"`
@@ -35,6 +39,19 @@ type CollectionState struct {
 	Docs   map[string]primitive.M
 }
 
+func (c *CollectionState) GetSortedDocs() []primitive.M {
+	keys := make([]string, 0, len(c.Docs))
+	for k := range c.Docs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	docs := make([]primitive.M, 0, len(keys))
+	for _, k := range keys {
+		docs = append(docs, c.Docs[k])
+	}
+	return docs
+}
 func (c *CollectionState) GetDocById(id interface{}) primitive.M {
 	return c.Docs[StringifyId(id)]
 }

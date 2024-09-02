@@ -172,11 +172,11 @@ func (s *Styles) loadDefaults() {
 
 	s.Databases = DatabasesStyle{
 		NodeColor:        "#387D44",
-		LeafColor:        "#4368da",
+		LeafColor:        "#F1FA8C",
 		BranchColor:      "#44bb58",
-		OpenNodeSymbol:   "🗁",
-		ClosedNodeSymbol: "🖿",
-		LeafSymbol:       "🗎",
+		OpenNodeSymbol:   "[#e4da20]🗁[-:-:-]",
+		ClosedNodeSymbol: "[#e4da20]🖿[-:-:-]",
+		LeafSymbol:       "[#5a8f45]🗎[-:-:-]",
 	}
 
 	s.Content = ContentStyle{

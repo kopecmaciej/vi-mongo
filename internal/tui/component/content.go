@@ -14,7 +14,6 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
-	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -188,7 +187,6 @@ func (c *Content) setKeybindings(ctx context.Context) {
 
 // HandleDatabaseSelection is called when a database/collection is selected in the DatabaseTree
 func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) error {
-	log.Info().Msgf("Handling database selection: %s.%s", db, coll)
 	c.queryBar.SetText("")
 	c.sortBar.SetText("")
 
@@ -205,7 +203,7 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 		state.Coll = coll
 		c.state = &state
 	}
-	return c.updateContent(ctx)
+	return c.updateContent(ctx, false)
 }
 
 // Rendering methods
@@ -367,14 +365,23 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 	c.sortBar.LoadNewKeys(autocompleteKeys)
 }
 
-func (c *Content) updateContent(ctx context.Context) error {
+func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	c.table.Clear()
 	c.App.SetFocus(c.table)
 
-	documents, count, err := c.listDocuments(ctx)
-	if err != nil {
-		log.Error().Err(err).Msg("Error listing documents")
-		return err
+	var documents []primitive.M
+	var count int64
+
+	if useState {
+		documents = c.state.GetSortedDocs()
+		count = c.state.Count
+	} else {
+		docs, c, err := c.listDocuments(ctx)
+		if err != nil {
+			return err
+		}
+		documents = docs
+		count = c
 	}
 
 	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.Page, c.state.Limit)
@@ -411,7 +418,6 @@ func (c *Content) updateContent(ctx context.Context) error {
 func (c *Content) multiRowDocument(doc string, row *int, id interface{}) {
 	indentedJson, err := mongo.IndentJson(doc)
 	if err != nil {
-		log.Error().Err(err).Msg("Error indenting JSON")
 		return
 	}
 	keyRegexWithIndent := regexp.MustCompile(`(?m)^\s{2}"([^"]+)":`)
@@ -462,7 +468,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 		c.state.Filter = util.TrimJson(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
-		err := c.updateContent(ctx)
+		err := c.updateContent(ctx, false)
 		if err != nil {
 			modal.ShowError(c.App.Pages, "Error updating content", err)
 		}
@@ -482,7 +488,7 @@ func (c *Content) sortBarListener(ctx context.Context) {
 		c.state.Sort = util.TrimJson(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
-		c.updateContent(ctx)
+		c.updateContent(ctx, false)
 		if c.Flex.HasItem(c.sortBar) {
 			c.Flex.RemoveItem(c.sortBar)
 		}
@@ -495,38 +501,16 @@ func (c *Content) sortBarListener(ctx context.Context) {
 }
 
 // refreshDocument refreshes the document in the table
-func (c *Content) refreshDocument(doc string) {
+func (c *Content) refreshDocument(ctx context.Context, doc string) {
 	c.state.UpdateRawDoc(doc)
 
-	c.updateContent(context.Background())
-}
-
-func (c *Content) refreshMultiRowDocument(doc string) {
-	row, _ := c.table.GetSelection()
-	_id := c.table.GetCell(row, 0).GetReference()
-
-	for i := row; i >= 0; i-- {
-		if strings.HasPrefix(c.table.GetCell(i, 0).Text, "{") {
-			row = i
-			break
-		}
-	}
-
-	doc = strings.TrimSpace(doc)
-
-	c.multiRowDocument(doc, &row, _id)
+	c.updateContent(ctx, true)
 }
 
 // addCell adds a new cell to the table
 func (c *Content) addCell(content string) {
 	maxRow := c.table.GetRowCount()
 	c.table.SetCell(maxRow, 0, tview.NewTableCell(content).SetAlign(tview.AlignLeft))
-}
-
-// refreshCell refreshes the cell with the new content
-func (c *Content) refreshCell(content string) {
-	row, col := c.table.GetSelection()
-	c.table.SetCell(row, col, tview.NewTableCell(content).SetAlign(tview.AlignLeft))
 }
 
 func (c *Content) viewJson(jsonString string) error {
@@ -571,7 +555,7 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 			}
 		}
 		c.App.Pages.RemovePage(c.deleteModal.GetIdentifier())
-		c.updateContent(ctx)
+		c.updateContent(ctx, true)
 	})
 
 	c.App.Pages.AddPage(c.deleteModal.GetIdentifier(), c.deleteModal, true, true)
@@ -625,7 +609,7 @@ func (c *Content) handleSwitchView(ctx context.Context) *tcell.EventKey {
 	case SingleLineView:
 		c.currentView = TableView
 	}
-	c.updateContent(ctx)
+	c.updateContent(ctx, true)
 	return nil
 }
 
@@ -686,7 +670,7 @@ func (c *Content) handleEditDocument(ctx context.Context, row, coll int) *tcell.
 	}
 
 	if updated != "" {
-		c.refreshDocument(updated)
+		c.refreshDocument(ctx, updated)
 	}
 	return nil
 }
@@ -744,7 +728,7 @@ func (c *Content) handleDeleteDocument(ctx context.Context, row, coll int) *tcel
 }
 
 func (c *Content) handleRefresh(ctx context.Context) *tcell.EventKey {
-	err := c.updateContent(ctx)
+	err := c.updateContent(ctx, false)
 	if err != nil {
 		defer modal.ShowError(c.App.Pages, "Error refreshing documents", err)
 	}
@@ -780,7 +764,7 @@ func (c *Content) handleNextPage(ctx context.Context) *tcell.EventKey {
 	c.state.Page += c.state.Limit
 	collectionKey := c.state.Db + "." + c.state.Coll
 	c.stateMap[collectionKey] = c.state
-	c.updateContent(ctx)
+	c.updateContent(ctx, false)
 	return nil
 }
 
@@ -791,7 +775,7 @@ func (c *Content) handlePreviousPage(ctx context.Context) *tcell.EventKey {
 	c.state.Page -= c.state.Limit
 	collectionKey := c.state.Db + "." + c.state.Coll
 	c.stateMap[collectionKey] = c.state
-	c.updateContent(ctx)
+	c.updateContent(ctx, false)
 	return nil
 }
 
