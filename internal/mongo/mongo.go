@@ -58,3 +58,8 @@ func (c *CollectionState) PopulateDocs(docs []primitive.M) {
 		c.Docs[StringifyId(doc["_id"])] = doc
 	}
 }
+
+func (c *CollectionState) AppendDoc(doc primitive.M) {
+	c.Docs[StringifyId(doc["_id"])] = doc
+	c.Count++
+}

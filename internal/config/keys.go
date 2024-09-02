@@ -1,9 +1,7 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 	"strings"
 
@@ -131,7 +129,7 @@ type (
 	}
 )
 
-func (k *KeyBindings) loadDefaultKeybindings() {
+func (k *KeyBindings) loadDefaults() {
 	k.Global = GlobalKeys{
 		ToggleFullScreenHelp: Key{
 			Runes:       []string{"?"},
@@ -363,47 +361,15 @@ func (k *KeyBindings) loadDefaultKeybindings() {
 // LoadKeybindings loads keybindings from the config file
 // if the file does not exist it creates a new one with default keybindings
 func LoadKeybindings() (*KeyBindings, error) {
-	keybindings := &KeyBindings{}
 	defaultKeybindings := &KeyBindings{}
-	defaultKeybindings.loadDefaultKeybindings()
+	defaultKeybindings.loadDefaults()
 
 	keybindingsPath, err := getKeybindingsPath()
 	if err != nil {
 		return nil, err
 	}
 
-	bytes, err := os.ReadFile(keybindingsPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// just for easy development
-			if os.Getenv("ENV") == "vi-dev" {
-				return defaultKeybindings, nil
-			}
-			err := ensureConfigDirExist()
-			if err != nil {
-				return nil, err
-			}
-			bytes, err = json.Marshal(defaultKeybindings)
-			if err != nil {
-				return nil, err
-			}
-			err = os.WriteFile(keybindingsPath, bytes, 0644)
-			if err != nil {
-				return nil, err
-			}
-			return defaultKeybindings, nil
-		}
-		return nil, err
-	}
-
-	err = json.Unmarshal(bytes, keybindings)
-	if err != nil {
-		return nil, err
-	}
-
-	util.MergeConfigs(keybindings, defaultKeybindings)
-
-	return keybindings, nil
+	return util.LoadConfigFile(defaultKeybindings, keybindingsPath)
 }
 
 // extractKeysFromStruct extracts all Key structs from a reflect.Value

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -10,7 +9,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
-	"gopkg.in/yaml.v3"
 )
 
 // Styles is a struct that contains all the styles for the application
@@ -135,7 +133,7 @@ type (
 	}
 )
 
-func (s *Styles) loadDefaultStyles() {
+func (s *Styles) loadDefaults() {
 	s.Global = GlobalStyles{
 		BackgroundColor:    "#0F172A",
 		TextColor:          "#FFFFFF",
@@ -231,48 +229,19 @@ func (s *Styles) loadDefaultStyles() {
 
 // LoadStyles creates a new Styles struct with default values
 func LoadStyles() (*Styles, error) {
-	styles := &Styles{}
 	defaultStyles := &Styles{}
-	defaultStyles.loadDefaultStyles()
+	defaultStyles.loadDefaults()
+
+	if os.Getenv("ENV") == "vi-dev" {
+		return defaultStyles, nil
+	}
 
 	stylePath, err := getStylePath()
 	if err != nil {
 		return nil, err
 	}
 
-	bytes, err := os.ReadFile(stylePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// just for easy development
-			if os.Getenv("ENV") == "vi-dev" {
-				return defaultStyles, nil
-			}
-			err := ensureConfigDirExist()
-			if err != nil {
-				return nil, err
-			}
-			bytes, err = json.Marshal(defaultStyles)
-			if err != nil {
-				return nil, err
-			}
-			err = os.WriteFile(stylePath, bytes, 0644)
-			if err != nil {
-				return nil, err
-			}
-			return defaultStyles, nil
-		}
-		return nil, err
-	}
-
-	err = yaml.Unmarshal(bytes, styles)
-	if err != nil {
-		return nil, err
-	}
-
-	// Merge loaded styles with default styles
-	util.MergeConfigs(styles, defaultStyles)
-
-	return styles, nil
+	return util.LoadConfigFile(defaultStyles, stylePath)
 }
 
 func (s *Styles) LoadMainStyles() {

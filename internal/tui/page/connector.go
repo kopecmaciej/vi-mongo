@@ -50,8 +50,6 @@ func (c *Connector) Init(app *core.App) error {
 	c.setStyle()
 	c.setKeybindings()
 
-	c.Render()
-
 	return nil
 }
 

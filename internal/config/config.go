@@ -55,66 +55,32 @@ type Config struct {
 // If the file does not exist, it will be created
 // with the default settings
 func LoadConfig() (*Config, error) {
-	config := &Config{}
+	defaultConfig := &Config{}
+	defaultConfig.loadDefaults()
+
 	configPath, err := GetConfigPath()
 	if err != nil {
 		return nil, err
 	}
-	bytes, err := os.ReadFile(configPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			err := ensureConfigDirExist()
-			if err != nil {
-				return nil, err
-			}
-			config.loadDefaultConfig()
-			bytes, err = yaml.Marshal(config)
-			if err != nil {
-				return nil, err
-			}
-			err = os.WriteFile(configPath, bytes, 0644)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
-	}
 
-	err = yaml.Unmarshal(bytes, &config)
-	if err != nil {
-		return nil, err
-	}
-
-	return config, nil
+	return util.LoadConfigFile(defaultConfig, configPath)
 }
 
-// loadDefaultConfig loads the default config settings
-func (c *Config) loadDefaultConfig() {
-	c = &Config{
-		Log: LogConfig{
-			Path:        LogPath,
-			Level:       "info",
-			PrettyPrint: true,
-		},
-		Editor: EditorConfig{
-			Command: "",
-			Env:     "EDITOR",
-		},
+// loadDefaults loads the default config settings
+func (c *Config) loadDefaults() {
+	c.Version = "1.0.0"
+	c.Debug = false
+	c.Log = LogConfig{
+		Path:        LogPath,
+		Level:       "info",
+		PrettyPrint: true,
 	}
-}
-
-// ensureConfigDirExist ensures the config directory exists
-// If it does not exist, it will be created
-func ensureConfigDirExist() error {
-	configPath, err := xdg.ConfigFile(ConfigDirName)
-	if err != nil {
-		return err
+	c.Editor = EditorConfig{
+		Command: "",
+		Env:     "EDITOR",
 	}
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return os.MkdirAll(configPath, 0755)
-	}
-	return nil
+	c.ShowConnectionPage = true
+	c.ShowWelcomePage = false
 }
 
 // GetConfigDir returns the path to the config directory
