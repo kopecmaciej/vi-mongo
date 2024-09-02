@@ -108,8 +108,6 @@ func (c *Content) init() error {
 	c.sortBar.EnableAutocomplete()
 	c.sortBar.SetDefaultText("{ <$0> }")
 
-	c.render(false)
-
 	c.queryBarListener(ctx)
 	c.sortBarListener(ctx)
 
@@ -211,8 +209,9 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 
 // Rendering methods
 
-func (c *Content) render(setFocus bool) {
+func (c *Content) Render(setFocus bool) {
 	c.Flex.Clear()
+	c.table.Clear()
 
 	var focusPrimitive tview.Primitive
 	focusPrimitive = c
@@ -471,7 +470,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 		}
 	}
 	rejectFunc := func() {
-		c.render(true)
+		c.Render(true)
 	}
 
 	c.queryBar.DoneFuncHandler(acceptFunc, rejectFunc)
@@ -488,7 +487,7 @@ func (c *Content) sortBarListener(ctx context.Context) {
 		}
 	}
 	rejectFunc := func() {
-		c.render(true)
+		c.Render(true)
 	}
 
 	c.sortBar.DoneFuncHandler(acceptFunc, rejectFunc)
@@ -498,6 +497,8 @@ func (c *Content) sortBarListener(ctx context.Context) {
 func (c *Content) refreshDocument(doc string) {
 	if c.currentView == JsonView {
 		c.refreshMultiRowDocument(doc)
+	} else if c.currentView == TableView {
+		// c.state.AppendDoc(doc)
 	} else {
 		trimmed := regexp.MustCompile(`(?m)^\s+`).ReplaceAllString(doc, "")
 		trimmed = regexp.MustCompile(`(?m):\s+`).ReplaceAllString(trimmed, ":")
@@ -688,6 +689,7 @@ func (c *Content) handleEditDocument(ctx context.Context, row, coll int) *tcell.
 		modal.ShowError(c.App.Pages, "Error editing document", err)
 		return nil
 	}
+
 	if updated != "" {
 		c.refreshDocument(updated)
 	}
@@ -708,11 +710,7 @@ func (c *Content) handleDuplicateDocument(ctx context.Context, row, coll int) *t
 	if err != nil {
 		defer modal.ShowError(c.App.Pages, "Error getting inserted document", err)
 	}
-	strDoc, err := mongo.ParseBsonDocument(duplicatedDoc)
-	if err != nil {
-		defer modal.ShowError(c.App.Pages, "Error stringifying document", err)
-	}
-	c.addCell(strDoc)
+	c.state.AppendDoc(duplicatedDoc)
 	return nil
 }
 
@@ -722,7 +720,7 @@ func (c *Content) handleToggleQuery() *tcell.EventKey {
 	} else {
 		c.queryBar.Toggle("")
 	}
-	c.render(true)
+	c.Render(true)
 	return nil
 }
 
@@ -732,7 +730,7 @@ func (c *Content) handleToggleSort() *tcell.EventKey {
 	} else {
 		c.sortBar.Toggle("")
 	}
-	c.render(true)
+	c.Render(true)
 	return nil
 }
 

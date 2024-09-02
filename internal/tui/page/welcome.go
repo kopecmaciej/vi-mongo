@@ -42,8 +42,6 @@ func (w *Welcome) Init(app *core.App) error {
 
 	w.setStyle()
 
-	w.Render()
-
 	return nil
 }
 
@@ -66,8 +64,6 @@ func (w *Welcome) Render() {
 	w.Flex.AddItem(w.form, 0, 3, true)
 
 	w.AddItem(tview.NewBox(), 0, 1, false)
-
-	w.App.SetRoot(w.Flex, true)
 }
 
 func (w *Welcome) SetOnSubmitFunc(onSubmit func()) {
@@ -86,17 +82,24 @@ func (w *Welcome) renderForm() {
 		modal.ShowError(w.App.Pages, "Error while getting config path", err)
 		return
 	}
+
+	cfg := w.App.GetConfig()
+
 	welcomeText := "All configuration can be set in " + configFile + " file. You can also set it here."
 	w.form.AddTextView("Welcome info", welcomeText, 0, 2, true, false)
 	w.form.AddTextView(" ", "-------------------------------------------", 0, 1, true, false)
 	w.form.AddTextView("Editor", "Set command (vim, nano etc) or env variable ($ENV) to open editor", 0, 2, true, false)
-	w.form.AddInputField("Set editor", "$EDITOR", 30, nil, nil)
+	editorCmd, err := cfg.GetEditorCmd()
+	if err != nil {
+		editorCmd = ""
+	}
+	w.form.AddInputField("Set editor", editorCmd, 30, nil, nil)
 	w.form.AddTextView("Logs", "Requires restart if changed", 0, 1, true, false)
-	w.form.AddInputField("Log File", "/tmp/vi-mongo.log", 30, nil, nil)
-	w.form.AddInputField("Log Level", "info", 30, nil, nil)
+	w.form.AddInputField("Log File", cfg.Log.Path, 30, nil, nil)
+	w.form.AddInputField("Log Level", cfg.Log.Level, 30, nil, nil)
 	w.form.AddTextView("Show on start", "Set pages to show on every start", 60, 1, true, false)
-	w.form.AddCheckbox("Connection page", true, nil)
-	w.form.AddCheckbox("Welcome page", false, nil)
+	w.form.AddCheckbox("Connection page", cfg.ShowConnectionPage, nil)
+	w.form.AddCheckbox("Welcome page", cfg.ShowWelcomePage, nil)
 	w.form.AddTextView("Show help", fmt.Sprintf("Press %s to show help", w.App.GetKeys().Global.ToggleFullScreenHelp.String()), 60, 1, true, false)
 
 	w.form.AddButton(" Save and Connect ", func() {
@@ -105,7 +108,9 @@ func (w *Welcome) renderForm() {
 			modal.ShowError(w.App.Pages, "Error while saving config", err)
 			return
 		}
-		w.onSubmit()
+		if w.onSubmit != nil {
+			w.onSubmit()
+		}
 	})
 
 	w.form.AddButton(" Exit ", func() {
@@ -114,11 +119,11 @@ func (w *Welcome) renderForm() {
 }
 
 func (w *Welcome) saveConfig() error {
-	editorCmd := w.form.GetFormItemByLabel("Editor").(*tview.InputField).GetText()
+	editorCmd := w.form.GetFormItemByLabel("Set editor").(*tview.InputField).GetText()
 	logFile := w.form.GetFormItemByLabel("Log File").(*tview.InputField).GetText()
 	logLevel := w.form.GetFormItemByLabel("Log Level").(*tview.InputField).GetText()
-	connPage := w.form.GetFormItemByLabel("Show connection page").(*tview.Checkbox).IsChecked()
-	welcomePage := w.form.GetFormItemByLabel("Show welcome page").(*tview.Checkbox).IsChecked()
+	connPage := w.form.GetFormItemByLabel("Connection page").(*tview.Checkbox).IsChecked()
+	welcomePage := w.form.GetFormItemByLabel("Welcome page").(*tview.Checkbox).IsChecked()
 
 	c := w.App.GetConfig()
 

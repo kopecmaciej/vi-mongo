@@ -48,6 +48,8 @@ func runApp(cmd *cobra.Command, args []string) {
 
 	cmd.Flags().Visit(func(f *pflag.Flag) {
 		switch f.Name {
+		// TODO: those should be one-time flags,
+		// right now they behave like they're from config file
 		case "debug":
 			cfg.Debug = debug
 		case "welcome-page":
@@ -83,6 +85,11 @@ func runApp(cmd *cobra.Command, args []string) {
 	err = app.Init()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error initializing app")
+	}
+	app.Render()
+	err = app.Run()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Error running app")
 	}
 }
 

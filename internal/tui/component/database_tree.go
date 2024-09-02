@@ -82,19 +82,24 @@ func (t *DatabaseTree) setKeybindings(ctx context.Context) {
 		switch {
 		case k.Contains(k.Databases.ExpandAll, event.Name()):
 			t.GetRoot().ExpandAll()
+			t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
+				t.setNewSymbol(node, t.style.ClosedNodeSymbol.String(), t.style.OpenNodeSymbol.String())
+				return true
+			})
 			return nil
 		case k.Contains(k.Databases.CollapseAll, event.Name()):
 			t.GetRoot().CollapseAll()
 			t.GetRoot().SetExpanded(true)
+			t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
+				t.setNewSymbol(node, t.style.OpenNodeSymbol.String(), t.style.ClosedNodeSymbol.String())
+				return true
+			})
 			return nil
 		case k.Contains(k.Databases.AddCollection, event.Name()):
 			t.addCollection(ctx)
 			return nil
 		case k.Contains(k.Databases.DeleteCollection, event.Name()):
 			t.deleteCollection(ctx)
-			return nil
-		case k.Contains(k.Databases.ToggleExpand, event.Name()):
-			t.GetCurrentNode().SetExpanded(!t.GetCurrentNode().IsExpanded())
 			return nil
 		}
 
@@ -239,12 +244,17 @@ func (t *DatabaseTree) rootNode() *tview.TreeNode {
 }
 
 func (t *DatabaseTree) dbNode(name string) *tview.TreeNode {
-	r := tview.NewTreeNode(fmt.Sprintf("%s %s", t.style.NodeSymbol.String(), name))
+	r := tview.NewTreeNode(fmt.Sprintf("%s %s", t.style.ClosedNodeSymbol.String(), name))
 	r.SetColor(t.style.NodeColor.Color())
 	r.SetSelectable(true)
 	r.SetExpanded(false)
 
 	r.SetSelectedFunc(func() {
+		if r.IsExpanded() {
+			r.SetText(fmt.Sprintf("%s %s", t.style.ClosedNodeSymbol.String(), name))
+		} else {
+			r.SetText(fmt.Sprintf("%s %s", t.style.OpenNodeSymbol.String(), name))
+		}
 		r.SetExpanded(!r.IsExpanded())
 	})
 
@@ -261,7 +271,13 @@ func (t *DatabaseTree) collNode(name string) *tview.TreeNode {
 }
 
 func (t *DatabaseTree) removeSymbols(db, coll string) (string, string) {
-	db = strings.Replace(db, t.style.NodeSymbol.String(), "", 1)
+	db = strings.Replace(db, t.style.OpenNodeSymbol.String(), "", 1)
 	coll = strings.Replace(coll, t.style.LeafSymbol.String(), "", 1)
 	return strings.TrimSpace(db), strings.TrimSpace(coll)
+}
+
+func (t *DatabaseTree) setNewSymbol(node *tview.TreeNode, oldSymbol, newSymbol string) {
+	text := node.GetText()
+
+	node.SetText(strings.Replace(text, oldSymbol, newSymbol, 1))
 }

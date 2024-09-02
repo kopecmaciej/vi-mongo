@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -10,7 +9,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
-	"gopkg.in/yaml.v3"
 )
 
 // Styles is a struct that contains all the styles for the application
@@ -31,7 +29,7 @@ type (
 		Others    OthersStyle    `yaml:"others"`
 	}
 
-	// GlobalStyles is a struct that contains all the root styles for the application
+	// GlobalStyles is a struct that contains all the global styles for the application
 	GlobalStyles struct {
 		BackgroundColor    Style `yaml:"backgroundColor"`
 		TextColor          Style `yaml:"textColor"`
@@ -73,11 +71,12 @@ type (
 
 	// DatabasesStyle is a struct that contains all the styles for the databases
 	DatabasesStyle struct {
-		NodeColor   Style `yaml:"nodeColor"`
-		NodeSymbol  Style `yaml:"nodeSymbol"`
-		LeafColor   Style `yaml:"leafColor"`
-		LeafSymbol  Style `yaml:"leafSymbol"`
-		BranchColor Style `yaml:"branchColor"`
+		NodeColor        Style `yaml:"nodeColor"`
+		OpenNodeSymbol   Style `yaml:"openNodeSymbol"`
+		ClosedNodeSymbol Style `yaml:"closedNodeSymbol"`
+		LeafColor        Style `yaml:"leafColor"`
+		LeafSymbol       Style `yaml:"leafSymbol"`
+		BranchColor      Style `yaml:"branchColor"`
 	}
 
 	// ContentStyle is a struct that contains all the styles for the content
@@ -135,7 +134,7 @@ type (
 	}
 )
 
-func (s *Styles) loadDefaultStyles() {
+func (s *Styles) loadDefaults() {
 	s.Global = GlobalStyles{
 		BackgroundColor:    "#0F172A",
 		TextColor:          "#FFFFFF",
@@ -172,11 +171,12 @@ func (s *Styles) loadDefaultStyles() {
 	}
 
 	s.Databases = DatabasesStyle{
-		NodeColor:   "#387D44",
-		LeafColor:   "#4368da",
-		BranchColor: "#44bb58",
-		NodeSymbol:  "📁",
-		LeafSymbol:  "📄",
+		NodeColor:        "#387D44",
+		LeafColor:        "#4368da",
+		BranchColor:      "#44bb58",
+		OpenNodeSymbol:   "🗁",
+		ClosedNodeSymbol: "🖿",
+		LeafSymbol:       "🗎",
 	}
 
 	s.Content = ContentStyle{
@@ -231,48 +231,19 @@ func (s *Styles) loadDefaultStyles() {
 
 // LoadStyles creates a new Styles struct with default values
 func LoadStyles() (*Styles, error) {
-	styles := &Styles{}
 	defaultStyles := &Styles{}
-	defaultStyles.loadDefaultStyles()
+	defaultStyles.loadDefaults()
+
+	if os.Getenv("ENV") == "vi-dev" {
+		return defaultStyles, nil
+	}
 
 	stylePath, err := getStylePath()
 	if err != nil {
 		return nil, err
 	}
 
-	bytes, err := os.ReadFile(stylePath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// just for easy development
-			if os.Getenv("ENV") == "vi-dev" {
-				return defaultStyles, nil
-			}
-			err := ensureConfigDirExist()
-			if err != nil {
-				return nil, err
-			}
-			bytes, err = json.Marshal(defaultStyles)
-			if err != nil {
-				return nil, err
-			}
-			err = os.WriteFile(stylePath, bytes, 0644)
-			if err != nil {
-				return nil, err
-			}
-			return defaultStyles, nil
-		}
-		return nil, err
-	}
-
-	err = yaml.Unmarshal(bytes, styles)
-	if err != nil {
-		return nil, err
-	}
-
-	// Merge loaded styles with default styles
-	util.MergeConfigs(styles, defaultStyles)
-
-	return styles, nil
+	return util.LoadConfigFile(defaultStyles, stylePath)
 }
 
 func (s *Styles) LoadMainStyles() {

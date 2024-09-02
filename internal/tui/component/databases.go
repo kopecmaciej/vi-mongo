@@ -52,12 +52,10 @@ func (s *Databases) init() error {
 		return err
 	}
 
-	if err := s.render(); err != nil {
+	if err := s.initialDbFetch(ctx); err != nil {
 		return err
 	}
-	if err := s.renderWithFilter(ctx, ""); err != nil {
-		return err
-	}
+
 	if err := s.filterBar.Init(s.App); err != nil {
 		return err
 	}
@@ -76,14 +74,14 @@ func (s *Databases) setKeybindings() {
 		switch {
 		case keys.Contains(keys.Databases.FilterBar, event.Name()):
 			s.filterBar.Enable()
-			s.render()
+			s.Render()
 			return nil
 		}
 		return event
 	})
 }
 
-func (s *Databases) render() error {
+func (s *Databases) Render() {
 	s.Flex.Clear()
 
 	var primitive tview.Primitive
@@ -95,9 +93,9 @@ func (s *Databases) render() error {
 	}
 	defer s.App.SetFocus(primitive)
 
-	s.Flex.AddItem(s.DbTree, 0, 1, true)
+	s.renderDbTree()
 
-	return nil
+	s.Flex.AddItem(s.DbTree, 0, 1, true)
 }
 
 func (s *Databases) filterBarListener(ctx context.Context) {
@@ -105,13 +103,13 @@ func (s *Databases) filterBarListener(ctx context.Context) {
 		s.filter(ctx, text)
 	}
 	rejectFunc := func() {
-		s.render()
+		s.Render()
 	}
 	s.filterBar.DoneFuncHandler(accceptFunc, rejectFunc)
 }
 
 func (s *Databases) filter(ctx context.Context, text string) {
-	defer s.render()
+	defer s.Render()
 	dbsWitColls := s.dbsWithColls
 	expand := false
 	filtered := []mongo.DBsWithCollections{}
@@ -146,17 +144,12 @@ func (s *Databases) filter(ctx context.Context, text string) {
 	s.DbTree.Render(ctx, filtered, expand)
 }
 
-func (s *Databases) renderWithFilter(ctx context.Context, filter string) error {
-	if err := s.fetchDbsWithCollections(ctx, filter); err != nil {
-		return err
-	}
-	s.DbTree.Render(ctx, s.dbsWithColls, false)
-
-	return nil
+func (s *Databases) renderDbTree() {
+	s.DbTree.Render(context.Background(), s.dbsWithColls, false)
 }
 
-func (s *Databases) fetchDbsWithCollections(ctx context.Context, filter string) error {
-	dbsWitColls, err := s.Dao.ListDbsWithCollections(ctx, filter)
+func (s *Databases) initialDbFetch(ctx context.Context) error {
+	dbsWitColls, err := s.Dao.ListDbsWithCollections(ctx, "")
 	if err != nil {
 		return err
 	}

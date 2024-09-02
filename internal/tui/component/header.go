@@ -52,15 +52,7 @@ func NewHeader() *Header {
 }
 
 func (h *Header) init() error {
-	ctx := context.Background()
 	h.setStyle()
-
-	if err := h.setBaseInfo(ctx); err != nil {
-		h.setInactiveBaseInfo(err)
-	}
-	h.render()
-
-	go h.refresh()
 
 	return nil
 }
@@ -73,9 +65,9 @@ func (h *Header) setStyle() {
 	h.Table.SetTitle(" Database Info ")
 }
 
-// setBaseInfo sets the base information about the database
+// SetBaseInfo sets the base information about the database
 // such as status, host, port, database, version, uptime, connections, memory etc.
-func (h *Header) setBaseInfo(ctx context.Context) error {
+func (h *Header) SetBaseInfo(ctx context.Context) error {
 	ss, err := h.Dao.GetServerStatus(ctx)
 	if err != nil {
 		return err
@@ -109,14 +101,14 @@ func (h *Header) setBaseInfo(ctx context.Context) error {
 
 // refresh refreshes the header view every 10 seconds
 // to display the most recent information about the database
-func (h *Header) refresh() {
+func (h *Header) Refresh() {
 	sleep := 10 * time.Second
 	for {
 		time.Sleep(sleep)
 		func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			err := h.setBaseInfo(ctx)
+			err := h.SetBaseInfo(ctx)
 			if err != nil {
 				if strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
 					return
@@ -127,13 +119,14 @@ func (h *Header) refresh() {
 			}
 		}()
 		h.App.QueueUpdateDraw(func() {
-			h.render()
+			h.Render()
 		})
 	}
 }
 
-// render renders the header view
-func (h *Header) render() {
+// Render renders the header view
+func (h *Header) Render() {
+	h.Table.Clear()
 	b := h.baseInfo
 
 	maxInRow := 2
