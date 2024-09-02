@@ -553,6 +553,7 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 			if err != nil {
 				defer modal.ShowError(c.App.Pages, "Error deleting document", err)
 			}
+			c.state.DeleteDoc(objectID)
 		}
 		c.App.Pages.RemovePage(c.deleteModal.GetIdentifier())
 		c.updateContent(ctx, true)

@@ -89,3 +89,8 @@ func (c *CollectionState) AppendDoc(doc primitive.M) {
 	c.Docs[StringifyId(doc["_id"])] = doc
 	c.Count++
 }
+
+func (c *CollectionState) DeleteDoc(id interface{}) {
+	delete(c.Docs, StringifyId(id))
+	c.Count--
+}
