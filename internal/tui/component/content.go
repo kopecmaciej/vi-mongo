@@ -211,6 +211,7 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 
 func (c *Content) Render(setFocus bool) {
 	c.Flex.Clear()
+	c.table.Clear()
 
 	var focusPrimitive tview.Primitive
 	focusPrimitive = c

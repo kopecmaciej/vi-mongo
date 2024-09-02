@@ -22,7 +22,7 @@ type (
 		Help      HelpKeys      `json:"help"`
 		Welcome   WelcomeKeys   `json:"welcome"`
 		Connector ConnectorKeys `json:"connector"`
-		Root      RootKeys      `json:"root"`
+		Main      MainKeys      `json:"main"`
 		Databases DatabasesKeys `json:"databases"`
 		Content   ContentKeys   `json:"content"`
 		DocPeeker DocPeekerKeys `json:"docPeeker"`
@@ -43,21 +43,20 @@ type (
 	// as keys are passed from top to bottom
 	GlobalKeys struct {
 		ToggleFullScreenHelp Key `json:"toggleFullScreenHelp"`
+		OpenConnector        Key `json:"openConnector"`
 	}
 
-	RootKeys struct {
+	MainKeys struct {
 		ToggleFocus    Key `json:"toggleFocus"`
 		FocusDatabases Key `json:"focusDatabases"`
 		FocusContent   Key `json:"focusContent"`
 		HideDatabases  Key `json:"hideDatabases"`
-		OpenConnector  Key `json:"openConnector"`
 	}
 
 	DatabasesKeys struct {
 		FilterBar        Key `json:"filterBar"`
 		ExpandAll        Key `json:"expandAll"`
 		CollapseAll      Key `json:"collapseAll"`
-		ToggleExpand     Key `json:"toggleExpand"`
 		AddCollection    Key `json:"addCollection"`
 		DeleteCollection Key `json:"deleteCollection"`
 	}
@@ -135,9 +134,13 @@ func (k *KeyBindings) loadDefaults() {
 			Runes:       []string{"?"},
 			Description: "Toggle full screen help",
 		},
+		OpenConnector: Key{
+			Keys:        []string{"Ctrl+O"},
+			Description: "Open connector",
+		},
 	}
 
-	k.Root = RootKeys{
+	k.Main = MainKeys{
 		ToggleFocus: Key{
 			Keys:        []string{"Tab", "Backtab"},
 			Description: "Focus next view",
@@ -154,10 +157,6 @@ func (k *KeyBindings) loadDefaults() {
 			Keys:        []string{"Ctrl+N"},
 			Description: "Hide databases",
 		},
-		OpenConnector: Key{
-			Keys:        []string{"Ctrl+O"},
-			Description: "Open connector",
-		},
 	}
 
 	k.Databases = DatabasesKeys{
@@ -172,10 +171,6 @@ func (k *KeyBindings) loadDefaults() {
 		CollapseAll: Key{
 			Runes:       []string{"W"},
 			Description: "Collapse all",
-		},
-		ToggleExpand: Key{
-			Runes:       []string{"T"},
-			Description: "Toggle expand",
 		},
 		AddCollection: Key{
 			Runes:       []string{"A"},

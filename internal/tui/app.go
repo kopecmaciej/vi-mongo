@@ -60,6 +60,9 @@ func (a *App) setKeybindings() {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// TODO: This is temporary solution
 		switch {
+		case a.Keys.Contains(a.Keys.Global.OpenConnector, event.Name()):
+			a.renderConnector()
+			return nil
 		case a.Keys.Contains(a.Keys.Global.ToggleFullScreenHelp, event.Name()):
 			if a.Pages.HasPage(page.HelpPage) {
 				a.Pages.RemovePage(page.HelpPage)

@@ -29,7 +29,7 @@ type (
 		Others    OthersStyle    `yaml:"others"`
 	}
 
-	// GlobalStyles is a struct that contains all the root styles for the application
+	// GlobalStyles is a struct that contains all the global styles for the application
 	GlobalStyles struct {
 		BackgroundColor    Style `yaml:"backgroundColor"`
 		TextColor          Style `yaml:"textColor"`
@@ -71,11 +71,12 @@ type (
 
 	// DatabasesStyle is a struct that contains all the styles for the databases
 	DatabasesStyle struct {
-		NodeColor   Style `yaml:"nodeColor"`
-		NodeSymbol  Style `yaml:"nodeSymbol"`
-		LeafColor   Style `yaml:"leafColor"`
-		LeafSymbol  Style `yaml:"leafSymbol"`
-		BranchColor Style `yaml:"branchColor"`
+		NodeColor        Style `yaml:"nodeColor"`
+		OpenNodeSymbol   Style `yaml:"openNodeSymbol"`
+		ClosedNodeSymbol Style `yaml:"closedNodeSymbol"`
+		LeafColor        Style `yaml:"leafColor"`
+		LeafSymbol       Style `yaml:"leafSymbol"`
+		BranchColor      Style `yaml:"branchColor"`
 	}
 
 	// ContentStyle is a struct that contains all the styles for the content
@@ -170,11 +171,12 @@ func (s *Styles) loadDefaults() {
 	}
 
 	s.Databases = DatabasesStyle{
-		NodeColor:   "#387D44",
-		LeafColor:   "#4368da",
-		BranchColor: "#44bb58",
-		NodeSymbol:  "📁",
-		LeafSymbol:  "📄",
+		NodeColor:        "#387D44",
+		LeafColor:        "#4368da",
+		BranchColor:      "#44bb58",
+		OpenNodeSymbol:   "🗁",
+		ClosedNodeSymbol: "🖿",
+		LeafSymbol:       "🗎",
 	}
 
 	s.Content = ContentStyle{

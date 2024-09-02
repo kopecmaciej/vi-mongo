@@ -126,6 +126,7 @@ func (h *Header) Refresh() {
 
 // Render renders the header view
 func (h *Header) Render() {
+	h.Table.Clear()
 	b := h.baseInfo
 
 	maxInRow := 2

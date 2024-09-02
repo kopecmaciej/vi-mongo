@@ -97,20 +97,20 @@ func (m *Main) setKeybindings() {
 	k := m.App.GetKeys()
 	m.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Root.ToggleFocus, event.Name()):
+		case k.Contains(k.Main.ToggleFocus, event.Name()):
 			if m.App.GetFocus() == m.databases.DbTree {
 				m.App.SetFocus(m.content)
 			} else {
 				m.App.SetFocus(m.databases)
 			}
 			return nil
-		case k.Contains(k.Root.FocusDatabases, event.Name()):
+		case k.Contains(k.Main.FocusDatabases, event.Name()):
 			m.App.SetFocus(m.databases)
 			return nil
-		case k.Contains(k.Root.FocusContent, event.Name()):
+		case k.Contains(k.Main.FocusContent, event.Name()):
 			m.App.SetFocus(m.content)
 			return nil
-		case k.Contains(k.Root.HideDatabases, event.Name()):
+		case k.Contains(k.Main.HideDatabases, event.Name()):
 			if _, ok := m.GetItem(0).(*component.Databases); ok {
 				m.RemoveItem(m.databases)
 				m.App.SetFocus(m.content)
@@ -118,9 +118,6 @@ func (m *Main) setKeybindings() {
 				m.Clear()
 				m.render()
 			}
-			return nil
-		case k.Contains(k.Root.OpenConnector, event.Name()):
-			m.App.Pages.RemovePage(m.GetIdentifier())
 			return nil
 		}
 		return event
