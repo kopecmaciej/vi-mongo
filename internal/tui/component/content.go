@@ -48,8 +48,8 @@ type Content struct {
 	jsonPeeker  *DocPeeker
 	deleteModal *modal.Delete
 	docModifier *DocModifier
-	state       mongo.CollectionState
-	stateMap    map[string]mongo.CollectionState
+	state       *mongo.CollectionState
+	stateMap    map[string]*mongo.CollectionState
 	currentView ViewType
 }
 
@@ -67,8 +67,8 @@ func NewContent() *Content {
 		jsonPeeker:  NewDocPeeker(),
 		deleteModal: modal.NewDeleteModal(),
 		docModifier: NewDocModifier(),
-		state:       mongo.CollectionState{},
-		stateMap:    make(map[string]mongo.CollectionState),
+		state:       &mongo.CollectionState{},
+		stateMap:    make(map[string]*mongo.CollectionState),
 		currentView: TableView,
 	}
 
@@ -188,6 +188,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 
 // HandleDatabaseSelection is called when a database/collection is selected in the DatabaseTree
 func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) error {
+	log.Info().Msgf("Handling database selection: %s.%s", db, coll)
 	c.queryBar.SetText("")
 	c.sortBar.SetText("")
 
@@ -195,14 +196,14 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 	if ok {
 		c.state = state
 	} else {
-		state = mongo.CollectionState{
+		state := mongo.CollectionState{
 			Page: 0,
 		}
 		_, _, _, height := c.table.GetInnerRect()
 		state.Limit = int64(height) - 3
 		state.Db = db
 		state.Coll = coll
-		c.state = state
+		c.state = &state
 	}
 	return c.updateContent(ctx)
 }
@@ -307,7 +308,7 @@ func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, int64, erro
 		return nil, 0, err
 	}
 
-	documents, count, err := c.Dao.ListDocuments(ctx, &c.state, filter, sort)
+	documents, count, err := c.Dao.ListDocuments(ctx, c.state, filter, sort)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -495,15 +496,9 @@ func (c *Content) sortBarListener(ctx context.Context) {
 
 // refreshDocument refreshes the document in the table
 func (c *Content) refreshDocument(doc string) {
-	if c.currentView == JsonView {
-		c.refreshMultiRowDocument(doc)
-	} else if c.currentView == TableView {
-		// c.state.AppendDoc(doc)
-	} else {
-		trimmed := regexp.MustCompile(`(?m)^\s+`).ReplaceAllString(doc, "")
-		trimmed = regexp.MustCompile(`(?m):\s+`).ReplaceAllString(trimmed, ":")
-		c.refreshCell(trimmed)
-	}
+	c.state.UpdateRawDoc(doc)
+
+	c.updateContent(context.Background())
 }
 
 func (c *Content) refreshMultiRowDocument(doc string) {

@@ -59,6 +59,15 @@ func (c *CollectionState) PopulateDocs(docs []primitive.M) {
 	}
 }
 
+func (c *CollectionState) UpdateRawDoc(doc string) {
+	docMap, err := ParseJsonToBson(doc)
+	if err != nil {
+		return
+	}
+	c.Docs[StringifyId(docMap["_id"])] = docMap
+
+}
+
 func (c *CollectionState) AppendDoc(doc primitive.M) {
 	c.Docs[StringifyId(doc["_id"])] = doc
 	c.Count++

@@ -244,20 +244,25 @@ func (i *InputBar) Toggle(text string) {
 
 func (i *InputBar) handleEvents() {
 	for event := range i.Listener {
-		sender, eventKey := event.Sender, event.EventKey
-		switch sender {
-		case i.historyModal.GetIdentifier():
-			switch {
-			case i.App.Keys.Contains(i.App.Keys.History.AcceptEntry, eventKey.Name()):
-				i.App.QueueUpdateDraw(func() {
-					i.SetText(i.historyModal.GetText())
-					i.App.SetFocus(i)
-				})
-			case i.App.Keys.Contains(i.App.Keys.History.CloseHistory, eventKey.Name()):
-				i.App.QueueUpdateDraw(func() {
-					i.App.SetFocus(i)
-				})
-			}
+		switch sender := event.Sender; {
+		case i.historyModal != nil && sender == i.historyModal.GetIdentifier():
+			i.handleHistoryModalEvent(event.EventKey)
+		default:
+			continue
 		}
+	}
+}
+
+func (i *InputBar) handleHistoryModalEvent(eventKey *tcell.EventKey) {
+	switch {
+	case i.App.Keys.Contains(i.App.Keys.History.AcceptEntry, eventKey.Name()):
+		i.App.QueueUpdateDraw(func() {
+			i.SetText(i.historyModal.GetText())
+			i.App.SetFocus(i)
+		})
+	case i.App.Keys.Contains(i.App.Keys.History.CloseHistory, eventKey.Name()):
+		i.App.QueueUpdateDraw(func() {
+			i.App.SetFocus(i)
+		})
 	}
 }

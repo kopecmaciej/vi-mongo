@@ -4,6 +4,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/component"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 )
@@ -54,6 +55,13 @@ func (m *Main) Render() {
 	m.databases.SetSelectFunc(m.content.HandleDatabaseSelection)
 
 	m.render()
+}
+
+// UpdateDao updates the dao in the components
+func (m *Main) UpdateDao(dao *mongo.Dao) {
+	m.databases.UpdateDao(dao)
+	m.header.UpdateDao(dao)
+	m.content.UpdateDao(dao)
 }
 
 func (m *Main) initComponents() error {
