@@ -2,9 +2,9 @@ package mongo
 
 var (
 	objectID = MongoKeyword{
-		Display:     "ObjectId(\"\"))",
-		InsertText:  "ObjectId(\"<$0>\")",
-		Description: "ObjectId is a 12-byte BSON type",
+		Display:     "ObjectID(\"\"))",
+		InsertText:  "ObjectID(\"<$0>\")",
+		Description: "ObjectID is a 12-byte BSON type",
 	}
 	comparisonOperators = []MongoKeyword{
 		{

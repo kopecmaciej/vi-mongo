@@ -14,7 +14,7 @@ const (
 	TypeInt      = "Int"
 	TypeDouble   = "Double"
 	TypeBool     = "Bool"
-	TypeObjectId = "ObjectId"
+	TypeObjectId = "ObjectID"
 	TypeDate     = "Date"
 	TypeArray    = "Array"
 	TypeObject   = "Object"

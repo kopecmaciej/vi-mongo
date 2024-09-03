@@ -129,27 +129,27 @@ type (
 	}
 
 	OthersStyle struct {
-		ButtonsTextColor       Style `yaml:"buttonsTextColor"`
-		ButtonsBackgroundColor Style `yaml:"buttonsBackgroundColor"`
+		ButtonsTextColor     Style `yaml:"buttonsTextColor"`
+		ButtonsSelectedColor Style `yaml:"buttonsSelectedColor"`
 	}
 )
 
 func (s *Styles) loadDefaults() {
 	s.Global = GlobalStyles{
 		BackgroundColor:    "#0F172A",
-		TextColor:          "#FFFFFF",
-		SecondaryTextColor: "#F1FA8C",
+		TextColor:          "#E2E8F0",
+		SecondaryTextColor: "#FDE68A",
 		BorderColor:        "#387D44",
-		FocusColor:         "#50FA7B",
+		FocusColor:         "#4ADE80",
 		TitleColor:         "#387D44",
 		GraphicsColor:      "#387D44",
 	}
 
 	s.Welcome = WelcomeStyle{
-		TextColor:                "#F1FA8C",
-		FormLabelColor:           "#F1FA8C",
-		FormInputColor:           "#F1FA8C",
-		FormInputBackgroundColor: "#163694",
+		TextColor:                "#FDE68A",
+		FormLabelColor:           "#FDE68A",
+		FormInputColor:           "#E2E8F0",
+		FormInputBackgroundColor: "#1E293B",
 	}
 
 	s.Connector = ConnectorStyle{
@@ -160,11 +160,11 @@ func (s *Styles) loadDefaults() {
 		ListTextColor:               "#F1FA8C",
 		ListSelectedTextColor:       "#50FA7B",
 		ListSelectedBackgroundColor: "#163694",
-		ListSecondaryTextColor:      "#50FA7B",
+		ListSecondaryTextColor:      "#387D44",
 	}
 
 	s.Header = HeaderStyle{
-		KeyColor:       "#F1FA8C",
+		KeyColor:       "#FDE68A",
 		ValueColor:     "#387D44",
 		ActiveSymbol:   "●",
 		InactiveSymbol: "○",
@@ -172,60 +172,60 @@ func (s *Styles) loadDefaults() {
 
 	s.Databases = DatabasesStyle{
 		NodeColor:        "#387D44",
-		LeafColor:        "#F1FA8C",
-		BranchColor:      "#44bb58",
-		OpenNodeSymbol:   "[#e4da20]🗁[-:-:-]",
-		ClosedNodeSymbol: "[#e4da20]🖿[-:-:-]",
-		LeafSymbol:       "[#5a8f45]🗎[-:-:-]",
+		LeafColor:        "#E2E8F0",
+		BranchColor:      "#4ADE80",
+		OpenNodeSymbol:   "[#FDE68A]🗁[-:-:-]",
+		ClosedNodeSymbol: "[#FDE68A]🖿[-:-:-]",
+		LeafSymbol:       "[#387D44]🗎[-:-:-]",
 	}
 
 	s.Content = ContentStyle{
-		StatusTextColor:          "#F1FA8C",
-		HeaderRowBackgroundColor: "#162036",
-		ColumnKeyColor:           "#F1FA8C",
-		ColumnTypeColor:          "#689e76",
+		StatusTextColor:          "#FDE68A",
+		HeaderRowBackgroundColor: "#1E293B",
+		ColumnKeyColor:           "#FDE68A",
+		ColumnTypeColor:          "#387D44",
 		CellTextColor:            "#387D44",
-		ActiveRowColor:           "#50FA7B",
-		SelectedRowColor:         "#50FA7B",
+		ActiveRowColor:           "#4ADE80",
+		SelectedRowColor:         "#4ADE80",
 		SeparatorSymbol:          "|",
-		SeparatorColor:           "#6c6e6d",
+		SeparatorColor:           "#334155",
 	}
 
 	s.DocPeeker = DocPeekerStyle{
 		KeyColor:       "#387D44",
-		ValueColor:     "#FFFFFF",
+		ValueColor:     "#E2E8F0",
 		ArrayColor:     "#387D44",
-		HighlightColor: "#163694",
-		BracketColor:   "#FF5555",
+		HighlightColor: "#3a4963",
+		BracketColor:   "#FDE68A",
 	}
 
 	s.InputBar = InputBarStyle{
-		LabelColor: "#F1FA8C",
-		InputColor: "#FFFFFF",
+		LabelColor: "#FDE68A",
+		InputColor: "#E2E8F0",
 		Autocomplete: AutocompleteStyle{
-			BackgroundColor:       "#163694",
-			TextColor:             "#F1FA8C",
-			ActiveBackgroundColor: "#A4A4A4",
-			ActiveTextColor:       "#FFFFFF",
-			SecondaryTextColor:    "#50D78E",
+			BackgroundColor:       "#1E293B",
+			TextColor:             "#E2E8F0",
+			ActiveBackgroundColor: "#387D44",
+			ActiveTextColor:       "#0F172A",
+			SecondaryTextColor:    "#FDE68A",
 		},
 	}
 
 	s.History = HistoryStyle{
-		TextColor:               "#F1FA8C",
-		SelectedTextColor:       "#50FA7B",
-		SelectedBackgroundColor: "#163694",
+		TextColor:               "#E2E8F0",
+		SelectedTextColor:       "#0F172A",
+		SelectedBackgroundColor: "#387D44",
 	}
 
 	s.Help = HelpStyle{
-		HeaderColor:      "#F1FA8C",
-		KeyColor:         "#F1FA8C",
-		DescriptionColor: "#FFFFFF",
+		HeaderColor:      "#387D44",
+		KeyColor:         "#FDE68A",
+		DescriptionColor: "#E2E8F0",
 	}
 
 	s.Others = OthersStyle{
-		ButtonsTextColor:       "#F1FA8C",
-		ButtonsBackgroundColor: "#0F172A",
+		ButtonsTextColor:     "#0F172A",
+		ButtonsSelectedColor: "#387D44",
 	}
 }
 
@@ -238,12 +238,12 @@ func LoadStyles() (*Styles, error) {
 		return defaultStyles, nil
 	}
 
-	stylePath, err := getStylePath()
+	styleFilePath, err := getStylePath()
 	if err != nil {
 		return nil, err
 	}
 
-	return util.LoadConfigFile(defaultStyles, stylePath)
+	return util.LoadConfigFile(defaultStyles, styleFilePath)
 }
 
 func (s *Styles) LoadMainStyles() {
@@ -300,7 +300,7 @@ func isHexColor(s string) bool {
 }
 
 func getStylePath() (string, error) {
-	configPath, err := GetConfigDir()
+	configPath, err := util.GetConfigDir()
 	if err != nil {
 		return "", err
 	}

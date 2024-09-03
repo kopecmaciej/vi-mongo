@@ -47,17 +47,17 @@ func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.Ob
 		return primitive.NilObjectID, fmt.Errorf("error unmarshaling JSON: %v", err)
 	}
 
-	rawID, err := d.Dao.InsetDocument(ctx, db, coll, document)
+	rawId, err := d.Dao.InsetDocument(ctx, db, coll, document)
 	if err != nil {
 		return primitive.NilObjectID, fmt.Errorf("error inserting document: %v", err)
 	}
 
-	ID, ok := rawID.(primitive.ObjectID)
+	id, ok := rawId.(primitive.ObjectID)
 	if !ok {
 		return primitive.NilObjectID, fmt.Errorf("error converting _id to primitive.ObjectID")
 	}
 
-	return ID, nil
+	return id, nil
 }
 
 // Edit opens the editor with the document and saves it if it was changed
@@ -108,12 +108,12 @@ func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocumen
 		return primitive.NilObjectID, fmt.Errorf("error inserting document: %v", err)
 	}
 
-	ID, ok := rawID.(primitive.ObjectID)
+	id, ok := rawID.(primitive.ObjectID)
 	if !ok {
 		return primitive.NilObjectID, fmt.Errorf("error converting _id to primitive.ObjectID")
 	}
 
-	return ID, nil
+	return id, nil
 }
 
 // updateDocument saves the document to the database

@@ -6,16 +6,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/adrg/xdg"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
 
 const (
-	ConfigDirName  = "vi-mongo"
-	ConfigFileName = "config.yaml"
-	LogPath        = "/tmp/vi-mongo.log"
+	ConfigFile = "config.yaml"
+	LogPath    = "/tmp/vi-mongo.log"
 )
 
 type MongoConfig struct {
@@ -83,22 +81,14 @@ func (c *Config) loadDefaults() {
 	c.ShowWelcomePage = false
 }
 
-// GetConfigDir returns the path to the config directory
-func GetConfigDir() (string, error) {
-	configPath, err := xdg.ConfigFile(ConfigDirName)
-	if err != nil {
-		return "", err
-	}
-	return configPath, nil
-}
-
 // GetConfigPath returns the path to the config file
 func GetConfigPath() (string, error) {
-	configPath, err := xdg.ConfigFile(ConfigDirName)
+	configPath, err := util.GetConfigDir()
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s/%s", configPath, ConfigFileName), nil
+
+	return fmt.Sprintf("%s/%s", configPath, ConfigFile), nil
 }
 
 // UpdateConfig updates the config file with the new settings

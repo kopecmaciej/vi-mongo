@@ -3,7 +3,6 @@ package mongo
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -63,24 +62,5 @@ func StringifyId(id interface{}) string {
 		return v.Hex()
 	default:
 		return fmt.Sprintf("%v", v)
-	}
-}
-
-// EnsureObjectId ensures that the id is a valid ObjectId
-func EnsureObjectIdOrString(id interface{}) interface{} {
-	switch v := id.(type) {
-	case primitive.ObjectID:
-		return v
-	case string:
-		if strings.HasPrefix(v, "$oid") {
-			objectId, err := primitive.ObjectIDFromHex(v[5:])
-			if err != nil {
-				return fmt.Sprintf("%v", v)
-			}
-			return objectId
-		}
-		return v
-	default:
-		return nil
 	}
 }

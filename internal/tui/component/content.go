@@ -14,6 +14,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -71,7 +72,7 @@ func NewContent() *Content {
 		currentView: TableView,
 	}
 
-	c.SetIdentifier(ContentComponent)
+	c.table.SetIdentifier(ContentComponent)
 	c.SetIdentifierFunc(c.GetIdentifier)
 	c.SetAfterInitFunc(c.init)
 
@@ -169,6 +170,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return c.handleToggleQuery()
 		case k.Contains(k.Content.ToggleSort, event.Name()):
 			return c.handleToggleSort()
+		// TODO: Add automatic sort by given column
 		case k.Contains(k.Content.Refresh, event.Name()):
 			return c.handleRefresh(ctx)
 		case k.Contains(k.Content.NextPage, event.Name()):
@@ -302,7 +304,7 @@ func (c *Content) renderSingleRowView(startRow int, documents []primitive.M) {
 		}
 		dataCell := tview.NewTableCell(jsoned).
 			SetAlign(tview.AlignLeft).
-			SetReference(mongo.EnsureObjectIdOrString(_id))
+			SetReference(_id)
 
 		c.table.SetCell(row, 0, dataCell)
 		row++
@@ -429,7 +431,7 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	return nil
 }
 
-func (c *Content) jsonViewDocument(doc string, row *int, id interface{}) {
+func (c *Content) jsonViewDocument(doc string, row *int, _id interface{}) {
 	indentedJson, err := mongo.IndentJson(doc)
 	if err != nil {
 		return
@@ -443,7 +445,7 @@ func (c *Content) jsonViewDocument(doc string, row *int, id interface{}) {
 		SetAlign(tview.AlignLeft).
 		SetTextColor(tcell.ColorGreen).
 		SetSelectable(false).
-		SetReference(mongo.EnsureObjectIdOrString(id)))
+		SetReference(_id))
 
 	*row++
 
@@ -472,7 +474,7 @@ func (c *Content) jsonViewDocument(doc string, row *int, id interface{}) {
 		SetAlign(tview.AlignLeft).
 		SetTextColor(tcell.ColorGreen).
 		SetSelectable(false).
-		SetReference(mongo.EnsureObjectIdOrString(id)))
+		SetReference(_id))
 
 	*row++
 }
@@ -521,8 +523,8 @@ func (c *Content) refreshDocument(ctx context.Context, doc string) {
 	c.updateContent(ctx, true)
 }
 
-// addCell adds a new cell to the table
-func (c *Content) addCell(content string) {
+// addNewDocument adds a new cell to the table
+func (c *Content) addNewDocument(content string) {
 	maxRow := c.table.GetRowCount()
 	c.table.SetCell(maxRow, 0, tview.NewTableCell(content).SetAlign(tview.AlignLeft))
 }
@@ -553,24 +555,33 @@ func (c *Content) viewJson(jsonString string) error {
 }
 
 func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
-	objectID, err := mongo.GetIDFromJSON(jsonString)
+	objectId, err := mongo.GetIDFromJSON(jsonString)
 	if err != nil {
 		return err
 	}
 
-	stringifyId := mongo.StringifyId(objectID)
+	stringifyId := mongo.StringifyId(objectId)
 
-	c.deleteModal.SetText("Are you sure you want to delete document of ID: [blue]" + stringifyId)
+	c.deleteModal.SetText("Are you sure you want to delete document of id: [blue]" + stringifyId)
 	c.deleteModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		if buttonIndex == 0 {
-			err = c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectID)
+		if buttonLabel == "[red]Delete" {
+			err = c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectId)
 			if err != nil {
-				defer modal.ShowError(c.App.Pages, "Error deleting document", err)
+				modal.ShowError(c.App.Pages, "Error deleting document", err)
+				return
 			}
-			c.state.DeleteDoc(objectID)
+			log.Info().Msgf("document deleted: %s", objectId)
+			c.state.DeleteDoc(objectId)
 		}
 		c.App.Pages.RemovePage(c.deleteModal.GetIdentifier())
 		c.updateContent(ctx, true)
+
+		row, col := c.table.GetSelection()
+		if row == c.table.GetRowCount() {
+			c.table.Select(row-1, col)
+		} else {
+			c.table.Select(row, col)
+		}
 	})
 
 	c.App.Pages.AddPage(c.deleteModal.GetIdentifier(), c.deleteModal, true, true)
@@ -666,22 +677,18 @@ func (c *Content) handleViewDocument(row, coll int) *tcell.EventKey {
 }
 
 func (c *Content) handleAddDocument(ctx context.Context) *tcell.EventKey {
-	ID, err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
+	id, err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error adding document", err)
 		return nil
 	}
-	insertedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
+	insertedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, id)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error getting inserted document", err)
 		return nil
 	}
-	strDoc, err := mongo.ParseBsonDocument(insertedDoc)
-	if err != nil {
-		modal.ShowError(c.App.Pages, "Error stringifying document", err)
-		return nil
-	}
-	c.addCell(strDoc)
+	c.state.AppendDoc(insertedDoc)
+	c.updateContent(ctx, true)
 	return nil
 }
 
@@ -709,15 +716,18 @@ func (c *Content) handleDuplicateDocument(ctx context.Context, row, coll int) *t
 		modal.ShowError(c.App.Pages, "Error duplicating document", err)
 		return nil
 	}
-	ID, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, doc)
+	id, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, doc)
 	if err != nil {
-		defer modal.ShowError(c.App.Pages, "Error duplicating document", err)
+		modal.ShowError(c.App.Pages, "Error duplicating document", err)
+		return nil
 	}
-	duplicatedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, ID)
+	duplicatedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, id)
 	if err != nil {
-		defer modal.ShowError(c.App.Pages, "Error getting inserted document", err)
+		modal.ShowError(c.App.Pages, "Error getting inserted document", err)
+		return nil
 	}
 	c.state.AppendDoc(duplicatedDoc)
+	c.updateContent(ctx, true)
 	return nil
 }
 

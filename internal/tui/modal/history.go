@@ -9,6 +9,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/primitives"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 )
 
 const (
@@ -184,7 +185,7 @@ func (h *History) loadHistory() ([]string, error) {
 }
 
 func getHisotryFilePath() string {
-	configDir, err := config.GetConfigDir()
+	configDir, err := util.GetConfigDir()
 	if err != nil {
 		return ""
 	}

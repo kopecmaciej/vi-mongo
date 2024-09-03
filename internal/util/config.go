@@ -7,7 +7,12 @@ import (
 	"path/filepath"
 	"reflect"
 
+	"github.com/adrg/xdg"
 	"gopkg.in/yaml.v3"
+)
+
+const (
+	ConfigDir = "vi-mongo"
 )
 
 // MergeConfigs merges the loaded config with the default config
@@ -39,7 +44,7 @@ func mergeConfigsRecursive(loaded, defaultValue reflect.Value) {
 // LoadConfigFile loads a configuration file, merges it with defaults, and returns the result
 func LoadConfigFile[T any](defaultConfig *T, configPath string) (*T, error) {
 	// Ensure the config directory exists
-	err := ensureConfigDirExist(configPath)
+	err := ensureConfigDirExist()
 	if err != nil {
 		return nil, err
 	}
@@ -101,9 +106,22 @@ func unmarshalConfig[T any](data []byte, configPath string, config *T) error {
 
 // ensureConfigDirExist ensures the config directory exists
 // If it does not exist, it will be created
-func ensureConfigDirExist(configPath string) error {
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return os.MkdirAll(configPath, 0755)
+func ensureConfigDirExist() error {
+	configDir, err := GetConfigDir()
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(configDir); os.IsNotExist(err) {
+		return os.MkdirAll(configDir, 0755)
 	}
 	return nil
+}
+
+// GetConfigDir returns the path to the config directory
+func GetConfigDir() (string, error) {
+	configPath, err := xdg.ConfigFile(ConfigDir)
+	if err != nil {
+		return "", err
+	}
+	return configPath, nil
 }

@@ -197,11 +197,11 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "View document",
 		},
 		AddDocument: Key{
-			Runes:       []string{"A"},
+			Runes:       []string{"a"},
 			Description: "Add document",
 		},
 		EditDocument: Key{
-			Runes:       []string{"E"},
+			Runes:       []string{"e"},
 			Description: "Edit document",
 		},
 		DuplicateDocument: Key{
@@ -485,7 +485,7 @@ func (k *Key) String() string {
 }
 
 func getKeybindingsPath() (string, error) {
-	configDir, err := GetConfigDir()
+	configDir, err := util.GetConfigDir()
 	if err != nil {
 		return "", err
 	}

@@ -46,7 +46,7 @@ func (d *Delete) setStyle() {
 	d.SetTitle(" Delete ")
 	d.SetBorderPadding(0, 0, 1, 1)
 	d.SetButtonTextColor(d.style.ButtonsTextColor.Color())
-	d.SetButtonBackgroundColor(d.style.ButtonsBackgroundColor.Color())
+	d.SetButtonActivatedStyle(tcell.StyleDefault.Background(d.style.ButtonsSelectedColor.Color()))
 }
 
 func (d *Delete) setKeybindings() {

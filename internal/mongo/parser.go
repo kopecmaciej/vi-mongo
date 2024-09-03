@@ -63,7 +63,7 @@ func ParseBsonValue(value interface{}) interface{} {
 	return parsed
 }
 
-// ParseStringQuery transforms a query string with ObjectId into a filter map compatible with MongoDB's BSON.
+// ParseStringQuery transforms a query string with ObjectID into a filter map compatible with MongoDB's BSON.
 // If keys are not quoted, this function will quote them.
 func ParseStringQuery(query string) (map[string]interface{}, error) {
 	var parseError error
@@ -75,7 +75,7 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 		query = util.QuoteUnquotedKeys(query)
 	}
 
-	query = strings.ReplaceAll(query, "ObjectId(\"", "{\"$oid\": \"")
+	query = strings.ReplaceAll(query, "ObjectID(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "\")", "\"}")
 
 	dateRegex := regexp.MustCompile(`\{\"\$date\"\s*:\s*\"(.*?)\"\}`)
@@ -127,7 +127,7 @@ func ParseJsonToBson(jsonDoc string) (primitive.M, error) {
 }
 
 // convertToBson converts a map[string]interface{} to a primitive.M document
-// with MongoDB-compatible types (ObjectId for $oid and DateTime for $date)
+// with MongoDB-compatible types (ObjectID for $oid and DateTime for $date)
 func convertToBson(doc map[string]interface{}) (primitive.M, error) {
 	convertedDoc := make(primitive.M)
 	for key, value := range doc {
