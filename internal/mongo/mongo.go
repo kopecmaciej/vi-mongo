@@ -1,6 +1,10 @@
 package mongo
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"sort"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type ServerStatus struct {
 	Ok             int32  `bson:"ok"`
@@ -35,6 +39,23 @@ type CollectionState struct {
 	Docs   map[string]primitive.M
 }
 
+func (c *CollectionState) GetSortedDocs() []primitive.M {
+	keys := make([]string, 0, len(c.Docs))
+	for k := range c.Docs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	docs := make([]primitive.M, 0, len(keys))
+	for _, k := range keys {
+		docCopy := make(primitive.M)
+		for key, value := range c.Docs[k] {
+			docCopy[key] = value
+		}
+		docs = append(docs, docCopy)
+	}
+	return docs
+}
 func (c *CollectionState) GetDocById(id interface{}) primitive.M {
 	return c.Docs[StringifyId(id)]
 }
@@ -59,7 +80,21 @@ func (c *CollectionState) PopulateDocs(docs []primitive.M) {
 	}
 }
 
+func (c *CollectionState) UpdateRawDoc(doc string) {
+	docMap, err := ParseJsonToBson(doc)
+	if err != nil {
+		return
+	}
+	c.Docs[StringifyId(docMap["_id"])] = docMap
+
+}
+
 func (c *CollectionState) AppendDoc(doc primitive.M) {
 	c.Docs[StringifyId(doc["_id"])] = doc
 	c.Count++
+}
+
+func (c *CollectionState) DeleteDoc(id interface{}) {
+	delete(c.Docs, StringifyId(id))
+	c.Count--
 }

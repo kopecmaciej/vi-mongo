@@ -8,12 +8,19 @@ import (
 )
 
 type (
+	MessageType string
+	// Messages is a list of messages that can be sent to the manager
+	Message struct {
+		Type MessageType
+		Data interface{}
+	}
+
 	// EventMsg is a wrapper for tcell.EventKey that also contains
 	// the sender of the event
 	EventMsg struct {
 		*tcell.EventKey
 		Sender  tview.Identifier
-		Message interface{}
+		Message Message
 	}
 
 	// ElementManager is a helper to manage different Elements

@@ -124,8 +124,14 @@ func (a *App) initAndRenderMain() error {
 	if err := a.connectToMongo(); err != nil {
 		return err
 	}
-	if err := a.mainView.Init(a.App); err != nil {
-		return err
+
+	// if main view is already initialized, we just update dao
+	if a.mainView.App != nil || a.mainView.Dao != nil {
+		a.mainView.UpdateDao(a.App.Dao)
+	} else {
+		if err := a.mainView.Init(a.App); err != nil {
+			return err
+		}
 	}
 
 	a.mainView.Render()

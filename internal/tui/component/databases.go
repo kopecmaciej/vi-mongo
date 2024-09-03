@@ -9,6 +9,7 @@ import (
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 )
 
 const (
@@ -52,14 +53,10 @@ func (s *Databases) init() error {
 		return err
 	}
 
-	if err := s.initialDbFetch(ctx); err != nil {
-		return err
-	}
-
 	if err := s.filterBar.Init(s.App); err != nil {
 		return err
 	}
-	s.filterBarListener(ctx)
+	s.filterBarHandler(ctx)
 
 	return nil
 }
@@ -93,12 +90,17 @@ func (s *Databases) Render() {
 	}
 	defer s.App.SetFocus(primitive)
 
-	s.renderDbTree()
+	if err := s.listDbsAndCollections(context.Background()); err != nil {
+		modal.ShowError(s.App.Pages, "Failed to list databases and collections", err)
+		return
+	}
+
+	s.DbTree.Render(context.Background(), s.dbsWithColls, false)
 
 	s.Flex.AddItem(s.DbTree, 0, 1, true)
 }
 
-func (s *Databases) filterBarListener(ctx context.Context) {
+func (s *Databases) filterBarHandler(ctx context.Context) {
 	accceptFunc := func(text string) {
 		s.filter(ctx, text)
 	}
@@ -144,11 +146,7 @@ func (s *Databases) filter(ctx context.Context, text string) {
 	s.DbTree.Render(ctx, filtered, expand)
 }
 
-func (s *Databases) renderDbTree() {
-	s.DbTree.Render(context.Background(), s.dbsWithColls, false)
-}
-
-func (s *Databases) initialDbFetch(ctx context.Context) error {
+func (s *Databases) listDbsAndCollections(ctx context.Context) error {
 	dbsWitColls, err := s.Dao.ListDbsWithCollections(ctx, "")
 	if err != nil {
 		return err

@@ -60,8 +60,6 @@ func StringifyId(id interface{}) string {
 	switch v := id.(type) {
 	case primitive.ObjectID:
 		return v.Hex()
-	case string:
-		return v
 	default:
 		return fmt.Sprintf("%v", v)
 	}
