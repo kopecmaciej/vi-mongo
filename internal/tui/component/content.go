@@ -127,8 +127,6 @@ func (c *Content) setStyle() {
 	c.tableHeader.SetText("Documents: 0, Page: 0, Limit: 0")
 	c.tableHeader.SetTextColor(c.style.StatusTextColor.Color())
 
-	c.table.SetFixed(1, 0)
-
 	c.view.SetBorder(true)
 	c.view.SetTitle(" JSON View ")
 	c.view.SetTitleAlign(tview.AlignCenter)
@@ -593,7 +591,7 @@ func (c *Content) getTableViewDocument(row, coll int) (string, error) {
 // Event handlers
 
 func (c *Content) handleScrolling(row int) {
-	if row == 3 {
+	if row == 1 && c.currentView == JsonView {
 		c.table.ScrollToBeginning()
 	}
 	if row == c.table.GetRowCount()-2 {

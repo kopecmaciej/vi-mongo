@@ -48,7 +48,11 @@ func (c *CollectionState) GetSortedDocs() []primitive.M {
 
 	docs := make([]primitive.M, 0, len(keys))
 	for _, k := range keys {
-		docs = append(docs, c.Docs[k])
+		docCopy := make(primitive.M)
+		for key, value := range c.Docs[k] {
+			docCopy[key] = value
+		}
+		docs = append(docs, docCopy)
 	}
 	return docs
 }
