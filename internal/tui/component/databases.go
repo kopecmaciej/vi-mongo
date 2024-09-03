@@ -69,7 +69,7 @@ func (s *Databases) setKeybindings() {
 	keys := s.App.GetKeys()
 	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case keys.Contains(keys.Databases.FilterBar, event.Name()):
+		case keys.Contains(keys.DatabaseTree.FilterBar, event.Name()):
 			s.filterBar.Enable()
 			s.Render()
 			return nil

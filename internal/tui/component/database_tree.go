@@ -80,14 +80,14 @@ func (t *DatabaseTree) setKeybindings(ctx context.Context) {
 	k := t.App.GetKeys()
 	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Databases.ExpandAll, event.Name()):
+		case k.Contains(k.DatabaseTree.ExpandAll, event.Name()):
 			t.GetRoot().ExpandAll()
 			t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
 				t.setNewSymbol(node, t.style.ClosedNodeSymbol.String(), t.style.OpenNodeSymbol.String())
 				return true
 			})
 			return nil
-		case k.Contains(k.Databases.CollapseAll, event.Name()):
+		case k.Contains(k.DatabaseTree.CollapseAll, event.Name()):
 			t.GetRoot().CollapseAll()
 			t.GetRoot().SetExpanded(true)
 			t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
@@ -95,10 +95,10 @@ func (t *DatabaseTree) setKeybindings(ctx context.Context) {
 				return true
 			})
 			return nil
-		case k.Contains(k.Databases.AddCollection, event.Name()):
+		case k.Contains(k.DatabaseTree.AddCollection, event.Name()):
 			t.addCollection(ctx)
 			return nil
-		case k.Contains(k.Databases.DeleteCollection, event.Name()):
+		case k.Contains(k.DatabaseTree.DeleteCollection, event.Name()):
 			t.deleteCollection(ctx)
 			return nil
 		}

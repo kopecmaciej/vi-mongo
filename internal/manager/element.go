@@ -7,6 +7,10 @@ import (
 	"github.com/kopecmaciej/tview"
 )
 
+const (
+	FocusChanged MessageType = "focus_changed"
+)
+
 type (
 	MessageType string
 	// Messages is a list of messages that can be sent to the manager

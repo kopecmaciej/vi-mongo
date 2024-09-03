@@ -182,10 +182,10 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Content.PreviousPage, event.Name()):
 			return c.handlePreviousPage(ctx)
 		// TODO: use this in multiple delete, think of other usage
-		case k.Contains(k.Content.MultipleSelect, event.Name()):
-			return c.handleMultipleSelect(row)
-		case k.Contains(k.Content.ClearSelection, event.Name()):
-			return c.handleClearSelection()
+		// case k.Contains(k.Content.MultipleSelect, event.Name()):
+		// 	return c.handleMultipleSelect(row)
+		// case k.Contains(k.Content.ClearSelection, event.Name()):
+		// 	return c.handleClearSelection()
 		case k.Contains(k.Content.CopyLine, event.Name()):
 			return c.handleCopyLine(row, coll)
 		}
@@ -523,12 +523,6 @@ func (c *Content) refreshDocument(ctx context.Context, doc string) {
 	c.updateContent(ctx, true)
 }
 
-// addNewDocument adds a new cell to the table
-func (c *Content) addNewDocument(content string) {
-	maxRow := c.table.GetRowCount()
-	c.table.SetCell(maxRow, 0, tview.NewTableCell(content).SetAlign(tview.AlignLeft))
-}
-
 func (c *Content) viewJson(jsonString string) error {
 	c.view.Clear()
 
@@ -817,10 +811,10 @@ func (c *Content) handlePreviousPage(ctx context.Context) *tcell.EventKey {
 	return nil
 }
 
-func (c *Content) handleMultipleSelect(row int) *tcell.EventKey {
-	c.table.ToggleRowSelection(row)
-	return nil
-}
+// func (c *Content) handleMultipleSelect(row int) *tcell.EventKey {
+// 	c.table.ToggleRowSelection(row)
+// 	return nil
+// }
 
 func (c *Content) handleClearSelection() *tcell.EventKey {
 	c.table.ClearSelection()

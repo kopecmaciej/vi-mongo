@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 
@@ -18,15 +19,15 @@ type (
 	// There are views that have only keybindings and some have
 	// nested keybindings of their children views
 	KeyBindings struct {
-		Global    GlobalKeys    `json:"global"`
-		Help      HelpKeys      `json:"help"`
-		Welcome   WelcomeKeys   `json:"welcome"`
-		Connector ConnectorKeys `json:"connector"`
-		Main      MainKeys      `json:"main"`
-		Databases DatabasesKeys `json:"databases"`
-		Content   ContentKeys   `json:"content"`
-		DocPeeker DocPeekerKeys `json:"docPeeker"`
-		History   HistoryKeys   `json:"history"`
+		Global       GlobalKeys       `json:"global"`
+		Help         HelpKeys         `json:"help"`
+		Welcome      WelcomeKeys      `json:"welcome"`
+		Connector    ConnectorKeys    `json:"connector"`
+		Main         MainKeys         `json:"main"`
+		DatabaseTree DatabaseTreeKeys `json:"databaseTree"`
+		Content      ContentKeys      `json:"content"`
+		DocPeeker    DocPeekerKeys    `json:"docPeeker"`
+		History      HistoryKeys      `json:"history"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -53,7 +54,7 @@ type (
 		HideDatabases  Key `json:"hideDatabases"`
 	}
 
-	DatabasesKeys struct {
+	DatabaseTreeKeys struct {
 		FilterBar        Key `json:"filterBar"`
 		ExpandAll        Key `json:"expandAll"`
 		CollapseAll      Key `json:"collapseAll"`
@@ -62,24 +63,24 @@ type (
 	}
 
 	ContentKeys struct {
-		ChangeView        Key      `json:"switchView"`
-		PeekDocument      Key      `json:"peekDocument"`
-		ViewDocument      Key      `json:"viewDocument"`
-		AddDocument       Key      `json:"addDocument"`
-		EditDocument      Key      `json:"editDocument"`
-		DuplicateDocument Key      `json:"duplicateDocument"`
-		DeleteDocument    Key      `json:"deleteDocument"`
-		MultipleSelect    Key      `json:"multipleSelect"`
-		ClearSelection    Key      `json:"clearSelection"`
-		CopyLine          Key      `json:"copyValue"`
-		Refresh           Key      `json:"refresh"`
-		ToggleQuery       Key      `json:"toggleQuery"`
-		NextDocument      Key      `json:"nextDocument"`
-		PreviousDocument  Key      `json:"previousDocument"`
-		NextPage          Key      `json:"nextPage"`
-		PreviousPage      Key      `json:"previousPage"`
-		QueryBar          QueryBar `json:"queryBar"`
-		ToggleSort        Key      `json:"toggleSort"`
+		ChangeView        Key `json:"switchView"`
+		PeekDocument      Key `json:"peekDocument"`
+		ViewDocument      Key `json:"viewDocument"`
+		AddDocument       Key `json:"addDocument"`
+		EditDocument      Key `json:"editDocument"`
+		DuplicateDocument Key `json:"duplicateDocument"`
+		DeleteDocument    Key `json:"deleteDocument"`
+		// MultipleSelect    Key      `json:"multipleSelect"`
+		// ClearSelection   Key      `json:"clearSelection"`
+		CopyLine         Key      `json:"copyValue"`
+		Refresh          Key      `json:"refresh"`
+		ToggleQuery      Key      `json:"toggleQuery"`
+		NextDocument     Key      `json:"nextDocument"`
+		PreviousDocument Key      `json:"previousDocument"`
+		NextPage         Key      `json:"nextPage"`
+		PreviousPage     Key      `json:"previousPage"`
+		QueryBar         QueryBar `json:"queryBar"`
+		ToggleSort       Key      `json:"toggleSort"`
 	}
 
 	QueryBar struct {
@@ -159,7 +160,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 	}
 
-	k.Databases = DatabasesKeys{
+	k.DatabaseTree = DatabaseTreeKeys{
 		FilterBar: Key{
 			Runes:       []string{"/"},
 			Description: "Focus filter bar",
@@ -185,12 +186,12 @@ func (k *KeyBindings) loadDefaults() {
 	k.Content = ContentKeys{
 		ChangeView: Key{
 			Runes:       []string{"f"},
-			Description: "Change table view",
+			Description: "Change view",
 		},
 		PeekDocument: Key{
 			Runes:       []string{"p"},
 			Keys:        []string{"Enter"},
-			Description: "Peek document",
+			Description: "Quick peek",
 		},
 		ViewDocument: Key{
 			Runes:       []string{"P"},
@@ -198,28 +199,28 @@ func (k *KeyBindings) loadDefaults() {
 		},
 		AddDocument: Key{
 			Runes:       []string{"a"},
-			Description: "Add document",
+			Description: "Add new",
 		},
 		EditDocument: Key{
 			Runes:       []string{"e"},
-			Description: "Edit document",
+			Description: "Edit",
 		},
 		DuplicateDocument: Key{
 			Runes:       []string{"d"},
-			Description: "Duplicate document",
+			Description: "Duplicate",
 		},
 		DeleteDocument: Key{
 			Runes:       []string{"D"},
-			Description: "Delete document",
+			Description: "Delete",
 		},
-		MultipleSelect: Key{
-			Runes:       []string{"v"},
-			Description: "Multiple select",
-		},
-		ClearSelection: Key{
-			Runes:       []string{"C"},
-			Description: "Clear selection",
-		},
+		// MultipleSelect: Key{
+		// 	Runes:       []string{"v"},
+		// 	Description: "Multiple select",
+		// },
+		// ClearSelection: Key{
+		// 	Runes:       []string{"C"},
+		// 	Description: "Clear selection",
+		// },
 		CopyLine: Key{
 			Runes:       []string{"c"},
 			Description: "Copy value",
@@ -358,6 +359,10 @@ func (k *KeyBindings) loadDefaults() {
 func LoadKeybindings() (*KeyBindings, error) {
 	defaultKeybindings := &KeyBindings{}
 	defaultKeybindings.loadDefaults()
+
+	if os.Getenv("ENV") == "vi-dev" {
+		return defaultKeybindings, nil
+	}
 
 	keybindingsPath, err := getKeybindingsPath()
 	if err != nil {

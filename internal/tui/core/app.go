@@ -54,6 +54,7 @@ func (a *App) SetPreviousFocus() {
 func (a *App) SetFocus(p tview.Primitive) {
 	a.PreviousFocus = a.GetFocus()
 	a.Application.SetFocus(p)
+	a.FocusChanged(p)
 }
 
 func (a *App) GiveBackFocus() {
@@ -61,6 +62,18 @@ func (a *App) GiveBackFocus() {
 		a.SetFocus(a.PreviousFocus)
 		a.PreviousFocus = nil
 	}
+}
+
+// FocusChanged is a callback that is called when the focus is changed
+// it is used to update the keys
+func (a *App) FocusChanged(p tview.Primitive) {
+	log.Info().Msgf("Focus changed to %s", p.GetIdentifier())
+	a.Manager.Broadcast(manager.EventMsg{
+		Message: manager.Message{
+			Type: manager.FocusChanged,
+			Data: p.GetIdentifier(),
+		},
+	})
 }
 
 // GetDao implements model.AppInterface

@@ -23,6 +23,10 @@ func NewDao(client *mongo.Client, config *config.MongoConfig) *Dao {
 	}
 }
 
+func (d *Dao) Ping(ctx context.Context) error {
+	return d.client.Ping(ctx, nil)
+}
+
 func (d *Dao) GetServerStatus(ctx context.Context) (*ServerStatus, error) {
 	var status ServerStatus
 	err := d.client.Database("admin").RunCommand(ctx, primitive.D{{Key: "serverStatus", Value: 1}}).Decode(&status)
