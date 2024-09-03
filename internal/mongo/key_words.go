@@ -186,6 +186,8 @@ func getMongoOperators() []MongoKeyword {
 	operators = append(operators, objectID)
 	operators = append(operators, comparisonOperators...)
 	operators = append(operators, elementOperators...)
+	operators = append(operators, evaluationOperators...)
+	operators = append(operators, logicalOperators...)
 
 	return operators
 }

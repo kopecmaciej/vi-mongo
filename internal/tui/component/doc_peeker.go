@@ -1,9 +1,7 @@
 package component
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
@@ -14,18 +12,11 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const (
 	DocPeekerView = "DocPeeker"
 )
-
-// peekerState is used to store the state of the document being peeked at
-type peekerState struct {
-	mongo.CollectionState
-	rawDocument string
-}
 
 // DocPeeker is a view that provides a modal view for peeking at a document
 type DocPeeker struct {
@@ -34,7 +25,9 @@ type DocPeeker struct {
 
 	style       *config.DocPeekerStyle
 	docModifier *DocModifier
-	state       peekerState
+	currentDoc  string
+
+	doneFunc func()
 }
 
 // NewDocPeeker creates a new DocPeeker view
@@ -51,10 +44,8 @@ func NewDocPeeker() *DocPeeker {
 }
 
 func (dc *DocPeeker) init() error {
-	ctx := context.Background()
-
 	dc.setStyle()
-	dc.setKeybindings(ctx)
+	dc.setKeybindings()
 
 	if err := dc.docModifier.Init(dc.App); err != nil {
 		return err
@@ -79,7 +70,7 @@ func (dc *DocPeeker) setStyle() {
 	dc.ViewModal.AddButtons([]string{"Edit", "Close"})
 }
 
-func (dc *DocPeeker) setKeybindings(ctx context.Context) {
+func (dc *DocPeeker) setKeybindings() {
 	k := dc.App.GetKeys()
 	dc.ViewModal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
@@ -100,9 +91,7 @@ func (dc *DocPeeker) setKeybindings(ctx context.Context) {
 			}
 			return nil
 		case k.Contains(k.DocPeeker.Refresh, event.Name()):
-			if err := dc.render(ctx); err != nil {
-				log.Error().Err(err).Msg("Error refreshing document")
-			}
+			dc.render()
 			return nil
 		}
 		return event
@@ -117,39 +106,36 @@ func (dc *DocPeeker) MoveToBottom() {
 	dc.ViewModal.MoveToBottom()
 }
 
-func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString string) error {
-	dc.state = peekerState{
-		CollectionState: mongo.CollectionState{
-			Db:   db,
-			Coll: coll,
-		},
-		rawDocument: jsonString,
-	}
-	var prettyJson bytes.Buffer
-	err := json.Indent(&prettyJson, []byte(jsonString), "", "  ")
-	if err != nil {
-		log.Error().Err(err).Msg("Error indenting JSON")
-		return nil
-	}
-	text := prettyJson.String()
+func (dc *DocPeeker) SetDoneFunc(doneFunc func()) {
+	dc.doneFunc = doneFunc
+}
 
-	dc.ViewModal.SetText(primitives.Text{
-		Content: text,
-		Color:   dc.style.ValueColor.Color(),
-		Align:   tview.AlignLeft,
-	})
+func (dc *DocPeeker) Peek(ctx context.Context, state *mongo.CollectionState, _id interface{}) error {
+	doc, err := state.GetJsonDocById(_id)
+	if err != nil {
+		return err
+	}
+
+	dc.currentDoc = doc
+	dc.render()
 
 	root := dc.App.Pages
 	root.AddPage(dc.GetIdentifier(), dc.ViewModal, true, true)
 	dc.ViewModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Edit" {
-			updatedDoc, err := dc.docModifier.Edit(ctx, db, coll, jsonString)
+			updatedDoc, err := dc.docModifier.Edit(ctx, state.Db, state.Coll, dc.currentDoc)
 			if err != nil {
 				modal.ShowError(dc.App.Pages, "Error editing document", err)
 				return
 			}
-			dc.state.rawDocument = updatedDoc
-			dc.render(ctx)
+
+			state.UpdateRawDoc(updatedDoc)
+			dc.currentDoc = updatedDoc
+			if dc.doneFunc != nil {
+				dc.doneFunc()
+			}
+			dc.render()
+			dc.App.SetFocus(dc.ViewModal)
 		} else if buttonLabel == "Close" || buttonLabel == "" {
 			root.RemovePage(dc.GetIdentifier())
 		}
@@ -157,6 +143,10 @@ func (dc *DocPeeker) Peek(ctx context.Context, db, coll string, jsonString strin
 	return nil
 }
 
-func (dc *DocPeeker) render(ctx context.Context) error {
-	return dc.Peek(ctx, dc.state.Db, dc.state.Coll, dc.state.rawDocument)
+func (dc *DocPeeker) render() {
+	dc.ViewModal.SetText(primitives.Text{
+		Content: dc.currentDoc,
+		Color:   dc.style.ValueColor.Color(),
+		Align:   tview.AlignLeft,
+	})
 }

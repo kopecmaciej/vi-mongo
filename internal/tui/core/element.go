@@ -33,9 +33,6 @@ type BaseElement struct {
 
 	// mutex is a mutex that is used to synchronize the view.
 	mutex sync.Mutex
-
-	// ConnectionChangedChan is a channel to notify about connection changes.
-	ConnectionChangedChan chan struct{}
 }
 
 // NewBaseElement is a constructor for the BaseElement struct.

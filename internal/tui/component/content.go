@@ -110,7 +110,16 @@ func (c *Content) init() error {
 	c.queryBarListener(ctx)
 	c.sortBarListener(ctx)
 
+	c.jsonPeeker.SetDoneFunc(func() {
+		c.updateContent(ctx, true)
+	})
+
 	return nil
+}
+
+func (c *Content) UpdateDao(dao *mongo.Dao) {
+	c.BaseElement.UpdateDao(dao)
+	c.docModifier.UpdateDao(dao)
 }
 
 func (c *Content) setStyle() {
@@ -277,17 +286,24 @@ func (c *Content) renderJsonView(startRow int, documents []primitive.M) {
 			modal.ShowError(c.App.Pages, "Error stringifying document", err)
 			return
 		}
-		c.multiRowDocument(jsoned, &row, _id)
+		c.jsonViewDocument(jsoned, &row, _id)
 	}
 	c.table.ScrollToBeginning()
 }
 
 func (c *Content) renderSingleRowView(startRow int, documents []primitive.M) {
-	parsedDocs, _ := mongo.ParseBsonDocuments(documents)
 	row := startRow
-	for _, d := range parsedDocs {
-		dataCell := tview.NewTableCell(d)
-		dataCell.SetAlign(tview.AlignLeft)
+	for _, d := range documents {
+		_id := d["_id"]
+		jsoned, err := mongo.ParseBsonDocument(d)
+		if err != nil {
+			modal.ShowError(c.App.Pages, "Error stringifying document", err)
+			return
+		}
+		dataCell := tview.NewTableCell(jsoned).
+			SetAlign(tview.AlignLeft).
+			SetReference(mongo.EnsureObjectIdOrString(_id))
+
 		c.table.SetCell(row, 0, dataCell)
 		row++
 	}
@@ -413,7 +429,7 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	return nil
 }
 
-func (c *Content) multiRowDocument(doc string, row *int, id interface{}) {
+func (c *Content) jsonViewDocument(doc string, row *int, id interface{}) {
 	indentedJson, err := mongo.IndentJson(doc)
 	if err != nil {
 		return
@@ -427,7 +443,7 @@ func (c *Content) multiRowDocument(doc string, row *int, id interface{}) {
 		SetAlign(tview.AlignLeft).
 		SetTextColor(tcell.ColorGreen).
 		SetSelectable(false).
-		SetReference(id))
+		SetReference(mongo.EnsureObjectIdOrString(id)))
 
 	*row++
 
@@ -456,7 +472,7 @@ func (c *Content) multiRowDocument(doc string, row *int, id interface{}) {
 		SetAlign(tview.AlignLeft).
 		SetTextColor(tcell.ColorGreen).
 		SetSelectable(false).
-		SetReference(id))
+		SetReference(mongo.EnsureObjectIdOrString(id)))
 
 	*row++
 }
@@ -576,16 +592,30 @@ func (c *Content) getDocumentBasedOnView(row, coll int) (string, error) {
 }
 
 func (c *Content) getMultiRowDocument(row, coll int) (string, error) {
-	forWithReference := c.table.GetCellAboveThatMatch(row, coll, func(cell *tview.TableCell) bool {
-		return strings.HasPrefix(cell.Text, `{`)
-	})
-	_id := forWithReference.GetReference()
+	_id := c.getDocumentId(row, coll)
 	return c.state.GetJsonDocById(_id)
 }
 
 func (c *Content) getTableViewDocument(row, coll int) (string, error) {
-	_id := c.table.GetCell(row, coll).GetReference()
+	_id := c.getDocumentId(row, coll)
 	return c.state.GetJsonDocById(_id)
+}
+
+// get document id based on view
+func (c *Content) getDocumentId(row, coll int) interface{} {
+	switch c.currentView {
+	case JsonView:
+		forWithReference := c.table.GetCellAboveThatMatch(row, coll, func(cell *tview.TableCell) bool {
+			return strings.HasPrefix(cell.Text, `{`)
+		})
+		return forWithReference.GetReference()
+	case TableView:
+		return c.table.GetCell(row, 0).GetReference()
+	case SingleLineView:
+		return c.table.GetCell(row, 0).GetReference()
+	default:
+		return nil
+	}
 }
 
 // Event handlers
@@ -613,12 +643,11 @@ func (c *Content) handleSwitchView(ctx context.Context) *tcell.EventKey {
 }
 
 func (c *Content) handlePeekDocument(ctx context.Context, row, coll int) *tcell.EventKey {
-	doc, err := c.getDocumentBasedOnView(row, coll)
-	if err != nil {
-		modal.ShowError(c.App.Pages, "Error peeking document", err)
+	_id := c.getDocumentId(row, coll)
+	if _id == nil {
 		return nil
 	}
-	c.jsonPeeker.Peek(ctx, c.state.Db, c.state.Coll, doc)
+	c.jsonPeeker.Peek(ctx, c.state, _id)
 	return nil
 }
 
