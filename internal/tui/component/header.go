@@ -171,7 +171,6 @@ func (h *Header) setInactiveBaseInfo(err error) {
 // handle events from the manager
 func (h *Header) handleEvents() {
 	for event := range h.Listener {
-		log.Info().Msgf("Received event: %s", event.Message.Type)
 		switch event.Message.Type {
 		case manager.FocusChanged:
 			h.UpdateKeys()

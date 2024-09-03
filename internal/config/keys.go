@@ -52,6 +52,7 @@ type (
 		FocusDatabases Key `json:"focusDatabases"`
 		FocusContent   Key `json:"focusContent"`
 		HideDatabases  Key `json:"hideDatabases"`
+		ShowServerInfo Key `json:"showServerInfo"`
 	}
 
 	DatabaseTreeKeys struct {
@@ -157,6 +158,10 @@ func (k *KeyBindings) loadDefaults() {
 		HideDatabases: Key{
 			Keys:        []string{"Ctrl+N"},
 			Description: "Hide databases",
+		},
+		ShowServerInfo: Key{
+			Keys:        []string{"Ctrl+T"},
+			Description: "Show server info",
 		},
 	}
 

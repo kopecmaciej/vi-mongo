@@ -1,12 +1,17 @@
 package page
 
 import (
+	"context"
+	"time"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/component"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -127,7 +132,28 @@ func (m *Main) setKeybindings() {
 				m.render()
 			}
 			return nil
+		case k.Contains(k.Main.ShowServerInfo, event.Name()):
+			m.ShowServerInfoModal()
+			return nil
 		}
 		return event
 	})
+}
+
+func (m *Main) ShowServerInfoModal() {
+	serverInfoModal := modal.NewServerInfoModal(m.Dao)
+	if err := serverInfoModal.Init(m.App); err != nil {
+		log.Error().Err(err).Msg("Failed to initialize server info modal")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := serverInfoModal.Render(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to render server info modal")
+		return
+	}
+
+	m.App.Pages.AddPage(modal.ServerInfoModalView, serverInfoModal, true, true)
 }

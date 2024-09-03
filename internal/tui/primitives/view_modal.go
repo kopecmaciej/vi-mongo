@@ -204,9 +204,12 @@ func (m *ViewModal) Draw(screen tcell.Screen) {
 	lines := tview.WordWrap(m.text.Content, width)
 
 	// Variables for scrolling
-	maxLines := screenHeight - 12
+	maxLines := len(lines)
+	if maxLines > screenHeight-12 {
+		maxLines = screenHeight - 12
+	}
 
-	m.endPosition = len(lines) - maxLines
+	m.endPosition = maxLines
 
 	// Calculate the total height and the starting line based on scroll position
 	totalHeight := len(lines)
@@ -252,49 +255,49 @@ func calculateIndent(line string) int {
 }
 
 func (m *ViewModal) calculateNextLinesToHighlight(lines []string) int {
-    if m.selectedLine >= len(lines) {
-        return 0
-    }
-    currentIndent := calculateIndent(lines[m.selectedLine])
-    linesToHighlight := 0
+	if m.selectedLine >= len(lines) {
+		return 0
+	}
+	currentIndent := calculateIndent(lines[m.selectedLine])
+	linesToHighlight := 0
 
-    for i := m.selectedLine + 1; i < len(lines); i++ {
-        nextIndent := calculateIndent(lines[i])
+	for i := m.selectedLine + 1; i < len(lines); i++ {
+		nextIndent := calculateIndent(lines[i])
 
-        if lines[i] == "}" && nextIndent == 0 {
-            return linesToHighlight
-        }
+		if lines[i] == "}" && nextIndent == 0 {
+			return linesToHighlight
+		}
 
-        // highlight till the end if first line
-        if m.selectedLine == 0 {
-            return len(lines) - 1
-        }
+		// highlight till the end if first line
+		if m.selectedLine == 0 {
+			return len(lines) - 1
+		}
 
-        // if current indent is 0, highlight only given line
-        if currentIndent == 0 {
-            return linesToHighlight
-        }
+		// if current indent is 0, highlight only given line
+		if currentIndent == 0 {
+			return linesToHighlight
+		}
 
-        // Case 1: Same indent, new key:value pair
-        if nextIndent == currentIndent {
-            return linesToHighlight
-            // Case 2: Wrapped line, continue highlighting
-        } else if nextIndent > 0 && nextIndent < currentIndent {
-            return linesToHighlight
-        } else if nextIndent == 0 {
-            linesToHighlight++
-            // Case 3: Object or array, continue until we find matching indent
-        } else if nextIndent > currentIndent {
-            linesToHighlight++
-            for j := i + 1; j < len(lines); j++ {
-                if calculateIndent(lines[j]) == currentIndent {
-                    return j - m.selectedLine
-                }
-            }
-        }
-    }
+		// Case 1: Same indent, new key:value pair
+		if nextIndent == currentIndent {
+			return linesToHighlight
+			// Case 2: Wrapped line, continue highlighting
+		} else if nextIndent > 0 && nextIndent < currentIndent {
+			return linesToHighlight
+		} else if nextIndent == 0 {
+			linesToHighlight++
+			// Case 3: Object or array, continue until we find matching indent
+		} else if nextIndent > currentIndent {
+			linesToHighlight++
+			for j := i + 1; j < len(lines); j++ {
+				if calculateIndent(lines[j]) == currentIndent {
+					return j - m.selectedLine
+				}
+			}
+		}
+	}
 
-    return linesToHighlight
+	return linesToHighlight
 }
 
 func (m *ViewModal) formatLine(line string, isFirstLine bool) string {

@@ -67,7 +67,6 @@ func (a *App) GiveBackFocus() {
 // FocusChanged is a callback that is called when the focus is changed
 // it is used to update the keys
 func (a *App) FocusChanged(p tview.Primitive) {
-	log.Info().Msgf("Focus changed to %s", p.GetIdentifier())
 	a.Manager.Broadcast(manager.EventMsg{
 		Message: manager.Message{
 			Type: manager.FocusChanged,
