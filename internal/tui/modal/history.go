@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	HistoryModal = "HistoryModal"
+	HistoryModal = "History"
 	QueryBar     = "QueryBar"
 
 	maxHistory = 10
@@ -100,13 +100,14 @@ func (h *History) clearHistory() *tcell.EventKey {
 }
 
 // Render loads history from file and renders it
-func (h *History) Render() error {
+func (h *History) Render() {
+	h.Clear()
+
 	history, err := h.loadHistory()
 	if err != nil {
-		return err
+		ShowError(h.App.Pages, "Failed to load history", err)
+		return
 	}
-
-	h.Clear()
 
 	// load in reverse order
 	for i := len(history) - 1; i >= 0; i-- {
@@ -116,8 +117,6 @@ func (h *History) Render() error {
 	}
 
 	h.App.Pages.AddPage(h.GetIdentifier(), h, true, true)
-
-	return nil
 }
 
 // SaveToHistory saves text to history file, if it's not already there.

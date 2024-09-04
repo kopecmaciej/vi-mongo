@@ -32,9 +32,10 @@ type (
 		*core.BaseElement
 		*tview.Table
 
-		style    *config.HeaderStyle
-		baseInfo BaseInfo
-		keys     []config.Key
+		style        *config.HeaderStyle
+		baseInfo     BaseInfo
+		keys         []config.Key
+		currentFocus tview.Identifier
 	}
 )
 
@@ -47,7 +48,6 @@ func NewHeader() *Header {
 	}
 
 	h.SetIdentifier(HeaderView)
-	h.SetIdentifierFunc(h.GetIdentifier)
 	h.SetAfterInitFunc(h.init)
 
 	return &h
@@ -55,7 +55,7 @@ func NewHeader() *Header {
 
 func (h *Header) init() error {
 	h.setStyle()
-	h.Subscribe()
+	h.Subscribe(HeaderView)
 	go h.handleEvents()
 
 	return nil
@@ -97,7 +97,7 @@ func (h *Header) Refresh() {
 				sleep += 5 * time.Second
 			}
 		}()
-		h.App.QueueUpdateDraw(func() {
+		go h.App.QueueUpdateDraw(func() {
 			h.Render()
 		})
 	}
@@ -107,7 +107,6 @@ func (h *Header) Refresh() {
 func (h *Header) Render() {
 	h.Table.Clear()
 	base := h.SetBaseInfo()
-	k := h.UpdateKeys()
 
 	maxInRow := 2
 	currCol := 0
@@ -127,6 +126,12 @@ func (h *Header) Render() {
 	h.Table.SetCell(0, 2, tview.NewTableCell(" "))
 	h.Table.SetCell(1, 2, tview.NewTableCell(" "))
 	currCol++
+
+	k, err := h.UpdateKeys()
+	if err != nil {
+		log.Warn().Err(err).Msg("Error while updating keys")
+		return
+	}
 
 	for _, key := range k {
 		if currRow%maxInRow == 0 && currRow != 0 {
@@ -173,7 +178,7 @@ func (h *Header) handleEvents() {
 	for event := range h.Listener {
 		switch event.Message.Type {
 		case manager.FocusChanged:
-			h.UpdateKeys()
+			h.currentFocus = tview.Identifier(event.Message.Data.(tview.Identifier))
 			go h.App.QueueUpdateDraw(func() {
 				h.Render()
 			})
@@ -198,17 +203,14 @@ func (h *Header) valueCell(text string) *tview.TableCell {
 }
 
 // UpdateKeys updates the keybindings for the current focused element
-func (h *Header) UpdateKeys() []config.Key {
-	focusedElement := h.App.GetFocus()
-	if focusedElement == nil {
-		return nil
+func (h *Header) UpdateKeys() ([]config.Key, error) {
+	if h.currentFocus == "" {
+		return nil, nil
 	}
 
-	elementID := focusedElement.GetIdentifier()
-	orderedKeys, err := h.App.GetKeys().GetKeysForElement(string(elementID))
+	orderedKeys, err := h.App.GetKeys().GetKeysForElement(string(h.currentFocus))
 	if err != nil {
-		log.Error().Err(err).Msg("Error getting keys for element")
-		return nil
+		return nil, err
 	}
 	keys := orderedKeys[0].Keys
 
@@ -218,5 +220,5 @@ func (h *Header) UpdateKeys() []config.Key {
 		h.keys = nil
 	}
 
-	return keys
+	return keys, nil
 }

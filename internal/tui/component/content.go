@@ -45,7 +45,7 @@ type Content struct {
 	style       *config.ContentStyle
 	queryBar    *InputBar
 	sortBar     *InputBar
-	jsonPeeker  *DocPeeker
+	peeker      *Peeker
 	deleteModal *modal.Delete
 	docModifier *DocModifier
 	state       *mongo.CollectionState
@@ -64,7 +64,7 @@ func NewContent() *Content {
 		view:        tview.NewTextView(),
 		queryBar:    NewInputBar(QueryBarComponent, "Query"),
 		sortBar:     NewInputBar(SortBarComponent, "Sort"),
-		jsonPeeker:  NewDocPeeker(),
+		peeker:      NewPeeker(),
 		deleteModal: modal.NewDeleteModal(),
 		docModifier: NewDocModifier(),
 		state:       &mongo.CollectionState{},
@@ -72,8 +72,10 @@ func NewContent() *Content {
 		currentView: TableView,
 	}
 
+	c.SetIdentifier(ContentComponent)
+	// neccesarry if focus is get back to content component
+	// it's related to how tview package works
 	c.table.SetIdentifier(ContentComponent)
-	c.SetIdentifierFunc(c.GetIdentifier)
 	c.SetAfterInitFunc(c.init)
 
 	return c
@@ -85,7 +87,7 @@ func (c *Content) init() error {
 	c.setStyle()
 	c.setKeybindings(ctx)
 
-	if err := c.jsonPeeker.Init(c.App); err != nil {
+	if err := c.peeker.Init(c.App); err != nil {
 		return err
 	}
 	if err := c.docModifier.Init(c.App); err != nil {
@@ -111,7 +113,7 @@ func (c *Content) init() error {
 	c.queryBarListener(ctx)
 	c.sortBarListener(ctx)
 
-	c.jsonPeeker.SetDoneFunc(func() {
+	c.peeker.SetDoneFunc(func() {
 		c.updateContent(ctx, true)
 	})
 
@@ -119,6 +121,7 @@ func (c *Content) init() error {
 }
 
 func (c *Content) UpdateDao(dao *mongo.Dao) {
+	c.table.Clear()
 	c.BaseElement.UpdateDao(dao)
 	c.docModifier.UpdateDao(dao)
 }
@@ -212,14 +215,19 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 		state.Coll = coll
 		c.state = &state
 	}
-	return c.updateContent(ctx, false)
+
+	err := c.updateContent(ctx, false)
+	if err != nil {
+		return err
+	}
+	c.App.SetFocus(c)
+	return nil
 }
 
 // Rendering methods
 
 func (c *Content) Render(setFocus bool) {
 	c.Flex.Clear()
-	c.table.Clear()
 
 	var focusPrimitive tview.Primitive
 	focusPrimitive = c
@@ -383,7 +391,6 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 
 func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	c.table.Clear()
-	c.App.SetFocus(c.table)
 
 	var documents []primitive.M
 	var count int64
@@ -481,6 +488,7 @@ func (c *Content) jsonViewDocument(doc string, row *int, _id interface{}) {
 
 func (c *Content) queryBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
+		log.Debug().Msgf("Saving query to history: %s", text)
 		c.state.Filter = util.TrimJson(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
@@ -652,7 +660,7 @@ func (c *Content) handlePeekDocument(ctx context.Context, row, coll int) *tcell.
 	if _id == nil {
 		return nil
 	}
-	c.jsonPeeker.Peek(ctx, c.state, _id)
+	c.peeker.Render(ctx, c.state, _id)
 	return nil
 }
 

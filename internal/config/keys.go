@@ -19,15 +19,17 @@ type (
 	// There are views that have only keybindings and some have
 	// nested keybindings of their children views
 	KeyBindings struct {
-		Global       GlobalKeys       `json:"global"`
-		Help         HelpKeys         `json:"help"`
-		Welcome      WelcomeKeys      `json:"welcome"`
-		Connector    ConnectorKeys    `json:"connector"`
-		Main         MainKeys         `json:"main"`
-		DatabaseTree DatabaseTreeKeys `json:"databaseTree"`
-		Content      ContentKeys      `json:"content"`
-		DocPeeker    DocPeekerKeys    `json:"docPeeker"`
-		History      HistoryKeys      `json:"history"`
+		Global    GlobalKeys    `json:"global"`
+		Help      HelpKeys      `json:"help"`
+		Welcome   WelcomeKeys   `json:"welcome"`
+		Connector ConnectorKeys `json:"connector"`
+		Main      MainKeys      `json:"main"`
+		Database  DatabaseKeys  `json:"databases"`
+		Content   ContentKeys   `json:"content"`
+		QueryBar  QueryBar      `json:"queryBar"`
+		SortBar   SortBar       `json:"sortBar"`
+		Peeker    PeekerKeys    `json:"peeker"`
+		History   HistoryKeys   `json:"history"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -49,13 +51,13 @@ type (
 
 	MainKeys struct {
 		ToggleFocus    Key `json:"toggleFocus"`
-		FocusDatabases Key `json:"focusDatabases"`
+		FocusDatabase  Key `json:"focusDatabases"`
 		FocusContent   Key `json:"focusContent"`
-		HideDatabases  Key `json:"hideDatabases"`
+		HideDatabase   Key `json:"hideDatabases"`
 		ShowServerInfo Key `json:"showServerInfo"`
 	}
 
-	DatabaseTreeKeys struct {
+	DatabaseKeys struct {
 		FilterBar        Key `json:"filterBar"`
 		ExpandAll        Key `json:"expandAll"`
 		CollapseAll      Key `json:"collapseAll"`
@@ -73,20 +75,23 @@ type (
 		DeleteDocument    Key `json:"deleteDocument"`
 		// MultipleSelect    Key      `json:"multipleSelect"`
 		// ClearSelection   Key      `json:"clearSelection"`
-		CopyLine         Key      `json:"copyValue"`
-		Refresh          Key      `json:"refresh"`
-		ToggleQuery      Key      `json:"toggleQuery"`
-		NextDocument     Key      `json:"nextDocument"`
-		PreviousDocument Key      `json:"previousDocument"`
-		NextPage         Key      `json:"nextPage"`
-		PreviousPage     Key      `json:"previousPage"`
-		QueryBar         QueryBar `json:"queryBar"`
-		ToggleSort       Key      `json:"toggleSort"`
+		CopyLine         Key `json:"copyValue"`
+		Refresh          Key `json:"refresh"`
+		ToggleQuery      Key `json:"toggleQuery"`
+		NextDocument     Key `json:"nextDocument"`
+		PreviousDocument Key `json:"previousDocument"`
+		NextPage         Key `json:"nextPage"`
+		PreviousPage     Key `json:"previousPage"`
+		ToggleSort       Key `json:"toggleSort"`
 	}
 
 	QueryBar struct {
 		ShowHistory Key `json:"showHistory"`
 		ClearInput  Key `json:"clearInput"`
+	}
+
+	SortBar struct {
+		ClearInput Key `json:"clearInput"`
 	}
 
 	ConnectorKeys struct {
@@ -115,7 +120,7 @@ type (
 		Close Key `json:"close"`
 	}
 
-	DocPeekerKeys struct {
+	PeekerKeys struct {
 		MoveToTop    Key `json:"moveToTop"`
 		MoveToBottom Key `json:"moveToBottom"`
 		CopyFullObj  Key `json:"copyFullObj"`
@@ -147,7 +152,7 @@ func (k *KeyBindings) loadDefaults() {
 			Keys:        []string{"Tab", "Backtab"},
 			Description: "Focus next view",
 		},
-		FocusDatabases: Key{
+		FocusDatabase: Key{
 			Keys:        []string{"Ctrl+H"},
 			Description: "Focus databases",
 		},
@@ -155,7 +160,7 @@ func (k *KeyBindings) loadDefaults() {
 			Keys:        []string{"Ctrl+L"},
 			Description: "Focus content",
 		},
-		HideDatabases: Key{
+		HideDatabase: Key{
 			Keys:        []string{"Ctrl+N"},
 			Description: "Hide databases",
 		},
@@ -165,7 +170,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 	}
 
-	k.DatabaseTree = DatabaseTreeKeys{
+	k.Database = DatabaseKeys{
 		FilterBar: Key{
 			Runes:       []string{"/"},
 			Description: "Focus filter bar",
@@ -260,11 +265,18 @@ func (k *KeyBindings) loadDefaults() {
 		},
 	}
 
-	k.Content.QueryBar = QueryBar{
+	k.QueryBar = QueryBar{
 		ShowHistory: Key{
 			Keys:        []string{"Ctrl+Y"},
 			Description: "Show history",
 		},
+		ClearInput: Key{
+			Keys:        []string{"Ctrl+D"},
+			Description: "Clear input",
+		},
+	}
+
+	k.SortBar = SortBar{
 		ClearInput: Key{
 			Keys:        []string{"Ctrl+D"},
 			Description: "Clear input",
@@ -320,7 +332,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 	}
 
-	k.DocPeeker = DocPeekerKeys{
+	k.Peeker = PeekerKeys{
 		MoveToTop: Key{
 			Runes:       []string{"g"},
 			Description: "Move to top",

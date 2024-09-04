@@ -33,7 +33,6 @@ func NewWelcome() *Welcome {
 	}
 
 	w.SetIdentifier(WelcomeView)
-	w.SetIdentifierFunc(w.GetIdentifier)
 
 	return w
 }

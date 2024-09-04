@@ -16,7 +16,7 @@ type (
 
 		// initial pages
 		connector *page.Connector
-		mainView  *page.Main
+		main      *page.Main
 		help      *page.Help
 	}
 )
@@ -28,7 +28,7 @@ func NewApp(appConfig *config.Config) *App {
 		App: coreApp,
 
 		connector: page.NewConnector(),
-		mainView:  page.NewMain(),
+		main:      page.NewMain(),
 		help:      page.NewHelp(),
 	}
 
@@ -60,10 +60,10 @@ func (a *App) setKeybindings() {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// TODO: This is temporary solution
 		switch {
-		case a.Keys.Contains(a.Keys.Global.OpenConnector, event.Name()):
+		case a.GetKeys().Contains(a.GetKeys().Global.OpenConnector, event.Name()):
 			a.renderConnector()
 			return nil
-		case a.Keys.Contains(a.Keys.Global.ToggleFullScreenHelp, event.Name()):
+		case a.GetKeys().Contains(a.GetKeys().Global.ToggleFullScreenHelp, event.Name()):
 			if a.Pages.HasPage(page.HelpPage) {
 				a.Pages.RemovePage(page.HelpPage)
 				return nil
@@ -81,7 +81,7 @@ func (a *App) setKeybindings() {
 
 func (a *App) connectToMongo() error {
 	currConn := a.App.GetConfig().GetCurrentConnection()
-	if a.Dao != nil && *a.Dao.Config == *currConn {
+	if a.GetDao() != nil && *a.GetDao().Config == *currConn {
 		return nil
 	}
 
@@ -92,7 +92,7 @@ func (a *App) connectToMongo() error {
 	if err := client.Ping(); err != nil {
 		return err
 	}
-	a.App.Dao = mongo.NewDao(client.Client, client.Config)
+	a.SetDao(mongo.NewDao(client.Client, client.Config))
 	return nil
 }
 
@@ -126,23 +126,23 @@ func (a *App) initAndRenderMain() error {
 	}
 
 	// if main view is already initialized, we just update dao
-	if a.mainView.App != nil || a.mainView.Dao != nil {
-		a.mainView.UpdateDao(a.App.Dao)
+	if a.main.App != nil || a.main.Dao != nil {
+		a.main.UpdateDao(a.GetDao())
 	} else {
-		if err := a.mainView.Init(a.App); err != nil {
+		if err := a.main.Init(a.App); err != nil {
 			return err
 		}
 	}
 
-	a.mainView.Render()
-	a.App.Pages.AddPage(a.mainView.GetIdentifier(), a.mainView, true, true)
+	a.main.Render()
+	a.Pages.AddPage(a.main.GetIdentifier(), a.main, true, true)
 	return nil
 }
 
 // renderConnector renders the connector page
 func (a *App) renderConnector() error {
 	a.connector.SetOnSubmitFunc(func() {
-		a.App.Pages.RemovePage(a.connector.GetIdentifier())
+		a.Pages.RemovePage(a.connector.GetIdentifier())
 		err := a.initAndRenderMain()
 		if err != nil {
 			a.Pages.AddPage(a.connector.GetIdentifier(), a.connector, true, true)

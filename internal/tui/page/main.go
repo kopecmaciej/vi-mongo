@@ -25,7 +25,7 @@ type Main struct {
 	innerFlex *tview.Flex
 	style     *config.GlobalStyles
 	header    *component.Header
-	databases *component.Databases
+	databases *component.Database
 	content   *component.Content
 }
 
@@ -35,7 +35,7 @@ func NewMain() *Main {
 		Flex:        tview.NewFlex(),
 		innerFlex:   tview.NewFlex(),
 		header:      component.NewHeader(),
-		databases:   component.NewDatabases(),
+		databases:   component.NewDatabase(),
 		content:     component.NewContent(),
 	}
 
@@ -117,14 +117,14 @@ func (m *Main) setKeybindings() {
 				m.App.SetFocus(m.databases)
 			}
 			return nil
-		case k.Contains(k.Main.FocusDatabases, event.Name()):
+		case k.Contains(k.Main.FocusDatabase, event.Name()):
 			m.App.SetFocus(m.databases)
 			return nil
 		case k.Contains(k.Main.FocusContent, event.Name()):
 			m.App.SetFocus(m.content)
 			return nil
-		case k.Contains(k.Main.HideDatabases, event.Name()):
-			if _, ok := m.GetItem(0).(*component.Databases); ok {
+		case k.Contains(k.Main.HideDatabase, event.Name()):
+			if _, ok := m.GetItem(0).(*component.Database); ok {
 				m.RemoveItem(m.databases)
 				m.App.SetFocus(m.content)
 			} else {
