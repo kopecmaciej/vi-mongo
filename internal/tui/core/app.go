@@ -14,12 +14,12 @@ type (
 		*tview.Application
 
 		Pages         *Pages
-		Dao           *mongo.Dao
-		Manager       *manager.ElementManager
-		Styles        *config.Styles
-		Config        *config.Config
-		Keys          *config.KeyBindings
-		PreviousFocus tview.Primitive
+		dao           *mongo.Dao
+		manager       *manager.ElementManager
+		styles        *config.Styles
+		config        *config.Config
+		keys          *config.KeyBindings
+		previousFocus tview.Primitive
 	}
 )
 
@@ -36,59 +36,66 @@ func NewApp(appConfig *config.Config) *App {
 
 	app := &App{
 		Application: tview.NewApplication(),
-		Manager:     manager.NewElementManager(),
-		Styles:      styles,
-		Config:      appConfig,
-		Keys:        keyBindings,
+		manager:     manager.NewElementManager(),
+		styles:      styles,
+		config:      appConfig,
+		keys:        keyBindings,
 	}
 
-	app.Pages = NewPages(app.Manager, app)
+	app.Pages = NewPages(app.manager, app)
 
 	return app
 }
 
 func (a *App) SetPreviousFocus() {
-	a.PreviousFocus = a.GetFocus()
+	a.previousFocus = a.GetFocus()
 }
 
 func (a *App) SetFocus(p tview.Primitive) {
-	a.PreviousFocus = a.GetFocus()
+	a.previousFocus = a.GetFocus()
 	a.Application.SetFocus(p)
+	a.FocusChanged(p)
 }
 
 func (a *App) GiveBackFocus() {
-	if a.PreviousFocus != nil {
-		a.SetFocus(a.PreviousFocus)
-		a.PreviousFocus = nil
+	if a.previousFocus != nil {
+		a.SetFocus(a.previousFocus)
+		a.previousFocus = nil
 	}
 }
 
-// GetDao implements model.AppInterface
+// FocusChanged is a callback that is called when the focus is changed
+// it is used to update the keys
+func (a *App) FocusChanged(p tview.Primitive) {
+	msg := manager.EventMsg{
+		Message: manager.Message{
+			Type: manager.FocusChanged,
+			Data: p.GetIdentifier(),
+		},
+	}
+	a.manager.Broadcast(msg)
+}
+
 func (a *App) GetDao() *mongo.Dao {
-	return a.Dao
+	return a.dao
 }
 
-// GetManager implements model.AppInterface
+func (a *App) SetDao(dao *mongo.Dao) {
+	a.dao = dao
+}
+
 func (a *App) GetManager() *manager.ElementManager {
-	return a.Manager
+	return a.manager
 }
 
-// GetKeys implements models.App
 func (a *App) GetKeys() *config.KeyBindings {
-	return a.Keys
+	return a.keys
 }
 
-// GetStyles implements models.App
 func (a *App) GetStyles() *config.Styles {
-	return a.Styles
+	return a.styles
 }
 
-// GetConfig implements models.App
 func (a *App) GetConfig() *config.Config {
-	return a.Config
-}
-
-// GetPages implements models.App
-func (a *App) GetPages() *tview.Pages {
-	return a.Pages.Pages
+	return a.config
 }

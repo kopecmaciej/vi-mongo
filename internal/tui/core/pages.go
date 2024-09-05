@@ -24,6 +24,16 @@ func NewPages(manager *manager.ElementManager, app *App) *Pages {
 func (r *Pages) AddPage(view tview.Identifier, page tview.Primitive, resize, visable bool) *tview.Pages {
 	r.app.SetPreviousFocus()
 	r.Pages.AddPage(string(view), page, resize, visable)
+	if visable && page.HasFocus() {
+		r.app.FocusChanged(page)
+	}
+	return r.Pages
+}
+
+// AddAndSwitchToPage is a wrapper for tview.Pages.AddAndSwitchToPage
+func (r *Pages) AddAndSwitchToPage(view tview.Identifier, page tview.Primitive, resize bool) *tview.Pages {
+	r.app.SetPreviousFocus()
+	r.Pages.AddAndSwitchToPage(string(view), page, resize)
 	return r.Pages
 }
 

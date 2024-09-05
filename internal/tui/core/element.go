@@ -14,9 +14,6 @@ type BaseElement struct {
 	// enabled is a flag that indicates if the view is enabled.
 	enabled bool
 
-	// getIdentifier returns the identifier of the view.
-	getIdentifier func() tview.Identifier
-
 	// App is a pointer to the main App.
 	// It's used for accessing App focus, root page etc.
 	App *App
@@ -109,12 +106,7 @@ func (c *BaseElement) SetAfterInitFunc(afterInitFunc func() error) {
 	c.afterInitFunc = afterInitFunc
 }
 
-// SetIdentifierFunc sets the function that returns the identifier of the view.
-func (c *BaseElement) SetIdentifierFunc(getIdentifier func() tview.Identifier) {
-	c.getIdentifier = getIdentifier
-}
-
 // Subscribe subscribes to the view events.
-func (c *BaseElement) Subscribe() {
-	c.Listener = c.App.GetManager().Subscribe(c.getIdentifier())
+func (c *BaseElement) Subscribe(identifier tview.Identifier) {
+	c.Listener = c.App.GetManager().Subscribe(identifier)
 }

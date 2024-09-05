@@ -13,12 +13,12 @@ import (
 )
 
 const (
-	DatabasesView = "Databases"
-	FilterBarView = "FilterBar"
+	DatabaseComponent = "Database"
+	FilterBarView     = "FilterBar"
 )
 
-// Databases is flex container for DatabaseTree and InputBar
-type Databases struct {
+// Database is flex container for DatabaseTree and InputBar
+type Database struct {
 	*core.BaseElement
 	*tview.Flex
 
@@ -28,8 +28,8 @@ type Databases struct {
 	dbsWithColls []mongo.DBsWithCollections
 }
 
-func NewDatabases() *Databases {
-	s := &Databases{
+func NewDatabase() *Database {
+	s := &Database{
 		BaseElement: core.NewBaseElement(),
 		Flex:        tview.NewFlex(),
 		DbTree:      NewDatabaseTree(),
@@ -37,14 +37,13 @@ func NewDatabases() *Databases {
 		mutex:       sync.Mutex{},
 	}
 
-	s.SetIdentifier(DatabasesView)
-	s.SetIdentifierFunc(s.GetIdentifier)
+	s.SetIdentifier(DatabaseComponent)
 	s.SetAfterInitFunc(s.init)
 
 	return s
 }
 
-func (s *Databases) init() error {
+func (s *Database) init() error {
 	ctx := context.Background()
 	s.setStyle()
 	s.setKeybindings()
@@ -61,15 +60,15 @@ func (s *Databases) init() error {
 	return nil
 }
 
-func (s *Databases) setStyle() {
+func (s *Database) setStyle() {
 	s.Flex.SetDirection(tview.FlexRow)
 }
 
-func (s *Databases) setKeybindings() {
+func (s *Database) setKeybindings() {
 	keys := s.App.GetKeys()
 	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case keys.Contains(keys.Databases.FilterBar, event.Name()):
+		case keys.Contains(keys.Database.FilterBar, event.Name()):
 			s.filterBar.Enable()
 			s.Render()
 			return nil
@@ -78,7 +77,7 @@ func (s *Databases) setKeybindings() {
 	})
 }
 
-func (s *Databases) Render() {
+func (s *Database) Render() {
 	s.Flex.Clear()
 
 	var primitive tview.Primitive
@@ -100,7 +99,7 @@ func (s *Databases) Render() {
 	s.Flex.AddItem(s.DbTree, 0, 1, true)
 }
 
-func (s *Databases) filterBarHandler(ctx context.Context) {
+func (s *Database) filterBarHandler(ctx context.Context) {
 	accceptFunc := func(text string) {
 		s.filter(ctx, text)
 	}
@@ -110,7 +109,7 @@ func (s *Databases) filterBarHandler(ctx context.Context) {
 	s.filterBar.DoneFuncHandler(accceptFunc, rejectFunc)
 }
 
-func (s *Databases) filter(ctx context.Context, text string) {
+func (s *Database) filter(ctx context.Context, text string) {
 	defer s.Render()
 	dbsWitColls := s.dbsWithColls
 	expand := false
@@ -146,7 +145,7 @@ func (s *Databases) filter(ctx context.Context, text string) {
 	s.DbTree.Render(ctx, filtered, expand)
 }
 
-func (s *Databases) listDbsAndCollections(ctx context.Context) error {
+func (s *Database) listDbsAndCollections(ctx context.Context) error {
 	dbsWitColls, err := s.Dao.ListDbsWithCollections(ctx, "")
 	if err != nil {
 		return err
@@ -156,6 +155,6 @@ func (s *Databases) listDbsAndCollections(ctx context.Context) error {
 	return nil
 }
 
-func (s *Databases) SetSelectFunc(f func(ctx context.Context, db string, coll string) error) {
+func (s *Database) SetSelectFunc(f func(ctx context.Context, db string, coll string) error) {
 	s.DbTree.SetSelectFunc(f)
 }

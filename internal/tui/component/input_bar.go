@@ -36,7 +36,6 @@ func NewInputBar(barId tview.Identifier, label string) *InputBar {
 	}
 
 	i.SetIdentifier(barId)
-	i.SetIdentifierFunc(i.GetIdentifier)
 	i.SetAfterInitFunc(i.init)
 
 	return i
@@ -46,7 +45,7 @@ func (i *InputBar) init() error {
 	i.setStyle()
 	i.setKeybindings()
 
-	i.Subscribe()
+	i.Subscribe(i.GetIdentifier())
 	go i.handleEvents()
 
 	cpFunc := func(text string) {
@@ -107,11 +106,11 @@ func (i *InputBar) setKeybindings() {
 
 		k := i.App.GetKeys()
 		switch {
-		case k.Contains(k.Content.QueryBar.ShowHistory, event.Name()):
+		case k.Contains(k.QueryBar.ShowHistory, event.Name()):
 			if i.historyModal != nil {
-				i.displayHistoryModal()
+				i.historyModal.Render()
 			}
-		case k.Contains(k.Content.QueryBar.ClearInput, event.Name()):
+		case k.Contains(k.QueryBar.ClearInput, event.Name()):
 			i.SetText("")
 			i.SetWordAtCursor(i.defaultText)
 		}
@@ -135,8 +134,10 @@ func (i *InputBar) DoneFuncHandler(accept func(string), reject func()) {
 			i.Toggle("")
 			reject()
 		case tcell.KeyEnter:
+			log.Debug().Msg("Enter key pressed")
 			i.Toggle("")
 			text := i.GetText()
+			log.Debug().Msgf("Saving query to history: %s", text)
 			if i.historyModal != nil {
 				err := i.historyModal.SaveToHistory(text)
 				if err != nil {
@@ -221,14 +222,6 @@ func (i *InputBar) LoadNewKeys(keys []string) {
 	i.docKeys = keys
 }
 
-// Display HistoryModal on the screen
-func (i *InputBar) displayHistoryModal() {
-	err := i.historyModal.Render()
-	if err != nil {
-		modal.ShowError(i.App.Pages, "Error rendering history modal", err)
-	}
-}
-
 // Draws default text if input is empty
 func (i *InputBar) Toggle(text string) {
 	i.BaseElement.Toggle()
@@ -254,15 +247,18 @@ func (i *InputBar) handleEvents() {
 }
 
 func (i *InputBar) handleHistoryModalEvent(eventKey *tcell.EventKey) {
+	log.Debug().Msgf("Received event from HistoryModal: %v", eventKey)
 	switch {
-	case i.App.Keys.Contains(i.App.Keys.History.AcceptEntry, eventKey.Name()):
-		i.App.QueueUpdateDraw(func() {
+	case i.App.GetKeys().Contains(i.App.GetKeys().History.AcceptEntry, eventKey.Name()):
+		go i.App.QueueUpdateDraw(func() {
 			i.SetText(i.historyModal.GetText())
 			i.App.SetFocus(i)
 		})
-	case i.App.Keys.Contains(i.App.Keys.History.CloseHistory, eventKey.Name()):
-		i.App.QueueUpdateDraw(func() {
+	case i.App.GetKeys().Contains(i.App.GetKeys().History.CloseHistory, eventKey.Name()):
+		go i.App.QueueUpdateDraw(func() {
 			i.App.SetFocus(i)
 		})
+	default:
+		return
 	}
 }
