@@ -2,10 +2,12 @@ package mongo
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 
 	"github.com/rs/zerolog/log"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -149,8 +151,36 @@ func (d *Dao) InsetDocument(ctx context.Context, db string, collection string, d
 	return res.InsertedID, nil
 }
 
-func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, id interface{}, document primitive.M) error {
-	updated, err := d.client.Database(db).Collection(collection).UpdateOne(ctx, primitive.M{"_id": id}, primitive.M{"$set": document})
+func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, id interface{}, originalDoc, document primitive.M) error {
+	setOps := bson.M{}
+	unsetOps := bson.M{}
+
+	for key, value := range document {
+		if origValue, exists := originalDoc[key]; !exists || !reflect.DeepEqual(origValue, value) {
+			setOps[key] = value
+		}
+	}
+
+	for key := range originalDoc {
+		if _, exists := document[key]; !exists {
+			log.Debug().Msgf("Unsetting field: %v", key)
+			unsetOps[key] = 1
+		}
+	}
+
+	update := bson.M{}
+	if len(setOps) > 0 {
+		update["$set"] = setOps
+	}
+	if len(unsetOps) > 0 {
+		update["$unset"] = unsetOps
+	}
+
+	if len(update) == 0 {
+		return nil
+	}
+
+	updated, err := d.client.Database(db).Collection(collection).UpdateOne(ctx, primitive.M{"_id": id}, update)
 	if err != nil {
 		log.Error().Msgf("Error updating document: %v", err)
 		return err

@@ -30,13 +30,6 @@ func (r *Pages) AddPage(view tview.Identifier, page tview.Primitive, resize, vis
 	return r.Pages
 }
 
-// AddAndSwitchToPage is a wrapper for tview.Pages.AddAndSwitchToPage
-func (r *Pages) AddAndSwitchToPage(view tview.Identifier, page tview.Primitive, resize bool) *tview.Pages {
-	r.app.SetPreviousFocus()
-	r.Pages.AddAndSwitchToPage(string(view), page, resize)
-	return r.Pages
-}
-
 // RemovePage is a wrapper for tview.Pages.RemovePage
 func (r *Pages) RemovePage(view tview.Identifier) *tview.Pages {
 	r.Pages.RemovePage(string(view))

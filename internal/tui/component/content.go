@@ -14,7 +14,6 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
-	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -411,15 +410,17 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 
 	if c.state.Filter != "" {
 		headerInfo += fmt.Sprintf(" | Filter: %s", c.state.Filter)
+		c.queryBar.SetText(c.state.Filter)
 	}
 	if c.state.Sort != "" {
 		headerInfo += fmt.Sprintf(" | Sort: %s", c.state.Sort)
+		c.sortBar.SetText(c.state.Sort)
 	}
 	c.tableHeader.SetText(headerInfo)
 
 	if count == 0 {
 		// TODO: find why if selectable is set to false, program crashes
-		c.table.SetCell(2, 0, tview.NewTableCell("No documents found"))
+		c.table.SetCell(0, 0, tview.NewTableCell("No documents found"))
 	}
 
 	c.table.SetSelectable(true, c.currentView == TableView)
@@ -488,20 +489,20 @@ func (c *Content) jsonViewDocument(doc string, row *int, _id interface{}) {
 
 func (c *Content) queryBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		log.Debug().Msgf("Saving query to history: %s", text)
 		c.state.Filter = util.TrimJson(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		err := c.updateContent(ctx, false)
 		if err != nil {
 			modal.ShowError(c.App.Pages, "Error updating content", err)
+			return
 		}
-		if c.Flex.HasItem(c.queryBar) {
-			c.Flex.RemoveItem(c.queryBar)
-		}
+		c.Flex.RemoveItem(c.queryBar)
+		c.App.SetFocus(c.table)
 	}
 	rejectFunc := func() {
-		c.Render(true)
+		c.Flex.RemoveItem(c.queryBar)
+		c.App.SetFocus(c.table)
 	}
 
 	c.queryBar.DoneFuncHandler(acceptFunc, rejectFunc)
@@ -513,12 +514,12 @@ func (c *Content) sortBarListener(ctx context.Context) {
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		c.updateContent(ctx, false)
-		if c.Flex.HasItem(c.sortBar) {
-			c.Flex.RemoveItem(c.sortBar)
-		}
+		c.Flex.RemoveItem(c.sortBar)
+		c.App.SetFocus(c.table)
 	}
 	rejectFunc := func() {
-		c.Render(true)
+		c.Flex.RemoveItem(c.sortBar)
+		c.App.SetFocus(c.table)
 	}
 
 	c.sortBar.DoneFuncHandler(acceptFunc, rejectFunc)
@@ -572,7 +573,6 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 				modal.ShowError(c.App.Pages, "Error deleting document", err)
 				return
 			}
-			log.Info().Msgf("document deleted: %s", objectId)
 			c.state.DeleteDoc(objectId)
 		}
 		c.App.Pages.RemovePage(c.deleteModal.GetIdentifier())
@@ -592,24 +592,6 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 }
 
 func (c *Content) getDocumentBasedOnView(row, coll int) (string, error) {
-	switch c.currentView {
-	case JsonView:
-		return c.getMultiRowDocument(row, coll)
-	case TableView:
-		return c.getTableViewDocument(row, 0)
-	case SingleLineView:
-		return c.table.GetCell(row, coll).Text, nil
-	default:
-		return "", fmt.Errorf("unknown view type")
-	}
-}
-
-func (c *Content) getMultiRowDocument(row, coll int) (string, error) {
-	_id := c.getDocumentId(row, coll)
-	return c.state.GetJsonDocById(_id)
-}
-
-func (c *Content) getTableViewDocument(row, coll int) (string, error) {
 	_id := c.getDocumentId(row, coll)
 	return c.state.GetJsonDocById(_id)
 }
@@ -695,12 +677,13 @@ func (c *Content) handleAddDocument(ctx context.Context) *tcell.EventKey {
 }
 
 func (c *Content) handleEditDocument(ctx context.Context, row, coll int) *tcell.EventKey {
-	doc, err := c.getDocumentBasedOnView(row, coll)
+	_id := c.getDocumentId(row, coll)
+	doc, err := c.state.GetJsonDocById(_id)
 	if err != nil {
-		modal.ShowError(c.App.Pages, "Error editing document", err)
+		modal.ShowError(c.App.Pages, "Error getting document", err)
 		return nil
 	}
-	updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, doc)
+	updated, err := c.docModifier.Edit(ctx, c.state.Db, c.state.Coll, _id, doc)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error editing document", err)
 		return nil
