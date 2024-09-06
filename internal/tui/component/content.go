@@ -489,7 +489,7 @@ func (c *Content) jsonViewDocument(doc string, row *int, _id interface{}) {
 
 func (c *Content) queryBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.Filter = util.TrimJson(text)
+		c.state.Filter = util.CleanJsonWhitespaces(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		err := c.updateContent(ctx, false)
@@ -510,7 +510,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 
 func (c *Content) sortBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.Sort = util.TrimJson(text)
+		c.state.Sort = util.CleanJsonWhitespaces(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		c.updateContent(ctx, false)
@@ -813,7 +813,7 @@ func (c *Content) handleClearSelection() *tcell.EventKey {
 }
 
 func (c *Content) handleCopyLine(row, col int) *tcell.EventKey {
-	selectedDoc := util.TrimJson(c.table.GetCell(row, col).Text)
+	selectedDoc := util.CleanJsonWhitespaces(c.table.GetCell(row, col).Text)
 	err := clipboard.WriteAll(selectedDoc)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error copying document", err)

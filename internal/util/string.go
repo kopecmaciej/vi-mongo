@@ -5,10 +5,11 @@ import (
 	"unicode"
 )
 
-// TrimJson removes redundant spaces from a JSON string
+// CleanJsonWhitespaces removes new lines and redundant spaces from a JSON string
 // and also removes comma from the end of the string
-func TrimJson(s string) string {
+func CleanJsonWhitespaces(s string) string {
 	s = strings.TrimSuffix(s, ",")
+	s = strings.ReplaceAll(s, "\n", " ")
 
 	var result strings.Builder
 	inQuotes := false

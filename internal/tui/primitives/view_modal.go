@@ -458,7 +458,7 @@ func (m *ViewModal) CopySelectedLine(copyFunc func(text string) error, copyType 
 		switch copyType {
 		case "full":
 			textToCopy = strings.Join(highlightedLines, "\n")
-			textToCopy = util.TrimJson(textToCopy)
+			textToCopy = util.CleanJsonWhitespaces(textToCopy)
 			textToCopy = strings.ReplaceAll(textToCopy, "{", "{ ")
 			textToCopy = strings.ReplaceAll(textToCopy, "}", " }")
 		case "value":
