@@ -81,7 +81,7 @@ func (p *Peeker) setKeybindings() {
 		case k.Contains(k.Peeker.MoveToBottom, event.Name()):
 			p.MoveToBottom()
 			return nil
-		case k.Contains(k.Peeker.CopyFullObj, event.Name()):
+		case k.Contains(k.Peeker.CopyHighlight, event.Name()):
 			if err := p.ViewModal.CopySelectedLine(clipboard.WriteAll, "full"); err != nil {
 				modal.ShowError(p.App.Pages, "Error copying full line", err)
 			}
@@ -123,19 +123,20 @@ func (p *Peeker) Render(ctx context.Context, state *mongo.CollectionState, _id i
 	p.App.Pages.AddPage(p.GetIdentifier(), p.ViewModal, true, true)
 	p.ViewModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		if buttonLabel == "Edit" {
-			updatedDoc, err := p.docModifier.Edit(ctx, state.Db, state.Coll, p.currentDoc)
+			updatedDoc, err := p.docModifier.Edit(ctx, state.Db, state.Coll, _id, p.currentDoc)
 			if err != nil {
 				modal.ShowError(p.App.Pages, "Error editing document", err)
 				return
 			}
 
-			state.UpdateRawDoc(updatedDoc)
-			p.currentDoc = updatedDoc
-			if p.doneFunc != nil {
-				p.doneFunc()
+			if updatedDoc != "" {
+				state.UpdateRawDoc(updatedDoc)
+				p.currentDoc = updatedDoc
+				if p.doneFunc != nil {
+					p.doneFunc()
+				}
+				p.setText()
 			}
-			p.setText()
-			p.App.SetFocus(p.ViewModal)
 		} else if buttonLabel == "Close" || buttonLabel == "" {
 			p.App.Pages.RemovePage(p.GetIdentifier())
 		}

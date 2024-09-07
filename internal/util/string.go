@@ -1,12 +1,11 @@
 package util
 
 import (
-	"regexp"
 	"strings"
 	"unicode"
 )
 
-// TrimJson removes whitespace from a JSON string, except within quotes
+// TrimJson removes redundant spaces from a JSON string
 // and also removes comma from the end of the string
 func TrimJson(s string) string {
 	s = strings.TrimSuffix(s, ",")
@@ -25,30 +24,12 @@ func TrimJson(s string) string {
 			result.WriteRune(char)
 		} else if !unicode.IsSpace(char) {
 			result.WriteRune(char)
+		} else if unicode.IsSpace(char) && prevChar != ' ' {
+			result.WriteRune(char)
 		}
 
 		prevChar = char
 	}
 
 	return result.String()
-}
-
-// QuoteUnquotedKeys adds quotes to unquoted keys in a JSON-like string
-func QuoteUnquotedKeys(s string) string {
-	re := regexp.MustCompile(`(\{|\,)\s*([a-zA-Z0-9_.]+)\s*:`)
-	return re.ReplaceAllString(s, `$1 "$2":`)
-}
-
-// TrimMultipleSpaces trims multiple spaces into a single space
-func TrimMultipleSpaces(s string) string {
-	// Then, replace multiple spaces with a single space
-	space := regexp.MustCompile(`\s+`)
-	return space.ReplaceAllString(s, " ")
-}
-
-// HidePasswordInUri redacts the password in a connection string
-func HidePasswordInUri(s string) string {
-	re := regexp.MustCompile(`://([^:]+):([^@]+)(@.*)`)
-
-	return re.ReplaceAllString(s, "://$1:********$3")
 }

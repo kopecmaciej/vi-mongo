@@ -88,10 +88,12 @@ type (
 	QueryBar struct {
 		ShowHistory Key `json:"showHistory"`
 		ClearInput  Key `json:"clearInput"`
+		Paste       Key `json:"paste"`
 	}
 
 	SortBar struct {
 		ClearInput Key `json:"clearInput"`
+		Paste      Key `json:"paste"`
 	}
 
 	ConnectorKeys struct {
@@ -121,11 +123,11 @@ type (
 	}
 
 	PeekerKeys struct {
-		MoveToTop    Key `json:"moveToTop"`
-		MoveToBottom Key `json:"moveToBottom"`
-		CopyFullObj  Key `json:"copyFullObj"`
-		CopyValue    Key `json:"copyValue"`
-		Refresh      Key `json:"refresh"`
+		MoveToTop     Key `json:"moveToTop"`
+		MoveToBottom  Key `json:"moveToBottom"`
+		CopyHighlight Key `json:"popyHighlight"`
+		CopyValue     Key `json:"copyValue"`
+		Refresh       Key `json:"refresh"`
 	}
 
 	HistoryKeys struct {
@@ -274,12 +276,20 @@ func (k *KeyBindings) loadDefaults() {
 			Keys:        []string{"Ctrl+D"},
 			Description: "Clear input",
 		},
+		Paste: Key{
+			Keys:        []string{"Ctrl+V"},
+			Description: "Paste from clipboard",
+		},
 	}
 
 	k.SortBar = SortBar{
 		ClearInput: Key{
 			Keys:        []string{"Ctrl+D"},
 			Description: "Clear input",
+		},
+		Paste: Key{
+			Keys:        []string{"Ctrl+V"},
+			Description: "Paste from clipboard",
 		},
 	}
 
@@ -341,7 +351,7 @@ func (k *KeyBindings) loadDefaults() {
 			Runes:       []string{"G"},
 			Description: "Move to bottom",
 		},
-		CopyFullObj: Key{
+		CopyHighlight: Key{
 			Runes:       []string{"c"},
 			Description: "Copy full object",
 		},

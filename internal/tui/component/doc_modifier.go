@@ -61,18 +61,18 @@ func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.Ob
 }
 
 // Edit opens the editor with the document and saves it if it was changed
-func (d *DocModifier) Edit(ctx context.Context, db, coll string, rawDocument string) (string, error) {
-	updatedDocument, err := d.openEditor(rawDocument)
+func (d *DocModifier) Edit(ctx context.Context, db, coll string, _id interface{}, jsonDoc string) (string, error) {
+	updatedDocument, err := d.openEditor(jsonDoc)
 	if err != nil {
 		return "", fmt.Errorf("error editing document: %v", err)
 	}
 
-	if strings.ReplaceAll(updatedDocument, " ", "") == strings.ReplaceAll(rawDocument, " ", "") {
+	if strings.ReplaceAll(updatedDocument, " ", "") == strings.ReplaceAll(jsonDoc, " ", "") {
 		log.Debug().Msgf("Edited JSON is the same as original")
 		return "", nil
 	}
 
-	err = d.updateDocument(ctx, db, coll, updatedDocument)
+	err = d.updateDocument(ctx, db, coll, _id, jsonDoc, updatedDocument)
 	if err != nil {
 		return "", fmt.Errorf("error saving document: %v", err)
 	}
@@ -117,7 +117,7 @@ func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocumen
 }
 
 // updateDocument saves the document to the database
-func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, rawDocument string) error {
+func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, _id interface{}, originalDoc, rawDocument string) error {
 	if rawDocument == "" {
 		return fmt.Errorf("document cannot be empty")
 	}
@@ -126,11 +126,15 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, rawDo
 	if err != nil {
 		return fmt.Errorf("error parsing JSON: %v", err)
 	}
-	id, err := mongo.GetIDFromDocument(parsedDoc)
+
+	parsedOriginalDoc, err := mongo.ParseJsonToBson(originalDoc)
 	if err != nil {
-		return fmt.Errorf("error getting _id from document: %v", err)
+		return fmt.Errorf("error parsing JSON: %v", err)
 	}
-	err = d.Dao.UpdateDocument(ctx, db, coll, id, parsedDoc)
+
+	delete(parsedDoc, "_id")
+	delete(parsedOriginalDoc, "_id")
+	err = d.Dao.UpdateDocument(ctx, db, coll, _id, parsedOriginalDoc, parsedDoc)
 	if err != nil {
 		log.Error().Msgf("error updating document: %v", err)
 		return nil
