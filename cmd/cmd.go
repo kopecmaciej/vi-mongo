@@ -39,6 +39,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&connectionPage, "connection-page", false, "Show connection page on startup")
 }
 
+// TODO: fix flags
 func runApp(cmd *cobra.Command, args []string) {
 	cfg, err := config.LoadConfig()
 	if err != nil {
