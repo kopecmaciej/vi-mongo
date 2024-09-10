@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -66,38 +65,24 @@ func ParseBsonValue(value interface{}) interface{} {
 // ParseStringQuery transforms a query string with ObjectID into a filter map compatible with MongoDB's BSON.
 // If keys are not quoted, this function will quote them.
 func ParseStringQuery(query string) (map[string]interface{}, error) {
-	var parseError error
 	if query == "" {
 		return map[string]interface{}{}, nil
 	}
 
-	if strings.Contains(query, "$") {
-		query = util.QuoteUnquotedKeys(query)
-	}
+	query = util.QuoteUnquotedKeys(query)
 
 	query = strings.ReplaceAll(query, "ObjectID(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "\")", "\"}")
 
-	dateRegex := regexp.MustCompile(`\{\"\$date\"\s*:\s*\"(.*?)\"\}`)
-	query = dateRegex.ReplaceAllStringFunc(query, func(match string) string {
-		dateStr := dateRegex.FindStringSubmatch(match)[1]
-		t, err := time.Parse(time.RFC3339, dateStr)
-		if err != nil {
-			parseError = err
-			return match
-		}
-		return fmt.Sprintf(`{"$date":{"$numberLong":"%d"}}`, primitive.NewDateTimeFromTime(t).Time().UnixMilli())
-	})
-	if parseError != nil {
-		return nil, fmt.Errorf("error parsing date: %w", parseError)
+	query, err := util.ParseDate(query)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing date: %w", err)
 	}
 
-	query = util.QuoteUnquotedKeys(query)
-
 	var filter primitive.M
-	parseError = bson.UnmarshalExtJSON([]byte(query), true, &filter)
-	if parseError != nil {
-		return nil, fmt.Errorf("error parsing query %s: %w", query, parseError)
+	err = bson.UnmarshalExtJSON([]byte(query), true, &filter)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing query %s: %w", query, err)
 	}
 
 	return filter, nil
