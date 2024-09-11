@@ -489,7 +489,7 @@ func (c *Content) jsonViewDocument(doc string, row *int, _id interface{}) {
 
 func (c *Content) queryBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.Filter = util.CleanJsonWhitespaces(text)
+		c.state.UpdateFilter(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		err := c.updateContent(ctx, false)
@@ -510,7 +510,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 
 func (c *Content) sortBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.Sort = util.CleanJsonWhitespaces(text)
+		c.state.UpdateSort(text)
 		collectionKey := c.state.Db + "." + c.state.Coll
 		c.stateMap[collectionKey] = c.state
 		c.updateContent(ctx, false)

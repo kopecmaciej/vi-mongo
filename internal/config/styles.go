@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
@@ -301,8 +300,7 @@ func (s *Style) Rune() rune {
 }
 
 func isHexColor(s string) bool {
-	re := regexp.MustCompile("^#(?:[0-9a-fA-F]{3}){1,2}$")
-	return re.MatchString(s)
+	return util.IsHexColor(s)
 }
 
 func getStylePath() (string, error) {

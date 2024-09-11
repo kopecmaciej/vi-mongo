@@ -3,6 +3,7 @@ package mongo
 import (
 	"sort"
 
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -15,6 +16,24 @@ type CollectionState struct {
 	Sort   string
 	Filter string
 	Docs   map[string]primitive.M
+}
+
+func (c *CollectionState) UpdateFilter(filter string) {
+	filter = util.CleanJsonWhitespaces(filter)
+	if util.IsJsonEmpty(filter) {
+		c.Filter = ""
+		return
+	}
+	c.Filter = filter
+}
+
+func (c *CollectionState) UpdateSort(sort string) {
+	sort = util.CleanJsonWhitespaces(sort)
+	if util.IsJsonEmpty(sort) {
+		c.Sort = ""
+		return
+	}
+	c.Sort = sort
 }
 
 func (c *CollectionState) GetSortedDocs() []primitive.M {

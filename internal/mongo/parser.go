@@ -74,7 +74,7 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 	query = strings.ReplaceAll(query, "ObjectID(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "\")", "\"}")
 
-	query, err := util.ParseDate(query)
+	query, err := util.ParseDateToBson(query)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing date: %w", err)
 	}

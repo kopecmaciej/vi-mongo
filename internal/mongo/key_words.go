@@ -114,37 +114,367 @@ var (
 			Description: "Matches documents that satisfy a JavaScript expression.",
 		},
 	}
-	geospatialOperators = []string{
-		"$geoIntersects", "$geoWithin", "$near", "$nearSphere", "$box", "$center",
-		"$centerSphere", "$geometry", "$maxDistance", "$minDistance", "$polygon",
+	geospatialOperators = []MongoKeyword{
+		{
+			Display:     "$geoIntersects",
+			InsertText:  "$geoIntersects: ",
+			Description: "Selects geometries that intersect with a GeoJSON geometry.",
+		},
+		{
+			Display:     "$geoWithin",
+			InsertText:  "$geoWithin: ",
+			Description: "Selects geometries within a bounding GeoJSON geometry.",
+		},
+		// Add similar entries for $near, $nearSphere, $box, $center, $centerSphere, $geometry, $maxDistance, $minDistance, $polygon
 	}
-	arrayOperators = []string{
-		"$all", "$elemMatch", "$size",
+	arrayOperators = []MongoKeyword{
+		{
+			Display:     "$all",
+			InsertText:  "$all: [<$0>]",
+			Description: "Matches arrays that contain all elements specified in the query.",
+		},
+		{
+			Display:     "$elemMatch",
+			InsertText:  "$elemMatch: {<$0>}",
+			Description: "Matches documents that contain an array field with at least one element that matches all the specified query criteria.",
+		},
+		{
+			Display:     "$size",
+			InsertText:  "$size: ",
+			Description: "Matches any array with the number of elements specified by the argument.",
+		},
 	}
-	bitwiseOperators = []string{
-		"$bitsAllClear", "$bitsAllSet", "$bitsAnyClear", "$bitsAnySet",
+	bitwiseOperators = []MongoKeyword{
+		{
+			Display:     "$bitsAllClear",
+			InsertText:  "$bitsAllClear: ",
+			Description: "Matches documents where all bits in the specified field are clear.",
+		},
+		{
+			Display:     "$bitsAllSet",
+			InsertText:  "$bitsAllSet: ",
+			Description: "Matches documents where all bits in the specified field are set.",
+		},
+		{
+			Display:     "$bitsAnyClear",
+			InsertText:  "$bitsAnyClear: ",
+			Description: "Matches documents where at least one bit in the specified field is clear.",
+		},
+		{
+			Display:     "$bitsAnySet",
+			InsertText:  "$bitsAnySet: ",
+			Description: "Matches documents where at least one bit in the specified field is set.",
+		},
 	}
-	projectionOperators = []string{
-		"$elemMatch", "$meta", "$slice",
+	projectionOperators = []MongoKeyword{
+		{
+			Display:     "$elemMatch",
+			InsertText:  "$elemMatch: {<$0>}",
+			Description: "Matches documents that contain an array field with at least one element that matches all the specified query criteria.",
+		},
+		{
+			Display:     "$meta",
+			InsertText:  "$meta: ",
+			Description: "Matches documents that contain a field with the specified metadata.",
+		},
+		{
+			Display:     "$slice",
+			InsertText:  "$slice: ",
+			Description: "Selects a portion of an array.",
+		},
 	}
-	miscellaneousOperators = []string{
-		"$comment", "$rand", "$natural",
+	miscellaneousOperators = []MongoKeyword{
+		{
+			Display:     "$comment",
+			InsertText:  "$comment: ",
+			Description: "Adds a comment to the query.",
+		},
+		{
+			Display:     "$rand",
+			InsertText:  "$rand: ",
+			Description: "Selects a random document from the collection.",
+		},
+		{
+			Display:     "$natural",
+			InsertText:  "$natural: ",
+			Description: "Selects documents in natural order.",
+		},
 	}
-	queryModifiers = []string{
-		"$comment", "$explain", "$hint", "$max", "$maxScan", "$maxTimeMS",
-		"$min", "$orderby", "$returnKey", "$showDiskLoc", "$snapshot", "$natural",
+	queryModifiers = []MongoKeyword{
+		{
+			Display:     "$comment",
+			InsertText:  "$comment: ",
+			Description: "Adds a comment to the query.",
+		},
+		{
+			Display:     "$explain",
+			InsertText:  "$explain: ",
+			Description: "Returns information about the query plan.",
+		},
+		{
+			Display:     "$hint",
+			InsertText:  "$hint: ",
+			Description: "Specifies the index to use for the query.",
+		},
+		{
+			Display:     "$max",
+			InsertText:  "$max: ",
+			Description: "Specifies the maximum number of documents to return.",
+		},
+		{
+			Display:     "$maxScan",
+			InsertText:  "$maxScan: ",
+			Description: "Specifies the maximum number of documents to scan.",
+		},
+		{
+			Display:     "$maxTimeMS",
+			InsertText:  "$maxTimeMS: ",
+			Description: "Specifies the maximum time in milliseconds to spend on the query.",
+		},
+		{
+			Display:     "$min",
+			InsertText:  "$min: ",
+			Description: "Specifies the minimum number of documents to return.",
+		},
+		{
+			Display:     "$orderby",
+			InsertText:  "$orderby: ",
+			Description: "Specifies the order in which to return documents.",
+		},
+		{
+			Display:     "$returnKey",
+			InsertText:  "$returnKey: ",
+			Description: "Returns only the specified fields.",
+		},
+		{
+			Display:     "$showDiskLoc",
+			InsertText:  "$showDiskLoc: ",
+			Description: "Returns the location of the documents on disk.",
+		},
+		{
+			Display:     "$snapshot",
+			InsertText:  "$snapshot: ",
+			Description: "Returns a snapshot of the collection at the time the query is executed.",
+		},
+		{
+			Display:     "$natural",
+			InsertText:  "$natural: ",
+			Description: "Selects documents in natural order.",
+		},
 	}
-	aggregationPipelineOperators = []string{
-		"$addFields", "$bucket", "$bucketAuto", "$collStats", "$count",
-		"$facet", "$geoNear", "$graphLookup", "$group", "$indexStats",
-		"$limit", "$listSessions", "$listLocalSessions", "$lookup", "$match",
-		"$merge", "$out", "$planCacheStats", "$project", "$redact",
-		"$replaceRoot", "$replaceWith", "$sample", "$set", "$skip",
-		"$sort", "$sortByCount", "$unset", "$unwind",
+	aggregationPipelineOperators = []MongoKeyword{
+		{
+			Display:     "$addFields",
+			InsertText:  "$addFields: {<$0>}",
+			Description: "Adds new fields to the documents in the pipeline.",
+		},
+		{
+			Display:     "$bucket",
+			InsertText:  "$bucket: {<$0>}",
+			Description: "Groups documents into buckets based on a specified expression.",
+		},
+		{
+			Display:     "$bucketAuto",
+			InsertText:  "$bucketAuto: {<$0>}",
+			Description: "Groups documents into buckets based on a specified expression, with automatic bucket size calculation.",
+		},
+		{
+			Display:     "$collStats",
+			InsertText:  "$collStats: ",
+			Description: "Returns statistics about the collection.",
+		},
+		{
+			Display:     "$count",
+			InsertText:  "$count: ",
+			Description: "Returns the count of documents in the collection.",
+		},
+		{
+			Display:     "$facet",
+			InsertText:  "$facet: {<$0>}",
+			Description: "Groups documents into buckets based on a specified expression, with automatic bucket size calculation.",
+		},
+		{
+			Display:     "$geoNear",
+			InsertText:  "$geoNear: {<$0>}",
+			Description: "Finds the nearest documents to a specified point.",
+		},
+		{
+			Display:     "$graphLookup",
+			InsertText:  "$graphLookup: {<$0>}",
+			Description: "Performs a recursive graph lookup on a collection.",
+		},
+		{
+			Display:     "$group",
+			InsertText:  "$group: {<$0>}",
+			Description: "Groups documents by a specified expression.",
+		},
+		{
+			Display:     "$indexStats",
+			InsertText:  "$indexStats: ",
+			Description: "Returns statistics about the indexes on the collection.",
+		},
+		{
+			Display:     "$limit",
+			InsertText:  "$limit: ",
+			Description: "Limits the number of documents returned.",
+		},
+		{
+			Display:     "$listSessions",
+			InsertText:  "$listSessions: ",
+			Description: "Returns a list of all sessions in the database.",
+		},
+		{
+			Display:     "$listLocalSessions",
+			InsertText:  "$listLocalSessions: ",
+			Description: "Returns a list of all local sessions in the database.",
+		},
+		{
+			Display:     "$lookup",
+			InsertText:  "$lookup: {<$0>}",
+			Description: "Joins two collections based on a specified local field and a specified foreign field.",
+		},
+		{
+			Display:     "$match",
+			InsertText:  "$match: {<$0>}",
+			Description: "Filters documents based on a specified expression.",
+		},
+		{
+			Display:     "$merge",
+			InsertText:  "$merge: {<$0>}",
+			Description: "Merges two collections based on a specified local field and a specified foreign field.",
+		},
+		{
+			Display:     "$out",
+			InsertText:  "$out: ",
+			Description: "Writes the output of the pipeline to a specified collection.",
+		},
+		{
+			Display:     "$planCacheStats",
+			InsertText:  "$planCacheStats: ",
+			Description: "Returns statistics about the plan cache.",
+		},
+		{
+			Display:     "$project",
+			InsertText:  "$project: {<$0>}",
+			Description: "Selects fields to include in the output.",
+		},
+		{
+			Display:     "$redact",
+			InsertText:  "$redact: {<$0>}",
+			Description: "Redacts fields from the output based on a specified expression.",
+		},
+		{
+			Display:     "$replaceRoot",
+			InsertText:  "$replaceRoot: {<$0>}",
+			Description: "Replaces the root field of the output with a specified expression.",
+		},
+		{
+			Display:     "$replaceWith",
+			InsertText:  "$replaceWith: {<$0>}",
+			Description: "Replaces the root field of the output with a specified expression.",
+		},
+		{
+			Display:     "$sample",
+			InsertText:  "$sample: ",
+			Description: "Randomly selects a specified number of documents from the collection.",
+		},
+		{
+			Display:     "$set",
+			InsertText:  "$set: {<$0>}",
+			Description: "Sets the value of a specified field in the output.",
+		},
+		{
+			Display:     "$skip",
+			InsertText:  "$skip: ",
+			Description: "Skips a specified number of documents in the output.",
+		},
+		{
+			Display:     "$sort",
+			InsertText:  "$sort: {<$0>}",
+			Description: "Sorts the output based on a specified expression.",
+		},
+		{
+			Display:     "$sortByCount",
+			InsertText:  "$sortByCount: {<$0>}",
+			Description: "Sorts the output based on the count of documents in each group.",
+		},
+		{
+			Display:     "$unset",
+			InsertText:  "$unset: {<$0>}",
+			Description: "Removes a specified field from the output.",
+		},
+		{
+			Display:     "$unwind",
+			InsertText:  "$unwind: {<$0>}",
+			Description: "Unwraps an array field in the output.",
+		},
 	}
-	updateOperators = []string{
-		"$addToSet", "$currentDate", "$inc", "$min", "$max", "$mul",
-		"$pop", "$pull", "$push", "$rename", "$set", "$setOnInsert", "$unset",
+	updateOperators = []MongoKeyword{
+		{
+			Display:     "$addToSet",
+			InsertText:  "$addToSet: {<$0>}",
+			Description: "Adds all elements of a specified array to a set in the document.",
+		},
+		{
+			Display:     "$currentDate",
+			InsertText:  "$currentDate: ",
+			Description: "Sets the value of a specified field to the current date.",
+		},
+		{
+			Display:     "$inc",
+			InsertText:  "$inc: {<$0>}",
+			Description: "Increments the value of a specified field by a specified amount.",
+		},
+		{
+			Display:     "$min",
+			InsertText:  "$min: {<$0>}",
+			Description: "Sets the value of a specified field to the minimum of its current value and a specified value.",
+		},
+		{
+			Display:     "$max",
+			InsertText:  "$max: {<$0>}",
+			Description: "Sets the value of a specified field to the maximum of its current value and a specified value.",
+		},
+		{
+			Display:     "$mul",
+			InsertText:  "$mul: {<$0>}",
+			Description: "Multiplies the value of a specified field by a specified amount.",
+		},
+		{
+			Display:     "$pop",
+			InsertText:  "$pop: {<$0>}",
+			Description: "Removes the first or last element from an array in the document.",
+		},
+		{
+			Display:     "$pull",
+			InsertText:  "$pull: {<$0>}",
+			Description: "Removes all occurrences of a specified value from an array in the document.",
+		},
+		{
+			Display:     "$push",
+			InsertText:  "$push: {<$0>}",
+			Description: "Adds a specified value to an array in the document.",
+		},
+		{
+			Display:     "$rename",
+			InsertText:  "$rename: {<$0>}",
+			Description: "Renames a specified field in the document.",
+		},
+		{
+			Display:     "$set",
+			InsertText:  "$set: {<$0>}",
+			Description: "Sets the value of a specified field in the document.",
+		},
+		{
+			Display:     "$setOnInsert",
+			InsertText:  "$setOnInsert: {<$0>}",
+			Description: "Sets the value of a specified field in the document only when the document is inserted.",
+		},
+		{
+			Display:     "$unset",
+			InsertText:  "$unset: {<$0>}",
+			Description: "Removes a specified field from the document.",
+		},
 	}
 )
 
@@ -188,6 +518,15 @@ func getMongoOperators() []MongoKeyword {
 	operators = append(operators, elementOperators...)
 	operators = append(operators, evaluationOperators...)
 	operators = append(operators, logicalOperators...)
+	operators = append(operators, geospatialOperators...)
+	operators = append(operators, arrayOperators...)
+	operators = append(operators, bitwiseOperators...)
+	operators = append(operators, projectionOperators...)
+	operators = append(operators, miscellaneousOperators...)
+	operators = append(operators, queryModifiers...)
+	// for now we don't need aggregation pipeline operators as there is no aggregation in this app
+	// operators = append(operators, aggregationPipelineOperators...)
+	operators = append(operators, updateOperators...)
 
 	return operators
 }

@@ -9,13 +9,17 @@ import (
 )
 
 var (
-	unquotedKeysRegex       = regexp.MustCompile(`(\{|\,)\s*([a-zA-Z\d()!@#$%&*._]+)\s*:`)
-	multipleSpacesRegex     = regexp.MustCompile(`\s+`)
-	uriPasswordRegex        = regexp.MustCompile(`://([^:]+):([^@]+)(@.*)`)
-	jsonKeyValuePairRegex   = regexp.MustCompile(`"([^"]+)":(.*)`)
-	keyWithIndentationRegex = regexp.MustCompile(`^\s*"([^"]+)":\s*(.*)$`)
-	dateRegex               = regexp.MustCompile(`\{\s*\"\$date\"\s*:\s*\"(.*?)\"\s*\}`)
+	unquotedKeysRegex   = regexp.MustCompile(`(\{|\,)\s*([a-zA-Z\d()!@#$%&*._]+)\s*:`)
+	multipleSpacesRegex = regexp.MustCompile(`\s+`)
+	uriPasswordRegex    = regexp.MustCompile(`://([^:]+):([^@]+)(@.*)`)
+	hexColorRegex       = regexp.MustCompile(`^#(?:[0-9a-fA-F]{3}){1,2}$`)
+	dateRegex           = regexp.MustCompile(`\{\s*\"\$date\"\s*:\s*\"(.*?)\"\s*\}`)
 )
+
+// IsHexColor checks if a string is a valid hex color
+func IsHexColor(s string) bool {
+	return hexColorRegex.MatchString(s)
+}
 
 // QuoteUnquotedKeys adds quotes to unquoted keys in a JSON-like string
 func QuoteUnquotedKeys(s string) string {
@@ -33,8 +37,8 @@ func HidePasswordInUri(s string) string {
 	return uriPasswordRegex.ReplaceAllString(s, "://$1:********$3")
 }
 
-// ParseDate parses a date in a JSON string into a BSON date
-func ParseDate(s string) (string, error) {
+// ParseDateToBson parses a date in a JSON string into a BSON date
+func ParseDateToBson(s string) (string, error) {
 	var parseError error
 	query := dateRegex.ReplaceAllStringFunc(s, func(match string) string {
 		dateStr := dateRegex.FindStringSubmatch(match)[1]

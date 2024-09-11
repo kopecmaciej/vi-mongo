@@ -5,6 +5,12 @@ import (
 	"unicode"
 )
 
+// IsJsonEmpty checks if a JSON string is empty or only contains whitespace
+func IsJsonEmpty(s string) bool {
+	s = strings.ReplaceAll(s, " ", "")
+	return s == "" || s == "{}"
+}
+
 // CleanJsonWhitespaces removes new lines and redundant spaces from a JSON string
 // and also removes comma from the end of the string
 func CleanJsonWhitespaces(s string) string {
