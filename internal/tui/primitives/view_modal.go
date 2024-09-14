@@ -354,6 +354,12 @@ func (m *ViewModal) MoveDown() {
 	maxLines := height - 6
 	totalLines := len(tview.WordWrap(m.text.Content, width))
 
+	// sometimes totalLines are incorrect, to short (when key:value is multilines at the end),
+	// to fix that we need to recalculate it based on the content
+	if totalLines < maxLines {
+		totalLines = maxLines
+	}
+
 	if m.selectedLine < maxLines-1 && m.selectedLine < totalLines-1 {
 		m.selectedLine++
 	} else if m.selectedLine < totalLines-1 && m.scrollPosition+m.selectedLine < totalLines {
@@ -371,6 +377,11 @@ func (m *ViewModal) MoveToBottom() {
 	maxLines := height - 6
 	lines := tview.WordWrap(m.text.Content, width)
 	totalLines := len(lines)
+
+	// same as in MoveDown, but for bottom
+	if totalLines < maxLines {
+		totalLines = maxLines
+	}
 
 	if totalLines > maxLines {
 		m.scrollPosition = totalLines - maxLines
