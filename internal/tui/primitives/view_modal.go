@@ -1,5 +1,8 @@
 package primitives
 
+// TODO!!!: Rethink the way of handling those margins and padddings
+// as they are becoming really hard to manage
+
 import (
 	"fmt"
 	"regexp"
@@ -335,28 +338,14 @@ func (m *ViewModal) highlightLine(line string, withMark bool) string {
 	return fmt.Sprintf("[-:%s:b]%s[-:-:-]", m.highlightColor.String(), line)
 }
 
-// Additional methods to handle scrolling
-func (m *ViewModal) ScrollUp() {
-	if m.scrollPosition == 0 {
-		return
-	}
-	m.scrollPosition--
-}
-
-func (m *ViewModal) ScrollDown() {
-	_, _, width, _ := m.GetRect()
-	totalLines := len(tview.WordWrap(m.text.Content, width))
-	if m.scrollPosition+m.selectedLine >= totalLines {
-		return
-	}
-	m.scrollPosition++
-}
-
 func (m *ViewModal) MoveUp() {
 	if m.selectedLine > 0 {
 		m.selectedLine--
 	} else if m.scrollPosition > 0 {
-		m.ScrollUp()
+		if m.scrollPosition == 0 {
+			return
+		}
+		m.scrollPosition--
 	}
 }
 
@@ -367,8 +356,8 @@ func (m *ViewModal) MoveDown() {
 
 	if m.selectedLine < maxLines-1 && m.selectedLine < totalLines-1 {
 		m.selectedLine++
-	} else if m.scrollPosition < m.endPosition {
-		m.ScrollDown()
+	} else if m.selectedLine < totalLines-1 && m.scrollPosition+m.selectedLine < totalLines {
+		m.scrollPosition++
 	}
 }
 

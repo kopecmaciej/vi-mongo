@@ -112,6 +112,7 @@ func (p *Peeker) SetDoneFunc(doneFunc func()) {
 }
 
 func (p *Peeker) Render(ctx context.Context, state *mongo.CollectionState, _id interface{}) error {
+	p.MoveToTop()
 	doc, err := state.GetJsonDocById(_id)
 	if err != nil {
 		return err
