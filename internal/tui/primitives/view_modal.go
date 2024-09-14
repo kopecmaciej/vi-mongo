@@ -203,8 +203,8 @@ func (m *ViewModal) Draw(screen tcell.Screen) {
 	m.frame.Clear()
 	lines := tview.WordWrap(m.text.Content, width)
 
-	// Variables for scrolling
 	maxLines := len(lines)
+	// 2x padding
 	if maxLines > screenHeight-12 {
 		maxLines = screenHeight - 12
 	}
@@ -222,13 +222,13 @@ func (m *ViewModal) Draw(screen tcell.Screen) {
 	}
 
 	numLinesToHighlight := m.calculateNextLinesToHighlight(lines)
-
 	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
 		lines[i] = m.formatLine(lines[i], i == startLine)
 
 		if i-startLine == m.selectedLine {
 			lines[i] = m.highlightLine(lines[i], true)
-			for j := m.selectedLine + 1; j <= m.selectedLine+numLinesToHighlight; j++ {
+			absolutePosition := m.scrollPosition + m.selectedLine
+			for j := absolutePosition + 1; j <= absolutePosition+numLinesToHighlight; j++ {
 				lines[j] = m.highlightLine(lines[j], false)
 			}
 		} else {
@@ -250,26 +250,30 @@ func (m *ViewModal) Draw(screen tcell.Screen) {
 	m.frame.Draw(screen)
 }
 
-func calculateIndent(line string) int {
+func calculateIndentation(line string) int {
 	return len(line) - len(strings.TrimLeft(line, " \t"))
 }
 
+// calculateNextLinesToHighlight calculates the number of lines to highlight after the selected line.
+// It's purly based on indentations and does not consider actual json structure.
 func (m *ViewModal) calculateNextLinesToHighlight(lines []string) int {
-	if m.selectedLine >= len(lines) {
+	absolutePosition := m.selectedLine + m.scrollPosition
+	if absolutePosition >= len(lines) {
 		return 0
 	}
-	currentIndent := calculateIndent(lines[m.selectedLine])
+	currentIndent := calculateIndentation(lines[absolutePosition])
 	linesToHighlight := 0
 
-	for i := m.selectedLine + 1; i < len(lines); i++ {
-		nextIndent := calculateIndent(lines[i])
+	for i := absolutePosition + 1; i < len(lines); i++ {
+		nextIndent := calculateIndentation(lines[i])
 
+		// if we have reached the end of the object or array, return the number of lines to highlight
 		if lines[i] == "}" && nextIndent == 0 {
 			return linesToHighlight
 		}
 
 		// highlight till the end if first line
-		if m.selectedLine == 0 {
+		if absolutePosition == 0 {
 			return len(lines) - 1
 		}
 
@@ -290,8 +294,8 @@ func (m *ViewModal) calculateNextLinesToHighlight(lines []string) int {
 		} else if nextIndent > currentIndent {
 			linesToHighlight++
 			for j := i + 1; j < len(lines); j++ {
-				if calculateIndent(lines[j]) == currentIndent {
-					return j - m.selectedLine
+				if calculateIndentation(lines[j]) == currentIndent {
+					return j - absolutePosition
 				}
 			}
 		}
@@ -340,10 +344,52 @@ func (m *ViewModal) ScrollUp() {
 }
 
 func (m *ViewModal) ScrollDown() {
-	if m.scrollPosition == m.endPosition {
+	_, _, width, _ := m.GetRect()
+	totalLines := len(tview.WordWrap(m.text.Content, width))
+	if m.scrollPosition+m.selectedLine >= totalLines {
 		return
 	}
 	m.scrollPosition++
+}
+
+func (m *ViewModal) MoveUp() {
+	if m.selectedLine > 0 {
+		m.selectedLine--
+	} else if m.scrollPosition > 0 {
+		m.ScrollUp()
+	}
+}
+
+func (m *ViewModal) MoveDown() {
+	_, _, width, height := m.GetRect()
+	maxLines := height - 6
+	totalLines := len(tview.WordWrap(m.text.Content, width))
+
+	if m.selectedLine < maxLines-1 && m.selectedLine < totalLines-1 {
+		m.selectedLine++
+	} else if m.scrollPosition < m.endPosition {
+		m.ScrollDown()
+	}
+}
+
+func (m *ViewModal) MoveToTop() {
+	m.scrollPosition = 0
+	m.selectedLine = 0
+}
+
+func (m *ViewModal) MoveToBottom() {
+	_, _, width, height := m.GetRect()
+	maxLines := height - 6
+	lines := tview.WordWrap(m.text.Content, width)
+	totalLines := len(lines)
+
+	if totalLines > maxLines {
+		m.scrollPosition = totalLines - maxLines
+		m.selectedLine = maxLines - 1
+	} else {
+		m.scrollPosition = 0
+		m.selectedLine = totalLines - 1
+	}
 }
 
 // TextAlignment sets the text alignment within the modal. This must be one of
@@ -402,52 +448,13 @@ func (m *ViewModal) SetScrollable(scrollable bool) *ViewModal {
 	return m
 }
 
-func (m *ViewModal) MoveUp() {
-	if m.selectedLine > 0 {
-		m.selectedLine--
-	} else if m.scrollPosition > 0 {
-		m.ScrollUp()
-	}
-}
-
-func (m *ViewModal) MoveDown() {
-	_, _, width, height := m.GetRect()
-	maxLines := height - 6
-	totalLines := len(tview.WordWrap(m.text.Content, width-4))
-
-	if m.selectedLine < maxLines-1 && m.selectedLine < totalLines-1 {
-		m.selectedLine++
-	} else if m.scrollPosition < m.endPosition {
-		m.ScrollDown()
-	}
-}
-
-func (m *ViewModal) MoveToTop() {
-	m.scrollPosition = 0
-	m.selectedLine = 0
-}
-
-func (m *ViewModal) MoveToBottom() {
-	_, _, width, height := m.GetRect()
-	maxLines := height - 6
-	lines := tview.WordWrap(m.text.Content, width-4)
-	totalLines := len(lines)
-
-	if totalLines > maxLines {
-		m.scrollPosition = totalLines - maxLines
-		m.selectedLine = maxLines - 1
-	} else {
-		m.scrollPosition = 0
-		m.selectedLine = totalLines - 1
-	}
-}
-
 // CopySelectedLine copies the selected line to the clipboard.
 // copyType can be "full" or "value". "full" will copy the entire highlighted lines,
 // while "value" will copy only the value of the highlighted line.
 func (m *ViewModal) CopySelectedLine(copyFunc func(text string) error, copyType string) error {
 	_, _, width, _ := m.GetRect()
-	lines := tview.WordWrap(m.text.Content, width-4)
+	width = width - 4
+	lines := tview.WordWrap(m.text.Content, width)
 	selectedLineIndex := m.scrollPosition + m.selectedLine
 
 	if selectedLineIndex >= 0 && selectedLineIndex < len(lines) {
