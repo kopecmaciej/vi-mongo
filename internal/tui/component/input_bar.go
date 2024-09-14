@@ -91,6 +91,7 @@ func (i *InputBar) setStyle() {
 
 func (i *InputBar) setKeybindings() {
 	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		k := i.App.GetKeys()
 		switch event.Rune() {
 		case '{':
 			if i.GetWordAtCursor() == "" {
@@ -104,7 +105,6 @@ func (i *InputBar) setKeybindings() {
 			}
 		}
 
-		k := i.App.GetKeys()
 		switch {
 		case k.Contains(k.QueryBar.ShowHistory, event.Name()):
 			if i.historyModal != nil {
@@ -112,7 +112,7 @@ func (i *InputBar) setKeybindings() {
 			}
 		case k.Contains(k.QueryBar.ClearInput, event.Name()):
 			i.SetText("")
-			i.SetWordAtCursor(i.defaultText)
+			go i.SetWordAtCursor(i.defaultText)
 		}
 
 		return event
@@ -247,7 +247,6 @@ func (i *InputBar) handleEvents() {
 }
 
 func (i *InputBar) handleHistoryModalEvent(eventKey *tcell.EventKey) {
-	log.Debug().Msgf("Received event from HistoryModal: %v", eventKey)
 	switch {
 	case i.App.GetKeys().Contains(i.App.GetKeys().History.AcceptEntry, eventKey.Name()):
 		go i.App.QueueUpdateDraw(func() {
