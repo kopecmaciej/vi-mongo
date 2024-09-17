@@ -7,6 +7,8 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
@@ -57,6 +59,9 @@ func (s *Database) init() error {
 	}
 	s.filterBarHandler(ctx)
 
+	s.Subscribe(DatabaseComponent)
+	go s.handleEvents()
+
 	return nil
 }
 
@@ -75,6 +80,21 @@ func (s *Database) setKeybindings() {
 		}
 		return event
 	})
+}
+
+func (s *Database) handleEvents() {
+	for event := range s.Listener {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			newStyles := event.Message.Data.(*config.Styles)
+			s.DbTree.style = &newStyles.Databases
+			go s.App.QueueUpdateDraw(func() {
+				s.DbTree.Render(context.Background(), s.dbsWithColls, false)
+			})
+		default:
+			continue
+		}
+	}
 }
 
 func (s *Database) Render() {

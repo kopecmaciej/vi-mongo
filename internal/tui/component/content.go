@@ -10,6 +10,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
@@ -116,13 +117,38 @@ func (c *Content) init() error {
 		c.updateContent(ctx, true)
 	})
 
+	c.Subscribe(ContentComponent)
+	go c.handleEvents()
+
 	return nil
+}
+
+func (c *Content) handleEvents() {
+	for event := range c.Listener {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			newStyles := event.Message.Data.(*config.Styles)
+			c.style = &newStyles.Content
+			c.queryBar.SetStyle(&newStyles.InputBar)
+			c.sortBar.SetStyle(&newStyles.InputBar)
+			c.peeker.SetStyle(&newStyles.DocPeeker)
+			go c.App.QueueUpdateDraw(func() {
+				c.Render(false)
+			})
+		default:
+			continue
+		}
+	}
 }
 
 func (c *Content) UpdateDao(dao *mongo.Dao) {
 	c.table.Clear()
 	c.BaseElement.UpdateDao(dao)
 	c.docModifier.UpdateDao(dao)
+}
+
+func (c *Content) SetStyle(style *config.ContentStyle) {
+	c.style = style
 }
 
 func (c *Content) setStyle() {
@@ -209,7 +235,7 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 			Page: 0,
 		}
 		_, _, _, height := c.table.GetInnerRect()
-		state.Limit = int64(height) - 3
+		state.Limit = int64(height) - 2
 		state.Db = db
 		state.Coll = coll
 		c.state = &state

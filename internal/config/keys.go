@@ -47,6 +47,7 @@ type (
 	GlobalKeys struct {
 		ToggleFullScreenHelp Key `json:"toggleFullScreenHelp"`
 		OpenConnector        Key `json:"openConnector"`
+		NextStyle            Key `json:"nextStyle"`
 	}
 
 	MainKeys struct {
@@ -146,6 +147,10 @@ func (k *KeyBindings) loadDefaults() {
 		OpenConnector: Key{
 			Keys:        []string{"Ctrl+O"},
 			Description: "Open connector",
+		},
+		NextStyle: Key{
+			Keys:        []string{"Ctrl+T"},
+			Description: "Switch to next style",
 		},
 	}
 

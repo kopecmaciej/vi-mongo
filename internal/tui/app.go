@@ -63,6 +63,12 @@ func (a *App) setKeybindings() {
 		case a.GetKeys().Contains(a.GetKeys().Global.OpenConnector, event.Name()):
 			a.renderConnector()
 			return nil
+		case a.GetKeys().Contains(a.GetKeys().Global.NextStyle, event.Name()):
+			err := a.NextStyle()
+			if err != nil {
+				modal.ShowError(a.Pages, "Failed to load next style", err)
+			}
+			return nil
 		case a.GetKeys().Contains(a.GetKeys().Global.ToggleFullScreenHelp, event.Name()):
 			if a.Pages.HasPage(page.HelpPage) {
 				a.Pages.RemovePage(page.HelpPage)

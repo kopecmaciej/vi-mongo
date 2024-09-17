@@ -67,6 +67,10 @@ func (i *InputBar) init() error {
 	return nil
 }
 
+func (i *InputBar) SetStyle(style *config.InputBarStyle) {
+	i.style = style
+}
+
 func (i *InputBar) setStyle() {
 	i.style = &i.App.GetStyles().InputBar
 	i.SetBorder(true)

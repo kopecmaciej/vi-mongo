@@ -8,6 +8,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
+	"github.com/rs/zerolog/log"
 )
 
 // Styles is a struct that contains all the styles for the application
@@ -235,7 +236,7 @@ func (s *Styles) loadDefaults() {
 }
 
 // LoadStyles creates a new Styles struct with default values
-func LoadStyles() (*Styles, error) {
+func LoadStyles(styleName string) (*Styles, error) {
 	defaultStyles := &Styles{}
 	defaultStyles.loadDefaults()
 
@@ -243,12 +244,12 @@ func LoadStyles() (*Styles, error) {
 		return defaultStyles, nil
 	}
 
-	styleFilePath, err := getStylePath()
+	stylePath, err := getStylePath(styleName)
 	if err != nil {
 		return nil, err
 	}
 
-	return util.LoadConfigFile(defaultStyles, styleFilePath)
+	return util.LoadConfigFile(defaultStyles, stylePath)
 }
 
 func (s *Styles) LoadMainStyles() {
@@ -264,6 +265,36 @@ func (s *Styles) LoadMainStyles() {
 	tview.Styles.FocusColor = s.loadColor(s.Global.FocusColor)
 	tview.Styles.TitleColor = s.loadColor(s.Global.TitleColor)
 	tview.Styles.GraphicsColor = s.loadColor(s.Global.GraphicsColor)
+}
+
+// PickNextStyle picks the next style in the list
+func (s *Styles) PickNextStyle(currentStyle string) (string, error) {
+	allStyles, err := GetAllStyles()
+	if err != nil {
+		return "", err
+	}
+
+	// find current style in all styles
+	currentStyleIndex := -1
+	for i, style := range allStyles {
+		if style == currentStyle {
+			currentStyleIndex = i
+		}
+	}
+
+	// if current style is not found, pick first one
+	if currentStyleIndex == -1 {
+		currentStyleIndex = 0
+	}
+
+	// if current style is last, pick first one
+	if currentStyleIndex == len(allStyles)-1 {
+		currentStyleIndex = 0
+	} else {
+		currentStyleIndex++
+	}
+
+	return allStyles[currentStyleIndex], nil
 }
 
 // LoadColor loads a color from a string
@@ -303,11 +334,31 @@ func isHexColor(s string) bool {
 	return util.IsHexColor(s)
 }
 
-func getStylePath() (string, error) {
+func getStylePath(styleName string) (string, error) {
 	configPath, err := util.GetConfigDir()
 	if err != nil {
 		return "", err
 	}
 
-	return configPath + "/styles.yaml", nil
+	return fmt.Sprintf("%s/styles/%s", configPath, styleName), nil
+}
+
+func GetAllStyles() ([]string, error) {
+	configPath, err := util.GetConfigDir()
+	if err != nil {
+		return nil, err
+	}
+
+	files, err := os.ReadDir(fmt.Sprintf("%s/styles", configPath))
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info().Msgf("files: %v", files)
+
+	styleNames := make([]string, 0, len(files))
+	for _, file := range files {
+		styleNames = append(styleNames, file.Name())
+	}
+	return styleNames, nil
 }

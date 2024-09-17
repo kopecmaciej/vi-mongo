@@ -182,6 +182,12 @@ func (h *Header) handleEvents() {
 			go h.App.QueueUpdateDraw(func() {
 				h.Render()
 			})
+		case manager.StyleChanged:
+			newStyles := event.Message.Data.(*config.Styles)
+			h.style = &newStyles.Header
+			go h.App.QueueUpdateDraw(func() {
+				h.Render()
+			})
 		default:
 			continue
 		}

@@ -1,5 +1,6 @@
 BUILD_DIR := .build
 SVC_NAME := vi-mongo
+INC_VERSION := $(shell git describe --tags --abbrev=0 | awk -F. '{OFS="."; $$NF+=1; print}')
 
 .PHONY: build run
 
@@ -25,11 +26,14 @@ lint:
 	golangci-lint run
 
 release: check-version
-	git tag -a v$(VERSION) -m "Release v$(VERSION)"
-	git push origin v$(VERSION)
+	git tag -a $(INC_VERSION) -m "Release $(INC_VERSION)"
+	git push origin $(INC_VERSION)
 
 check-version:
-	@if [ -z "$(VERSION)" ]; then \
-		echo "Error: VERSION is not set"; \
+	@if [ -z "$(INC_VERSION)" ]; then \
+		echo "Error: INC_VERSION is not set"; \
 		exit 1; \
 	fi
+
+bump-version:
+	@git describe --tags --abbrev=0 | awk -F. '{OFS="."; $NF+=1; print $0}'

@@ -24,7 +24,7 @@ type (
 )
 
 func NewApp(appConfig *config.Config) *App {
-	styles, err := config.LoadStyles()
+	styles, err := config.LoadStyles(appConfig.CurrentStyle)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load styles")
 	}
@@ -45,6 +45,35 @@ func NewApp(appConfig *config.Config) *App {
 	app.Pages = NewPages(app.manager, app)
 
 	return app
+}
+
+func (a *App) NextStyle() error {
+	nextStyle, err := a.styles.PickNextStyle(a.config.CurrentStyle)
+	if err != nil {
+		return err
+	}
+
+	a.config.CurrentStyle = nextStyle
+	err = a.config.UpdateConfig()
+	if err != nil {
+		return err
+	}
+
+	a.styles, err = config.LoadStyles(a.config.CurrentStyle)
+	if err != nil {
+		return err
+	}
+	a.styles.LoadMainStyles()
+
+	// Broadcast style change event
+	a.manager.Broadcast(manager.EventMsg{
+		Message: manager.Message{
+			Type: manager.StyleChanged,
+			Data: a.styles,
+		},
+	})
+
+	return nil
 }
 
 func (a *App) SetPreviousFocus() {

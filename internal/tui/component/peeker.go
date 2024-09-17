@@ -55,6 +55,10 @@ func (p *Peeker) init() error {
 	return nil
 }
 
+func (p *Peeker) SetStyle(style *config.DocPeekerStyle) {
+	p.style = style
+}
+
 func (p *Peeker) setStyle() {
 	p.style = &p.App.GetStyles().DocPeeker
 	p.SetBorder(true)
