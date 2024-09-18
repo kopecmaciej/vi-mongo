@@ -8,6 +8,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
@@ -22,7 +23,7 @@ const (
 
 type DatabaseTree struct {
 	*core.BaseElement
-	*tview.TreeView
+	*core.TreeView
 
 	addModal    *primitives.InputModal
 	deleteModal *tview.Modal
@@ -34,7 +35,7 @@ type DatabaseTree struct {
 func NewDatabaseTree() *DatabaseTree {
 	d := &DatabaseTree{
 		BaseElement: core.NewBaseElement(),
-		TreeView:    tview.NewTreeView(),
+		TreeView:    core.NewTreeView(),
 		addModal:    primitives.NewInputModal(),
 		deleteModal: tview.NewModal(),
 	}
@@ -49,29 +50,35 @@ func (t *DatabaseTree) init() error {
 	ctx := context.Background()
 
 	t.setStyle()
+	t.setStaticLayout()
 	t.setKeybindings(ctx)
+	t.SetSelectedFunc(func(node *tview.TreeNode) {
+		t.SetCurrentNode(node)
+	})
+
+	t.handleEvents()
 
 	return nil
 }
 
-func (t *DatabaseTree) setStyle() {
-	t.style = &t.App.GetStyles().Databases
+func (t *DatabaseTree) setStaticLayout() {
 	t.SetBorder(true)
 	t.SetTitle(" Databases ")
 	t.SetBorderPadding(0, 0, 1, 1)
 	t.SetGraphics(false)
 
-	t.SetGraphicsColor(t.style.BranchColor.Color())
-	t.SetSelectedFunc(func(node *tview.TreeNode) {
-		t.SetCurrentNode(node)
-	})
+	// move colors to styles
+	t.deleteModal.AddButtons([]string{"[red]Delete", "Cancel"})
+}
 
-	t.addModal.SetInputLabel("Collection name: ")
+func (t *DatabaseTree) setStyle() {
+	t.style = &t.App.GetStyles().Databases
+
+	t.SetGraphicsColor(t.style.BranchColor.Color())
+
 	t.addModal.SetFieldBackgroundColor(tcell.ColorBlack)
-	t.addModal.SetBorder(true)
 
 	t.deleteModal.SetButtonTextColor(tcell.ColorWhite)
-	t.deleteModal.AddButtons([]string{"[red]Delete", "Cancel"})
 }
 
 func (t *DatabaseTree) setKeybindings(ctx context.Context) {
@@ -102,6 +109,15 @@ func (t *DatabaseTree) setKeybindings(ctx context.Context) {
 		}
 
 		return event
+	})
+}
+
+func (t *DatabaseTree) handleEvents() {
+	go t.HandleEvents(DatabaseComponent, func(event manager.EventMsg) {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			t.setStyle()
+		}
 	})
 }
 

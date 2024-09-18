@@ -1,7 +1,9 @@
 package core
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
 )
 
@@ -10,6 +12,13 @@ type Pages struct {
 
 	manager *manager.ElementManager
 	app     *App
+}
+
+func (p *Pages) SetStyle(style *config.Styles) {
+	p.Pages.SetBackgroundColor(style.Global.BackgroundColor.Color())
+	p.Pages.SetBorderColor(style.Global.BorderColor.Color())
+	p.Pages.SetTitleColor(style.Global.TitleColor.Color())
+	p.Pages.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
 }
 
 func NewPages(manager *manager.ElementManager, app *App) *Pages {

@@ -45,6 +45,7 @@ type Config struct {
 	Editor             EditorConfig  `yaml:"editor"`
 	ShowConnectionPage bool          `yaml:"showConnectionPage"`
 	ShowWelcomePage    bool          `yaml:"showWelcomePage"`
+	CurrentStyle       string        `yaml:"currentStyle"`
 	CurrentConnection  string        `yaml:"currentConnection"`
 	Connections        []MongoConfig `yaml:"connections"`
 }
@@ -77,6 +78,7 @@ func (c *Config) loadDefaults() {
 		Command: "",
 		Env:     "EDITOR",
 	}
+	c.CurrentStyle = "default.yaml"
 	c.ShowConnectionPage = true
 	c.ShowWelcomePage = false
 }

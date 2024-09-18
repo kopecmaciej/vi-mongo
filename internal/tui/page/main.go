@@ -7,6 +7,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/component"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
@@ -20,9 +21,9 @@ const (
 
 type Main struct {
 	*core.BaseElement
-	*tview.Flex
+	*core.Flex
 
-	innerFlex *tview.Flex
+	innerFlex *core.Flex
 	style     *config.GlobalStyles
 	header    *component.Header
 	databases *component.Database
@@ -32,8 +33,8 @@ type Main struct {
 func NewMain() *Main {
 	m := &Main{
 		BaseElement: core.NewBaseElement(),
-		Flex:        tview.NewFlex(),
-		innerFlex:   tview.NewFlex(),
+		Flex:        core.NewFlex(),
+		innerFlex:   core.NewFlex(),
 		header:      component.NewHeader(),
 		databases:   component.NewDatabase(),
 		content:     component.NewContent(),
@@ -49,7 +50,18 @@ func (m *Main) init() error {
 	m.setStyles()
 	m.setKeybindings()
 
+	m.handleEvents()
+
 	return m.initComponents()
+}
+
+func (m *Main) handleEvents() {
+	go m.HandleEvents(MainPage, func(event manager.EventMsg) {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			m.setStyles()
+		}
+	})
 }
 
 func (m *Main) Render() {
@@ -83,17 +95,14 @@ func (m *Main) initComponents() error {
 }
 
 func (m *Main) setStyles() {
-	m.style = &m.App.GetStyles().Global
-	m.SetBackgroundColor(m.style.BackgroundColor.Color())
-	m.innerFlex.SetBackgroundColor(m.style.BackgroundColor.Color())
+	m.SetStyle(m.App.GetStyles())
+	m.innerFlex.SetStyle(m.App.GetStyles())
+	m.innerFlex.SetDirection(tview.FlexRow)
 }
 
 func (m *Main) render() error {
 	m.Clear()
 	m.innerFlex.Clear()
-
-	m.innerFlex.SetBackgroundColor(m.style.BackgroundColor.Color())
-	m.innerFlex.SetDirection(tview.FlexRow)
 
 	m.AddItem(m.databases, 30, 0, true)
 	m.AddItem(m.innerFlex, 0, 7, false)

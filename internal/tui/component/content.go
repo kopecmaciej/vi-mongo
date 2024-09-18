@@ -10,6 +10,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
@@ -35,12 +36,12 @@ const (
 // Content is a view that displays documents in a table
 type Content struct {
 	*core.BaseElement
-	*tview.Flex
+	*core.Flex
 
-	tableFlex   *tview.Flex
-	tableHeader *tview.TextView
+	tableFlex   *core.Flex
+	tableHeader *core.TextView
 	table       *core.Table
-	view        *tview.TextView
+	view        *core.TextView
 	style       *config.ContentStyle
 	queryBar    *InputBar
 	sortBar     *InputBar
@@ -55,12 +56,12 @@ type Content struct {
 func NewContent() *Content {
 	c := &Content{
 		BaseElement: core.NewBaseElement(),
-		Flex:        tview.NewFlex(),
+		Flex:        core.NewFlex(),
 
-		tableFlex:   tview.NewFlex(),
-		tableHeader: tview.NewTextView(),
+		tableFlex:   core.NewFlex(),
+		tableHeader: core.NewTextView(),
 		table:       core.NewTable(),
-		view:        tview.NewTextView(),
+		view:        core.NewTextView(),
 		queryBar:    NewInputBar(QueryBarComponent, "Query"),
 		sortBar:     NewInputBar(SortBarComponent, "Sort"),
 		peeker:      NewPeeker(),
@@ -83,6 +84,7 @@ func NewContent() *Content {
 func (c *Content) init() error {
 	ctx := context.Background()
 
+	c.setStaticLayout()
 	c.setStyle()
 	c.setKeybindings(ctx)
 
@@ -116,7 +118,19 @@ func (c *Content) init() error {
 		c.updateContent(ctx, true)
 	})
 
+	c.handleEvents()
+
 	return nil
+}
+
+func (c *Content) handleEvents() {
+	go c.HandleEvents(ContentComponent, func(event manager.EventMsg) {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			c.setStyle()
+			c.updateContent(context.Background(), true)
+		}
+	})
 }
 
 func (c *Content) UpdateDao(dao *mongo.Dao) {
@@ -127,7 +141,19 @@ func (c *Content) UpdateDao(dao *mongo.Dao) {
 
 func (c *Content) setStyle() {
 	c.style = &c.App.GetStyles().Content
+	styles := c.App.GetStyles()
 
+	c.tableFlex.SetStyle(styles)
+	c.tableHeader.SetStyle(styles)
+	c.view.SetStyle(styles)
+	c.Flex.SetStyle(styles)
+	c.table.SetStyle(styles)
+
+	c.tableFlex.SetBorderColor(c.style.SeparatorColor.Color())
+	c.tableHeader.SetTextColor(c.style.StatusTextColor.Color())
+}
+
+func (c *Content) setStaticLayout() {
 	c.tableFlex.SetBorder(true)
 	c.tableFlex.SetDirection(tview.FlexRow)
 	c.tableFlex.SetTitle(" Content ")
@@ -137,7 +163,6 @@ func (c *Content) setStyle() {
 	c.tableFlex.SetBorderPadding(0, 0, 1, 1)
 
 	c.tableHeader.SetText("Documents: 0, Page: 0, Limit: 0")
-	c.tableHeader.SetTextColor(c.style.StatusTextColor.Color())
 
 	c.view.SetBorder(true)
 	c.view.SetTitle(" JSON View ")
@@ -209,7 +234,7 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 			Page: 0,
 		}
 		_, _, _, height := c.table.GetInnerRect()
-		state.Limit = int64(height) - 3
+		state.Limit = int64(height) - 2
 		state.Db = db
 		state.Coll = coll
 		c.state = &state
@@ -271,6 +296,9 @@ func (c *Content) renderTableView(startRow int, documents []primitive.M) {
 				cellText = util.GetValueByType(val)
 			} else {
 				cellText = ""
+			}
+			if len(cellText) > 30 {
+				cellText = cellText[0:30] + "..."
 			}
 
 			cell := tview.NewTableCell(cellText).

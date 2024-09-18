@@ -7,6 +7,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
@@ -20,7 +21,7 @@ const (
 // Database is flex container for DatabaseTree and InputBar
 type Database struct {
 	*core.BaseElement
-	*tview.Flex
+	*core.Flex
 
 	DbTree       *DatabaseTree
 	filterBar    *InputBar
@@ -31,7 +32,7 @@ type Database struct {
 func NewDatabase() *Database {
 	s := &Database{
 		BaseElement: core.NewBaseElement(),
-		Flex:        tview.NewFlex(),
+		Flex:        core.NewFlex(),
 		DbTree:      NewDatabaseTree(),
 		filterBar:   NewInputBar(FilterBarView, "Filter"),
 		mutex:       sync.Mutex{},
@@ -57,10 +58,15 @@ func (s *Database) init() error {
 	}
 	s.filterBarHandler(ctx)
 
+	s.handleEvents()
+
 	return nil
 }
 
 func (s *Database) setStyle() {
+	s.Flex.SetStyle(s.App.GetStyles())
+	s.DbTree.SetStyle(s.App.GetStyles())
+	s.filterBar.SetStyle(s.App.GetStyles())
 	s.Flex.SetDirection(tview.FlexRow)
 }
 
@@ -74,6 +80,15 @@ func (s *Database) setKeybindings() {
 			return nil
 		}
 		return event
+	})
+}
+
+func (s *Database) handleEvents() {
+	go s.HandleEvents(DatabaseComponent, func(event manager.EventMsg) {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			s.setStyle()
+		}
 	})
 }
 

@@ -9,6 +9,7 @@ import (
 
 const (
 	FocusChanged MessageType = "focus_changed"
+	StyleChanged MessageType = "style_changed"
 )
 
 type (
