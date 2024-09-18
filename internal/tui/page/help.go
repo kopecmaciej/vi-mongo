@@ -38,6 +38,7 @@ func NewHelp() *Help {
 }
 
 func (h *Help) init() error {
+	h.setStaticLayout()
 	h.setStyle()
 	h.setKeybindings()
 
@@ -166,13 +167,7 @@ func (h *Help) AddKeySection(name string, keys []config.Key, row *int, col int) 
 
 func (h *Help) setStyle() {
 	h.style = &h.App.GetStyles().Help
-	h.Table.SetStyle(h.App.GetStyles())
-	h.Table.SetBorder(true)
-	h.Table.SetTitle(" Help ")
-	h.Table.SetBorderPadding(1, 1, 3, 3)
-	h.Table.SetSelectable(false, false)
-	h.Table.SetTitleAlign(tview.AlignLeft)
-	h.Table.SetEvaluateAllRows(true)
+	h.SetStyle(h.App.GetStyles())
 }
 
 func (h *Help) setStaticLayout() {

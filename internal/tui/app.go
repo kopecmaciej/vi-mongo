@@ -156,8 +156,8 @@ func (a *App) renderConnector() error {
 		}
 	})
 
-	a.connector.Render()
 	a.Pages.AddPage(a.connector.GetIdentifier(), a.connector, true, true)
+	a.connector.Render()
 	return nil
 }
 
@@ -177,7 +177,7 @@ func (a *App) renderWelcome() error {
 			modal.ShowError(a.Pages, "Error while rendering connector page", err)
 		}
 	})
-	welcome.Render()
 	a.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
+	welcome.Render()
 	return nil
 }

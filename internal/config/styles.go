@@ -129,8 +129,9 @@ type (
 
 	OthersStyle struct {
 		// buttons
-		ButtonsTextColor     Style `yaml:"buttonsTextColor"`
-		ButtonsSelectedColor Style `yaml:"buttonsSelectedColor"`
+		ButtonsTextColor       Style `yaml:"buttonsTextColor"`
+		ButtonsSelectedColor   Style `yaml:"buttonsSelectedColor"`
+		ButtonsBackgroundColor Style `yaml:"buttonsBackgroundColor"`
 		// modals specials
 		ModalTextColor          Style `yaml:"modalTextColor"`
 		ModalSecondaryTextColor Style `yaml:"modalSecondaryTextColor"`
@@ -229,6 +230,7 @@ func (s *Styles) loadDefaults() {
 	s.Others = OthersStyle{
 		ButtonsTextColor:        "#0F172A",
 		ButtonsSelectedColor:    "#387D44",
+		ButtonsBackgroundColor:  "#1E293B",
 		ModalTextColor:          "#FDE68A",
 		ModalSecondaryTextColor: "#387D44",
 	}

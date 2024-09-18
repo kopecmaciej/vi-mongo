@@ -21,10 +21,10 @@ type Connector struct {
 	*core.Flex
 
 	// form is for creating new connection
-	form *tview.Form
+	form *core.Form
 
 	// list is a list of all available connections
-	list *tview.List
+	list *core.List
 
 	style *config.ConnectorStyle
 
@@ -37,8 +37,8 @@ func NewConnector() *Connector {
 	c := &Connector{
 		BaseElement: core.NewBaseElement(),
 		Flex:        core.NewFlex(),
-		form:        tview.NewForm(),
-		list:        tview.NewList(),
+		form:        core.NewForm(),
+		list:        core.NewList(),
 	}
 
 	c.SetIdentifier(ConnectorPage)
@@ -65,6 +65,9 @@ func (c *Connector) handleEvents() {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			c.setStyle()
+			go c.App.QueueUpdateDraw(func() {
+				c.Render()
+			})
 		}
 	})
 }
@@ -82,7 +85,10 @@ func (c *Connector) setStaticLayout() {
 }
 
 func (c *Connector) setStyle() {
-	c.Flex.SetStyle(c.App.GetStyles())
+	c.SetStyle(c.App.GetStyles())
+	c.form.SetStyle(c.App.GetStyles())
+	c.list.SetStyle(c.App.GetStyles())
+
 	c.style = &c.App.GetStyles().Connector
 
 	c.form.SetFieldTextColor(c.style.FormInputColor.Color())
@@ -136,12 +142,15 @@ func (c *Connector) Render() {
 	// easy way to center the form
 	c.AddItem(tview.NewBox(), 0, 1, false)
 
-	if len(c.App.GetConfig().Connections) > 0 {
-		c.renderList()
-		defer c.App.SetFocus(c.list)
-	} else {
-		defer c.App.SetFocus(c.form)
+	if page, _ := c.App.Pages.GetFrontPage(); page == ConnectorPage {
+		if len(c.App.GetConfig().Connections) > 0 {
+			c.renderList()
+			defer c.App.SetFocus(c.list)
+		} else {
+			defer c.App.SetFocus(c.form)
+		}
 	}
+
 	c.renderForm()
 
 	// easy way to center the form
@@ -149,7 +158,7 @@ func (c *Connector) Render() {
 }
 
 // renderForm renders the form for creating new connection
-func (c *Connector) renderForm() *tview.Form {
+func (c *Connector) renderForm() *core.Form {
 	c.form.Clear(true)
 
 	c.form.AddInputField("Name", "", 40, nil, nil)

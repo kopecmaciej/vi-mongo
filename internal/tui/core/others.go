@@ -14,6 +14,12 @@ type (
 	Flex struct {
 		*tview.Flex
 	}
+	Form struct {
+		*tview.Form
+	}
+	List struct {
+		*tview.List
+	}
 	TextView struct {
 		*tview.TextView
 	}
@@ -39,6 +45,36 @@ func (f *Flex) SetStyle(style *config.Styles) {
 	f.Flex.SetBorderColor(style.Global.BorderColor.Color())
 	f.Flex.SetTitleColor(style.Global.TitleColor.Color())
 	f.Flex.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
+}
+
+func NewForm() *Form {
+	return &Form{
+		Form: tview.NewForm(),
+	}
+}
+
+func (f *Form) SetStyle(style *config.Styles) {
+	f.Form.SetBackgroundColor(style.Global.BackgroundColor.Color())
+	f.Form.SetBorderColor(style.Global.BorderColor.Color())
+	f.Form.SetTitleColor(style.Global.TitleColor.Color())
+	f.Form.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
+
+	if f.GetButtonCount() > 0 {
+		f.SetButtonBackgroundColor(style.Others.ButtonsBackgroundColor.Color())
+	}
+}
+
+func NewList() *List {
+	return &List{
+		List: tview.NewList(),
+	}
+}
+
+func (l *List) SetStyle(style *config.Styles) {
+	l.List.SetBackgroundColor(style.Global.BackgroundColor.Color())
+	l.List.SetBorderColor(style.Global.BorderColor.Color())
+	l.List.SetTitleColor(style.Global.TitleColor.Color())
+	l.List.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
 }
 
 func NewTextView() *TextView {

@@ -55,6 +55,12 @@ func (m *Main) init() error {
 	return m.initComponents()
 }
 
+func (m *Main) setStyles() {
+	m.SetStyle(m.App.GetStyles())
+	m.innerFlex.SetStyle(m.App.GetStyles())
+	m.innerFlex.SetDirection(tview.FlexRow)
+}
+
 func (m *Main) handleEvents() {
 	go m.HandleEvents(MainPage, func(event manager.EventMsg) {
 		switch event.Message.Type {
@@ -92,12 +98,6 @@ func (m *Main) initComponents() error {
 		return err
 	}
 	return nil
-}
-
-func (m *Main) setStyles() {
-	m.SetStyle(m.App.GetStyles())
-	m.innerFlex.SetStyle(m.App.GetStyles())
-	m.innerFlex.SetDirection(tview.FlexRow)
 }
 
 func (m *Main) render() error {

@@ -6,20 +6,21 @@ import (
 
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 )
 
 const (
-	WelcomeView = "Welcome"
+	WelcomePage = "Welcome"
 )
 
 type Welcome struct {
 	*core.BaseElement
-	*tview.Flex
+	*core.Flex
 
 	// Form
-	form *tview.Form
+	form *core.Form
 
 	// Callbacks
 	onSubmit func()
@@ -28,11 +29,11 @@ type Welcome struct {
 func NewWelcome() *Welcome {
 	w := &Welcome{
 		BaseElement: core.NewBaseElement(),
-		Flex:        tview.NewFlex(),
-		form:        tview.NewForm(),
+		Flex:        core.NewFlex(),
+		form:        core.NewForm(),
 	}
 
-	w.SetIdentifier(WelcomeView)
+	w.SetIdentifier(WelcomePage)
 
 	return w
 }
@@ -40,20 +41,41 @@ func NewWelcome() *Welcome {
 func (w *Welcome) Init(app *core.App) error {
 	w.App = app
 
+	w.setStaticLayout()
 	w.setStyle()
+
+	w.handleEvents()
 
 	return nil
 }
 
-func (w *Welcome) setStyle() {
-	style := w.App.GetStyles().Welcome
-
+func (w *Welcome) setStaticLayout() {
 	w.form.SetBorder(true)
-	w.form.SetFieldTextColor(style.FormInputColor.Color())
-	w.form.SetFieldBackgroundColor(style.FormInputBackgroundColor.Color())
-	w.SetBorder(false)
+	w.form.SetTitle(" Welcome to Vi Mongo ")
+	w.form.SetTitleAlign(tview.AlignCenter)
+	w.form.SetButtonsAlign(tview.AlignCenter)
 }
 
+func (w *Welcome) setStyle() {
+	w.Flex.SetStyle(w.App.GetStyles())
+	w.form.SetStyle(w.App.GetStyles())
+	style := w.App.GetStyles().Welcome
+
+	w.form.SetFieldTextColor(style.FormInputColor.Color())
+	w.form.SetFieldBackgroundColor(style.FormInputBackgroundColor.Color())
+}
+
+func (w *Welcome) handleEvents() {
+	go w.HandleEvents(WelcomePage, func(event manager.EventMsg) {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			w.setStyle()
+			go w.App.QueueUpdateDraw(func() {
+				w.Render()
+			})
+		}
+	})
+}
 func (w *Welcome) Render() {
 	w.Flex.Clear()
 
@@ -64,6 +86,10 @@ func (w *Welcome) Render() {
 	w.Flex.AddItem(w.form, 0, 3, true)
 
 	w.AddItem(tview.NewBox(), 0, 1, false)
+
+	if page, _ := w.App.Pages.GetFrontPage(); page == WelcomePage {
+		w.App.SetFocus(w)
+	}
 }
 
 func (w *Welcome) SetOnSubmitFunc(onSubmit func()) {
@@ -72,10 +98,6 @@ func (w *Welcome) SetOnSubmitFunc(onSubmit func()) {
 
 func (w *Welcome) renderForm() {
 	w.form.Clear(true)
-
-	w.form.SetBorder(true)
-	w.form.SetTitle(" Welcome to Vi Mongo ")
-	w.form.SetTitleAlign(tview.AlignCenter)
 
 	configFile, err := config.GetConfigPath()
 	if err != nil {
