@@ -22,7 +22,7 @@ const (
 // Peeker is a view that provides a modal view for peeking at a document
 type Peeker struct {
 	*core.BaseElement
-	*primitives.ViewModal
+	*core.ViewModal
 
 	style       *config.DocPeekerStyle
 	docModifier *DocModifier
@@ -35,7 +35,7 @@ type Peeker struct {
 func NewPeeker() *Peeker {
 	p := &Peeker{
 		BaseElement: core.NewBaseElement(),
-		ViewModal:   primitives.NewViewModal(),
+		ViewModal:   core.NewViewModal(),
 		docModifier: NewDocModifier(),
 	}
 
@@ -53,6 +53,8 @@ func (p *Peeker) init() error {
 	if err := p.docModifier.Init(p.App); err != nil {
 		return err
 	}
+
+	p.handleEvents()
 
 	return nil
 }
@@ -76,6 +78,7 @@ func (p *Peeker) setStaticLayout() {
 
 func (p *Peeker) setStyle() {
 	p.style = &p.App.GetStyles().DocPeeker
+	p.ViewModal.SetStyle(p.App.GetStyles())
 	p.SetHighlightColor(p.style.HighlightColor.Color())
 	p.SetDocumentColors(
 		p.style.KeyColor.Color(),

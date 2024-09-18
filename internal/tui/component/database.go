@@ -30,7 +30,7 @@ type Database struct {
 }
 
 func NewDatabase() *Database {
-	s := &Database{
+	d := &Database{
 		BaseElement: core.NewBaseElement(),
 		Flex:        core.NewFlex(),
 		DbTree:      NewDatabaseTree(),
@@ -38,95 +38,96 @@ func NewDatabase() *Database {
 		mutex:       sync.Mutex{},
 	}
 
-	s.SetIdentifier(DatabaseComponent)
-	s.SetAfterInitFunc(s.init)
+	d.SetIdentifier(DatabaseComponent)
+	d.SetAfterInitFunc(d.init)
 
-	return s
+	return d
 }
 
-func (s *Database) init() error {
+func (d *Database) init() error {
 	ctx := context.Background()
-	s.setStyle()
-	s.setKeybindings()
+	d.setStyle()
+	d.setKeybindings()
 
-	if err := s.DbTree.Init(s.App); err != nil {
+	if err := d.DbTree.Init(d.App); err != nil {
 		return err
 	}
 
-	if err := s.filterBar.Init(s.App); err != nil {
+	if err := d.filterBar.Init(d.App); err != nil {
 		return err
 	}
-	s.filterBarHandler(ctx)
+	d.filterBarHandler(ctx)
 
-	s.handleEvents()
+	d.handleEvents()
 
 	return nil
 }
 
-func (s *Database) setStyle() {
-	s.Flex.SetStyle(s.App.GetStyles())
-	s.DbTree.SetStyle(s.App.GetStyles())
-	s.filterBar.SetStyle(s.App.GetStyles())
-	s.Flex.SetDirection(tview.FlexRow)
+func (d *Database) setStyle() {
+	d.Flex.SetStyle(d.App.GetStyles())
+	d.DbTree.SetStyle(d.App.GetStyles())
+	d.filterBar.SetStyle(d.App.GetStyles())
+	d.Flex.SetDirection(tview.FlexRow)
 }
 
-func (s *Database) setKeybindings() {
-	keys := s.App.GetKeys()
-	s.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+func (d *Database) setKeybindings() {
+	keys := d.App.GetKeys()
+	d.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case keys.Contains(keys.Database.FilterBar, event.Name()):
-			s.filterBar.Enable()
-			s.Render()
+			d.filterBar.Enable()
+			d.Render()
 			return nil
 		}
 		return event
 	})
 }
 
-func (s *Database) handleEvents() {
-	go s.HandleEvents(DatabaseComponent, func(event manager.EventMsg) {
+func (d *Database) handleEvents() {
+	go d.HandleEvents(DatabaseComponent, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
-			s.setStyle()
+			d.setStyle()
+			d.DbTree.RefreshStyle()
 		}
 	})
 }
 
-func (s *Database) Render() {
-	s.Flex.Clear()
+func (d *Database) Render() {
+	d.Flex.Clear()
 
 	var primitive tview.Primitive
-	primitive = s.DbTree
+	primitive = d.DbTree
 
-	if s.filterBar.IsEnabled() {
-		s.Flex.AddItem(s.filterBar, 3, 0, false)
-		primitive = s.filterBar
+	if d.filterBar.IsEnabled() {
+		d.Flex.AddItem(d.filterBar, 3, 0, false)
+		primitive = d.filterBar
 	}
-	defer s.App.SetFocus(primitive)
+	defer d.App.SetFocus(primitive)
 
-	if err := s.listDbsAndCollections(context.Background()); err != nil {
-		modal.ShowError(s.App.Pages, "Failed to list databases and collections", err)
+	if err := d.listDbsAndCollections(context.Background()); err != nil {
+		modal.ShowError(d.App.Pages, "Failed to list databases and collections", err)
 		return
 	}
 
-	s.DbTree.Render(context.Background(), s.dbsWithColls, false)
+	d.DbTree.Render(context.Background(), d.dbsWithColls, false)
 
-	s.Flex.AddItem(s.DbTree, 0, 1, true)
+	d.Flex.AddItem(d.DbTree, 0, 1, true)
 }
 
-func (s *Database) filterBarHandler(ctx context.Context) {
+func (d *Database) filterBarHandler(ctx context.Context) {
 	accceptFunc := func(text string) {
-		s.filter(ctx, text)
+		d.filter(ctx, text)
 	}
 	rejectFunc := func() {
-		s.Render()
+		d.Render()
 	}
-	s.filterBar.DoneFuncHandler(accceptFunc, rejectFunc)
+	d.filterBar.DoneFuncHandler(accceptFunc, rejectFunc)
 }
 
-func (s *Database) filter(ctx context.Context, text string) {
-	defer s.Render()
-	dbsWitColls := s.dbsWithColls
+func (d *Database) filter(ctx context.Context, text string) {
+	defer d.Render()
+	dbsWitColls := d.dbsWithColls
 	expand := false
 	filtered := []mongo.DBsWithCollections{}
 	if text == "" {
@@ -157,19 +158,19 @@ func (s *Database) filter(ctx context.Context, text string) {
 			}
 		}
 	}
-	s.DbTree.Render(ctx, filtered, expand)
+	d.DbTree.Render(ctx, filtered, expand)
 }
 
-func (s *Database) listDbsAndCollections(ctx context.Context) error {
-	dbsWitColls, err := s.Dao.ListDbsWithCollections(ctx, "")
+func (d *Database) listDbsAndCollections(ctx context.Context) error {
+	dbsWitColls, err := d.Dao.ListDbsWithCollections(ctx, "")
 	if err != nil {
 		return err
 	}
-	s.dbsWithColls = dbsWitColls
+	d.dbsWithColls = dbsWitColls
 
 	return nil
 }
 
-func (s *Database) SetSelectFunc(f func(ctx context.Context, db string, coll string) error) {
-	s.DbTree.SetSelectFunc(f)
+func (d *Database) SetSelectFunc(f func(ctx context.Context, db string, coll string) error) {
+	d.DbTree.SetSelectFunc(f)
 }

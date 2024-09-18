@@ -7,6 +7,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/primitives"
 )
 
 type (
@@ -21,6 +22,9 @@ type (
 	}
 	InputField struct {
 		*tview.InputField
+	}
+	ViewModal struct {
+		*primitives.ViewModal
 	}
 )
 
@@ -74,4 +78,17 @@ func (i *InputField) SetStyle(style *config.Styles) {
 	i.InputField.SetBorderColor(style.Global.BorderColor.Color())
 	i.InputField.SetTitleColor(style.Global.TitleColor.Color())
 	i.InputField.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
+}
+
+func NewViewModal() *ViewModal {
+	return &ViewModal{
+		ViewModal: primitives.NewViewModal(),
+	}
+}
+
+func (v *ViewModal) SetStyle(style *config.Styles) {
+	v.ViewModal.SetBackgroundColor(style.Global.BackgroundColor.Color())
+	v.ViewModal.SetBorderColor(style.Global.BorderColor.Color())
+	v.ViewModal.SetTitleColor(style.Global.TitleColor.Color())
+	v.ViewModal.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
 }

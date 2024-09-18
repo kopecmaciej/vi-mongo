@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	InputModalView   = "InputModal"
-	ConfirmModalView = "ConfirmModal"
+	InputModalView        = "InputModal"
+	ConfirmModalView      = "ConfirmModal"
+	DatabaseTreeComponent = "DatabaseTree"
 )
 
 type DatabaseTree struct {
@@ -40,7 +41,7 @@ func NewDatabaseTree() *DatabaseTree {
 		deleteModal: tview.NewModal(),
 	}
 
-	d.SetIdentifier(DatabaseComponent)
+	d.SetIdentifier(DatabaseTreeComponent)
 	d.SetAfterInitFunc(d.init)
 
 	return d
@@ -55,7 +56,6 @@ func (t *DatabaseTree) init() error {
 	t.SetSelectedFunc(func(node *tview.TreeNode) {
 		t.SetCurrentNode(node)
 	})
-
 	t.handleEvents()
 
 	return nil
@@ -72,6 +72,7 @@ func (t *DatabaseTree) setStaticLayout() {
 }
 
 func (t *DatabaseTree) setStyle() {
+	t.TreeView.SetStyle(t.App.GetStyles())
 	t.style = &t.App.GetStyles().Databases
 
 	t.SetGraphicsColor(t.style.BranchColor.Color())
@@ -113,10 +114,11 @@ func (t *DatabaseTree) setKeybindings(ctx context.Context) {
 }
 
 func (t *DatabaseTree) handleEvents() {
-	go t.HandleEvents(DatabaseComponent, func(event manager.EventMsg) {
+	go t.HandleEvents(DatabaseTreeComponent, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			t.setStyle()
+			t.RefreshStyle()
 		}
 	})
 }
@@ -145,6 +147,19 @@ func (t *DatabaseTree) Render(ctx context.Context, dbsWitColls []mongo.DBsWithCo
 	if expand {
 		t.GetRoot().ExpandAll()
 	}
+}
+
+func (t *DatabaseTree) RefreshStyle() {
+	rootNode := t.GetRoot()
+
+	rootNode.Walk(func(node, parent *tview.TreeNode) bool {
+		if parent != nil {
+			parent.SetColor(t.style.NodeColor.Color())
+		}
+
+		node.SetColor(t.style.LeafColor.Color())
+		return true
+	})
 }
 
 func (t *DatabaseTree) addCollection(ctx context.Context) error {

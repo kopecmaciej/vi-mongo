@@ -88,6 +88,7 @@ func NewViewModal() *ViewModal {
 
 // SetBackgroundColor sets the color of the modal frame background.
 func (m *ViewModal) SetBackgroundColor(color tcell.Color) *ViewModal {
+	m.Box.SetBackgroundColor(color)
 	m.form.SetBackgroundColor(color)
 	m.frame.SetBackgroundColor(color)
 	return m
@@ -96,6 +97,27 @@ func (m *ViewModal) SetBackgroundColor(color tcell.Color) *ViewModal {
 // SetTextColor sets the color of the message text.
 func (m *ViewModal) SetTextColor(color tcell.Color) *ViewModal {
 	m.text.Color = color
+	return m
+}
+
+// SetBorderColor sets the color of the modal frame border.
+func (m *ViewModal) SetBorderColor(color tcell.Color) *ViewModal {
+	m.Box.SetBorderColor(color)
+	m.frame.SetBorderColor(color)
+	return m
+}
+
+// SetTitleColor sets the color of the modal frame title.
+func (m *ViewModal) SetTitleColor(color tcell.Color) *ViewModal {
+	m.Box.SetTitleColor(color)
+	m.frame.SetTitleColor(color)
+	return m
+}
+
+// SetFocusStyle sets the style of the modal when it is focused.
+func (m *ViewModal) SetFocusStyle(style tcell.Style) *ViewModal {
+	m.Box.SetFocusStyle(style)
+	m.frame.SetFocusStyle(style)
 	return m
 }
 

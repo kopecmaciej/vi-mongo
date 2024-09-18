@@ -1,10 +1,8 @@
 package component
 
 import (
-	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
@@ -80,31 +78,6 @@ func (h *Header) SetBaseInfo() BaseInfo {
 		1: {"Host", h.Dao.Config.Host},
 	}
 	return h.baseInfo
-}
-
-// refresh refreshes the header view every 10 seconds
-// to display the most recent information about the database
-func (h *Header) Refresh() {
-	sleep := 10 * time.Second
-	for {
-		time.Sleep(sleep)
-		func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			err := h.Dao.Ping(ctx)
-			if err != nil {
-				if strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
-					return
-				}
-				log.Error().Err(err).Msg("Error while refreshing header")
-				h.setInactiveBaseInfo(err)
-				sleep += 5 * time.Second
-			}
-		}()
-		go h.App.QueueUpdateDraw(func() {
-			h.Render()
-		})
-	}
 }
 
 // Render renders the header view
@@ -213,6 +186,12 @@ func (h *Header) valueCell(text string) *tview.TableCell {
 func (h *Header) UpdateKeys() ([]config.Key, error) {
 	if h.currentFocus == "" {
 		return nil, nil
+	}
+
+	// hack for DatabaseTree, as it's child of Database
+	// TODO: think of better solution for this
+	if h.currentFocus == "DatabaseTree" {
+		h.currentFocus = "Database"
 	}
 
 	orderedKeys, err := h.App.GetKeys().GetKeysForElement(string(h.currentFocus))

@@ -172,7 +172,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Hide databases",
 		},
 		ShowServerInfo: Key{
-			Keys:        []string{"Ctrl+T"},
+			Keys:        []string{"Ctrl+I"},
 			Description: "Show server info",
 		},
 	}
