@@ -1,7 +1,7 @@
 package core
 
-// This file contains all other primitives that for now have only style set
-// Once they get more complex, they should be moved to their own file
+// Here we define all the components that need to be styled
+// but they don't have any other methods implemented
 
 import (
 	"github.com/gdamore/tcell/v2"
@@ -10,6 +10,25 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/primitives"
 )
 
+// Styler is an interface for components that can be styled
+type Styler interface {
+	SetBackgroundColor(tcell.Color) *tview.Box
+	SetBorderColor(tcell.Color) *tview.Box
+	SetTitleColor(tcell.Color) *tview.Box
+	SetFocusStyle(tcell.Style) *tview.Box
+}
+
+// SetCommonStyle applies common styling to any component implementing the Styler interface
+func SetCommonStyle(s Styler, style *config.Styles) {
+	s.SetBackgroundColor(style.Global.BackgroundColor.Color())
+	s.SetBorderColor(style.Global.BorderColor.Color())
+	s.SetTitleColor(style.Global.TitleColor.Color())
+	s.SetFocusStyle(tcell.StyleDefault.
+		Foreground(style.Global.FocusColor.Color()).
+		Background(style.Global.BackgroundColor.Color()))
+}
+
+// Define structs for each component type
 type (
 	Flex struct {
 		*tview.Flex
@@ -37,110 +56,71 @@ type (
 	}
 )
 
+// Constructor functions
 func NewFlex() *Flex {
-	return &Flex{
-		Flex: tview.NewFlex(),
-	}
-}
-
-func (f *Flex) SetStyle(style *config.Styles) {
-	f.Flex.SetBackgroundColor(style.Global.BackgroundColor.Color())
-	f.Flex.SetBorderColor(style.Global.BorderColor.Color())
-	f.Flex.SetTitleColor(style.Global.TitleColor.Color())
-	f.Flex.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
+	return &Flex{Flex: tview.NewFlex()}
 }
 
 func NewForm() *Form {
-	return &Form{
-		Form: tview.NewForm(),
-	}
+	return &Form{Form: tview.NewForm()}
+}
+
+func NewList() *List {
+	return &List{List: tview.NewList()}
+}
+
+func NewTextView() *TextView {
+	return &TextView{TextView: tview.NewTextView()}
+}
+
+func NewTreeView() *TreeView {
+	return &TreeView{TreeView: tview.NewTreeView()}
+}
+
+func NewInputField() *InputField {
+	return &InputField{InputField: tview.NewInputField()}
+}
+
+func NewViewModal() *ViewModal {
+	return &ViewModal{ViewModal: primitives.NewViewModal()}
+}
+
+func NewListModal() *ListModal {
+	return &ListModal{ListModal: primitives.NewListModal()}
+}
+
+// SetStyle methods
+func (f *Flex) SetStyle(style *config.Styles) {
+	SetCommonStyle(f.Flex, style)
 }
 
 func (f *Form) SetStyle(style *config.Styles) {
-	f.Form.SetBackgroundColor(style.Global.BackgroundColor.Color())
-	f.Form.SetBorderColor(style.Global.BorderColor.Color())
-	f.Form.SetTitleColor(style.Global.TitleColor.Color())
-	f.Form.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
-
+	SetCommonStyle(f.Form, style)
 	if f.GetButtonCount() > 0 {
 		f.SetButtonBackgroundColor(style.Others.ButtonsBackgroundColor.Color())
 	}
 }
 
-func NewList() *List {
-	return &List{
-		List: tview.NewList(),
-	}
-}
-
 func (l *List) SetStyle(style *config.Styles) {
-	l.List.SetBackgroundColor(style.Global.BackgroundColor.Color())
-	l.List.SetBorderColor(style.Global.BorderColor.Color())
-	l.List.SetTitleColor(style.Global.TitleColor.Color())
-	l.List.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
-}
-
-func NewTextView() *TextView {
-	return &TextView{
-		TextView: tview.NewTextView(),
-	}
+	SetCommonStyle(l.List, style)
 }
 
 func (t *TextView) SetStyle(style *config.Styles) {
-	t.TextView.SetBackgroundColor(style.Global.BackgroundColor.Color())
-	t.TextView.SetBorderColor(style.Global.BorderColor.Color())
-	t.TextView.SetTitleColor(style.Global.TitleColor.Color())
-	t.TextView.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
-}
-
-func NewTreeView() *TreeView {
-	return &TreeView{
-		TreeView: tview.NewTreeView(),
-	}
+	SetCommonStyle(t.TextView, style)
 }
 
 func (t *TreeView) SetStyle(style *config.Styles) {
-	t.TreeView.SetBackgroundColor(style.Global.BackgroundColor.Color())
-	t.TreeView.SetBorderColor(style.Global.BorderColor.Color())
-	t.TreeView.SetTitleColor(style.Global.TitleColor.Color())
-	t.TreeView.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
-}
-
-func NewInputField() *InputField {
-	return &InputField{
-		InputField: tview.NewInputField(),
-	}
+	SetCommonStyle(t.TreeView, style)
 }
 
 func (i *InputField) SetStyle(style *config.Styles) {
-	i.InputField.SetBackgroundColor(style.Global.BackgroundColor.Color())
-	i.InputField.SetBorderColor(style.Global.BorderColor.Color())
-	i.InputField.SetTitleColor(style.Global.TitleColor.Color())
-	i.InputField.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
-}
-
-func NewViewModal() *ViewModal {
-	return &ViewModal{
-		ViewModal: primitives.NewViewModal(),
-	}
+	SetCommonStyle(i.InputField, style)
 }
 
 func (v *ViewModal) SetStyle(style *config.Styles) {
-	v.ViewModal.SetBackgroundColor(style.Global.BackgroundColor.Color())
-	v.ViewModal.SetBorderColor(style.Global.BorderColor.Color())
-	v.ViewModal.SetTitleColor(style.Global.TitleColor.Color())
-	v.ViewModal.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
-}
-
-func NewListModal() *ListModal {
-	return &ListModal{
-		ListModal: primitives.NewListModal(),
-	}
+	SetCommonStyle(v.ViewModal, style)
 }
 
 func (l *ListModal) SetStyle(style *config.Styles) {
-	l.ListModal.SetBackgroundColor(style.Global.BackgroundColor.Color())
-	l.ListModal.SetBorderColor(style.Global.BorderColor.Color())
-	l.ListModal.SetTitleColor(style.Global.TitleColor.Color())
-	l.ListModal.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
+	SetCommonStyle(l.ListModal, style)
 }

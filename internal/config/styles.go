@@ -15,17 +15,18 @@ type (
 	Style string
 
 	Styles struct {
-		Global    GlobalStyles   `yaml:"global"`
-		Welcome   WelcomeStyle   `yaml:"welcome"`
-		Connector ConnectorStyle `yaml:"connector"`
-		Header    HeaderStyle    `yaml:"header"`
-		Databases DatabasesStyle `yaml:"databases"`
-		Content   ContentStyle   `yaml:"content"`
-		DocPeeker DocPeekerStyle `yaml:"docPeeker"`
-		InputBar  InputBarStyle  `yaml:"filterBar"`
-		History   HistoryStyle   `yaml:"history"`
-		Help      HelpStyle      `yaml:"help"`
-		Others    OthersStyle    `yaml:"others"`
+		Global      GlobalStyles     `yaml:"global"`
+		Welcome     WelcomeStyle     `yaml:"welcome"`
+		Connector   ConnectorStyle   `yaml:"connector"`
+		Header      HeaderStyle      `yaml:"header"`
+		Databases   DatabasesStyle   `yaml:"databases"`
+		Content     ContentStyle     `yaml:"content"`
+		DocPeeker   DocPeekerStyle   `yaml:"docPeeker"`
+		InputBar    InputBarStyle    `yaml:"filterBar"`
+		History     HistoryStyle     `yaml:"history"`
+		Help        HelpStyle        `yaml:"help"`
+		Others      OthersStyle      `yaml:"others"`
+		StyleChange StyleChangeStyle `yaml:"styleChange"`
 	}
 
 	// GlobalStyles is a struct that contains all the global styles for the application
@@ -136,6 +137,12 @@ type (
 		ModalTextColor          Style `yaml:"modalTextColor"`
 		ModalSecondaryTextColor Style `yaml:"modalSecondaryTextColor"`
 	}
+
+	StyleChangeStyle struct {
+		TextColor               Style `yaml:"textColor"`
+		SelectedTextColor       Style `yaml:"selectedTextColor"`
+		SelectedBackgroundColor Style `yaml:"selectedBackgroundColor"`
+	}
 )
 
 func (s *Styles) loadDefaults() {
@@ -233,6 +240,12 @@ func (s *Styles) loadDefaults() {
 		ButtonsBackgroundColor:  "#1E293B",
 		ModalTextColor:          "#FDE68A",
 		ModalSecondaryTextColor: "#387D44",
+	}
+
+	s.StyleChange = StyleChangeStyle{
+		TextColor:               "#E2E8F0",
+		SelectedTextColor:       "#0F172A",
+		SelectedBackgroundColor: "#387D44",
 	}
 }
 

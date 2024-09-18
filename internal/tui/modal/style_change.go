@@ -4,6 +4,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/primitives"
 )
 
 const (
@@ -12,15 +13,16 @@ const (
 
 type StyleChange struct {
 	*core.BaseElement
-	*core.ListModal
+	*primitives.ListModal
 
+	style      *config.StyleChangeStyle
 	applyStyle func(styleName string) error
 }
 
 func NewStyleChangeModal() *StyleChange {
 	sc := &StyleChange{
 		BaseElement: core.NewBaseElement(),
-		ListModal:   core.NewListModal(),
+		ListModal:   primitives.NewListModal(),
 	}
 
 	sc.SetIdentifier(StyleChangeModal)
@@ -33,20 +35,31 @@ func (sc *StyleChange) init() error {
 	sc.setStaticLayout()
 	sc.setStyle()
 	sc.setKeybindings()
-
 	sc.setContent()
 
 	return nil
 }
 
 func (sc *StyleChange) setStaticLayout() {
-	sc.SetBorder(true)
 	sc.SetTitle(" Change Style ")
+	sc.SetBorder(true)
+	sc.ShowSecondaryText(false)
 	sc.SetBorderPadding(0, 0, 1, 1)
 }
 
 func (sc *StyleChange) setStyle() {
-	sc.SetStyle(sc.App.GetStyles())
+	sc.style = &sc.App.GetStyles().StyleChange
+	globalBackground := sc.App.GetStyles().Global.BackgroundColor.Color()
+
+	mainStyle := tcell.StyleDefault.
+		Foreground(sc.style.TextColor.Color()).
+		Background(globalBackground)
+	sc.SetMainTextStyle(mainStyle)
+
+	selectedStyle := tcell.StyleDefault.
+		Foreground(sc.style.SelectedTextColor.Color()).
+		Background(sc.style.SelectedBackgroundColor.Color())
+	sc.SetSelectedStyle(selectedStyle)
 }
 
 func (sc *StyleChange) setKeybindings() {
@@ -78,10 +91,10 @@ func (sc *StyleChange) setContent() {
 		return
 	}
 
-	for _, style := range allStyles {
-		sc.AddItem(style, "", 0, nil)
+	for i, style := range allStyles {
+		rune := 49 + i
+		sc.AddItem(style, "", int32(rune), nil)
 	}
-
 }
 
 func (sc *StyleChange) SetApplyStyle(applyStyle func(styleName string) error) {

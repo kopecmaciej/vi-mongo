@@ -87,38 +87,38 @@ func NewViewModal() *ViewModal {
 }
 
 // SetBackgroundColor sets the color of the modal frame background.
-func (m *ViewModal) SetBackgroundColor(color tcell.Color) *ViewModal {
+func (m *ViewModal) SetBackgroundColor(color tcell.Color) *tview.Box {
 	m.Box.SetBackgroundColor(color)
 	m.form.SetBackgroundColor(color)
 	m.frame.SetBackgroundColor(color)
-	return m
+	return m.Box
 }
 
 // SetTextColor sets the color of the message text.
-func (m *ViewModal) SetTextColor(color tcell.Color) *ViewModal {
+func (m *ViewModal) SetTextColor(color tcell.Color) *tview.Box {
 	m.text.Color = color
-	return m
+	return m.Box
 }
 
 // SetBorderColor sets the color of the modal frame border.
-func (m *ViewModal) SetBorderColor(color tcell.Color) *ViewModal {
+func (m *ViewModal) SetBorderColor(color tcell.Color) *tview.Box {
 	m.Box.SetBorderColor(color)
 	m.frame.SetBorderColor(color)
-	return m
+	return m.Box
 }
 
 // SetTitleColor sets the color of the modal frame title.
-func (m *ViewModal) SetTitleColor(color tcell.Color) *ViewModal {
+func (m *ViewModal) SetTitleColor(color tcell.Color) *tview.Box {
 	m.Box.SetTitleColor(color)
 	m.frame.SetTitleColor(color)
-	return m
+	return m.Box
 }
 
 // SetFocusStyle sets the style of the modal when it is focused.
-func (m *ViewModal) SetFocusStyle(style tcell.Style) *ViewModal {
+func (m *ViewModal) SetFocusStyle(style tcell.Style) *tview.Box {
 	m.Box.SetFocusStyle(style)
 	m.frame.SetFocusStyle(style)
-	return m
+	return m.Box
 }
 
 // SetButtonBackgroundColor sets the background color of the buttons.
