@@ -1,4 +1,4 @@
-<p align="center"><img src="./assets/vimongo_header.png"></p>
+<p  align="center"><img src="./assets/logo/no-background.svg" width="600"></p>
 
 ## Showcasing some of the features of Vi Mongo
 
