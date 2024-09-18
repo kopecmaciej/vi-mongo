@@ -59,7 +59,6 @@ func (c *Connector) Init(app *core.App) error {
 	return nil
 }
 
-// handle events from the manager
 func (c *Connector) handleEvents() {
 	go c.HandleEvents(ConnectorPage, func(event manager.EventMsg) {
 		switch event.Message.Type {
@@ -135,7 +134,6 @@ func (c *Connector) setKeybindings() {
 	})
 }
 
-// Render renders the View
 func (c *Connector) Render() {
 	c.Clear()
 

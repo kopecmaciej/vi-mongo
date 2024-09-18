@@ -61,6 +61,11 @@ func (lm *ListModal) RemoveItem(index int) *ListModal {
 	return lm
 }
 
+// GetCurrentItem returns the index of the currently selected item
+func (lm *ListModal) GetCurrentItem() int {
+	return lm.list.GetCurrentItem()
+}
+
 // Clear removes all items from the list
 func (lm *ListModal) Clear() *ListModal {
 	lm.list.Clear()

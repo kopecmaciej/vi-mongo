@@ -32,6 +32,9 @@ type (
 	ViewModal struct {
 		*primitives.ViewModal
 	}
+	ListModal struct {
+		*primitives.ListModal
+	}
 )
 
 func NewFlex() *Flex {
@@ -127,4 +130,17 @@ func (v *ViewModal) SetStyle(style *config.Styles) {
 	v.ViewModal.SetBorderColor(style.Global.BorderColor.Color())
 	v.ViewModal.SetTitleColor(style.Global.TitleColor.Color())
 	v.ViewModal.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
+}
+
+func NewListModal() *ListModal {
+	return &ListModal{
+		ListModal: primitives.NewListModal(),
+	}
+}
+
+func (l *ListModal) SetStyle(style *config.Styles) {
+	l.ListModal.SetBackgroundColor(style.Global.BackgroundColor.Color())
+	l.ListModal.SetBorderColor(style.Global.BorderColor.Color())
+	l.ListModal.SetTitleColor(style.Global.TitleColor.Color())
+	l.ListModal.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
 }

@@ -63,11 +63,8 @@ func (a *App) setKeybindings() {
 		case a.GetKeys().Contains(a.GetKeys().Global.OpenConnector, event.Name()):
 			a.renderConnector()
 			return nil
-		case a.GetKeys().Contains(a.GetKeys().Global.NextStyle, event.Name()):
-			err := a.NextStyle()
-			if err != nil {
-				modal.ShowError(a.Pages, "Failed to load next style", err)
-			}
+		case a.GetKeys().Contains(a.GetKeys().Global.ShowStyleModal, event.Name()):
+			a.ShowStyleChangeModal()
 			return nil
 		case a.GetKeys().Contains(a.GetKeys().Global.ToggleFullScreenHelp, event.Name()):
 			if a.Pages.HasPage(page.HelpPage) {
@@ -180,4 +177,15 @@ func (a *App) renderWelcome() error {
 	a.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
 	welcome.Render()
 	return nil
+}
+
+func (a *App) ShowStyleChangeModal() {
+	styleChangeModal := modal.NewStyleChangeModal()
+	if err := styleChangeModal.Init(a.App); err != nil {
+		modal.ShowError(a.Pages, "Error while initializing style change modal", err)
+	}
+	styleChangeModal.Render()
+	styleChangeModal.SetApplyStyle(func(styleName string) error {
+		return a.SetStyle(styleName)
+	})
 }

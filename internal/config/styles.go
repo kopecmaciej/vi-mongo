@@ -268,36 +268,6 @@ func (s *Styles) LoadMainStyles() {
 	tview.Styles.GraphicsColor = s.loadColor(s.Global.GraphicsColor)
 }
 
-// PickNextStyle picks the next style in the list
-func (s *Styles) PickNextStyle(currentStyle string) (string, error) {
-	allStyles, err := GetAllStyles()
-	if err != nil {
-		return "", err
-	}
-
-	// find current style in all styles
-	currentStyleIndex := -1
-	for i, style := range allStyles {
-		if style == currentStyle {
-			currentStyleIndex = i
-		}
-	}
-
-	// if current style is not found, pick first one
-	if currentStyleIndex == -1 {
-		currentStyleIndex = 0
-	}
-
-	// if current style is last, pick first one
-	if currentStyleIndex == len(allStyles)-1 {
-		currentStyleIndex = 0
-	} else {
-		currentStyleIndex++
-	}
-
-	return allStyles[currentStyleIndex], nil
-}
-
 // LoadColor loads a color from a string
 // It will check if the color is a hex color or a color name
 func (s *Styles) loadColor(color Style) tcell.Color {

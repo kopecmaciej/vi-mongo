@@ -48,14 +48,9 @@ func NewApp(appConfig *config.Config) *App {
 	return app
 }
 
-func (a *App) NextStyle() error {
-	nextStyle, err := a.styles.PickNextStyle(a.config.CurrentStyle)
-	if err != nil {
-		return err
-	}
-
-	a.config.CurrentStyle = nextStyle
-	err = a.config.UpdateConfig()
+func (a *App) SetStyle(styleName string) error {
+	a.config.CurrentStyle = styleName
+	err := a.config.UpdateConfig()
 	if err != nil {
 		return err
 	}
