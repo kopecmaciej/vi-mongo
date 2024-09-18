@@ -8,6 +8,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
@@ -16,7 +17,7 @@ import (
 
 type InputBar struct {
 	*core.BaseElement
-	*tview.InputField
+	*core.InputField
 
 	historyModal   *modal.History
 	style          *config.InputBarStyle
@@ -28,12 +29,13 @@ type InputBar struct {
 
 func NewInputBar(barId tview.Identifier, label string) *InputBar {
 	i := &InputBar{
-		BaseElement: core.NewBaseElement(),
-		InputField: tview.NewInputField().
-			SetLabel(" " + label + ": "),
+		BaseElement:    core.NewBaseElement(),
+		InputField:     core.NewInputField(),
 		enabled:        false,
 		autocompleteOn: false,
 	}
+
+	i.InputField.SetLabel(" " + label + ": ")
 
 	i.SetIdentifier(barId)
 	i.SetAfterInitFunc(i.init)
@@ -44,9 +46,7 @@ func NewInputBar(barId tview.Identifier, label string) *InputBar {
 func (i *InputBar) init() error {
 	i.setStyle()
 	i.setKeybindings()
-
-	i.Subscribe(i.GetIdentifier())
-	go i.handleEvents()
+	i.setStaticLayout()
 
 	cpFunc := func(text string) {
 		err := clipboard.WriteAll(text)
@@ -64,16 +64,17 @@ func (i *InputBar) init() error {
 	}
 	i.SetClipboard(cpFunc, pasteFunc)
 
+	i.handleEvents()
+
 	return nil
 }
 
-func (i *InputBar) SetStyle(style *config.InputBarStyle) {
-	i.style = style
+func (i *InputBar) setStaticLayout() {
+	i.SetBorder(true)
 }
 
 func (i *InputBar) setStyle() {
 	i.style = &i.App.GetStyles().InputBar
-	i.SetBorder(true)
 	i.SetFieldTextColor(i.style.InputColor.Color())
 
 	// Autocomplete styles
@@ -120,6 +121,20 @@ func (i *InputBar) setKeybindings() {
 		}
 
 		return event
+	})
+}
+
+func (i *InputBar) handleEvents() {
+	go i.HandleEvents(i.GetIdentifier(), func(event manager.EventMsg) {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			i.setStyle()
+		}
+
+		switch sender := event.Sender; {
+		case i.historyModal != nil && sender == i.historyModal.GetIdentifier():
+			i.handleHistoryModalEvent(event.EventKey)
+		}
 	})
 }
 
@@ -236,17 +251,6 @@ func (i *InputBar) Toggle(text string) {
 		go i.App.QueueUpdateDraw(func() {
 			i.SetWordAtCursor(i.defaultText)
 		})
-	}
-}
-
-func (i *InputBar) handleEvents() {
-	for event := range i.Listener {
-		switch sender := event.Sender; {
-		case i.historyModal != nil && sender == i.historyModal.GetIdentifier():
-			i.handleHistoryModalEvent(event.EventKey)
-		default:
-			continue
-		}
 	}
 }
 

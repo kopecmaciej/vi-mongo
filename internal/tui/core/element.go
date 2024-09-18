@@ -110,3 +110,13 @@ func (c *BaseElement) SetAfterInitFunc(afterInitFunc func() error) {
 func (c *BaseElement) Subscribe(identifier tview.Identifier) {
 	c.Listener = c.App.GetManager().Subscribe(identifier)
 }
+
+// HandleEvents handles events from the manager
+func (c *BaseElement) HandleEvents(identifier tview.Identifier, handler func(event manager.EventMsg)) {
+	if c.Listener == nil {
+		c.Listener = c.App.GetManager().Subscribe(identifier)
+	}
+	for event := range c.Listener {
+		handler(event)
+	}
+}

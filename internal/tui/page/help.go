@@ -6,6 +6,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 )
 
@@ -16,7 +17,7 @@ const (
 // Help is a view that provides a help screen for keybindings
 type Help struct {
 	*core.BaseElement
-	*tview.Table
+	*core.Table
 
 	style *config.HelpStyle
 
@@ -27,7 +28,7 @@ type Help struct {
 func NewHelp() *Help {
 	h := &Help{
 		BaseElement: core.NewBaseElement(),
-		Table:       tview.NewTable(),
+		Table:       core.NewTable(),
 	}
 
 	h.SetIdentifier(HelpPage)
@@ -40,7 +41,21 @@ func (h *Help) init() error {
 	h.setStyle()
 	h.setKeybindings()
 
+	h.handleEvents()
+
 	return nil
+}
+
+func (h *Help) handleEvents() {
+	go h.HandleEvents(HelpPage, func(event manager.EventMsg) {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			h.setStyle()
+			go h.App.QueueUpdateDraw(func() {
+				h.Render()
+			})
+		}
+	})
 }
 
 func (h *Help) Render() error {
@@ -151,6 +166,16 @@ func (h *Help) AddKeySection(name string, keys []config.Key, row *int, col int) 
 
 func (h *Help) setStyle() {
 	h.style = &h.App.GetStyles().Help
+	h.Table.SetStyle(h.App.GetStyles())
+	h.Table.SetBorder(true)
+	h.Table.SetTitle(" Help ")
+	h.Table.SetBorderPadding(1, 1, 3, 3)
+	h.Table.SetSelectable(false, false)
+	h.Table.SetTitleAlign(tview.AlignLeft)
+	h.Table.SetEvaluateAllRows(true)
+}
+
+func (h *Help) setStaticLayout() {
 	h.Table.SetBorder(true)
 	h.Table.SetTitle(" Help ")
 	h.Table.SetBorderPadding(1, 1, 3, 3)

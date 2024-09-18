@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
@@ -46,6 +47,7 @@ func NewPeeker() *Peeker {
 
 func (p *Peeker) init() error {
 	p.setStyle()
+	p.setStaticLayout()
 	p.setKeybindings()
 
 	if err := p.docModifier.Init(p.App); err != nil {
@@ -55,15 +57,25 @@ func (p *Peeker) init() error {
 	return nil
 }
 
-func (p *Peeker) SetStyle(style *config.DocPeekerStyle) {
-	p.style = style
+func (p *Peeker) handleEvents() {
+	go p.HandleEvents(PeekerComponent, func(event manager.EventMsg) {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			p.setStyle()
+		}
+	})
+}
+
+func (p *Peeker) setStaticLayout() {
+	p.SetBorder(true)
+	p.SetTitle("Document Details")
+	p.SetTitleAlign(tview.AlignLeft)
+
+	p.ViewModal.AddButtons([]string{"Edit", "Close"})
 }
 
 func (p *Peeker) setStyle() {
 	p.style = &p.App.GetStyles().DocPeeker
-	p.SetBorder(true)
-	p.SetTitle("Document Details")
-	p.SetTitleAlign(tview.AlignLeft)
 	p.SetHighlightColor(p.style.HighlightColor.Color())
 	p.SetDocumentColors(
 		p.style.KeyColor.Color(),
@@ -71,8 +83,6 @@ func (p *Peeker) setStyle() {
 		p.style.BracketColor.Color(),
 		p.style.ArrayColor.Color(),
 	)
-
-	p.ViewModal.AddButtons([]string{"Edit", "Close"})
 }
 
 func (p *Peeker) setKeybindings() {

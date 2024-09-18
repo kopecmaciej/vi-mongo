@@ -1,7 +1,9 @@
 package core
 
 import (
+	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/config"
 )
 
 type Table struct {
@@ -12,6 +14,13 @@ func NewTable() *Table {
 	return &Table{
 		Table: tview.NewTable(),
 	}
+}
+
+func (t *Table) SetStyle(style *config.Styles) {
+	t.SetBackgroundColor(style.Global.BackgroundColor.Color())
+	t.SetBorderColor(style.Global.BorderColor.Color())
+	t.SetTitleColor(style.Global.TitleColor.Color())
+	t.SetFocusStyle(tcell.StyleDefault.Foreground(style.Global.FocusColor.Color()).Background(style.Global.BackgroundColor.Color()))
 }
 
 // MoveUpUntil moves the selection up until a condition is met

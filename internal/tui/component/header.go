@@ -30,7 +30,7 @@ type (
 	// Header is a view that displays basic information and keybindings in the header
 	Header struct {
 		*core.BaseElement
-		*tview.Table
+		*core.Table
 
 		style        *config.HeaderStyle
 		baseInfo     BaseInfo
@@ -43,7 +43,7 @@ type (
 func NewHeader() *Header {
 	h := Header{
 		BaseElement: core.NewBaseElement(),
-		Table:       tview.NewTable(),
+		Table:       core.NewTable(),
 		baseInfo:    make(BaseInfo),
 	}
 
@@ -55,18 +55,22 @@ func NewHeader() *Header {
 
 func (h *Header) init() error {
 	h.setStyle()
-	h.Subscribe(HeaderView)
-	go h.handleEvents()
+	h.setStaticLayout()
+
+	h.handleEvents()
 
 	return nil
 }
 
+func (h *Header) setStaticLayout() {
+	h.Table.SetBorder(true)
+	h.Table.SetTitle(" Basic Info ")
+	h.Table.SetBorderPadding(0, 0, 1, 1)
+}
+
 func (h *Header) setStyle() {
 	h.style = &h.App.GetStyles().Header
-	h.Table.SetSelectable(false, false)
-	h.Table.SetBorder(true)
-	h.Table.SetBorderPadding(0, 0, 1, 1)
-	h.Table.SetTitle(" Basic Info ")
+	h.SetStyle(h.App.GetStyles())
 }
 
 // SetBaseInfo sets the basic information about the database connection
@@ -175,7 +179,7 @@ func (h *Header) setInactiveBaseInfo(err error) {
 
 // handle events from the manager
 func (h *Header) handleEvents() {
-	for event := range h.Listener {
+	go h.HandleEvents(HeaderView, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.FocusChanged:
 			h.currentFocus = tview.Identifier(event.Message.Data.(tview.Identifier))
@@ -183,15 +187,12 @@ func (h *Header) handleEvents() {
 				h.Render()
 			})
 		case manager.StyleChanged:
-			newStyles := event.Message.Data.(*config.Styles)
-			h.style = &newStyles.Header
+			h.setStyle()
 			go h.App.QueueUpdateDraw(func() {
 				h.Render()
 			})
-		default:
-			continue
 		}
-	}
+	})
 }
 
 func (h *Header) keyCell(text string) *tview.TableCell {

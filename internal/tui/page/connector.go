@@ -6,24 +6,27 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 )
 
 const (
-	ConnectorView = "Connector"
+	ConnectorPage = "Connector"
 )
 
 // Connector is a view for connecting to mongodb using tview package
 type Connector struct {
 	*core.BaseElement
-	*tview.Flex
+	*core.Flex
 
 	// form is for creating new connection
 	form *tview.Form
 
 	// list is a list of all available connections
 	list *tview.List
+
+	style *config.ConnectorStyle
 
 	// function that is called when connection is set
 	onSubmit func()
@@ -33,12 +36,12 @@ type Connector struct {
 func NewConnector() *Connector {
 	c := &Connector{
 		BaseElement: core.NewBaseElement(),
-		Flex:        tview.NewFlex(),
+		Flex:        core.NewFlex(),
 		form:        tview.NewForm(),
 		list:        tview.NewList(),
 	}
 
-	c.SetIdentifier(ConnectorView)
+	c.SetIdentifier(ConnectorPage)
 
 	return c
 }
@@ -47,19 +50,28 @@ func NewConnector() *Connector {
 func (c *Connector) Init(app *core.App) error {
 	c.App = app
 
+	c.setStaticLayout()
 	c.setStyle()
 	c.setKeybindings()
+
+	c.handleEvents()
 
 	return nil
 }
 
-func (c *Connector) setStyle() {
-	style := c.App.GetStyles().Connector
+// handle events from the manager
+func (c *Connector) handleEvents() {
+	go c.HandleEvents(ConnectorPage, func(event manager.EventMsg) {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			c.setStyle()
+		}
+	})
+}
 
+func (c *Connector) setStaticLayout() {
 	c.form.SetTitle(" New connection ")
 	c.form.SetBorder(true)
-	c.form.SetFieldTextColor(style.FormInputColor.Color())
-	c.form.SetFieldBackgroundColor(style.FormInputBackgroundColor.Color())
 
 	c.list.SetTitle(" Saved connections ")
 	c.list.SetBorder(true)
@@ -67,15 +79,23 @@ func (c *Connector) setStyle() {
 	c.list.SetWrapText(true)
 	c.list.SetBorderPadding(1, 1, 1, 1)
 	c.list.SetItemGap(1)
+}
+
+func (c *Connector) setStyle() {
+	c.Flex.SetStyle(c.App.GetStyles())
+	c.style = &c.App.GetStyles().Connector
+
+	c.form.SetFieldTextColor(c.style.FormInputColor.Color())
+	c.form.SetFieldBackgroundColor(c.style.FormInputBackgroundColor.Color())
 
 	globalBackground := c.App.GetStyles().Global.BackgroundColor.Color()
 	mainStyle := tcell.StyleDefault.
-		Foreground(style.ListTextColor.Color()).
+		Foreground(c.style.ListTextColor.Color()).
 		Background(globalBackground)
 	c.list.SetMainTextStyle(mainStyle)
 
 	secondaryStyle := tcell.StyleDefault.
-		Foreground(style.ListSecondaryTextColor.Color()).
+		Foreground(c.style.ListSecondaryTextColor.Color()).
 		Background(globalBackground).
 		Italic(true)
 	c.list.SetSecondaryTextStyle(secondaryStyle)

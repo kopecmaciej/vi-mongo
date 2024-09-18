@@ -8,7 +8,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
-	"github.com/rs/zerolog/log"
 )
 
 // Styles is a struct that contains all the styles for the application
@@ -354,11 +353,34 @@ func GetAllStyles() ([]string, error) {
 		return nil, err
 	}
 
-	log.Info().Msgf("files: %v", files)
-
 	styleNames := make([]string, 0, len(files))
 	for _, file := range files {
 		styleNames = append(styleNames, file.Name())
 	}
 	return styleNames, nil
+}
+
+func (s *Styles) ApplyPrimitiveStyle(pr tview.Primitive) {
+	switch p := pr.(type) {
+	case *tview.Flex:
+		p.SetBackgroundColor(s.Global.BackgroundColor.Color())
+		p.SetBorderColor(s.Global.BorderColor.Color())
+		p.SetTitleColor(s.Global.TitleColor.Color())
+		p.SetFocusStyle(tcell.StyleDefault.Foreground(s.Global.FocusColor.Color()).Background(s.Global.BackgroundColor.Color()))
+	case *tview.Table:
+		p.SetBackgroundColor(s.Global.BackgroundColor.Color())
+		p.SetBorderColor(s.Global.BorderColor.Color())
+		p.SetTitleColor(s.Global.TitleColor.Color())
+		p.SetFocusStyle(tcell.StyleDefault.Foreground(s.Global.FocusColor.Color()).Background(s.Global.BackgroundColor.Color()))
+	case *tview.TextView:
+		p.SetBackgroundColor(s.Global.BackgroundColor.Color())
+		p.SetBorderColor(s.Global.BorderColor.Color())
+		p.SetTitleColor(s.Global.TitleColor.Color())
+		p.SetFocusStyle(tcell.StyleDefault.Foreground(s.Global.FocusColor.Color()).Background(s.Global.BackgroundColor.Color()))
+	case *tview.InputField:
+		p.SetBackgroundColor(s.Global.BackgroundColor.Color())
+		p.SetBorderColor(s.Global.BorderColor.Color())
+		p.SetTitleColor(s.Global.TitleColor.Color())
+		p.SetFocusStyle(tcell.StyleDefault.Foreground(s.Global.FocusColor.Color()).Background(s.Global.BackgroundColor.Color()))
+	}
 }

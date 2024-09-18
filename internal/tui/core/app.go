@@ -43,6 +43,7 @@ func NewApp(appConfig *config.Config) *App {
 	}
 
 	app.Pages = NewPages(app.manager, app)
+	app.Pages.SetStyle(styles)
 
 	return app
 }
@@ -64,12 +65,10 @@ func (a *App) NextStyle() error {
 		return err
 	}
 	a.styles.LoadMainStyles()
-
-	// Broadcast style change event
+	a.Pages.SetStyle(a.styles)
 	a.manager.Broadcast(manager.EventMsg{
 		Message: manager.Message{
 			Type: manager.StyleChanged,
-			Data: a.styles,
 		},
 	})
 
