@@ -65,7 +65,7 @@ func (sc *StyleChange) setStyle() {
 func (sc *StyleChange) setKeybindings() {
 	sc.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyEscape:
+		case tcell.KeyEscape, tcell.KeyCtrlT:
 			sc.App.Pages.RemovePage(StyleChangeModal)
 			return nil
 		case tcell.KeyEnter:
