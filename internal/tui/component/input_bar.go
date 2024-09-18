@@ -74,6 +74,7 @@ func (i *InputBar) setStaticLayout() {
 }
 
 func (i *InputBar) setStyle() {
+	i.SetStyle(i.App.GetStyles())
 	i.style = &i.App.GetStyles().InputBar
 	i.SetFieldTextColor(i.style.InputColor.Color())
 

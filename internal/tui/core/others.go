@@ -89,7 +89,6 @@ func NewListModal() *ListModal {
 	return &ListModal{ListModal: primitives.NewListModal()}
 }
 
-// SetStyle methods
 func (f *Flex) SetStyle(style *config.Styles) {
 	SetCommonStyle(f.Flex, style)
 }
@@ -115,6 +114,10 @@ func (t *TreeView) SetStyle(style *config.Styles) {
 
 func (i *InputField) SetStyle(style *config.Styles) {
 	SetCommonStyle(i.InputField, style)
+	i.SetLabelStyle(tcell.StyleDefault.Foreground(style.Global.TextColor.Color()).Background(style.Global.BackgroundColor.Color()))
+	i.SetFieldBackgroundColor(style.Global.BackgroundColor.Color())
+	i.SetFieldTextColor(style.Global.TextColor.Color())
+	i.SetPlaceholderTextColor(style.Global.TextColor.Color())
 }
 
 func (v *ViewModal) SetStyle(style *config.Styles) {

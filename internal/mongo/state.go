@@ -25,6 +25,7 @@ func (c *CollectionState) UpdateFilter(filter string) {
 		return
 	}
 	c.Filter = filter
+	c.Page = 0
 }
 
 func (c *CollectionState) UpdateSort(sort string) {
