@@ -9,7 +9,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
-	"github.com/rs/zerolog/log"
 )
 
 //go:embed styles
@@ -383,8 +382,6 @@ func ExtractStyles() error {
 		// Return any other error
 		return err
 	}
-
-	log.Debug().Msgf("Populating styles directory: %s", stylesDir)
 
 	// Populate styles directory
 	entries, err := stylesFS.ReadDir("styles")
