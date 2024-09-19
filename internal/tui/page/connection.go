@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	ConnectorPage = "Connector"
+	ConnectionPage = "Connection"
 )
 
-// Connector is a view for connecting to mongodb using tview package
-type Connector struct {
+// Connection is a view for connecting to mongodb using tview package
+type Connection struct {
 	*core.BaseElement
 	*core.Flex
 
@@ -26,28 +26,28 @@ type Connector struct {
 	// list is a list of all available connections
 	list *core.List
 
-	style *config.ConnectorStyle
+	style *config.ConnectionStyle
 
 	// function that is called when connection is set
 	onSubmit func()
 }
 
-// NewConnector creates a new connection view
-func NewConnector() *Connector {
-	c := &Connector{
+// NewConnection creates a new connection view
+func NewConnection() *Connection {
+	c := &Connection{
 		BaseElement: core.NewBaseElement(),
 		Flex:        core.NewFlex(),
 		form:        core.NewForm(),
 		list:        core.NewList(),
 	}
 
-	c.SetIdentifier(ConnectorPage)
+	c.SetIdentifier(ConnectionPage)
 
 	return c
 }
 
 // Init overrides the Init function from the BaseElement struct
-func (c *Connector) Init(app *core.App) error {
+func (c *Connection) Init(app *core.App) error {
 	c.App = app
 
 	c.setStaticLayout()
@@ -59,8 +59,8 @@ func (c *Connector) Init(app *core.App) error {
 	return nil
 }
 
-func (c *Connector) handleEvents() {
-	go c.HandleEvents(ConnectorPage, func(event manager.EventMsg) {
+func (c *Connection) handleEvents() {
+	go c.HandleEvents(ConnectionPage, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			c.setStyle()
@@ -71,7 +71,7 @@ func (c *Connector) handleEvents() {
 	})
 }
 
-func (c *Connector) setStaticLayout() {
+func (c *Connection) setStaticLayout() {
 	c.form.SetTitle(" New connection ")
 	c.form.SetBorder(true)
 
@@ -83,12 +83,12 @@ func (c *Connector) setStaticLayout() {
 	c.list.SetItemGap(1)
 }
 
-func (c *Connector) setStyle() {
+func (c *Connection) setStyle() {
 	c.SetStyle(c.App.GetStyles())
 	c.form.SetStyle(c.App.GetStyles())
 	c.list.SetStyle(c.App.GetStyles())
 
-	c.style = &c.App.GetStyles().Connector
+	c.style = &c.App.GetStyles().Connection
 
 	c.form.SetFieldTextColor(c.style.FormInputColor.Color())
 	c.form.SetFieldBackgroundColor(c.style.FormInputBackgroundColor.Color())
@@ -106,14 +106,14 @@ func (c *Connector) setStyle() {
 	c.list.SetSecondaryTextStyle(secondaryStyle)
 }
 
-func (c *Connector) setKeybindings() {
+func (c *Connection) setKeybindings() {
 	k := c.App.GetKeys()
 	c.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Connector.ConnectorForm.SaveConnection, event.Name()):
+		case k.Contains(k.Connection.ConnectionForm.SaveConnection, event.Name()):
 			c.saveButtonFunc()
 			return nil
-		case k.Contains(k.Connector.ConnectorForm.FocusList, event.Name()):
+		case k.Contains(k.Connection.ConnectionForm.FocusList, event.Name()):
 			c.App.SetFocus(c.list)
 			return nil
 		}
@@ -123,10 +123,10 @@ func (c *Connector) setKeybindings() {
 
 	c.list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Connector.ConnectorList.FocusForm, event.Name()):
+		case k.Contains(k.Connection.ConnectionList.FocusForm, event.Name()):
 			c.App.SetFocus(c.form)
 			return nil
-		case k.Contains(k.Connector.ConnectorList.DeleteConnection, event.Name()):
+		case k.Contains(k.Connection.ConnectionList.DeleteConnection, event.Name()):
 			c.deleteCurrConnection()
 			return nil
 		}
@@ -134,13 +134,13 @@ func (c *Connector) setKeybindings() {
 	})
 }
 
-func (c *Connector) Render() {
+func (c *Connection) Render() {
 	c.Clear()
 
 	// easy way to center the form
 	c.AddItem(tview.NewBox(), 0, 1, false)
 
-	if page, _ := c.App.Pages.GetFrontPage(); page == ConnectorPage {
+	if page, _ := c.App.Pages.GetFrontPage(); page == ConnectionPage {
 		if len(c.App.GetConfig().Connections) > 0 {
 			c.renderList()
 			defer c.App.SetFocus(c.list)
@@ -156,7 +156,7 @@ func (c *Connector) Render() {
 }
 
 // renderForm renders the form for creating new connection
-func (c *Connector) renderForm() *core.Form {
+func (c *Connection) renderForm() *core.Form {
 	c.form.Clear(true)
 
 	c.form.AddInputField("Name", "", 40, nil, nil)
@@ -180,7 +180,7 @@ func (c *Connector) renderForm() *core.Form {
 }
 
 // renderList renders the list of all available connections
-func (c *Connector) renderList() {
+func (c *Connection) renderList() {
 	c.list.Clear()
 
 	for _, conn := range c.App.GetConfig().Connections {
@@ -190,7 +190,7 @@ func (c *Connector) renderList() {
 		})
 	}
 
-	c.list.AddItem("Click to add new connection", "or by pressing "+c.App.GetKeys().Connector.ConnectorList.FocusForm.String(), 0, func() {
+	c.list.AddItem("Click to add new connection", "or by pressing "+c.App.GetKeys().Connection.ConnectionList.FocusForm.String(), 0, func() {
 		c.App.SetFocus(c.form)
 	})
 
@@ -198,7 +198,7 @@ func (c *Connector) renderList() {
 }
 
 // setConnections sets connections from config file
-func (c *Connector) setConnections() {
+func (c *Connection) setConnections() {
 	if c.list.GetCurrentItem() == c.list.GetItemCount()-1 {
 		return
 	}
@@ -215,7 +215,7 @@ func (c *Connector) setConnections() {
 }
 
 // removeConnection removes connection from config file
-func (c *Connector) deleteCurrConnection() error {
+func (c *Connection) deleteCurrConnection() error {
 	currItem := c.list.GetCurrentItem()
 	currConn, _ := c.list.GetItemText(currItem)
 	err := c.App.GetConfig().DeleteConnection(currConn)
@@ -230,7 +230,7 @@ func (c *Connector) deleteCurrConnection() error {
 }
 
 // saveButtonFunc is a function for saving new connection
-func (c *Connector) saveButtonFunc() {
+func (c *Connection) saveButtonFunc() {
 	name := c.form.GetFormItemByLabel("Name").(*tview.InputField).GetText()
 	url := c.form.GetFormItemByLabel("Url").(*tview.InputField).GetText()
 	timeout := c.form.GetFormItemByLabel("Timeout").(*tview.InputField).GetText()
@@ -287,11 +287,11 @@ func (c *Connector) saveButtonFunc() {
 }
 
 // cancelButtonFunc is a function for canceling the form
-func (c *Connector) cancelButtonFunc() {
+func (c *Connection) cancelButtonFunc() {
 	c.renderForm()
 }
 
 // SetOnSubmitFunc sets callback function
-func (c *Connector) SetOnSubmitFunc(onSubmit func()) {
+func (c *Connection) SetOnSubmitFunc(onSubmit func()) {
 	c.onSubmit = onSubmit
 }

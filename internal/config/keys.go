@@ -19,17 +19,17 @@ type (
 	// There are views that have only keybindings and some have
 	// nested keybindings of their children views
 	KeyBindings struct {
-		Global    GlobalKeys    `json:"global"`
-		Help      HelpKeys      `json:"help"`
-		Welcome   WelcomeKeys   `json:"welcome"`
-		Connector ConnectorKeys `json:"connector"`
-		Main      MainKeys      `json:"main"`
-		Database  DatabaseKeys  `json:"databases"`
-		Content   ContentKeys   `json:"content"`
-		QueryBar  QueryBar      `json:"queryBar"`
-		SortBar   SortBar       `json:"sortBar"`
-		Peeker    PeekerKeys    `json:"peeker"`
-		History   HistoryKeys   `json:"history"`
+		Global     GlobalKeys     `json:"global"`
+		Help       HelpKeys       `json:"help"`
+		Welcome    WelcomeKeys    `json:"welcome"`
+		Connection ConnectionKeys `json:"connection"`
+		Main       MainKeys       `json:"main"`
+		Database   DatabaseKeys   `json:"databases"`
+		Content    ContentKeys    `json:"content"`
+		QueryBar   QueryBar       `json:"queryBar"`
+		SortBar    SortBar        `json:"sortBar"`
+		Peeker     PeekerKeys     `json:"peeker"`
+		History    HistoryKeys    `json:"history"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -46,7 +46,7 @@ type (
 	// as keys are passed from top to bottom
 	GlobalKeys struct {
 		ToggleFullScreenHelp Key `json:"toggleFullScreenHelp"`
-		OpenConnector        Key `json:"openConnector"`
+		OpenConnection       Key `json:"openConnection"`
 		ShowStyleModal       Key `json:"showStyleModal"`
 	}
 
@@ -97,18 +97,18 @@ type (
 		Paste      Key `json:"paste"`
 	}
 
-	ConnectorKeys struct {
-		ToggleFocus   Key               `json:"toggleFocus"`
-		ConnectorForm ConnectorFormKeys `json:"connectorForm"`
-		ConnectorList ConnectorListKeys `json:"connectorList"`
+	ConnectionKeys struct {
+		ToggleFocus    Key                `json:"toggleFocus"`
+		ConnectionForm ConnectionFormKeys `json:"connectionForm"`
+		ConnectionList ConnectionListKeys `json:"connectionList"`
 	}
 
-	ConnectorFormKeys struct {
+	ConnectionFormKeys struct {
 		SaveConnection Key `json:"saveConnection"`
 		FocusList      Key `json:"focusList"`
 	}
 
-	ConnectorListKeys struct {
+	ConnectionListKeys struct {
 		FocusForm        Key `json:"focusForm"`
 		DeleteConnection Key `json:"deleteConnection"`
 		SetConnection    Key `json:"setConnection"`
@@ -144,9 +144,9 @@ func (k *KeyBindings) loadDefaults() {
 			Runes:       []string{"?"},
 			Description: "Toggle full screen help",
 		},
-		OpenConnector: Key{
+		OpenConnection: Key{
 			Keys:        []string{"Ctrl+O"},
-			Description: "Open connector",
+			Description: "Open connection page",
 		},
 		ShowStyleModal: Key{
 			Keys:        []string{"Ctrl+T"},
@@ -298,12 +298,12 @@ func (k *KeyBindings) loadDefaults() {
 		},
 	}
 
-	k.Connector.ToggleFocus = Key{
+	k.Connection.ToggleFocus = Key{
 		Keys:        []string{"Tab", "Backtab"},
 		Description: "Toggle focus",
 	}
 
-	k.Connector.ConnectorForm = ConnectorFormKeys{
+	k.Connection.ConnectionForm = ConnectionFormKeys{
 		SaveConnection: Key{
 			Keys:        []string{"Ctrl+S", "Enter"},
 			Description: "Save connection",
@@ -314,7 +314,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 	}
 
-	k.Connector.ConnectorList = ConnectorListKeys{
+	k.Connection.ConnectionList = ConnectionListKeys{
 		FocusForm: Key{
 			Keys:        []string{"Ctrl+L", "Ctrl+Right"},
 			Description: "Move focus to form",

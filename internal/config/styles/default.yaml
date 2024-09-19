@@ -1,0 +1,78 @@
+global:
+    backgroundColor: '#0F172A'
+    textColor: '#E2E8F0'
+    secondaryTextColor: '#FDE68A'
+    borderColor: '#387D44'
+    focusColor: '#4ADE80'
+    titleColor: '#387D44'
+    graphicsColor: '#387D44'
+welcome:
+    textColor: '#FDE68A'
+    formLabelColor: '#FDE68A'
+    formInputColor: '#E2E8F0'
+    formInputBackgroundColor: '#1E293B'
+connection:
+    formLabelColor: '#F1FA8C'
+    formInputBackgroundColor: '#163694'
+    formInputColor: '#F1FA8C'
+    formButtonColor: '#387D44'
+    listTextColor: '#F1FA8C'
+    listSelectedTextColor: '#50FA7B'
+    listSelectedBackgroundColor: '#163694'
+    listSecondaryTextColor: '#387D44'
+    listSecondaryBackgroundColor: '#163694'
+header:
+    keyColor: '#FDE68A'
+    valueColor: '#387D44'
+    activeSymbol: ●
+    inactiveSymbol: ○
+databases:
+    nodeColor: '#387D44'
+    openNodeSymbol: "[#FDE68A]\U0001F5C1[-:-:-]"
+    closedNodeSymbol: "[#FDE68A]\U0001F5BF[-:-:-]"
+    leafColor: '#E2E8F0'
+    leafSymbol: "[#387D44]\U0001F5CE[-:-:-]"
+    branchColor: '#4ADE80'
+content:
+    docInfoTextColor: '#FDE68A'
+    headerRowColor: '#1E293B'
+    columnKeyColor: '#FDE68A'
+    columnTypeColor: '#387D44'
+    cellTextColor: '#387D44'
+    activeRowColor: '#4ADE80'
+    selectedRowColor: '#4ADE80'
+    separatorSymbol: '|'
+    separatorColor: '#334155'
+docPeeker:
+    keyColor: '#387D44'
+    valueColor: '#E2E8F0'
+    bracketColor: '#FDE68A'
+    arrayColor: '#387D44'
+    highlightColor: '#3a4963'
+filterBar:
+    labelColor: '#FDE68A'
+    inputColor: '#E2E8F0'
+    autocomplete:
+        backgroundColor: '#1E293B'
+        textColor: '#E2E8F0'
+        activeBackgroundColor: '#387D44'
+        activeTextColor: '#0F172A'
+        secondaryTextColor: '#FDE68A'
+history:
+    textColor: '#E2E8F0'
+    selectedTextColor: '#0F172A'
+    selectedBackgroundColor: '#387D44'
+help:
+    headerColor: '#387D44'
+    keyColor: '#FDE68A'
+    descriptionColor: '#E2E8F0'
+others:
+    buttonsTextColor: '#0F172A'
+    buttonsSelectedColor: '#387D44'
+    buttonsBackgroundColor: '#1E293B'
+    modalTextColor: '#FDE68A'
+    modalSecondaryTextColor: '#387D44'
+styleChange:
+    textColor: '#E2E8F0'
+    selectedTextColor: '#0F172A'
+    selectedBackgroundColor: '#387D44'

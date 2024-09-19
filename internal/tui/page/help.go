@@ -74,7 +74,7 @@ func (h *Help) Render() error {
 	for _, viewKeys := range allKeys {
 		if viewKeys.Element == "Global" || viewKeys.Element == "Help" {
 			thirdRowElements = append(thirdRowElements, viewKeys)
-		} else if viewKeys.Element == "Welcome" || viewKeys.Element == "Connector" {
+		} else if viewKeys.Element == "Welcome" || viewKeys.Element == "Connection" {
 			secondRowElements = append(secondRowElements, viewKeys)
 		} else {
 			h.renderKeySection([]config.OrderedKeys{viewKeys}, &row, col)
@@ -121,7 +121,7 @@ func (h *Help) calculateMaxWidth(keys []config.OrderedKeys) (int, int) {
 func (h *Help) renderKeySection(keys []config.OrderedKeys, row *int, col int) {
 	for _, viewKeys := range keys {
 		viewName := viewKeys.Element
-		if viewName == "Root" {
+		if viewName == "Main" {
 			viewName = "Main Layout"
 		}
 		h.addHeaderSection(viewName, *row, col)

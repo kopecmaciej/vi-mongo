@@ -3,7 +3,7 @@ global:
     textColor: '#2C3E2D'
     secondaryTextColor: '#5B8C5A'
     borderColor: '#B7D0B6'
-    focusColor: '#FF9580'
+    focusColor: '#FF8700'
     titleColor: '#2E7D32'
     graphicsColor: '#2E7D32'
 welcome:
@@ -11,7 +11,7 @@ welcome:
     formLabelColor: '#FF9580'
     formInputColor: '#2C3E2D'
     formInputBackgroundColor: '#FFFFFF'
-connector:
+connection:
     formLabelColor: '#FF9580'
     formInputBackgroundColor: '#FFFFFF'
     formInputColor: '#2C3E2D'
@@ -20,7 +20,7 @@ connector:
     listSelectedTextColor: '#FFFFFF'
     listSelectedBackgroundColor: '#2E7D32'
     listSecondaryTextColor: '#5B8C5A'
-    listSecondaryBackgroundColor: ""
+    listSecondaryBackgroundColor: '#FFFFFF'
 header:
     keyColor: '#FF9580'
     valueColor: '#2E7D32'
@@ -69,3 +69,8 @@ help:
 others:
     buttonsTextColor: '#FFFFFF'
     buttonsBackgroundColor: '#2E7D32'
+styleChange:
+    textColor: '#2C3E2D'
+    selectedTextColor: '#FFFFFF'
+    selectedBackgroundColor: '#2E7D32'
+

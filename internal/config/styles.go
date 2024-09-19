@@ -1,6 +1,7 @@
 package config
 
 import (
+	"embed"
 	"fmt"
 	"os"
 	"strconv"
@@ -10,6 +11,9 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 )
 
+//go:embed styles
+var stylesFS embed.FS
+
 // Styles is a struct that contains all the styles for the application
 type (
 	Style string
@@ -17,7 +21,7 @@ type (
 	Styles struct {
 		Global      GlobalStyles     `yaml:"global"`
 		Welcome     WelcomeStyle     `yaml:"welcome"`
-		Connector   ConnectorStyle   `yaml:"connector"`
+		Connection  ConnectionStyle  `yaml:"connection"`
 		Header      HeaderStyle      `yaml:"header"`
 		Databases   DatabasesStyle   `yaml:"databases"`
 		Content     ContentStyle     `yaml:"content"`
@@ -48,8 +52,8 @@ type (
 		FormInputBackgroundColor Style `yaml:"formInputBackgroundColor"`
 	}
 
-	// ConnectorStyle is a struct that contains all the styles for the connector
-	ConnectorStyle struct {
+	// ConnectionStyle is a struct that contains all the styles for the connection
+	ConnectionStyle struct {
 		FormLabelColor               Style `yaml:"formLabelColor"`
 		FormInputBackgroundColor     Style `yaml:"formInputBackgroundColor"`
 		FormInputColor               Style `yaml:"formInputColor"`
@@ -163,7 +167,7 @@ func (s *Styles) loadDefaults() {
 		FormInputBackgroundColor: "#1E293B",
 	}
 
-	s.Connector = ConnectorStyle{
+	s.Connection = ConnectionStyle{
 		FormLabelColor:              "#F1FA8C",
 		FormInputBackgroundColor:    "#163694",
 		FormInputColor:              "#F1FA8C",
@@ -263,6 +267,10 @@ func LoadStyles(styleName string) (*Styles, error) {
 		return nil, err
 	}
 
+	if err := ExtractStyles(); err != nil {
+		return nil, err
+	}
+
 	return util.LoadConfigFile(defaultStyles, stylePath)
 }
 
@@ -345,27 +353,44 @@ func GetAllStyles() ([]string, error) {
 	return styleNames, nil
 }
 
-func (s *Styles) ApplyPrimitiveStyle(pr tview.Primitive) {
-	switch p := pr.(type) {
-	case *tview.Flex:
-		p.SetBackgroundColor(s.Global.BackgroundColor.Color())
-		p.SetBorderColor(s.Global.BorderColor.Color())
-		p.SetTitleColor(s.Global.TitleColor.Color())
-		p.SetFocusStyle(tcell.StyleDefault.Foreground(s.Global.FocusColor.Color()).Background(s.Global.BackgroundColor.Color()))
-	case *tview.Table:
-		p.SetBackgroundColor(s.Global.BackgroundColor.Color())
-		p.SetBorderColor(s.Global.BorderColor.Color())
-		p.SetTitleColor(s.Global.TitleColor.Color())
-		p.SetFocusStyle(tcell.StyleDefault.Foreground(s.Global.FocusColor.Color()).Background(s.Global.BackgroundColor.Color()))
-	case *tview.TextView:
-		p.SetBackgroundColor(s.Global.BackgroundColor.Color())
-		p.SetBorderColor(s.Global.BorderColor.Color())
-		p.SetTitleColor(s.Global.TitleColor.Color())
-		p.SetFocusStyle(tcell.StyleDefault.Foreground(s.Global.FocusColor.Color()).Background(s.Global.BackgroundColor.Color()))
-	case *tview.InputField:
-		p.SetBackgroundColor(s.Global.BackgroundColor.Color())
-		p.SetBorderColor(s.Global.BorderColor.Color())
-		p.SetTitleColor(s.Global.TitleColor.Color())
-		p.SetFocusStyle(tcell.StyleDefault.Foreground(s.Global.FocusColor.Color()).Background(s.Global.BackgroundColor.Color()))
+func ExtractStyles() error {
+	configDir, err := util.GetConfigDir()
+	if err != nil {
+		return err
 	}
+
+	stylesDir := fmt.Sprintf("%s/styles", configDir)
+	// check if styles dir exists, if not create it, if yes return
+	if info, err := os.Stat(stylesDir); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(stylesDir, 0755); err != nil {
+				return err
+			}
+		} else if info.IsDir() {
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	entries, err := stylesFS.ReadDir("styles")
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			content, err := stylesFS.ReadFile("styles/" + entry.Name())
+			if err != nil {
+				return err
+			}
+
+			err = os.WriteFile(stylesDir+"/"+entry.Name(), content, 0644)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

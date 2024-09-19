@@ -151,6 +151,9 @@ func (c *Content) setStyle() {
 
 	c.tableFlex.SetBorderColor(c.style.SeparatorColor.Color())
 	c.tableHeader.SetTextColor(c.style.StatusTextColor.Color())
+
+	c.table.SetBordersColor(c.style.SeparatorColor.Color())
+	c.table.SetSeparator(c.style.SeparatorSymbol.Rune())
 }
 
 func (c *Content) setStaticLayout() {
@@ -158,8 +161,6 @@ func (c *Content) setStaticLayout() {
 	c.tableFlex.SetDirection(tview.FlexRow)
 	c.tableFlex.SetTitle(" Content ")
 	c.tableFlex.SetTitleAlign(tview.AlignCenter)
-	c.tableFlex.AddItem(c.tableHeader, 2, 0, false)
-	c.tableFlex.AddItem(c.table, 0, 1, true)
 	c.tableFlex.SetBorderPadding(0, 0, 1, 1)
 
 	c.tableHeader.SetText("Documents: 0, Page: 0, Limit: 0")
@@ -234,7 +235,7 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 			Page: 0,
 		}
 		_, _, _, height := c.table.GetInnerRect()
-		state.Limit = int64(height) - 2
+		state.Limit = int64(height - 1)
 		state.Db = db
 		state.Coll = coll
 		c.state = &state
@@ -252,6 +253,7 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 
 func (c *Content) Render(setFocus bool) {
 	c.Flex.Clear()
+	c.tableFlex.Clear()
 
 	var focusPrimitive tview.Primitive
 	focusPrimitive = c
@@ -266,6 +268,9 @@ func (c *Content) Render(setFocus bool) {
 		focusPrimitive = c.sortBar
 	}
 
+	c.tableFlex.AddItem(c.tableHeader, 2, 0, false)
+	c.tableFlex.AddItem(c.table, 0, 1, true)
+
 	c.Flex.AddItem(c.tableFlex, 0, 1, true)
 
 	if setFocus {
@@ -274,10 +279,9 @@ func (c *Content) Render(setFocus bool) {
 }
 
 func (c *Content) renderTableView(startRow int, documents []primitive.M) {
+	c.table.SetFixed(1, 0)
 	sortedKeys := util.GetSortedKeysWithTypes(documents, c.style.ColumnTypeColor.Color().String())
 
-	c.table.SetBordersColor(c.style.SeparatorColor.Color())
-	c.table.SetSeparator(c.style.SeparatorSymbol.Rune())
 	// Set the header row
 	for col, key := range sortedKeys {
 		c.table.SetCell(startRow, col, tview.NewTableCell(key).
@@ -315,6 +319,7 @@ func (c *Content) renderTableView(startRow int, documents []primitive.M) {
 }
 
 func (c *Content) renderJsonView(startRow int, documents []primitive.M) {
+	c.table.SetFixed(0, 0)
 	row := startRow
 	for _, doc := range documents {
 		_id := doc["_id"]

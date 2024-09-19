@@ -11,7 +11,7 @@ welcome:
     formLabelColor: '#FF9580'
     formInputColor: '#E0E0E0'
     formInputBackgroundColor: '#2A2A3A'
-connector:
+connection:
     formLabelColor: '#FF9580'
     formInputBackgroundColor: '#2A2A3A'
     formInputColor: '#E0E0E0'
@@ -69,3 +69,9 @@ help:
 others:
     buttonsTextColor: '#1E1E2E'
     buttonsBackgroundColor: '#61AFEF'
+styleChange:
+    textColor: '#E0E0E0'
+    selectedTextColor: '#1E1E2E'
+    selectedBackgroundColor: '#61AFEF'
+
+

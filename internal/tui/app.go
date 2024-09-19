@@ -15,9 +15,9 @@ type (
 		*core.App
 
 		// initial pages
-		connector *page.Connector
-		main      *page.Main
-		help      *page.Help
+		connection *page.Connection
+		main       *page.Main
+		help       *page.Help
 	}
 )
 
@@ -27,9 +27,9 @@ func NewApp(appConfig *config.Config) *App {
 	app := &App{
 		App: coreApp,
 
-		connector: page.NewConnector(),
-		main:      page.NewMain(),
-		help:      page.NewHelp(),
+		connection: page.NewConnection(),
+		main:       page.NewMain(),
+		help:       page.NewHelp(),
 	}
 
 	return app
@@ -45,7 +45,7 @@ func (a *App) Init() error {
 	}
 	a.setKeybindings()
 
-	if err := a.connector.Init(a.App); err != nil {
+	if err := a.connection.Init(a.App); err != nil {
 		return err
 	}
 
@@ -60,8 +60,8 @@ func (a *App) setKeybindings() {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// TODO: This is temporary solution
 		switch {
-		case a.GetKeys().Contains(a.GetKeys().Global.OpenConnector, event.Name()):
-			a.renderConnector()
+		case a.GetKeys().Contains(a.GetKeys().Global.OpenConnection, event.Name()):
+			a.renderConnection()
 			return nil
 		case a.GetKeys().Contains(a.GetKeys().Global.ShowStyleModal, event.Name()):
 			a.ShowStyleChangeModal()
@@ -108,8 +108,8 @@ func (a *App) Render() {
 			modal.ShowError(a.Pages, "Error while rendering welcome page", err)
 		}
 	case a.App.GetConfig().GetCurrentConnection() == nil, a.App.GetConfig().ShowConnectionPage:
-		if err := a.renderConnector(); err != nil {
-			modal.ShowError(a.Pages, "Error while rendering connector", err)
+		if err := a.renderConnection(); err != nil {
+			modal.ShowError(a.Pages, "Error while rendering connection", err)
 		}
 	default:
 		// we need to init main view after connection is established
@@ -142,19 +142,19 @@ func (a *App) initAndRenderMain() error {
 	return nil
 }
 
-// renderConnector renders the connector page
-func (a *App) renderConnector() error {
-	a.connector.SetOnSubmitFunc(func() {
-		a.Pages.RemovePage(a.connector.GetIdentifier())
+// renderConnection renders the connection page
+func (a *App) renderConnection() error {
+	a.connection.SetOnSubmitFunc(func() {
+		a.Pages.RemovePage(a.connection.GetIdentifier())
 		err := a.initAndRenderMain()
 		if err != nil {
-			a.Pages.AddPage(a.connector.GetIdentifier(), a.connector, true, true)
+			a.Pages.AddPage(a.connection.GetIdentifier(), a.connection, true, true)
 			modal.ShowError(a.App.Pages, "Error while connecting to the database", err)
 		}
 	})
 
-	a.Pages.AddPage(a.connector.GetIdentifier(), a.connector, true, true)
-	a.connector.Render()
+	a.Pages.AddPage(a.connection.GetIdentifier(), a.connection, true, true)
+	a.connection.Render()
 	return nil
 }
 
@@ -168,10 +168,10 @@ func (a *App) renderWelcome() error {
 	}
 	welcome.SetOnSubmitFunc(func() {
 		a.Pages.RemovePage(welcome.GetIdentifier())
-		err := a.renderConnector()
+		err := a.renderConnection()
 		if err != nil {
 			a.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
-			modal.ShowError(a.Pages, "Error while rendering connector page", err)
+			modal.ShowError(a.Pages, "Error while rendering connection page", err)
 		}
 	})
 	a.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
