@@ -17,10 +17,10 @@ connection:
     formInputColor: '#F1FA8C'
     formButtonColor: '#387D44'
     listTextColor: '#F1FA8C'
-    listSelectedTextColor: '#50FA7B'
-    listSelectedBackgroundColor: '#163694'
+    listSelectedTextColor: '#0F172A'
+    listSelectedBackgroundColor: '#387D44'
     listSecondaryTextColor: '#387D44'
-    listSecondaryBackgroundColor: '#163694'
+    listSecondaryBackgroundColor: '#0F172A'
 header:
     keyColor: '#FDE68A'
     valueColor: '#387D44'

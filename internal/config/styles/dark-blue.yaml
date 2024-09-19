@@ -20,7 +20,7 @@ connection:
     listSelectedTextColor: '#1E1E2E'
     listSelectedBackgroundColor: '#61AFEF'
     listSecondaryTextColor: '#A0A0B0'
-    listSecondaryBackgroundColor: ""
+    listSecondaryBackgroundColor: "#1E1E2E"
 header:
     keyColor: '#FF9580'
     valueColor: '#61AFEF'

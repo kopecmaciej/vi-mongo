@@ -9,6 +9,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
+	"github.com/rs/zerolog/log"
 )
 
 //go:embed styles
@@ -168,14 +169,15 @@ func (s *Styles) loadDefaults() {
 	}
 
 	s.Connection = ConnectionStyle{
-		FormLabelColor:              "#F1FA8C",
-		FormInputBackgroundColor:    "#163694",
-		FormInputColor:              "#F1FA8C",
-		FormButtonColor:             "#387D44",
-		ListTextColor:               "#F1FA8C",
-		ListSelectedTextColor:       "#50FA7B",
-		ListSelectedBackgroundColor: "#163694",
-		ListSecondaryTextColor:      "#387D44",
+		FormLabelColor:               "#F1FA8C",
+		FormInputBackgroundColor:     "#163694",
+		FormInputColor:               "#F1FA8C",
+		FormButtonColor:              "#387D44",
+		ListTextColor:                "#F1FA8C",
+		ListSelectedTextColor:        "#50FA7B",
+		ListSelectedBackgroundColor:  "#163694",
+		ListSecondaryTextColor:       "#387D44",
+		ListSecondaryBackgroundColor: "#0F172A",
 	}
 
 	s.Header = HeaderStyle{
@@ -218,7 +220,7 @@ func (s *Styles) loadDefaults() {
 		LabelColor: "#FDE68A",
 		InputColor: "#E2E8F0",
 		Autocomplete: AutocompleteStyle{
-			BackgroundColor:       "#1E293B",
+			BackgroundColor:       "#0F172A",
 			TextColor:             "#E2E8F0",
 			ActiveBackgroundColor: "#387D44",
 			ActiveTextColor:       "#0F172A",
@@ -360,19 +362,31 @@ func ExtractStyles() error {
 	}
 
 	stylesDir := fmt.Sprintf("%s/styles", configDir)
-	// check if styles dir exists, if not create it, if yes return
-	if info, err := os.Stat(stylesDir); err != nil {
-		if os.IsNotExist(err) {
-			if err := os.MkdirAll(stylesDir, 0755); err != nil {
-				return err
-			}
-		} else if info.IsDir() {
-			return nil
-		} else {
+
+	// Check if styles directory exists
+	if info, err := os.Stat(stylesDir); err == nil && info.IsDir() {
+		// Check if any style files exist
+		entries, err := os.ReadDir(stylesDir)
+		if err != nil {
 			return err
 		}
+		if len(entries) > 0 {
+			// Styles already exist, return early
+			return nil
+		}
+	} else if os.IsNotExist(err) {
+		// Create styles directory if it doesn't exist
+		if err := os.MkdirAll(stylesDir, 0755); err != nil {
+			return err
+		}
+	} else {
+		// Return any other error
+		return err
 	}
 
+	log.Debug().Msgf("Populating styles directory: %s", stylesDir)
+
+	// Populate styles directory
 	entries, err := stylesFS.ReadDir("styles")
 	if err != nil {
 		return err

@@ -104,6 +104,9 @@ func (c *Connection) setStyle() {
 		Background(c.style.ListSecondaryBackgroundColor.Color()).
 		Italic(true)
 	c.list.SetSecondaryTextStyle(secondaryStyle)
+	c.list.SetSelectedStyle(tcell.StyleDefault.
+		Foreground(c.style.ListSelectedTextColor.Color()).
+		Background(c.style.ListSelectedBackgroundColor.Color()))
 }
 
 func (c *Connection) setKeybindings() {
