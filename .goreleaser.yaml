@@ -1,9 +1,6 @@
 project_name: vi-mongo
 version: 2
 
-env_files:
-  github_token: ./.env
-
 before:
   hooks:
     - go mod tidy
