@@ -4,7 +4,7 @@ go 1.22.1
 
 require (
 	github.com/gdamore/tcell/v2 v2.7.1
-	github.com/kopecmaciej/tview v0.0.6
+	github.com/kopecmaciej/tview v0.0.7
 	github.com/rs/zerolog v1.32.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0

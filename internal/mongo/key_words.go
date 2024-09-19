@@ -56,7 +56,7 @@ var (
 		},
 		{
 			Display:     "$not",
-			InsertText:  "$not: {<$0>}",
+			InsertText:  "$not: ",
 			Description: "Inverts the effect of a query expression.",
 		},
 		{
