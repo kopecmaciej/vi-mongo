@@ -19,7 +19,7 @@ connection:
     listTextColor: '#2E7D32'
     listSelectedTextColor: '#FFFFFF'
     listSelectedBackgroundColor: '#2E7D32'
-    listSecondaryTextColor: '#5B8C5A'
+    listSecondaryTextColor: '#FF9580'
     listSecondaryBackgroundColor: '#F0F4E8'
 header:
     keyColor: '#FF9580'
