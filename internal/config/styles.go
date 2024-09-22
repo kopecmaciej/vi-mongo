@@ -173,7 +173,7 @@ func (s *Styles) loadDefaults() {
 		FormInputColor:               "#F1FA8C",
 		FormButtonColor:              "#387D44",
 		ListTextColor:                "#F1FA8C",
-		ListSelectedTextColor:        "#50FA7B",
+		ListSelectedTextColor:        "#F1FA8C",
 		ListSelectedBackgroundColor:  "#163694",
 		ListSecondaryTextColor:       "#387D44",
 		ListSecondaryBackgroundColor: "#0F172A",
