@@ -126,9 +126,8 @@ func (d *Database) filterBarHandler(ctx context.Context) {
 }
 
 func (d *Database) filter(ctx context.Context, text string) {
-	defer d.Render()
 	dbsWitColls := d.dbsWithColls
-	expand := false
+	expand := true
 	filtered := []mongo.DBsWithCollections{}
 	if text == "" {
 		filtered = dbsWitColls
@@ -159,6 +158,10 @@ func (d *Database) filter(ctx context.Context, text string) {
 		}
 	}
 	d.DbTree.Render(ctx, filtered, expand)
+
+	d.Flex.RemoveItem(d.filterBar)
+
+	d.App.SetFocus(d.DbTree)
 }
 
 func (d *Database) listDbsAndCollections(ctx context.Context) error {

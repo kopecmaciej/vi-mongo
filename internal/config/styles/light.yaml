@@ -1,5 +1,5 @@
 global:
-    backgroundColor: '#D8D9E0'
+    backgroundColor: '#FFFFFF'
     textColor: '#2A2A3F'
     secondaryTextColor: '#4A5B8C'
     borderColor: '#B0B2C0'
@@ -48,7 +48,7 @@ docPeeker:
     valueColor: '#2A2A3F'
     bracketColor: '#FF6B8B'
     arrayColor: '#4A5B8C'
-    highlightColor: '#C8CAD5'
+    highlightColor: '#e2e2e2'
 filterBar:
     labelColor: '#FF9580'
     inputColor: '#2A2A3F'
