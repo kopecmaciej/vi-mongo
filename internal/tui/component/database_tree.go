@@ -300,8 +300,17 @@ func (t *DatabaseTree) collNode(name string) *tview.TreeNode {
 }
 
 func (t *DatabaseTree) removeSymbols(db, coll string) (string, string) {
-	db = strings.Replace(db, t.style.OpenNodeSymbol.String(), "", 1)
-	coll = strings.Replace(coll, t.style.LeafSymbol.String(), "", 1)
+	symbolsToRemove := []string{
+		t.style.OpenNodeSymbol.String(),
+		t.style.ClosedNodeSymbol.String(),
+		t.style.LeafSymbol.String(),
+	}
+
+	for _, symbol := range symbolsToRemove {
+		db = strings.ReplaceAll(db, symbol, "")
+		coll = strings.ReplaceAll(coll, symbol, "")
+	}
+
 	return strings.TrimSpace(db), strings.TrimSpace(coll)
 }
 
