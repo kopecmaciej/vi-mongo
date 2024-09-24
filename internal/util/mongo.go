@@ -58,10 +58,7 @@ func GetValueByType(v interface{}) string {
 		return t.Hex()
 	case primitive.DateTime:
 		return t.Time().Format(time.RFC3339)
-	case primitive.A:
-		b, _ := json.Marshal(t)
-		return string(b)
-	case primitive.D, primitive.M:
+	case primitive.A, primitive.D, primitive.M, map[string]interface{}, []interface{}:
 		b, _ := json.Marshal(t)
 		return string(b)
 	default:

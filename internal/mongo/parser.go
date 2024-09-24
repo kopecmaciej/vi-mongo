@@ -158,6 +158,11 @@ func ParseJsonValue(value interface{}) (interface{}, error) {
 			convertedArray[i] = convertedElem
 		}
 		return convertedArray, nil
+	case float64:
+		if v == float64(int64(v)) {
+			return int64(v), nil
+		}
+		return v, nil
 	default:
 		return v, nil
 	}

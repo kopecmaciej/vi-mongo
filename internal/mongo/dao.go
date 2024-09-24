@@ -163,7 +163,6 @@ func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, 
 
 	for key := range originalDoc {
 		if _, exists := document[key]; !exists {
-			log.Debug().Msgf("Unsetting field: %v", key)
 			unsetOps[key] = 1
 		}
 	}
