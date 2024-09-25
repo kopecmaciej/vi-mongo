@@ -55,6 +55,9 @@ type ViewModal struct {
 
 	// The colors for document elements.
 	keyColor, valueColor, bracketColor, arrayColor tcell.Color
+
+	// The margin of the modal (only top and bottom)
+	marginTop, marginBottom int
 }
 
 // NewViewModal returns a new modal message window.
@@ -67,6 +70,8 @@ func NewViewModal() *ViewModal {
 		},
 		scrollable:     true,
 		scrollPosition: 0,
+		marginTop:      6,
+		marginBottom:   6,
 	}
 	m.form = tview.NewForm().
 		SetButtonsAlign(tview.AlignCenter).
@@ -222,16 +227,15 @@ func (m *ViewModal) HasFocus() bool {
 func (m *ViewModal) Draw(screen tcell.Screen) {
 	// Calculate the width of this modal.
 	screenWidth, screenHeight := screen.Size()
-	width := screenWidth / 3
+	width := screenWidth / 2
 
 	// Reset the text and find out how wide it is.
 	m.frame.Clear()
 	lines := tview.WordWrap(m.text.Content, width)
 
 	maxLines := len(lines)
-	// 2x padding
-	if maxLines > screenHeight-12 {
-		maxLines = screenHeight - 12
+	if maxLines > screenHeight-m.marginTop-m.marginBottom {
+		maxLines = screenHeight - m.marginTop - m.marginBottom
 	}
 
 	m.endPosition = maxLines
@@ -263,11 +267,11 @@ func (m *ViewModal) Draw(screen tcell.Screen) {
 		m.frame.AddText(lines[i], true, m.text.Align, m.text.Color)
 	}
 
-	// Set the modal's position and size.
-	height := maxLines + 6
-	width += 4
+	height := maxLines + m.marginBottom
+
 	x := (screenWidth - width) / 2
 	y := (screenHeight - height) / 2
+
 	m.SetRect(x, y, width, height)
 
 	// Draw the frame.
@@ -286,6 +290,7 @@ func (m *ViewModal) calculateNextLinesToHighlight(lines []string) int {
 	if absolutePosition >= len(lines) {
 		return 0
 	}
+
 	currentIndent := calculateIndentation(lines[absolutePosition])
 	linesToHighlight := 0
 
@@ -373,7 +378,7 @@ func (m *ViewModal) MoveUp() {
 
 func (m *ViewModal) MoveDown() {
 	_, _, width, height := m.GetRect()
-	maxLines := height - 6
+	maxLines := height - m.marginBottom
 	totalLines := len(tview.WordWrap(m.text.Content, width))
 
 	// sometimes totalLines are incorrect, to short (when key:value is multilines at the end),
@@ -384,7 +389,7 @@ func (m *ViewModal) MoveDown() {
 
 	if m.selectedLine < maxLines-1 && m.selectedLine < totalLines-1 {
 		m.selectedLine++
-	} else if m.selectedLine < totalLines-1 && m.scrollPosition+m.selectedLine < totalLines {
+	} else if m.selectedLine < totalLines-1 && m.scrollPosition+m.selectedLine < totalLines-1 {
 		m.scrollPosition++
 	}
 }
@@ -396,7 +401,7 @@ func (m *ViewModal) MoveToTop() {
 
 func (m *ViewModal) MoveToBottom() {
 	_, _, width, height := m.GetRect()
-	maxLines := height - 6
+	maxLines := height - m.marginBottom
 	lines := tview.WordWrap(m.text.Content, width)
 	totalLines := len(lines)
 

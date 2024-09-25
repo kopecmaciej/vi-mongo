@@ -561,13 +561,7 @@ func (c *Content) sortBarListener(ctx context.Context) {
 // refreshDocument refreshes the document in the table
 func (c *Content) refreshDocument(ctx context.Context, doc string) {
 	c.state.UpdateRawDoc(doc)
-
-	// TODO: probably we don't need to refetch, just update current one
-	if c.state.Filter != "" || c.state.Sort != "" {
-		c.updateContent(ctx, false)
-	} else {
-		c.updateContent(ctx, true)
-	}
+	c.updateContentBasedOnState(ctx)
 }
 
 func (c *Content) viewJson(jsonString string) error {
@@ -614,7 +608,8 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 			c.state.DeleteDoc(objectId)
 		}
 		c.App.Pages.RemovePage(c.deleteModal.GetIdentifier())
-		c.updateContent(ctx, true)
+
+		c.updateContentBasedOnState(ctx)
 
 		row, col := c.table.GetSelection()
 		if row == c.table.GetRowCount() {
@@ -650,8 +645,6 @@ func (c *Content) getDocumentId(row, coll int) interface{} {
 		return nil
 	}
 }
-
-// Event handlers
 
 func (c *Content) handleScrolling(row int) {
 	if row == 1 && c.currentView == JsonView {
@@ -710,7 +703,7 @@ func (c *Content) handleAddDocument(ctx context.Context) *tcell.EventKey {
 		return nil
 	}
 	c.state.AppendDoc(insertedDoc)
-	c.updateContent(ctx, true)
+	c.updateContentBasedOnState(ctx)
 	return nil
 }
 
@@ -750,7 +743,7 @@ func (c *Content) handleDuplicateDocument(ctx context.Context, row, coll int) *t
 		return nil
 	}
 	c.state.AppendDoc(duplicatedDoc)
-	c.updateContent(ctx, true)
+	c.updateContentBasedOnState(ctx)
 	return nil
 }
 
@@ -857,4 +850,12 @@ func (c *Content) handleCopyLine(row, col int) *tcell.EventKey {
 		modal.ShowError(c.App.Pages, "Error copying document", err)
 	}
 	return nil
+}
+
+func (c *Content) updateContentBasedOnState(ctx context.Context) error {
+	if c.state.Filter != "" || c.state.Sort != "" {
+		return c.updateContent(ctx, false)
+	} else {
+		return c.updateContent(ctx, true)
+	}
 }
