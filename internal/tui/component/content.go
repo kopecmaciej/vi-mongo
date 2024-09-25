@@ -562,7 +562,12 @@ func (c *Content) sortBarListener(ctx context.Context) {
 func (c *Content) refreshDocument(ctx context.Context, doc string) {
 	c.state.UpdateRawDoc(doc)
 
-	c.updateContent(ctx, true)
+	// TODO: probably we don't need to refetch, just update current one
+	if c.state.Filter != "" || c.state.Sort != "" {
+		c.updateContent(ctx, false)
+	} else {
+		c.updateContent(ctx, true)
+	}
 }
 
 func (c *Content) viewJson(jsonString string) error {
