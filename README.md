@@ -12,6 +12,8 @@ Emphasizing ease of use without sacrificing functionality, Vi Mongo offers a
 user-friendly command-line experience for database administrators and developers
 alike.
 
+Visit [www.vi-mongo.com](https://www.vi-mongo.com) for more information.
+
 ## Installation
 
 [www.vi-mongo.com/docs/installation](https://www.vi-mongo.com/docs/installation)

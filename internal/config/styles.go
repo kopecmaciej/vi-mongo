@@ -35,13 +35,15 @@ type (
 
 	// GlobalStyles is a struct that contains all the global styles for the application
 	GlobalStyles struct {
-		BackgroundColor    Style `yaml:"backgroundColor"`
-		TextColor          Style `yaml:"textColor"`
-		SecondaryTextColor Style `yaml:"secondaryTextColor"`
-		BorderColor        Style `yaml:"borderColor"`
-		FocusColor         Style `yaml:"focusColor"`
-		TitleColor         Style `yaml:"titleColor"`
-		GraphicsColor      Style `yaml:"graphicsColor"`
+		BackgroundColor             Style `yaml:"backgroundColor"`
+		ContrastBackgroundColor     Style `yaml:"contrastBackgroundColor"`
+		MoreContrastBackgroundColor Style `yaml:"moreContrastBackgroundColor"`
+		TextColor                   Style `yaml:"textColor"`
+		SecondaryTextColor          Style `yaml:"secondaryTextColor"`
+		BorderColor                 Style `yaml:"borderColor"`
+		FocusColor                  Style `yaml:"focusColor"`
+		TitleColor                  Style `yaml:"titleColor"`
+		GraphicsColor               Style `yaml:"graphicsColor"`
 	}
 
 	// WelcomeStyle is a struct that contains all the styles for the welcome screen
@@ -151,13 +153,15 @@ type (
 
 func (s *Styles) loadDefaults() {
 	s.Global = GlobalStyles{
-		BackgroundColor:    "#0F172A",
-		TextColor:          "#E2E8F0",
-		SecondaryTextColor: "#FDE68A",
-		BorderColor:        "#387D44",
-		FocusColor:         "#4ADE80",
-		TitleColor:         "#387D44",
-		GraphicsColor:      "#387D44",
+		BackgroundColor:             "#0F172A",
+		ContrastBackgroundColor:     "#1E293B",
+		MoreContrastBackgroundColor: "#FDE68A",
+		TextColor:                   "#E2E8F0",
+		SecondaryTextColor:          "#A0A0B0",
+		BorderColor:                 "#387D44",
+		FocusColor:                  "#4ADE80",
+		TitleColor:                  "#387D44",
+		GraphicsColor:               "#387D44",
 	}
 
 	s.Welcome = WelcomeStyle{
@@ -277,8 +281,8 @@ func LoadStyles(styleName string) (*Styles, error) {
 
 func (s *Styles) LoadMainStyles() {
 	tview.Styles.PrimitiveBackgroundColor = s.loadColor(s.Global.BackgroundColor)
-	tview.Styles.ContrastBackgroundColor = s.loadColor(s.Global.BackgroundColor)
-	tview.Styles.MoreContrastBackgroundColor = s.loadColor(s.Global.BackgroundColor)
+	tview.Styles.ContrastBackgroundColor = s.loadColor(s.Global.ContrastBackgroundColor)
+	tview.Styles.MoreContrastBackgroundColor = s.loadColor(s.Global.MoreContrastBackgroundColor)
 	tview.Styles.PrimaryTextColor = s.loadColor(s.Global.TextColor)
 	tview.Styles.SecondaryTextColor = s.loadColor(s.Global.SecondaryTextColor)
 	tview.Styles.TertiaryTextColor = s.loadColor(s.Global.SecondaryTextColor)

@@ -1,14 +1,19 @@
 global:
     backgroundColor: '#1E1E2E'
+    contrastBackgroundColor: '#3D3D4D'
+    moreContrastBackgroundColor: '#3D3D4D'
     textColor: '#E0E0E0'
     secondaryTextColor: '#A0A0B0'
+    tertiaryTextColor: '#61AFEF'
+    inverseTextColor: '#3D3D4D'
+    contrastSecondaryTextColor: '#FF9580'
     borderColor: '#3D3D4D'
     focusColor: '#FF9580'
     titleColor: '#61AFEF'
     graphicsColor: '#61AFEF'
 welcome:
     textColor: '#A0A0B0'
-    formLabelColor: '#FF9580'
+    formLabelColor: '#61AFEF'
     formInputColor: '#E0E0E0'
     formInputBackgroundColor: '#2A2A3A'
 connection:
@@ -69,6 +74,8 @@ help:
 others:
     buttonsTextColor: '#1E1E2E'
     buttonsBackgroundColor: '#61AFEF'
+    modalTextColor: '#E0E0E0'
+    modalSecondaryTextColor: '#61AFEF'
 styleChange:
     textColor: '#E0E0E0'
     selectedTextColor: '#1E1E2E'

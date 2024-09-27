@@ -1,5 +1,7 @@
 global:
     backgroundColor: '#F0F4E8'
+    contrastBackgroundColor: '#D0E8CF'
+    moreContrastBackgroundColor: '#B7D0B6'
     textColor: '#2C3E2D'
     secondaryTextColor: '#5B8C5A'
     borderColor: '#B7D0B6'
@@ -69,6 +71,8 @@ help:
 others:
     buttonsTextColor: '#FFFFFF'
     buttonsBackgroundColor: '#2E7D32'
+    modalTextColor: '#2C3E2D'
+    modalSecondaryTextColor: '#2E7D32'
 styleChange:
     textColor: '#2C3E2D'
     selectedTextColor: '#FFFFFF'

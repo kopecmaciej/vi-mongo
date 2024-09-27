@@ -92,6 +92,7 @@ func (c *Connection) setStyle() {
 
 	c.form.SetFieldTextColor(c.style.FormInputColor.Color())
 	c.form.SetFieldBackgroundColor(c.style.FormInputBackgroundColor.Color())
+	c.form.SetLabelColor(c.style.FormLabelColor.Color())
 
 	globalBackground := c.App.GetStyles().Global.BackgroundColor.Color()
 	mainStyle := tcell.StyleDefault.
