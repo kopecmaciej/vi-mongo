@@ -45,3 +45,6 @@ release:
   github:
     owner: kopecmaciej
     name: vi-mongo
+
+  # for now it will be a pre-release
+  prerelease: true

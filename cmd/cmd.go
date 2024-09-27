@@ -45,7 +45,6 @@ func init() {
 	rootCmd.Flags().BoolVar(&connectionPage, "connection-page", false, "Show connection page on startup")
 }
 
-// TODO: fix flags
 func runApp(cmd *cobra.Command, args []string) {
 	if showVersion {
 		greenColor := "\033[32m"
