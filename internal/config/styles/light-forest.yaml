@@ -1,80 +1,80 @@
 global:
-    backgroundColor: '#F0F4E8'
-    contrastBackgroundColor: '#D0E8CF'
-    moreContrastBackgroundColor: '#B7D0B6'
-    textColor: '#2C3E2D'
-    secondaryTextColor: '#5B8C5A'
-    borderColor: '#B7D0B6'
-    focusColor: '#FF8700'
-    titleColor: '#2E7D32'
-    graphicsColor: '#2E7D32'
+  backgroundColor: "#F0F4E8"
+  contrastBackgroundColor: "#D0E8CF"
+  moreContrastBackgroundColor: "#B7D0B6"
+  textColor: "#2C3E2D"
+  secondaryTextColor: "#5B8C5A"
+  borderColor: "#B7D0B6"
+  focusColor: "#FF8700"
+  titleColor: "#2E7D32"
+  graphicsColor: "#2E7D32"
 welcome:
-    textColor: '#5B8C5A'
-    formLabelColor: '#FF9580'
-    formInputColor: '#2C3E2D'
-    formInputBackgroundColor: '#FFFFFF'
+  textColor: "#5B8C5A"
+  formLabelColor: "#FF9580"
+  formInputColor: "#2C3E2D"
+  formInputBackgroundColor: "#FFFFFF"
 connection:
-    formLabelColor: '#FF9580'
-    formInputBackgroundColor: '#FFFFFF'
-    formInputColor: '#2C3E2D'
-    formButtonColor: '#2E7D32'
-    listTextColor: '#2E7D32'
-    listSelectedTextColor: '#FFFFFF'
-    listSelectedBackgroundColor: '#2E7D32'
-    listSecondaryTextColor: '#FF9580'
-    listSecondaryBackgroundColor: '#F0F4E8'
+  formLabelColor: "#FF9580"
+  formInputBackgroundColor: "#FFFFFF"
+  formInputColor: "#2C3E2D"
+  formButtonColor: "#2E7D32"
+  listTextColor: "#2E7D32"
+  listSelectedTextColor: "#FFFFFF"
+  listSelectedBackgroundColor: "#2E7D32"
+  listSecondaryTextColor: "#FF9580"
+  listSecondaryBackgroundColor: "#F0F4E8"
 header:
-    keyColor: '#FF9580'
-    valueColor: '#2E7D32'
-    activeSymbol: ●
-    inactiveSymbol: ○
+  keyColor: "#FF9580"
+  valueColor: "#2E7D32"
+  activeSymbol: ●
+  inactiveSymbol: ○
 databases:
-    nodeColor: '#2E7D32'
-    openNodeSymbol: "[#FF8700]\U0001F5C1[-:-:-]"
-    closedNodeSymbol: "[#FF8700]\U0001F5BF[-:-:-]"
-    leafColor: '#2C3E2D'
-    leafSymbol: "[#00A86B]\U0001F5CE[-:-:-]"
-    branchColor: '#5B8C5A'
+  nodeColor: "#2E7D32"
+  openNodeSymbol: "[#FF8700]\U0001F5C1[-:-:-]"
+  closedNodeSymbol: "[#FF8700]\U0001F5BF[-:-:-]"
+  leafColor: "#2C3E2D"
+  leafSymbol: "[#00A86B]\U0001F5CE[-:-:-]"
+  branchColor: "#5B8C5A"
 content:
-    docInfoTextColor: '#5B8C5A'
-    headerRowColor: '#D0E8CF'
-    columnKeyColor: '#FF9580'
-    columnTypeColor: '#00A86B'
-    cellTextColor: '#2C3E2D'
-    activeRowColor: '#2E7D32'
-    selectedRowColor: '#2E7D32'
-    separatorSymbol: '|'
-    separatorColor: '#B7D0B6'
+  docInfoTextColor: "#5B8C5A"
+  headerRowColor: "#D0E8CF"
+  columnKeyColor: "#FF9580"
+  columnTypeColor: "#00A86B"
+  cellTextColor: "#2C3E2D"
+  activeRowColor: "#2E7D32"
+  selectedRowColor: "#2E7D32"
+  separatorSymbol: "|"
+  separatorColor: "#B7D0B6"
 docPeeker:
-    keyColor: '#FF9580'
-    valueColor: '#2C3E2D'
-    bracketColor: '#FF6B8B'
-    arrayColor: '#5B8C5A'
-    highlightColor: '#D0E8CF'
+  keyColor: "#FF9580"
+  valueColor: "#2C3E2D"
+  bracketColor: "#FF6B8B"
+  arrayColor: "#5B8C5A"
+  highlightColor: "#D0E8CF"
 filterBar:
-    labelColor: '#FF9580'
-    inputColor: '#2C3E2D'
-    autocomplete:
-        backgroundColor: '#FFFFFF'
-        textColor: '#2C3E2D'
-        activeBackgroundColor: '#2E7D32'
-        activeTextColor: '#FFFFFF'
-        secondaryTextColor: '#5B8C5A'
+  labelColor: "#FF9580"
+  inputColor: "#2C3E2D"
+  autocomplete:
+    backgroundColor: "#FFFFFF"
+    textColor: "#2C3E2D"
+    activeBackgroundColor: "#2E7D32"
+    activeTextColor: "#FFFFFF"
+    secondaryTextColor: "#5B8C5A"
 history:
-    textColor: '#2C3E2D'
-    selectedTextColor: '#FFFFFF'
-    selectedBackgroundColor: '#2E7D32'
+  textColor: "#2C3E2D"
+  selectedTextColor: "#FFFFFF"
+  selectedBackgroundColor: "#2E7D32"
 help:
-    headerColor: '#2E7D32'
-    keyColor: '#FF9580'
-    descriptionColor: '#2C3E2D'
+  headerColor: "#2E7D32"
+  keyColor: "#FF9580"
+  descriptionColor: "#2C3E2D"
 others:
-    buttonsTextColor: '#FFFFFF'
-    buttonsBackgroundColor: '#2E7D32'
-    modalTextColor: '#2C3E2D'
-    modalSecondaryTextColor: '#2E7D32'
+  buttonsTextColor: "#FFFFFF"
+  buttonsBackgroundColor: "#2E7D32"
+  deleteButtonSelectedBackgroundColor: "#DA3312"
+  modalTextColor: "#2C3E2D"
+  modalSecondaryTextColor: "#2E7D32"
 styleChange:
-    textColor: '#2C3E2D'
-    selectedTextColor: '#FFFFFF'
-    selectedBackgroundColor: '#2E7D32'
-
+  textColor: "#2C3E2D"
+  selectedTextColor: "#FFFFFF"
+  selectedBackgroundColor: "#2E7D32"

@@ -136,9 +136,9 @@ type (
 
 	OthersStyle struct {
 		// buttons
-		ButtonsTextColor       Style `yaml:"buttonsTextColor"`
-		ButtonsSelectedColor   Style `yaml:"buttonsSelectedColor"`
-		ButtonsBackgroundColor Style `yaml:"buttonsBackgroundColor"`
+		ButtonsTextColor                    Style `yaml:"buttonsTextColor"`
+		ButtonsBackgroundColor              Style `yaml:"buttonsBackgroundColor"`
+		DeleteButtonSelectedBackgroundColor Style `yaml:"deleteButtonSelectedBackgroundColor"`
 		// modals specials
 		ModalTextColor          Style `yaml:"modalTextColor"`
 		ModalSecondaryTextColor Style `yaml:"modalSecondaryTextColor"`
@@ -244,11 +244,11 @@ func (s *Styles) loadDefaults() {
 	}
 
 	s.Others = OthersStyle{
-		ButtonsTextColor:        "#0F172A",
-		ButtonsSelectedColor:    "#387D44",
-		ButtonsBackgroundColor:  "#1E293B",
-		ModalTextColor:          "#FDE68A",
-		ModalSecondaryTextColor: "#387D44",
+		ButtonsTextColor:                    "#0F172A",
+		ButtonsBackgroundColor:              "#1E293B",
+		DeleteButtonSelectedBackgroundColor: "#DA3312",
+		ModalTextColor:                      "#FDE68A",
+		ModalSecondaryTextColor:             "#387D44",
 	}
 
 	s.StyleChange = StyleChangeStyle{

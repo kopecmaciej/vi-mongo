@@ -48,6 +48,9 @@ type (
 	InputField struct {
 		*tview.InputField
 	}
+	Modal struct {
+		*tview.Modal
+	}
 	ViewModal struct {
 		*primitives.ViewModal
 	}
@@ -79,6 +82,10 @@ func NewTreeView() *TreeView {
 
 func NewInputField() *InputField {
 	return &InputField{InputField: tview.NewInputField()}
+}
+
+func NewModal() *Modal {
+	return &Modal{Modal: tview.NewModal()}
 }
 
 func NewViewModal() *ViewModal {
@@ -119,6 +126,12 @@ func (i *InputField) SetStyle(style *config.Styles) {
 	i.SetFieldBackgroundColor(style.Global.BackgroundColor.Color())
 	i.SetFieldTextColor(style.Global.TextColor.Color())
 	i.SetPlaceholderTextColor(style.Global.TextColor.Color())
+}
+
+func (m *Modal) SetStyle(style *config.Styles) {
+	SetCommonStyle(m.Box, style)
+	m.SetButtonBackgroundColor(style.Others.ButtonsBackgroundColor.Color())
+	m.SetButtonTextColor(style.Others.ButtonsTextColor.Color())
 }
 
 func (v *ViewModal) SetStyle(style *config.Styles) {

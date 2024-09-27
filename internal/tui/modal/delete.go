@@ -2,8 +2,8 @@ package modal
 
 import (
 	"github.com/gdamore/tcell/v2"
-	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 )
 
@@ -13,7 +13,7 @@ const (
 
 type Delete struct {
 	*core.BaseElement
-	*tview.Modal
+	*core.Modal
 
 	style *config.OthersStyle
 }
@@ -21,7 +21,7 @@ type Delete struct {
 func NewDeleteModal() *Delete {
 	dm := &Delete{
 		BaseElement: core.NewBaseElement(),
-		Modal:       tview.NewModal(),
+		Modal:       core.NewModal(),
 	}
 
 	dm.SetIdentifier(DeleteModal)
@@ -31,22 +31,28 @@ func NewDeleteModal() *Delete {
 }
 
 func (d *Delete) init() error {
+	d.setStaticLayout()
 	d.setStyle()
 	d.setKeybindings()
 
-	d.AddButtons([]string{"[red]Delete", "Cancel"})
+	d.handleEvents()
 
 	return nil
 }
 
-func (d *Delete) setStyle() {
-	d.style = &d.App.GetStyles().Others
-
+func (d *Delete) setStaticLayout() {
+	d.AddButtons([]string{"Delete", "Cancel"})
 	d.SetBorder(true)
 	d.SetTitle(" Delete ")
 	d.SetBorderPadding(0, 0, 1, 1)
-	d.SetButtonTextColor(d.style.ButtonsTextColor.Color())
-	d.SetButtonActivatedStyle(tcell.StyleDefault.Background(d.style.ButtonsSelectedColor.Color()))
+}
+
+func (d *Delete) setStyle() {
+	d.SetStyle(d.App.GetStyles())
+	d.style = &d.App.GetStyles().Others
+
+	d.SetButtonActivatedStyle(tcell.StyleDefault.
+		Background(d.style.DeleteButtonSelectedBackgroundColor.Color()))
 }
 
 func (d *Delete) setKeybindings() {
@@ -58,5 +64,14 @@ func (d *Delete) setKeybindings() {
 			return tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
 		}
 		return event
+	})
+}
+
+func (d *Delete) handleEvents() {
+	go d.HandleEvents(DeleteModal, func(event manager.EventMsg) {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			d.setStyle()
+		}
 	})
 }

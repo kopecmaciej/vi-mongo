@@ -81,6 +81,10 @@ func (c *Connection) setStaticLayout() {
 	c.list.SetWrapText(true)
 	c.list.SetBorderPadding(1, 1, 1, 1)
 	c.list.SetItemGap(1)
+
+	c.form.AddButton("Save", c.saveButtonFunc)
+	c.form.AddButton("Cancel", c.cancelButtonFunc)
+
 }
 
 func (c *Connection) setStyle() {
@@ -161,7 +165,7 @@ func (c *Connection) Render() {
 
 // renderForm renders the form for creating new connection
 func (c *Connection) renderForm() *core.Form {
-	c.form.Clear(true)
+	c.form.Clear(false)
 
 	c.form.AddInputField("Name", "", 40, nil, nil)
 	c.form.AddInputField("Url", "mongodb://", 40, nil, nil)
@@ -174,9 +178,6 @@ func (c *Connection) renderForm() *core.Form {
 	c.form.AddPasswordField("Password", "", 40, '*', nil)
 	c.form.AddInputField("Database", "", 40, nil, nil)
 	c.form.AddInputField("Timeout", "5", 10, nil, nil)
-
-	c.form.AddButton("Save", c.saveButtonFunc)
-	c.form.AddButton("Cancel", c.cancelButtonFunc)
 
 	c.AddItem(c.form, 60, 0, true)
 

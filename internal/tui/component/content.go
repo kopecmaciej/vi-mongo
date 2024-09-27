@@ -599,7 +599,11 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 
 	c.deleteModal.SetText("Are you sure you want to delete document of id: [blue]" + stringifyId)
 	c.deleteModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		if buttonLabel == "[red]Delete" {
+		defer c.App.Pages.RemovePage(c.deleteModal.GetIdentifier())
+		if buttonLabel == "Cancel" {
+			return
+		}
+		if buttonLabel == "Delete" {
 			err = c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectId)
 			if err != nil {
 				modal.ShowError(c.App.Pages, "Error deleting document", err)
@@ -607,7 +611,6 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 			}
 			c.state.DeleteDoc(objectId)
 		}
-		c.App.Pages.RemovePage(c.deleteModal.GetIdentifier())
 
 		c.updateContentBasedOnState(ctx)
 
