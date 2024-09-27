@@ -1,13 +1,14 @@
 BUILD_DIR := .build
 SVC_NAME := vi-mongo
-INC_VERSION := $(shell git describe --tags --abbrev=0 | awk -F. '{OFS="."; $$NF+=1; print}')
+VERSION := $(shell git describe --tags --abbrev=0)
+REPOSITORY := github.com/kopecmaciej/vi-mongo
 
 .PHONY: build run
 
 all: build run
 
 build:
-	go build -ldflags="-s -w" -o $(BUILD_DIR)/$(SVC_NAME) .
+	go build -ldflags="-s -w -X $(REPOSITORY)/cmd.version=$(VERSION)" -o $(BUILD_DIR)/$(SVC_NAME) .
 
 run:
 	env $$(cat .env) $(BUILD_DIR)/$(SVC_NAME)

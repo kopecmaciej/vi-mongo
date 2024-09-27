@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	"fmt"
+
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/tui"
 	"github.com/rs/zerolog"
@@ -13,6 +15,7 @@ import (
 
 var (
 	cfgFile        string
+	showVersion    bool
 	debug          bool
 	welcomePage    bool
 	connectionPage bool
@@ -22,6 +25,8 @@ var (
 		Long:  `A Terminal User Interface (TUI) client for MongoDB`,
 		Run:   runApp,
 	}
+
+	version = "v0.0.0"
 )
 
 func Execute() error {
@@ -34,6 +39,7 @@ func Execute() error {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/vi-mongo/config.yaml)")
+	rootCmd.Flags().BoolVar(&showVersion, "version", false, "Show version")
 	rootCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug mode")
 	rootCmd.Flags().BoolVar(&welcomePage, "welcome-page", false, "Show welcome page on startup")
 	rootCmd.Flags().BoolVar(&connectionPage, "connection-page", false, "Show connection page on startup")
@@ -41,18 +47,38 @@ func init() {
 
 // TODO: fix flags
 func runApp(cmd *cobra.Command, args []string) {
+	if showVersion {
+		greenColor := "\033[32m"
+		resetColor := "\033[0m"
+		fmt.Printf("%s\n", greenColor)
+		fmt.Println(`
+ __      ___   __  __                       
+ \ \    / (_) |  \/  |                      
+  \ \  / / _  | \  / | ___  _ __   __ _  ___
+   \ \/ / | | | |\/| |/ _ \| '_ \ / _` + "`" + ` |/ _ \
+    \  /  | | | |  | | (_) | | | | (_| | (_) |
+     \/   |_| |_|  |_|\___/|_| |_|\__, |\___/
+                                   __/ |     
+                                  |___/      
+`)
+		fmt.Printf("Version %s%s\n", version, resetColor)
+		os.Exit(0)
+	}
+
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error loading config")
 		os.Exit(1)
 	}
 
+	debug := false
+
 	cmd.Flags().Visit(func(f *pflag.Flag) {
 		switch f.Name {
-		// TODO: those should be one-time flags,
-		// right now they behave like they're from config file
+		case "version":
+			showVersion = true
 		case "debug":
-			cfg.Debug = debug
+			debug = true
 		case "welcome-page":
 			cfg.ShowWelcomePage = welcomePage
 		case "connection-page":
@@ -61,7 +87,7 @@ func runApp(cmd *cobra.Command, args []string) {
 	})
 
 	logLevel := zerolog.InfoLevel
-	if cfg.Debug {
+	if debug {
 		logLevel = zerolog.DebugLevel
 	}
 
@@ -73,8 +99,8 @@ func runApp(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	if cfg.Debug {
-		log.Info().Msg("Debug mode enabled")
+	if debug {
+		log.Debug().Msg("Debug mode enabled")
 	}
 	log.Info().Msg("Mongo UI started")
 

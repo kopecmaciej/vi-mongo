@@ -41,7 +41,6 @@ type EditorConfig struct {
 type Config struct {
 	Version            string        `yaml:"version"`
 	Log                LogConfig     `yaml:"log"`
-	Debug              bool          `yaml:"debug"`
 	Editor             EditorConfig  `yaml:"editor"`
 	ShowConnectionPage bool          `yaml:"showConnectionPage"`
 	ShowWelcomePage    bool          `yaml:"showWelcomePage"`
@@ -68,7 +67,6 @@ func LoadConfig() (*Config, error) {
 // loadDefaults loads the default config settings
 func (c *Config) loadDefaults() {
 	c.Version = "1.0.0"
-	c.Debug = false
 	c.Log = LogConfig{
 		Path:        LogPath,
 		Level:       "info",
