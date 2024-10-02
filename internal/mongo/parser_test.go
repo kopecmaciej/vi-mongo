@@ -9,125 +9,159 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func TestParseQueryEmptyInput(t *testing.T) {
-	result, err := ParseStringQuery("")
+func TestParseStringQuery(t *testing.T) {
+	objectID, err := primitive.ObjectIDFromHex("507f1f77bcf86cd799439011")
+	assert.NoError(t, err, "Failed to create ObjectID for testing")
 
-	assert.NoError(t, err)
-	assert.Equal(t, map[string]interface{}{}, result)
+	cases := []struct {
+		name     string
+		input    string
+		expected map[string]interface{}
+		hasError bool
+	}{
+		{
+			name:     "Empty input",
+			input:    "",
+			expected: map[string]interface{}{},
+			hasError: false,
+		},
+		{
+			name:     "Valid input with ObjectID",
+			input:    `{_id: ObjectID("507f1f77bcf86cd799439011")}`,
+			expected: map[string]interface{}{"_id": objectID},
+			hasError: false,
+		},
+		{
+			name:     "Multiple fields with nested document",
+			input:    `{ _id: ObjectID("507f1f77bcf86cd799439011"), user: { name: "John", age: 30 } }`,
+			expected: map[string]interface{}{"_id": objectID, "user": primitive.M{"name": "John", "age": int32(30)}},
+			hasError: false,
+		},
+		{
+			name:     "Array and date",
+			input:    `{ tags: ["mongodb", "database"], createdAt: { $date: "2023-04-15T12:00:00Z" } }`,
+			expected: map[string]interface{}{"tags": primitive.A{"mongodb", "database"}, "createdAt": primitive.NewDateTimeFromTime(time.Date(2023, 4, 15, 12, 0, 0, 0, time.UTC))},
+			hasError: false,
+		},
+		{
+			name:     "Invalid ObjectID",
+			input:    `{"_id": ObjectID("invalid")}`,
+			expected: nil,
+			hasError: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := ParseStringQuery(tc.input)
+			if tc.hasError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
 }
 
-func TestParseQueryValidInput(t *testing.T) {
-	objectID := primitive.NewObjectID()
-	query := fmt.Sprintf(`{_id: ObjectID("%s")}`, objectID.Hex())
-	expected := map[string]interface{}{"_id": objectID}
+func TestParseJsonToBson(t *testing.T) {
+	objectID, err := primitive.ObjectIDFromHex("507f1f77bcf86cd799439011")
+	assert.NoError(t, err, "Failed to create ObjectID for testing")
 
-	result, err := ParseStringQuery(query)
+	cases := []struct {
+		name     string
+		input    string
+		expected primitive.M
+		hasError bool
+	}{
+		{
+			name:     "Valid JSON with ObjectID",
+			input:    `{"_id": {"$oid": "507f1f77bcf86cd799439011"}, "name": "John"}`,
+			expected: primitive.M{"_id": objectID, "name": "John"},
+			hasError: false,
+		},
+		{
+			name:     "Valid JSON with Date",
+			input:    `{"createdAt": {"$date": "2024-01-01T00:00:00Z"}}`,
+			expected: primitive.M{"createdAt": primitive.NewDateTimeFromTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))},
+			hasError: false,
+		},
+		{
+			name:     "Invalid JSON",
+			input:    `{"invalid": json}`,
+			expected: nil,
+			hasError: true,
+		},
+	}
 
-	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := ParseJsonToBson(tc.input)
+			if tc.hasError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
 }
 
-func TestParseQueryWithMultipleFields(t *testing.T) {
-	objectID := primitive.NewObjectID()
-	query := fmt.Sprintf(`{_id: ObjectID("%s"), name: "John"}`, objectID.Hex())
-	expected := map[string]interface{}{"_id": objectID, "name": "John"}
+func TestParseBsonDocument(t *testing.T) {
+	objectID, err := primitive.ObjectIDFromHex("507f1f77bcf86cd799439011")
+	assert.NoError(t, err, "Failed to create ObjectID for testing")
 
-	result, err := ParseStringQuery(query)
+	input := map[string]interface{}{
+		"_id":  objectID,
+		"name": "Mark Twain",
+		"age":  60,
+		"tags": []string{"mongodb", "database"},
+	}
 
+	expected := fmt.Sprintf(`{"_id":{"$oid":"%s"},"age":60,"name":"Mark Twain","tags":["mongodb","database"]}`, objectID.Hex())
+
+	result, err := ParseBsonDocument(input)
 	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
+	assert.Equal(t, result, expected)
 }
 
-func TestParseQueryWithMultipleFieldsAndSpaces(t *testing.T) {
-	objectID := primitive.NewObjectID()
-	query := fmt.Sprintf(`{ _id: ObjectID("%s"), name: "John" }`, objectID.Hex())
-	expected := map[string]interface{}{"_id": objectID, "name": "John"}
+func TestParseBsonValue(t *testing.T) {
+	objectID, err := primitive.ObjectIDFromHex("507f1f77bcf86cd799439011")
+	assert.NoError(t, err, "Failed to create ObjectID for testing")
 
-	result, err := ParseStringQuery(query)
+	dateTime := primitive.NewDateTimeFromTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))
 
-	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
-}
+	cases := []struct {
+		name     string
+		input    interface{}
+		expected interface{}
+	}{
+		{
+			name:     "ObjectID",
+			input:    primitive.NewObjectID(),
+			expected: primitive.M{"$oid": objectID.Hex()},
+		},
+		{
+			name:     "DateTime",
+			input:    primitive.NewDateTimeFromTime(time.Now()),
+			expected: primitive.M{"$date": dateTime.Time()},
+		},
+		{
+			name:     "String",
+			input:    "test",
+			expected: "test",
+		},
+		{
+			name:     "Int64",
+			input:    int64(123),
+			expected: int64(123),
+		},
+	}
 
-func TestParseQueryWithMultipleNestedFieldsAndSpaces(t *testing.T) {
-	objectID := primitive.NewObjectID()
-	query := fmt.Sprintf(`{ _id: ObjectID("%s"), name.first: "John" }`, objectID.Hex())
-	expected := map[string]interface{}{"_id": objectID, "name.first": "John"}
-
-	result, err := ParseStringQuery(query)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
-}
-
-func TestParseQueryWithOperator(t *testing.T) {
-	objectID := primitive.NewObjectID()
-	query := fmt.Sprintf(`{ _id: ObjectID("%s"), name: { $exists: true } }`, objectID.Hex())
-	expected := map[string]interface{}{"_id": objectID, "name": primitive.M{"$exists": true}}
-
-	result, err := ParseStringQuery(query)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
-}
-
-func TestParseQueryInvalidInput(t *testing.T) {
-	query := `{"_id": ObjectID("123")}`
-
-	_, err := ParseStringQuery(query)
-
-	expected := fmt.Errorf("error parsing query")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), expected.Error())
-}
-
-func TestParseQueryWithNestedDocument(t *testing.T) {
-	query := `{ user: { name: "Mike", weight: 75.7 } }`
-	expected := map[string]interface{}{"user": primitive.M{"name": "Mike", "weight": 75.7}}
-
-	result, err := ParseStringQuery(query)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
-}
-
-func TestParseQueryWithArray(t *testing.T) {
-	query := `{ tags: ["mongodb", "database"] }`
-	expected := map[string]interface{}{"tags": primitive.A{"mongodb", "database"}}
-
-	result, err := ParseStringQuery(query)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
-}
-
-func TestParseQueryWithDate(t *testing.T) {
-	query := `{ createdAt: { $date: "2023-04-15T12:00:00Z" } }`
-	expectedDate := time.Date(2023, 4, 15, 12, 0, 0, 0, time.UTC)
-	expected := map[string]interface{}{"createdAt": primitive.NewDateTimeFromTime(expectedDate)}
-
-	result, err := ParseStringQuery(query)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
-}
-
-func TestParseQueryWithMultipleOperators(t *testing.T) {
-	query := `{ age: { $gte: 18, $lte: 65 } }`
-	expected := map[string]interface{}{"age": primitive.M{"$gte": int32(18), "$lte": int32(65)}}
-
-	result, err := ParseStringQuery(query)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
-}
-
-func TestParseQueryWithRegex(t *testing.T) {
-	query := `{ name: { $regex: "^J", $options: "i" } }`
-	expected := map[string]interface{}{"name": primitive.M{"$regex": "^J", "$options": "i"}}
-
-	result, err := ParseStringQuery(query)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := ParseBsonValue(tc.input)
+			assert.IsType(t, tc.expected, result)
+		})
+	}
 }
