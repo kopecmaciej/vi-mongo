@@ -16,6 +16,7 @@ func IsJsonEmpty(s string) bool {
 func CleanJsonWhitespaces(s string) string {
 	s = strings.TrimSuffix(s, ",")
 	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.ReplaceAll(s, "\t", "")
 
 	var result strings.Builder
 	inQuotes := false
