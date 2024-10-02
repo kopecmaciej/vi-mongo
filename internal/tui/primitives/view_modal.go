@@ -493,8 +493,6 @@ func (m *ViewModal) CopySelectedLine(copyFunc func(text string) error, copyType 
 		case "full":
 			textToCopy = strings.Join(highlightedLines, "\n")
 			textToCopy = util.CleanJsonWhitespaces(textToCopy)
-			textToCopy = strings.ReplaceAll(textToCopy, "{", "{ ")
-			textToCopy = strings.ReplaceAll(textToCopy, "}", " }")
 		case "value":
 			for _, line := range highlightedLines {
 				if parts := strings.SplitN(line, ":", 2); len(parts) > 1 {
