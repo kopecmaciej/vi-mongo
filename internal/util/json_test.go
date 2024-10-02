@@ -46,8 +46,8 @@ func TestCleanJsonWhitespaces(t *testing.T) {
 		},
 		{
 			name:     "Preserve spaces in quotes",
-			input:    `{"key": "value with spaces"}`,
-			expected: `{"key": "value with spaces"}`,
+			input:    `{"key 1": "value with spaces"}`,
+			expected: `{"key 1": "value with spaces"}`,
 		},
 		{
 			name: "Complex JSON",

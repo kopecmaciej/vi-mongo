@@ -89,6 +89,9 @@ func (c *CollectionState) UpdateRawDoc(doc string) error {
 }
 
 func (c *CollectionState) AppendDoc(doc primitive.M) {
+	if c.Docs == nil {
+		c.Docs = make(map[string]primitive.M)
+	}
 	c.Docs[StringifyId(doc["_id"])] = doc
 	c.Count++
 }

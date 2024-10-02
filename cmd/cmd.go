@@ -50,7 +50,7 @@ func runApp(cmd *cobra.Command, args []string) {
 		greenColor := "\033[32m"
 		resetColor := "\033[0m"
 		fmt.Printf("%s\n", greenColor)
-		fmt.Println(`
+		fmt.Print(`
  __      ___   __  __                       
  \ \    / (_) |  \/  |                      
   \ \  / / _  | \  / | ___  _ __   __ _  ___
