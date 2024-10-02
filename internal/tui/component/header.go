@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	HeaderView = "Header"
+	HeaderComponent = "Header"
 )
 
 type (
@@ -45,7 +45,7 @@ func NewHeader() *Header {
 		baseInfo:    make(BaseInfo),
 	}
 
-	h.SetIdentifier(HeaderView)
+	h.SetIdentifier(HeaderComponent)
 	h.SetAfterInitFunc(h.init)
 
 	return &h
@@ -152,7 +152,7 @@ func (h *Header) setInactiveBaseInfo(err error) {
 
 // handle events from the manager
 func (h *Header) handleEvents() {
-	go h.HandleEvents(HeaderView, func(event manager.EventMsg) {
+	go h.HandleEvents(HeaderComponent, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.FocusChanged:
 			h.currentFocus = tview.Identifier(event.Message.Data.(tview.Identifier))

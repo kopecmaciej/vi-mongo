@@ -3,7 +3,6 @@ package component
 import (
 	"context"
 
-	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
@@ -24,7 +23,6 @@ type Peeker struct {
 	*core.BaseElement
 	*core.ViewModal
 
-	style       *config.DocPeekerStyle
 	docModifier *DocModifier
 	currentDoc  string
 
@@ -77,14 +75,14 @@ func (p *Peeker) setStaticLayout() {
 }
 
 func (p *Peeker) setStyle() {
-	p.style = &p.App.GetStyles().DocPeeker
+	style := &p.App.GetStyles().DocPeeker
 	p.ViewModal.SetStyle(p.App.GetStyles())
-	p.SetHighlightColor(p.style.HighlightColor.Color())
+	p.SetHighlightColor(style.HighlightColor.Color())
 	p.SetDocumentColors(
-		p.style.KeyColor.Color(),
-		p.style.ValueColor.Color(),
-		p.style.BracketColor.Color(),
-		p.style.ArrayColor.Color(),
+		style.KeyColor.Color(),
+		style.ValueColor.Color(),
+		style.BracketColor.Color(),
+		style.ArrayColor.Color(),
 	)
 }
 
@@ -165,7 +163,7 @@ func (p *Peeker) Render(ctx context.Context, state *mongo.CollectionState, _id i
 func (p *Peeker) setText() {
 	p.ViewModal.SetText(primitives.Text{
 		Content: p.currentDoc,
-		Color:   p.style.ValueColor.Color(),
+		Color:   p.App.GetStyles().DocPeeker.ValueColor.Color(),
 		Align:   tview.AlignLeft,
 	})
 }
