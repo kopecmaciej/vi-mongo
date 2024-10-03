@@ -49,7 +49,6 @@ docPeeker:
   keyColor: "#FF9580"
   valueColor: "#2A2A3F"
   bracketColor: "#FF6B8B"
-  arrayColor: "#4A5B8C"
   highlightColor: "#e2e2e2"
 filterBar:
   labelColor: "#FF9580"

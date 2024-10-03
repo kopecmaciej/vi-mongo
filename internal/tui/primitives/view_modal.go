@@ -145,11 +145,10 @@ func (m *ViewModal) SetHighlightColor(color tcell.Color) *ViewModal {
 }
 
 // SetDocumentColors sets the colors for document elements.
-func (m *ViewModal) SetDocumentColors(keyColor, valueColor, bracketColor, arrayColor tcell.Color) *ViewModal {
+func (m *ViewModal) SetDocumentColors(keyColor, valueColor, bracketColor tcell.Color) *ViewModal {
 	m.keyColor = keyColor
 	m.valueColor = valueColor
 	m.bracketColor = bracketColor
-	m.arrayColor = arrayColor
 	return m
 }
 
@@ -250,14 +249,14 @@ func (m *ViewModal) Draw(screen tcell.Screen) {
 		startLine = 0
 	}
 
-	numLinesToHighlight := m.calculateNextLinesToHighlight(lines)
+	numNextLinesToHighlight := m.calculateNextLinesToHighlight(lines)
 	for i := startLine; i < startLine+maxLines && i < totalHeight; i++ {
-		lines[i] = m.formatLine(lines[i], i == startLine)
+		lines[i] = m.formatAndColorizeLine(lines[i], i == startLine)
 
 		if i-startLine == m.selectedLine {
 			lines[i] = m.highlightLine(lines[i], true)
 			absolutePosition := m.scrollPosition + m.selectedLine
-			for j := absolutePosition + 1; j <= absolutePosition+numLinesToHighlight; j++ {
+			for j := absolutePosition + 1; j <= absolutePosition+numNextLinesToHighlight; j++ {
 				lines[j] = m.highlightLine(lines[j], false)
 			}
 		} else {
@@ -284,6 +283,7 @@ func calculateIndentation(line string) int {
 }
 
 // calculateNextLinesToHighlight calculates the number of lines to highlight after the selected line.
+// so total number of lines to highlight is numNextLinesToHighlight + 1 (plus the selected line)
 // It's purly based on indentations and does not consider actual json structure.
 func (m *ViewModal) calculateNextLinesToHighlight(lines []string) int {
 	absolutePosition := m.selectedLine + m.scrollPosition
@@ -310,10 +310,8 @@ func (m *ViewModal) calculateNextLinesToHighlight(lines []string) int {
 		// if current indent is 0, highlight only given line
 		if currentIndent == 0 {
 			return linesToHighlight
-		}
-
-		// Case 1: Same indent, new key:value pair
-		if nextIndent == currentIndent {
+			// Case 1: Same indent, new key:value pair
+		} else if nextIndent == currentIndent {
 			return linesToHighlight
 			// Case 2: Wrapped line, continue highlighting
 		} else if nextIndent > 0 && nextIndent < currentIndent {
@@ -334,14 +332,14 @@ func (m *ViewModal) calculateNextLinesToHighlight(lines []string) int {
 	return linesToHighlight
 }
 
-func (m *ViewModal) formatLine(line string, isFirstLine bool) string {
+func (m *ViewModal) formatAndColorizeLine(line string, isFirstLine bool) string {
 	if isFirstLine && strings.TrimSpace(line) == "{" {
-		return fmt.Sprintf("[%s]{[%s]", m.bracketColor.String(), m.valueColor.String())
+		return fmt.Sprintf("[%s]{[%s]", m.bracketColor.CSS(), m.valueColor.CSS())
 	}
 
 	if strings.Contains(line, "{") || strings.Contains(line, "}") {
-		line = strings.ReplaceAll(line, "{", fmt.Sprintf("[%s]{", m.bracketColor.String()))
-		line = strings.ReplaceAll(line, "}", fmt.Sprintf("[%s]}[%s]", m.bracketColor.String(), m.valueColor.String()))
+		line = strings.ReplaceAll(line, "{", fmt.Sprintf("[%s]{", m.bracketColor.CSS()))
+		line = strings.ReplaceAll(line, "}", fmt.Sprintf("[%s]}[%s]", m.bracketColor.CSS(), m.valueColor.String()))
 	}
 
 	re := regexp.MustCompile(`"([^"]+)":(.*)`)
@@ -350,7 +348,7 @@ func (m *ViewModal) formatLine(line string, isFirstLine bool) string {
 		if len(matches) > 2 {
 			key := matches[1]
 			value := strings.TrimSpace(matches[2])
-			return fmt.Sprintf("[%s]\"%s\"[:]: [%s]%s[-]", m.keyColor.String(), key, m.valueColor.String(), value)
+			return fmt.Sprintf("[%s]\"%s\"[:]: [%s]%s[-]", m.keyColor.CSS(), key, m.valueColor.CSS(), value)
 		}
 		return s
 	})
@@ -360,9 +358,9 @@ func (m *ViewModal) formatLine(line string, isFirstLine bool) string {
 
 func (m *ViewModal) highlightLine(line string, withMark bool) string {
 	if withMark {
-		return fmt.Sprintf("[-:%s:b]>%s[-:-:-]", m.highlightColor.String(), line)
+		return fmt.Sprintf("[-:%s:b]>%s[-:-:-]", m.highlightColor.CSS(), line)
 	}
-	return fmt.Sprintf("[-:%s:b]%s[-:-:-]", m.highlightColor.String(), line)
+	return fmt.Sprintf("[-:%s:b]%s[-:-:-]", m.highlightColor.CSS(), line)
 }
 
 func (m *ViewModal) MoveUp() {
@@ -485,8 +483,8 @@ func (m *ViewModal) CopySelectedLine(copyFunc func(text string) error, copyType 
 	selectedLineIndex := m.scrollPosition + m.selectedLine
 
 	if selectedLineIndex >= 0 && selectedLineIndex < len(lines) {
-		numLinesToHighlight := m.calculateNextLinesToHighlight(lines)
-		highlightedLines := lines[selectedLineIndex : selectedLineIndex+numLinesToHighlight+1]
+		numNextLinesToHighlight := m.calculateNextLinesToHighlight(lines)
+		highlightedLines := lines[selectedLineIndex : selectedLineIndex+numNextLinesToHighlight+1]
 
 		var textToCopy string
 		switch copyType {
@@ -494,19 +492,24 @@ func (m *ViewModal) CopySelectedLine(copyFunc func(text string) error, copyType 
 			textToCopy = strings.Join(highlightedLines, "\n")
 			textToCopy = util.CleanJsonWhitespaces(textToCopy)
 		case "value":
-			for _, line := range highlightedLines {
-				if parts := strings.SplitN(line, ":", 2); len(parts) > 1 {
-					textToCopy += strings.TrimSpace(parts[1]) + "\n"
-				} else {
-					textToCopy += strings.TrimSpace(line) + "\n"
-				}
+			// Join all highlighted lines
+			fullText := strings.Join(highlightedLines, " ")
+			// Split by the first colon to separate key and value
+			parts := strings.SplitN(fullText, ":", 2)
+			if len(parts) > 1 {
+				// Trim spaces and remove trailing comma if exists
+				textToCopy = strings.TrimSpace(parts[1])
+				textToCopy = strings.TrimSuffix(textToCopy, ",")
+			} else {
+				textToCopy = strings.TrimSpace(fullText)
 			}
+			// Clean up JSON whitespaces
+			textToCopy = util.CleanJsonWhitespaces(textToCopy)
 		default:
 			textToCopy = strings.Join(highlightedLines, "\n")
 		}
 
 		textToCopy = strings.TrimSpace(textToCopy)
-		textToCopy = strings.TrimSuffix(textToCopy, ",")
 		return copyFunc(textToCopy)
 	}
 	return nil

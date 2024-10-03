@@ -103,7 +103,6 @@ type (
 		KeyColor       Style `yaml:"keyColor"`
 		ValueColor     Style `yaml:"valueColor"`
 		BracketColor   Style `yaml:"bracketColor"`
-		ArrayColor     Style `yaml:"arrayColor"`
 		HighlightColor Style `yaml:"highlightColor"`
 	}
 
@@ -214,7 +213,6 @@ func (s *Styles) loadDefaults() {
 	s.DocPeeker = DocPeekerStyle{
 		KeyColor:       "#387D44",
 		ValueColor:     "#E2E8F0",
-		ArrayColor:     "#387D44",
 		HighlightColor: "#3a4963",
 		BracketColor:   "#FDE68A",
 	}

@@ -82,7 +82,6 @@ func (p *Peeker) setStyle() {
 		style.KeyColor.Color(),
 		style.ValueColor.Color(),
 		style.BracketColor.Color(),
-		style.ArrayColor.Color(),
 	)
 }
 
