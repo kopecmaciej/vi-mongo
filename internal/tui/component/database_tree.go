@@ -75,21 +75,21 @@ func (t *DatabaseTree) setStyle() {
 	t.TreeView.SetStyle(t.App.GetStyles())
 	t.style = &t.App.GetStyles().Databases
 
-	t.SetGraphicsColor(t.style.BranchColor.Color())
-
 	t.addModal.SetFieldBackgroundColor(tcell.ColorBlack)
 
 	t.deleteModal.SetButtonTextColor(tcell.ColorWhite)
 }
 
 func (t *DatabaseTree) setKeybindings(ctx context.Context) {
+	closedNodeSymbol := config.SymbolWithColor(t.style.ClosedNodeSymbol, t.style.NodeSymbolColor)
+	openNodeSymbol := config.SymbolWithColor(t.style.OpenNodeSymbol, t.style.NodeSymbolColor)
 	k := t.App.GetKeys()
 	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Database.ExpandAll, event.Name()):
 			t.GetRoot().ExpandAll()
 			t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
-				t.setNewSymbol(node, t.style.ClosedNodeSymbol.String(), t.style.OpenNodeSymbol.String())
+				t.setNewSymbol(node, closedNodeSymbol, openNodeSymbol)
 				return true
 			})
 			return nil
@@ -97,7 +97,7 @@ func (t *DatabaseTree) setKeybindings(ctx context.Context) {
 			t.GetRoot().CollapseAll()
 			t.GetRoot().SetExpanded(true)
 			t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
-				t.setNewSymbol(node, t.style.OpenNodeSymbol.String(), t.style.ClosedNodeSymbol.String())
+				t.setNewSymbol(node, openNodeSymbol, closedNodeSymbol)
 				return true
 			})
 			return nil
@@ -153,11 +153,12 @@ func (t *DatabaseTree) RefreshStyle() {
 	rootNode := t.GetRoot()
 
 	rootNode.Walk(func(node, parent *tview.TreeNode) bool {
+		// TODO: update symbol color
 		if parent != nil {
-			parent.SetColor(t.style.NodeColor.Color())
+			parent.SetColor(t.style.NodeTextColor.Color())
 		}
 
-		node.SetColor(t.style.LeafColor.Color())
+		node.SetColor(t.style.LeafTextColor.Color())
 		return true
 	})
 }
@@ -176,7 +177,7 @@ func (t *DatabaseTree) addCollection(ctx context.Context) error {
 	}
 	db := parent.GetText()
 
-	t.addModal.SetLabel(fmt.Sprintf("Add collection name for [%s][::b]%s", t.style.NodeColor.Color(), db))
+	t.addModal.SetLabel(fmt.Sprintf("Add collection name for [%s][::b]%s", t.style.NodeTextColor.Color(), db))
 
 	t.addModal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEnter {
@@ -214,7 +215,7 @@ func (t *DatabaseTree) deleteCollection(ctx context.Context) error {
 	}
 	parent := t.GetCurrentNode().GetReference().(*tview.TreeNode)
 	db, coll := parent.GetText(), t.GetCurrentNode().GetText()
-	text := fmt.Sprintf("Are you sure you want to delete [%s]%s [white]from [%s]%s", t.style.LeafColor.Color(), coll, t.style.NodeColor.Color(), db)
+	text := fmt.Sprintf("Are you sure you want to delete [%s]%s [white]from [%s]%s", t.style.LeafTextColor.Color(), coll, t.style.NodeTextColor.Color(), db)
 	t.deleteModal.SetText(text)
 	db, coll = t.removeSymbols(db, coll)
 	t.deleteModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
@@ -265,7 +266,7 @@ func (t *DatabaseTree) addChildNode(ctx context.Context, parent *tview.TreeNode,
 
 func (t *DatabaseTree) rootNode() *tview.TreeNode {
 	r := tview.NewTreeNode("")
-	r.SetColor(t.style.NodeColor.Color())
+	r.SetColor(t.style.NodeTextColor.Color())
 	r.SetSelectable(false)
 	r.SetExpanded(true)
 
@@ -273,16 +274,18 @@ func (t *DatabaseTree) rootNode() *tview.TreeNode {
 }
 
 func (t *DatabaseTree) dbNode(name string) *tview.TreeNode {
-	r := tview.NewTreeNode(fmt.Sprintf("%s %s", t.style.ClosedNodeSymbol.String(), name))
-	r.SetColor(t.style.NodeColor.Color())
+	openNodeSymbol := config.SymbolWithColor(t.style.OpenNodeSymbol, t.style.NodeSymbolColor)
+	closedNodeSymbol := config.SymbolWithColor(t.style.ClosedNodeSymbol, t.style.NodeSymbolColor)
+	r := tview.NewTreeNode(fmt.Sprintf("%s %s", closedNodeSymbol, name))
+	r.SetColor(t.style.NodeTextColor.Color())
 	r.SetSelectable(true)
 	r.SetExpanded(false)
 
 	r.SetSelectedFunc(func() {
 		if r.IsExpanded() {
-			r.SetText(fmt.Sprintf("%s %s", t.style.ClosedNodeSymbol.String(), name))
+			r.SetText(fmt.Sprintf("%s %s", closedNodeSymbol, name))
 		} else {
-			r.SetText(fmt.Sprintf("%s %s", t.style.OpenNodeSymbol.String(), name))
+			r.SetText(fmt.Sprintf("%s %s", openNodeSymbol, name))
 		}
 		r.SetExpanded(!r.IsExpanded())
 	})
@@ -291,8 +294,9 @@ func (t *DatabaseTree) dbNode(name string) *tview.TreeNode {
 }
 
 func (t *DatabaseTree) collNode(name string) *tview.TreeNode {
-	ch := tview.NewTreeNode(fmt.Sprintf("%s %s", t.style.LeafSymbol.String(), name))
-	ch.SetColor(t.style.LeafColor.Color())
+	leafSymbol := config.SymbolWithColor(t.style.LeafSymbol, t.style.LeafSymbolColor)
+	ch := tview.NewTreeNode(fmt.Sprintf("%s %s", leafSymbol, name))
+	ch.SetColor(t.style.LeafTextColor.Color())
 	ch.SetSelectable(true)
 	ch.SetExpanded(false)
 
@@ -300,10 +304,13 @@ func (t *DatabaseTree) collNode(name string) *tview.TreeNode {
 }
 
 func (t *DatabaseTree) removeSymbols(db, coll string) (string, string) {
+	openNodeSymbol := config.SymbolWithColor(t.style.OpenNodeSymbol, t.style.NodeSymbolColor)
+	closedNodeSymbol := config.SymbolWithColor(t.style.ClosedNodeSymbol, t.style.NodeSymbolColor)
+	leafSymbol := config.SymbolWithColor(t.style.LeafSymbol, t.style.LeafSymbolColor)
 	symbolsToRemove := []string{
-		t.style.OpenNodeSymbol.String(),
-		t.style.ClosedNodeSymbol.String(),
-		t.style.LeafSymbol.String(),
+		openNodeSymbol,
+		closedNodeSymbol,
+		leafSymbol,
 	}
 
 	for _, symbol := range symbolsToRemove {

@@ -358,11 +358,11 @@ func (k *KeyBindings) loadDefaults() {
 		},
 		CopyHighlight: Key{
 			Runes:       []string{"c"},
-			Description: "Copy full object",
+			Description: "Copy highlighted",
 		},
 		CopyValue: Key{
 			Runes:       []string{"v"},
-			Description: "Copy value",
+			Description: "Copy only value",
 		},
 		Refresh: Key{
 			Runes:       []string{"R"},

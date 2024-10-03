@@ -38,15 +38,20 @@ type EditorConfig struct {
 	Env     string `yaml:"env"`
 }
 
+type StylesConfig struct {
+	BetterSymbols bool   `yaml:"betterSymbols"`
+	CurrentStyle  string `yaml:"currentStyle"`
+}
+
 type Config struct {
 	Version            string        `yaml:"version"`
 	Log                LogConfig     `yaml:"log"`
 	Editor             EditorConfig  `yaml:"editor"`
 	ShowConnectionPage bool          `yaml:"showConnectionPage"`
 	ShowWelcomePage    bool          `yaml:"showWelcomePage"`
-	CurrentStyle       string        `yaml:"currentStyle"`
 	CurrentConnection  string        `yaml:"currentConnection"`
 	Connections        []MongoConfig `yaml:"connections"`
+	Styles             StylesConfig  `yaml:"styles"`
 }
 
 // LoadConfig loads the config file
@@ -76,7 +81,10 @@ func (c *Config) loadDefaults() {
 		Command: "",
 		Env:     "EDITOR",
 	}
-	c.CurrentStyle = "default.yaml"
+	c.Styles = StylesConfig{
+		BetterSymbols: true,
+		CurrentStyle:  "default.yaml",
+	}
 	c.ShowConnectionPage = true
 	c.ShowWelcomePage = false
 }

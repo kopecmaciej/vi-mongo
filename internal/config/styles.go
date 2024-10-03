@@ -77,12 +77,13 @@ type (
 
 	// DatabasesStyle is a struct that contains all the styles for the databases
 	DatabasesStyle struct {
-		NodeColor        Style `yaml:"nodeColor"`
+		NodeTextColor    Style `yaml:"nodeTextColor"`
+		LeafTextColor    Style `yaml:"leafTextColor"`
+		NodeSymbolColor  Style `yaml:"nodeSymbolColor"`
+		LeafSymbolColor  Style `yaml:"leafSymbolColor"`
 		OpenNodeSymbol   Style `yaml:"openNodeSymbol"`
 		ClosedNodeSymbol Style `yaml:"closedNodeSymbol"`
-		LeafColor        Style `yaml:"leafColor"`
 		LeafSymbol       Style `yaml:"leafSymbol"`
-		BranchColor      Style `yaml:"branchColor"`
 	}
 
 	// ContentStyle is a struct that contains all the styles for the content
@@ -190,12 +191,13 @@ func (s *Styles) loadDefaults() {
 	}
 
 	s.Databases = DatabasesStyle{
-		NodeColor:        "#387D44",
-		LeafColor:        "#E2E8F0",
-		BranchColor:      "#4ADE80",
-		OpenNodeSymbol:   "[#FDE68A]🗁[-:-:-]",
-		ClosedNodeSymbol: "[#FDE68A]🖿[-:-:-]",
-		LeafSymbol:       "[#387D44]🗎[-:-:-]",
+		NodeTextColor:    "#387D44",
+		LeafTextColor:    "#E2E8F0",
+		NodeSymbolColor:  "#FDE68A",
+		LeafSymbolColor:  "#387D44",
+		OpenNodeSymbol:   "▶",
+		ClosedNodeSymbol: "▼",
+		LeafSymbol:       "◆",
 	}
 
 	s.Content = ContentStyle{
@@ -256,8 +258,12 @@ func (s *Styles) loadDefaults() {
 	}
 }
 
+func SymbolWithColor(symbol Style, color Style) string {
+	return fmt.Sprintf("[%s]%s[-:-:-]", color.String(), symbol.String())
+}
+
 // LoadStyles creates a new Styles struct with default values
-func LoadStyles(styleName string) (*Styles, error) {
+func LoadStyles(styleName string, useBetterSymbols bool) (*Styles, error) {
 	defaultStyles := &Styles{}
 	defaultStyles.loadDefaults()
 
@@ -274,7 +280,17 @@ func LoadStyles(styleName string) (*Styles, error) {
 		return nil, err
 	}
 
-	return util.LoadConfigFile(defaultStyles, stylePath)
+	styles, err := util.LoadConfigFile(defaultStyles, stylePath)
+	if err != nil {
+		return nil, err
+	}
+
+	if !useBetterSymbols {
+		styles.Databases.OpenNodeSymbol = defaultStyles.Databases.OpenNodeSymbol
+		styles.Databases.ClosedNodeSymbol = defaultStyles.Databases.ClosedNodeSymbol
+		styles.Databases.LeafSymbol = defaultStyles.Databases.LeafSymbol
+	}
+	return styles, nil
 }
 
 func (s *Styles) LoadMainStyles() {

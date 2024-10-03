@@ -29,12 +29,13 @@ header:
   activeSymbol: ●
   inactiveSymbol: ○
 databases:
-  nodeColor: "#387D44"
-  openNodeSymbol: "[#FDE68A]\U0001F5C1[-:-:-]"
-  closedNodeSymbol: "[#FDE68A]\U0001F5BF[-:-:-]"
-  leafColor: "#E2E8F0"
-  leafSymbol: "[#387D44]\U0001F5CE[-:-:-]"
-  branchColor: "#4ADE80"
+  nodeTextColor: "#387D44"
+  leafTextColor: "#E2E8F0"
+  nodeSymbolColor: "#FDE68A"
+  leafSymbolColor: "#387D44"
+  openNodeSymbol: "\U0001F5C1"
+  closedNodeSymbol: "\U0001F5BF"
+  leafSymbol: "\U0001F5CE"
 content:
   docInfoTextColor: "#FDE68A"
   headerRowColor: "#1E293B"

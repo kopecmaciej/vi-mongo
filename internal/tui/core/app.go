@@ -24,7 +24,7 @@ type (
 )
 
 func NewApp(appConfig *config.Config) *App {
-	styles, err := config.LoadStyles(appConfig.CurrentStyle)
+	styles, err := config.LoadStyles(appConfig.Styles.CurrentStyle, appConfig.Styles.BetterSymbols)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load styles")
 	}
@@ -49,13 +49,13 @@ func NewApp(appConfig *config.Config) *App {
 }
 
 func (a *App) SetStyle(styleName string) error {
-	a.config.CurrentStyle = styleName
+	a.config.Styles.CurrentStyle = styleName
 	err := a.config.UpdateConfig()
 	if err != nil {
 		return err
 	}
 
-	a.styles, err = config.LoadStyles(a.config.CurrentStyle)
+	a.styles, err = config.LoadStyles(a.config.Styles.CurrentStyle, a.config.Styles.BetterSymbols)
 	if err != nil {
 		return err
 	}

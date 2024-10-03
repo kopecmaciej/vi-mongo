@@ -134,14 +134,13 @@ func (w *Welcome) renderForm() {
 	w.form.AddInputField("Set editor", editorCmd, 30, nil, nil)
 	w.form.AddTextView("Logs", "Requires restart if changed", 0, 1, true, false)
 	w.form.AddInputField("Log File", cfg.Log.Path, 30, nil, nil)
-	// Replace the log level input with a dropdown
 	logLevels := []string{"debug", "info", "warn", "error", "fatal", "panic"}
 	w.form.AddDropDown("Log Level", logLevels, getLogLevelIndex(cfg.Log.Level, logLevels), nil)
+	w.form.AddCheckbox("Use symbols 🗁 🖿 🗎", cfg.Styles.BetterSymbols, nil)
 	w.form.AddTextView("Show on start", "Set pages to show on every start", 60, 1, true, false)
 	w.form.AddCheckbox("Connection page", cfg.ShowConnectionPage, nil)
 	w.form.AddCheckbox("Welcome page", cfg.ShowWelcomePage, nil)
 	w.form.AddTextView("Show help", fmt.Sprintf("Press %s to show help", w.App.GetKeys().Global.ToggleFullScreenHelp.String()), 60, 1, true, false)
-
 }
 
 func (w *Welcome) saveConfig() error {
@@ -164,6 +163,12 @@ func (w *Welcome) saveConfig() error {
 	c.Log.Level = logLevel
 	c.ShowConnectionPage = w.form.GetFormItemByLabel("Connection page").(*tview.Checkbox).IsChecked()
 	c.ShowWelcomePage = w.form.GetFormItemByLabel("Welcome page").(*tview.Checkbox).IsChecked()
+
+	betterSymbols := w.form.GetFormItemByLabel("Use symbols 🗁 🖿 🗎").(*tview.Checkbox).IsChecked()
+	if betterSymbols != c.Styles.BetterSymbols {
+		c.Styles.BetterSymbols = betterSymbols
+		w.App.SetStyle(c.Styles.CurrentStyle)
+	}
 
 	err := w.App.GetConfig().UpdateConfig()
 	if err != nil {
