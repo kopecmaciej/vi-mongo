@@ -2,13 +2,10 @@ package modal
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
-)
-
-const (
-	DeleteModal = "DeleteModal"
 )
 
 type Delete struct {
@@ -18,13 +15,13 @@ type Delete struct {
 	style *config.OthersStyle
 }
 
-func NewDeleteModal() *Delete {
+func NewDeleteModal(id tview.Identifier) *Delete {
 	dm := &Delete{
 		BaseElement: core.NewBaseElement(),
 		Modal:       core.NewModal(),
 	}
 
-	dm.SetIdentifier(DeleteModal)
+	dm.SetIdentifier(id)
 	dm.SetAfterInitFunc(dm.init)
 
 	return dm
@@ -68,7 +65,7 @@ func (d *Delete) setKeybindings() {
 }
 
 func (d *Delete) handleEvents() {
-	go d.HandleEvents(DeleteModal, func(event manager.EventMsg) {
+	go d.HandleEvents(d.GetIdentifier(), func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			d.setStyle()

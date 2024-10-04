@@ -130,6 +130,8 @@ func (i *InputField) SetStyle(style *config.Styles) {
 
 func (m *Modal) SetStyle(style *config.Styles) {
 	SetCommonStyle(m.Box, style)
+	m.SetBackgroundColor(style.Global.BackgroundColor.Color())
+	m.SetTextColor(style.Global.TextColor.Color())
 	m.SetButtonBackgroundColor(style.Others.ButtonsBackgroundColor.Color())
 	m.SetButtonTextColor(style.Others.ButtonsTextColor.Color())
 }

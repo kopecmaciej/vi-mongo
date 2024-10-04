@@ -19,10 +19,11 @@ import (
 )
 
 const (
-	ContentComponent  = "Content"
-	JsonViewComponent = "JsonView"
-	QueryBarComponent = "QueryBar"
-	SortBarComponent  = "SortBar"
+	ContentComponent   = "Content"
+	JsonViewComponent  = "JsonView"
+	QueryBarComponent  = "QueryBar"
+	SortBarComponent   = "SortBar"
+	ContentDeleteModal = "ContentDeleteModal"
 )
 
 type ViewType int
@@ -65,7 +66,7 @@ func NewContent() *Content {
 		queryBar:    NewInputBar(QueryBarComponent, "Query"),
 		sortBar:     NewInputBar(SortBarComponent, "Sort"),
 		peeker:      NewPeeker(),
-		deleteModal: modal.NewDeleteModal(),
+		deleteModal: modal.NewDeleteModal(ContentDeleteModal),
 		docModifier: NewDocModifier(),
 		state:       &mongo.CollectionState{},
 		stateMap:    make(map[string]*mongo.CollectionState),

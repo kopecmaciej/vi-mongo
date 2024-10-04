@@ -20,6 +20,7 @@ const (
 	InputModalView        = "InputModal"
 	ConfirmModalView      = "ConfirmModal"
 	DatabaseTreeComponent = "DatabaseTree"
+	DatabaseDeleteModal   = "DatabaseDeleteModal"
 )
 
 type DatabaseTree struct {
@@ -27,7 +28,7 @@ type DatabaseTree struct {
 	*core.TreeView
 
 	addModal    *primitives.InputModal
-	deleteModal *tview.Modal
+	deleteModal *modal.Delete
 	style       *config.DatabasesStyle
 
 	nodeSelectFunc func(ctx context.Context, db string, coll string) error
@@ -38,7 +39,7 @@ func NewDatabaseTree() *DatabaseTree {
 		BaseElement: core.NewBaseElement(),
 		TreeView:    core.NewTreeView(),
 		addModal:    primitives.NewInputModal(),
-		deleteModal: tview.NewModal(),
+		deleteModal: modal.NewDeleteModal(DatabaseDeleteModal),
 	}
 
 	d.SetIdentifier(DatabaseTreeComponent)
@@ -56,6 +57,11 @@ func (t *DatabaseTree) init() error {
 	t.SetSelectedFunc(func(node *tview.TreeNode) {
 		t.SetCurrentNode(node)
 	})
+
+	if err := t.deleteModal.Init(t.App); err != nil {
+		return err
+	}
+
 	t.handleEvents()
 
 	return nil
@@ -67,17 +73,18 @@ func (t *DatabaseTree) setStaticLayout() {
 	t.SetBorderPadding(0, 0, 1, 1)
 	t.SetGraphics(false)
 
-	// move colors to styles
-	t.deleteModal.AddButtons([]string{"[red]Delete", "Cancel"})
+	t.addModal.SetBorder(true)
 }
 
 func (t *DatabaseTree) setStyle() {
-	t.TreeView.SetStyle(t.App.GetStyles())
-	t.style = &t.App.GetStyles().Databases
+	globalStyle := t.App.GetStyles()
+	t.TreeView.SetStyle(globalStyle)
+	t.style = &globalStyle.Databases
 
-	t.addModal.SetFieldBackgroundColor(tcell.ColorBlack)
-
-	t.deleteModal.SetButtonTextColor(tcell.ColorWhite)
+	t.addModal.SetBorderColor(globalStyle.Global.BorderColor.Color())
+	t.addModal.SetBackgroundColor(globalStyle.Global.BackgroundColor.Color())
+	t.addModal.SetFieldTextColor(globalStyle.Others.ModalTextColor.Color())
+	t.addModal.SetFieldBackgroundColor(globalStyle.Global.ContrastBackgroundColor.Color())
 }
 
 func (t *DatabaseTree) setKeybindings(ctx context.Context) {
@@ -87,29 +94,36 @@ func (t *DatabaseTree) setKeybindings(ctx context.Context) {
 	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Database.ExpandAll, event.Name()):
-			t.GetRoot().ExpandAll()
-			t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
-				t.setNewSymbol(node, closedNodeSymbol, openNodeSymbol)
-				return true
-			})
+			t.expandAllNodes(closedNodeSymbol, openNodeSymbol)
 			return nil
 		case k.Contains(k.Database.CollapseAll, event.Name()):
-			t.GetRoot().CollapseAll()
-			t.GetRoot().SetExpanded(true)
-			t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
-				t.setNewSymbol(node, openNodeSymbol, closedNodeSymbol)
-				return true
-			})
+			t.collapseAllNodes(openNodeSymbol, closedNodeSymbol)
 			return nil
 		case k.Contains(k.Database.AddCollection, event.Name()):
-			t.addCollection(ctx)
+			t.showAddCollectionModal(ctx)
 			return nil
 		case k.Contains(k.Database.DeleteCollection, event.Name()):
-			t.deleteCollection(ctx)
+			t.showDeleteCollectionModal(ctx)
 			return nil
 		}
-
 		return event
+	})
+}
+
+func (t *DatabaseTree) expandAllNodes(closedSymbol, openSymbol string) {
+	t.GetRoot().ExpandAll()
+	t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
+		t.setNodeSymbol(node, closedSymbol, openSymbol)
+		return true
+	})
+}
+
+func (t *DatabaseTree) collapseAllNodes(openSymbol, closedSymbol string) {
+	t.GetRoot().CollapseAll()
+	t.GetRoot().SetExpanded(true)
+	t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
+		t.setNodeSymbol(node, openSymbol, closedSymbol)
+		return true
 	})
 }
 
@@ -150,100 +164,70 @@ func (t *DatabaseTree) Render(ctx context.Context, dbsWitColls []mongo.DBsWithCo
 }
 
 func (t *DatabaseTree) RefreshStyle() {
-	rootNode := t.GetRoot()
-
-	rootNode.Walk(func(node, parent *tview.TreeNode) bool {
-		// TODO: update symbol color
+	t.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
 		if parent != nil {
-			parent.SetColor(t.style.NodeTextColor.Color())
+			t.updateNodeSymbol(parent)
 		}
-
-		node.SetColor(t.style.LeafTextColor.Color())
+		t.updateLeafSymbol(node)
 		return true
 	})
 }
 
-func (t *DatabaseTree) addCollection(ctx context.Context) error {
-	// get the current node's or parent node's
-	level := t.GetCurrentNode().GetLevel()
-	if level == 0 {
+func (t *DatabaseTree) showAddCollectionModal(ctx context.Context) error {
+	parent := t.getParentNode()
+	if parent == nil {
 		return nil
-	}
-	var parent *tview.TreeNode
-	if level == 1 {
-		parent = t.GetCurrentNode()
-	} else {
-		parent = t.GetCurrentNode().GetReference().(*tview.TreeNode)
 	}
 	db := parent.GetText()
 
 	t.addModal.SetLabel(fmt.Sprintf("Add collection name for [%s][::b]%s", t.style.NodeTextColor.Color(), db))
-
-	t.addModal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEnter {
-			collectionName := t.addModal.GetText()
-			if collectionName == "" {
-				return event
-			}
-			db, collectionName = t.removeSymbols(db, collectionName)
-			err := t.Dao.AddCollection(ctx, db, collectionName)
-			if err != nil {
-				log.Error().Err(err).Msg("Error adding collection")
-				return nil
-			}
-			t.addChildNode(ctx, parent, collectionName, true)
-			t.addModal.SetText("")
-			t.App.Pages.RemovePage(InputModalView)
-		}
-		if event.Key() == tcell.KeyEscape {
-			t.addModal.SetText("")
-			t.App.Pages.RemovePage(InputModalView)
-		}
-
-		return event
-	})
-
+	t.addModal.SetInputCapture(t.createAddCollectionInputCapture(ctx, parent, db))
 	t.App.Pages.AddPage(InputModalView, t.addModal, true, true)
-
 	return nil
 }
 
-func (t *DatabaseTree) deleteCollection(ctx context.Context) error {
-	level := t.GetCurrentNode().GetLevel()
-	if level == 0 || level == 1 {
+func (t *DatabaseTree) createAddCollectionInputCapture(ctx context.Context, parent *tview.TreeNode, db string) func(*tcell.EventKey) *tcell.EventKey {
+	return func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEnter:
+			t.handleAddCollection(ctx, parent, db)
+		case tcell.KeyEscape:
+			t.closeAddModal()
+		}
+		return event
+	}
+}
+
+func (t *DatabaseTree) handleAddCollection(ctx context.Context, parent *tview.TreeNode, db string) {
+	collectionName := t.addModal.GetText()
+	if collectionName == "" {
+		return
+	}
+	db, collectionName = t.removeSymbols(db, collectionName)
+	err := t.Dao.AddCollection(ctx, db, collectionName)
+	if err != nil {
+		log.Error().Err(err).Msg("Error adding collection")
+		return
+	}
+	t.addChildNode(ctx, parent, collectionName, true)
+	t.closeAddModal()
+}
+
+func (t *DatabaseTree) closeAddModal() {
+	t.addModal.SetText("")
+	t.App.Pages.RemovePage(InputModalView)
+}
+
+func (t *DatabaseTree) showDeleteCollectionModal(ctx context.Context) error {
+	if t.GetCurrentNode().GetLevel() < 2 {
 		return fmt.Errorf("cannot delete database")
 	}
 	parent := t.GetCurrentNode().GetReference().(*tview.TreeNode)
 	db, coll := parent.GetText(), t.GetCurrentNode().GetText()
-	text := fmt.Sprintf("Are you sure you want to delete [%s]%s [white]from [%s]%s", t.style.LeafTextColor.Color(), coll, t.style.NodeTextColor.Color(), db)
-	t.deleteModal.SetText(text)
+	t.deleteModal.SetText(t.getDeleteConfirmationText(db, coll))
 	db, coll = t.removeSymbols(db, coll)
-	t.deleteModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		defer t.App.Pages.RemovePage(ConfirmModalView)
-		if buttonIndex == 0 {
-			err := t.Dao.DeleteCollection(ctx, db, coll)
-			if err != nil {
-				return
-			}
-			childCount := parent.GetChildren()
-			var index int
-			for i, child := range childCount {
-				if child.GetText() == t.GetCurrentNode().GetText() {
-					index = i
-					break
-				}
-			}
-			parent.RemoveChild(t.GetCurrentNode())
-			if index == 0 && len(childCount) > 1 {
-				t.SetCurrentNode(parent.GetChildren()[0])
-			} else if index > 0 {
-				t.SetCurrentNode(parent.GetChildren()[index-1])
-			}
-		}
-	})
-
+	t.deleteModal.SetDoneFunc(t.createDeleteCollectionDoneFunc(ctx, db, coll, parent))
 	t.App.Pages.AddPage(ConfirmModalView, t.deleteModal, true, true)
-
 	return nil
 }
 
@@ -321,8 +305,99 @@ func (t *DatabaseTree) removeSymbols(db, coll string) (string, string) {
 	return strings.TrimSpace(db), strings.TrimSpace(coll)
 }
 
-func (t *DatabaseTree) setNewSymbol(node *tview.TreeNode, oldSymbol, newSymbol string) {
+func (t *DatabaseTree) setNodeSymbol(node *tview.TreeNode, oldSymbol, newSymbol string) {
 	text := node.GetText()
-
 	node.SetText(strings.Replace(text, oldSymbol, newSymbol, 1))
+}
+
+func (t *DatabaseTree) getParentNode() *tview.TreeNode {
+	level := t.GetCurrentNode().GetLevel()
+	if level == 0 {
+		return nil
+	}
+	if level == 1 {
+		return t.GetCurrentNode()
+	}
+	return t.GetCurrentNode().GetReference().(*tview.TreeNode)
+}
+
+func (t *DatabaseTree) getDeleteConfirmationText(db, coll string) string {
+	return fmt.Sprintf("Are you sure you want to delete [%s]%s[-:-:-] [white]from [%s]%s[-:-:-]",
+		t.style.LeafTextColor.Color(), coll, t.style.NodeTextColor.Color(), db)
+}
+
+func (t *DatabaseTree) createDeleteCollectionDoneFunc(ctx context.Context, db, coll string, parent *tview.TreeNode) func(int, string) {
+	return func(buttonIndex int, buttonLabel string) {
+		defer t.App.Pages.RemovePage(ConfirmModalView)
+		if buttonIndex == 0 {
+			t.handleDeleteCollection(ctx, db, coll, parent)
+		}
+	}
+}
+
+func (t *DatabaseTree) handleDeleteCollection(ctx context.Context, db, coll string, parent *tview.TreeNode) {
+	err := t.Dao.DeleteCollection(ctx, db, coll)
+	if err != nil {
+		return
+	}
+	t.removeCollectionNode(parent)
+}
+
+func (t *DatabaseTree) removeCollectionNode(parent *tview.TreeNode) {
+	currentNode := t.GetCurrentNode()
+	childCount := parent.GetChildren()
+	index := t.findNodeIndex(childCount, currentNode)
+	parent.RemoveChild(currentNode)
+	t.updateCurrentNode(parent, childCount, index)
+}
+
+func (t *DatabaseTree) findNodeIndex(children []*tview.TreeNode, node *tview.TreeNode) int {
+	for i, child := range children {
+		if child.GetText() == node.GetText() {
+			return i
+		}
+	}
+	return -1
+}
+
+func (t *DatabaseTree) updateCurrentNode(parent *tview.TreeNode, childCount []*tview.TreeNode, index int) {
+	if index == 0 && len(childCount) > 1 {
+		t.SetCurrentNode(parent.GetChildren()[0])
+	} else if index > 0 {
+		t.SetCurrentNode(parent.GetChildren()[index-1])
+	}
+}
+
+func (t *DatabaseTree) updateNodeSymbol(node *tview.TreeNode) {
+	node.SetColor(t.style.NodeTextColor.Color())
+	openNodeSymbol := config.SymbolWithColor(t.style.OpenNodeSymbol, t.style.NodeSymbolColor)
+	closedNodeSymbol := config.SymbolWithColor(t.style.ClosedNodeSymbol, t.style.NodeSymbolColor)
+	currText := strings.Split(node.GetText(), " ")
+	if len(currText) < 2 {
+		return
+	}
+	if node.IsExpanded() {
+		node.SetText(fmt.Sprintf("%s %s", openNodeSymbol, currText[1]))
+	} else {
+		node.SetText(fmt.Sprintf("%s %s", closedNodeSymbol, currText[1]))
+	}
+
+	node.SetSelectedFunc(func() {
+		if node.IsExpanded() {
+			node.SetText(fmt.Sprintf("%s %s", closedNodeSymbol, currText[1]))
+		} else {
+			node.SetText(fmt.Sprintf("%s %s", openNodeSymbol, currText[1]))
+		}
+		node.SetExpanded(!node.IsExpanded())
+	})
+}
+
+func (t *DatabaseTree) updateLeafSymbol(node *tview.TreeNode) {
+	node.SetColor(t.style.LeafTextColor.Color())
+	leafSymbol := config.SymbolWithColor(t.style.LeafSymbol, t.style.LeafSymbolColor)
+	currText := strings.Split(node.GetText(), " ")
+	if len(currText) < 2 {
+		return
+	}
+	node.SetText(fmt.Sprintf("%s %s", leafSymbol, currText[1]))
 }
