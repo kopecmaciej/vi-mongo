@@ -74,6 +74,7 @@ func (t *DatabaseTree) setStaticLayout() {
 	t.SetGraphics(false)
 
 	t.addModal.SetBorder(true)
+	t.addModal.SetTitle("Add collection")
 }
 
 func (t *DatabaseTree) setStyle() {

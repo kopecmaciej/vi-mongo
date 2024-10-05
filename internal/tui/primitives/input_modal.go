@@ -27,7 +27,7 @@ func NewInputModal() *InputModal {
 func (mi *InputModal) Draw(screen tcell.Screen) {
 	screenWidth, screenHeight := screen.Size()
 
-	minWidth, minHeight := 50, 5
+	minWidth, minHeight := 50, 6
 	// Calculate the width and height of the popup
 	width, height := screenWidth/5, screenHeight/6
 	if width < minWidth {
@@ -51,7 +51,7 @@ func (mi *InputModal) Draw(screen tcell.Screen) {
 
 	tview.Print(screen, mi.label, inputX, inputY, inputWidth, tview.AlignCenter, tcell.ColorYellow)
 
-	inputY += 3
+	inputY += 2
 	inputX = inputX + 2
 	inputWidth = inputWidth - 4
 	mi.input.SetRect(inputX, inputY, inputWidth, 1)
