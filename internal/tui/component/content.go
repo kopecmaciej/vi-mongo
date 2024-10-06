@@ -429,7 +429,7 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	var count int64
 
 	if useState {
-		documents = c.state.GetSortedDocs()
+		documents = c.state.Docs
 		count = c.state.Count
 	} else {
 		docs, c, err := c.listDocuments(ctx)

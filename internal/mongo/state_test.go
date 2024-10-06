@@ -34,26 +34,10 @@ func TestCollectionState_UpdateSort(t *testing.T) {
 	assert.Equal(t, "", cs.Sort)
 }
 
-func TestCollectionState_GetSortedDocs(t *testing.T) {
-	cs := &CollectionState{
-		Docs: map[string]primitive.M{
-			"2": {"_id": "2", "value": 2},
-			"1": {"_id": "1", "value": 1},
-			"3": {"_id": "3", "value": 3},
-		},
-	}
-
-	sortedDocs := cs.GetSortedDocs()
-	assert.Len(t, sortedDocs, 3)
-	assert.Equal(t, "1", sortedDocs[0]["_id"])
-	assert.Equal(t, "2", sortedDocs[1]["_id"])
-	assert.Equal(t, "3", sortedDocs[2]["_id"])
-}
-
 func TestCollectionState_GetDocById(t *testing.T) {
 	cs := &CollectionState{
-		Docs: map[string]primitive.M{
-			"1": {"_id": "1", "value": 1},
+		Docs: []primitive.M{
+			{"_id": "1", "value": 1},
 		},
 	}
 
@@ -74,8 +58,8 @@ func TestCollectionState_PopulateDocs(t *testing.T) {
 
 	cs.PopulateDocs(docs)
 	assert.Len(t, cs.Docs, 2)
-	assert.Equal(t, primitive.M{"_id": "1", "value": 1}, cs.Docs["1"])
-	assert.Equal(t, primitive.M{"_id": "2", "value": 2}, cs.Docs["2"])
+	assert.Equal(t, primitive.M{"_id": "1", "value": 1}, cs.Docs[0])
+	assert.Equal(t, primitive.M{"_id": "2", "value": 2}, cs.Docs[1])
 }
 
 func TestCollectionState_AppendDoc(t *testing.T) {
@@ -84,13 +68,13 @@ func TestCollectionState_AppendDoc(t *testing.T) {
 
 	cs.AppendDoc(doc)
 	assert.Len(t, cs.Docs, 1)
-	assert.Equal(t, doc, cs.Docs["1"])
+	assert.Equal(t, doc, cs.Docs[0])
 	assert.Equal(t, int64(2), cs.Count)
 }
 
 func TestCollectionState_DeleteDoc(t *testing.T) {
 	cs := &CollectionState{
-		Docs:  map[string]primitive.M{"1": {"_id": "1", "value": 1}},
+		Docs:  []primitive.M{{"_id": "1", "value": 1}},
 		Count: 1,
 	}
 

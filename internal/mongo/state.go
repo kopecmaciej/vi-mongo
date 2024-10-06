@@ -35,10 +35,6 @@ func (c *CollectionState) UpdateSort(sort string) {
 	c.Sort = sort
 }
 
-func (c *CollectionState) GetSortedDocs() []primitive.M {
-	return c.Docs
-}
-
 func (c *CollectionState) GetDocById(id interface{}) primitive.M {
 	for _, doc := range c.Docs {
 		if doc["_id"] == id {
