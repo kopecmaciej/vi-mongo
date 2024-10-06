@@ -1,8 +1,6 @@
 package mongo
 
 import (
-	"sort"
-
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -15,7 +13,7 @@ type CollectionState struct {
 	Count  int64
 	Sort   string
 	Filter string
-	Docs   map[string]primitive.M
+	Docs   []primitive.M
 }
 
 func (c *CollectionState) UpdateFilter(filter string) {
@@ -38,25 +36,16 @@ func (c *CollectionState) UpdateSort(sort string) {
 }
 
 func (c *CollectionState) GetSortedDocs() []primitive.M {
-	keys := make([]string, 0, len(c.Docs))
-	for k := range c.Docs {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	docs := make([]primitive.M, 0, len(keys))
-	for _, k := range keys {
-		docs = append(docs, copyDoc(c.Docs[k]))
-	}
-	return docs
+	return c.Docs
 }
 
 func (c *CollectionState) GetDocById(id interface{}) primitive.M {
-	doc, ok := c.Docs[StringifyId(id)]
-	if !ok {
-		return nil
+	for _, doc := range c.Docs {
+		if doc["_id"] == id {
+			return copyDoc(doc)
+		}
 	}
-	return copyDoc(doc)
+	return nil
 }
 
 func (c *CollectionState) GetJsonDocById(id interface{}) (string, error) {
@@ -73,9 +62,9 @@ func (c *CollectionState) GetJsonDocById(id interface{}) (string, error) {
 }
 
 func (c *CollectionState) PopulateDocs(docs []primitive.M) {
-	c.Docs = make(map[string]primitive.M)
-	for _, doc := range docs {
-		c.Docs[StringifyId(doc["_id"])] = copyDoc(doc)
+	c.Docs = make([]primitive.M, len(docs))
+	for i, doc := range docs {
+		c.Docs[i] = copyDoc(doc)
 	}
 }
 
@@ -84,21 +73,29 @@ func (c *CollectionState) UpdateRawDoc(doc string) error {
 	if err != nil {
 		return err
 	}
-	c.Docs[StringifyId(docMap["_id"])] = docMap
+	for i, existingDoc := range c.Docs {
+		if existingDoc["_id"] == docMap["_id"] {
+			c.Docs[i] = docMap
+			return nil
+		}
+	}
+	c.Docs = append(c.Docs, docMap)
 	return nil
 }
 
 func (c *CollectionState) AppendDoc(doc primitive.M) {
-	if c.Docs == nil {
-		c.Docs = make(map[string]primitive.M)
-	}
-	c.Docs[StringifyId(doc["_id"])] = doc
+	c.Docs = append(c.Docs, doc)
 	c.Count++
 }
 
 func (c *CollectionState) DeleteDoc(id interface{}) {
-	delete(c.Docs, StringifyId(id))
-	c.Count--
+	for i, doc := range c.Docs {
+		if doc["_id"] == id {
+			c.Docs = append(c.Docs[:i], c.Docs[i+1:]...)
+			c.Count--
+			return
+		}
+	}
 }
 
 // Helper function to create a deep copy of a primitive.M
