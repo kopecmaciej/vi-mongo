@@ -58,7 +58,6 @@ func (a *App) Run() error {
 
 func (a *App) setKeybindings() {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// TODO: This is temporary solution
 		switch {
 		case a.GetKeys().Contains(a.GetKeys().Global.OpenConnection, event.Name()):
 			a.renderConnection()
