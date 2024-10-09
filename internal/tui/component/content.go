@@ -50,7 +50,7 @@ type Content struct {
 	deleteModal *modal.Delete
 	docModifier *DocModifier
 	state       *mongo.CollectionState
-	stateMap    map[string]*mongo.CollectionState
+	stateMap    *mongo.StateMap
 	currentView ViewType
 }
 
@@ -69,7 +69,7 @@ func NewContent() *Content {
 		deleteModal: modal.NewDeleteModal(ContentDeleteModal),
 		docModifier: NewDocModifier(),
 		state:       &mongo.CollectionState{},
-		stateMap:    make(map[string]*mongo.CollectionState),
+		stateMap:    mongo.NewStateMap(),
 		currentView: TableView,
 	}
 
@@ -217,6 +217,8 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		// 	return c.handleClearSelection()
 		case k.Contains(k.Content.CopyLine, event.Name()):
 			return c.handleCopyLine(row, coll)
+		case k.Contains(k.Content.CopyDocument, event.Name()):
+			return c.handleCopyDocument(row, coll)
 		}
 
 		return event
@@ -228,24 +230,24 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 	c.queryBar.SetText("")
 	c.sortBar.SetText("")
 
-	state, ok := c.stateMap[db+"."+coll]
+	state, ok := c.stateMap.Get(c.stateMap.Key(db, coll))
 	if ok {
 		c.state = state
 	} else {
-		state := mongo.CollectionState{
+		c.state = &mongo.CollectionState{
 			Page: 0,
+			Db:   db,
+			Coll: coll,
 		}
 		_, _, _, height := c.table.GetInnerRect()
-		state.Limit = int64(height - 1)
-		state.Db = db
-		state.Coll = coll
-		c.state = &state
+		c.state.Limit = int64(height - 1)
 	}
 
 	err := c.updateContent(ctx, false)
 	if err != nil {
 		return err
 	}
+
 	c.App.SetFocus(c)
 	return nil
 }
@@ -317,6 +319,7 @@ func (c *Content) renderTableView(startRow int, documents []primitive.M) {
 			c.table.SetCell(startRow+row, col, cell)
 		}
 	}
+	c.table.Select(1, 0)
 }
 
 func (c *Content) renderJsonView(startRow int, documents []primitive.M) {
@@ -331,7 +334,9 @@ func (c *Content) renderJsonView(startRow int, documents []primitive.M) {
 		}
 		c.jsonViewDocument(jsoned, &row, _id)
 	}
+
 	c.table.ScrollToBeginning()
+	c.table.Select(1, 0)
 }
 
 func (c *Content) renderSingleRowView(startRow int, documents []primitive.M) {
@@ -350,7 +355,7 @@ func (c *Content) renderSingleRowView(startRow int, documents []primitive.M) {
 		c.table.SetCell(row, 0, dataCell)
 		row++
 	}
-	c.table.ScrollToBeginning()
+	c.table.Select(0, 0)
 }
 
 func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, int64, error) {
@@ -429,7 +434,7 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	var count int64
 
 	if useState {
-		documents = c.state.Docs
+		documents = c.state.GetAllDocs()
 		count = c.state.Count
 	} else {
 		docs, c, err := c.listDocuments(ctx)
@@ -452,6 +457,8 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	}
 	c.tableHeader.SetText(headerInfo)
 
+	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
+
 	if count == 0 {
 		// TODO: find why if selectable is set to false, program crashes
 		c.table.SetCell(0, 0, tview.NewTableCell("No documents found"))
@@ -467,8 +474,6 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	case SingleLineView:
 		c.renderSingleRowView(startRow, documents)
 	}
-
-	c.stateMap[c.state.Db+"."+c.state.Coll] = c.state
 
 	return nil
 }
@@ -524,8 +529,7 @@ func (c *Content) jsonViewDocument(doc string, row *int, _id interface{}) {
 func (c *Content) queryBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
 		c.state.UpdateFilter(text)
-		collectionKey := c.state.Db + "." + c.state.Coll
-		c.stateMap[collectionKey] = c.state
+		c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 		err := c.updateContent(ctx, false)
 		if err != nil {
 			modal.ShowError(c.App.Pages, "Error updating content", err)
@@ -545,8 +549,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 func (c *Content) sortBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
 		c.state.UpdateSort(text)
-		collectionKey := c.state.Db + "." + c.state.Coll
-		c.stateMap[collectionKey] = c.state
+		c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 		c.updateContent(ctx, false)
 		c.Flex.RemoveItem(c.sortBar)
 		c.App.SetFocus(c.table)
@@ -820,8 +823,7 @@ func (c *Content) handleNextPage(ctx context.Context) *tcell.EventKey {
 		return nil
 	}
 	c.state.Page += c.state.Limit
-	collectionKey := c.state.Db + "." + c.state.Coll
-	c.stateMap[collectionKey] = c.state
+	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 	c.updateContent(ctx, false)
 	return nil
 }
@@ -831,8 +833,7 @@ func (c *Content) handlePreviousPage(ctx context.Context) *tcell.EventKey {
 		return nil
 	}
 	c.state.Page -= c.state.Limit
-	collectionKey := c.state.Db + "." + c.state.Coll
-	c.stateMap[collectionKey] = c.state
+	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 	c.updateContent(ctx, false)
 	return nil
 }
@@ -850,6 +851,20 @@ func (c *Content) handleClearSelection() *tcell.EventKey {
 func (c *Content) handleCopyLine(row, col int) *tcell.EventKey {
 	selectedDoc := util.CleanJsonWhitespaces(c.table.GetCell(row, col).Text)
 	err := clipboard.WriteAll(selectedDoc)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error copying document", err)
+	}
+	return nil
+}
+
+func (c *Content) handleCopyDocument(row, col int) *tcell.EventKey {
+	docId := c.getDocumentId(row, col)
+	doc, err := c.state.GetJsonDocById(docId)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error copying document", err)
+		return nil
+	}
+	err = clipboard.WriteAll(doc)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error copying document", err)
 	}

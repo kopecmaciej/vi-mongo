@@ -36,7 +36,7 @@ func TestCollectionState_UpdateSort(t *testing.T) {
 
 func TestCollectionState_GetDocById(t *testing.T) {
 	cs := &CollectionState{
-		Docs: []primitive.M{
+		docs: []primitive.M{
 			{"_id": "1", "value": 1},
 		},
 	}
@@ -57,9 +57,9 @@ func TestCollectionState_PopulateDocs(t *testing.T) {
 	}
 
 	cs.PopulateDocs(docs)
-	assert.Len(t, cs.Docs, 2)
-	assert.Equal(t, primitive.M{"_id": "1", "value": 1}, cs.Docs[0])
-	assert.Equal(t, primitive.M{"_id": "2", "value": 2}, cs.Docs[1])
+	assert.Len(t, cs.docs, 2)
+	assert.Equal(t, primitive.M{"_id": "1", "value": 1}, cs.docs[0])
+	assert.Equal(t, primitive.M{"_id": "2", "value": 2}, cs.docs[1])
 }
 
 func TestCollectionState_AppendDoc(t *testing.T) {
@@ -67,20 +67,40 @@ func TestCollectionState_AppendDoc(t *testing.T) {
 	doc := primitive.M{"_id": "1", "value": 1}
 
 	cs.AppendDoc(doc)
-	assert.Len(t, cs.Docs, 1)
-	assert.Equal(t, doc, cs.Docs[0])
+	assert.Len(t, cs.docs, 1)
+	assert.Equal(t, doc, cs.docs[0])
 	assert.Equal(t, int64(2), cs.Count)
 }
 
 func TestCollectionState_DeleteDoc(t *testing.T) {
 	cs := &CollectionState{
-		Docs:  []primitive.M{{"_id": "1", "value": 1}},
+		docs:  []primitive.M{{"_id": "1", "value": 1}},
 		Count: 1,
 	}
 
 	cs.DeleteDoc("1")
-	assert.Len(t, cs.Docs, 0)
+	assert.Len(t, cs.docs, 0)
 	assert.Equal(t, int64(0), cs.Count)
 }
 
-// Add more tests for other methods as needed
+func TestCollectionState_GetJsonDocById_DoesNotModifyState(t *testing.T) {
+	id1 := primitive.NewObjectID()
+	id2 := primitive.NewObjectID()
+	cs := &CollectionState{
+		docs: []primitive.M{
+			{"_id": id1, "value": 1},
+			{"_id": id2, "value": 2},
+		},
+	}
+
+	jsonDoc, err := cs.GetJsonDocById(id1)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, jsonDoc)
+
+	assert.Contains(t, jsonDoc, "$oid")
+	assert.Contains(t, jsonDoc, id1.Hex())
+
+	assert.Len(t, cs.docs, 2)
+	assert.Equal(t, primitive.M{"_id": id1, "value": 1}, cs.docs[0])
+	assert.Equal(t, primitive.M{"_id": id2, "value": 2}, cs.docs[1])
+}

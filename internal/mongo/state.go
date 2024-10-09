@@ -1,6 +1,9 @@
 package mongo
 
 import (
+	"reflect"
+	"sync"
+
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -13,7 +16,39 @@ type CollectionState struct {
 	Count  int64
 	Sort   string
 	Filter string
-	Docs   []primitive.M
+	docs   []primitive.M
+}
+
+func (c *CollectionState) GetAllDocs() []primitive.M {
+	docsCopy := make([]primitive.M, len(c.docs))
+	for i, doc := range c.docs {
+		docsCopy[i] = deepCopy(doc)
+	}
+	return docsCopy
+}
+
+func (c *CollectionState) GetDocById(id interface{}) primitive.M {
+	for _, doc := range c.docs {
+		if reflect.TypeOf(doc["_id"]) == reflect.TypeOf(id) {
+			if doc["_id"] == id {
+				return deepCopy(doc)
+			}
+		}
+	}
+	return nil
+}
+
+func (c *CollectionState) GetJsonDocById(id interface{}) (string, error) {
+	doc := c.GetDocById(id)
+	jsoned, err := ParseBsonDocument(doc)
+	if err != nil {
+		return "", err
+	}
+	indentedJson, err := IndentJson(jsoned)
+	if err != nil {
+		return "", err
+	}
+	return indentedJson.String(), nil
 }
 
 func (c *CollectionState) UpdateFilter(filter string) {
@@ -35,32 +70,10 @@ func (c *CollectionState) UpdateSort(sort string) {
 	c.Sort = sort
 }
 
-func (c *CollectionState) GetDocById(id interface{}) primitive.M {
-	for _, doc := range c.Docs {
-		if doc["_id"] == id {
-			return copyDoc(doc)
-		}
-	}
-	return nil
-}
-
-func (c *CollectionState) GetJsonDocById(id interface{}) (string, error) {
-	doc := c.GetDocById(id)
-	jsoned, err := ParseBsonDocument(doc)
-	if err != nil {
-		return "", err
-	}
-	indentedJson, err := IndentJson(jsoned)
-	if err != nil {
-		return "", err
-	}
-	return indentedJson.String(), nil
-}
-
 func (c *CollectionState) PopulateDocs(docs []primitive.M) {
-	c.Docs = make([]primitive.M, len(docs))
+	c.docs = make([]primitive.M, len(docs))
 	for i, doc := range docs {
-		c.Docs[i] = copyDoc(doc)
+		c.docs[i] = deepCopy(doc)
 	}
 }
 
@@ -69,36 +82,63 @@ func (c *CollectionState) UpdateRawDoc(doc string) error {
 	if err != nil {
 		return err
 	}
-	for i, existingDoc := range c.Docs {
+	for i, existingDoc := range c.docs {
 		if existingDoc["_id"] == docMap["_id"] {
-			c.Docs[i] = docMap
+			c.docs[i] = docMap
 			return nil
 		}
 	}
-	c.Docs = append(c.Docs, docMap)
+	c.docs = append(c.docs, docMap)
 	return nil
 }
 
 func (c *CollectionState) AppendDoc(doc primitive.M) {
-	c.Docs = append(c.Docs, doc)
+	c.docs = append(c.docs, doc)
 	c.Count++
 }
 
 func (c *CollectionState) DeleteDoc(id interface{}) {
-	for i, doc := range c.Docs {
+	for i, doc := range c.docs {
 		if doc["_id"] == id {
-			c.Docs = append(c.Docs[:i], c.Docs[i+1:]...)
+			c.docs = append(c.docs[:i], c.docs[i+1:]...)
 			c.Count--
 			return
 		}
 	}
 }
 
-// Helper function to create a deep copy of a primitive.M
-func copyDoc(doc primitive.M) primitive.M {
+func deepCopy(doc primitive.M) primitive.M {
 	docCopy := make(primitive.M)
 	for key, value := range doc {
 		docCopy[key] = value
 	}
 	return docCopy
+}
+
+type StateMap struct {
+	mu     sync.RWMutex
+	states map[string]*CollectionState
+}
+
+func NewStateMap() *StateMap {
+	return &StateMap{
+		states: make(map[string]*CollectionState),
+	}
+}
+
+func (sm *StateMap) Get(key string) (*CollectionState, bool) {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+	state, ok := sm.states[key]
+	return state, ok
+}
+
+func (sm *StateMap) Set(key string, state *CollectionState) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	sm.states[key] = state
+}
+
+func (sm *StateMap) Key(db, coll string) string {
+	return db + "." + coll
 }

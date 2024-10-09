@@ -74,16 +74,18 @@ type (
 		EditDocument      Key `json:"editDocument"`
 		DuplicateDocument Key `json:"duplicateDocument"`
 		DeleteDocument    Key `json:"deleteDocument"`
+		CopyLine          Key `json:"copyValue"`
+		CopyDocument      Key `json:"copyDocument"`
+		Refresh           Key `json:"refresh"`
+		ToggleQuery       Key `json:"toggleQuery"`
+		NextDocument      Key `json:"nextDocument"`
+		PreviousDocument  Key `json:"previousDocument"`
+		NextPage          Key `json:"nextPage"`
+		PreviousPage      Key `json:"previousPage"`
+		ToggleSort        Key `json:"toggleSort"`
+
 		// MultipleSelect    Key      `json:"multipleSelect"`
 		// ClearSelection   Key      `json:"clearSelection"`
-		CopyLine         Key `json:"copyValue"`
-		Refresh          Key `json:"refresh"`
-		ToggleQuery      Key `json:"toggleQuery"`
-		NextDocument     Key `json:"nextDocument"`
-		PreviousDocument Key `json:"previousDocument"`
-		NextPage         Key `json:"nextPage"`
-		PreviousPage     Key `json:"previousPage"`
-		ToggleSort       Key `json:"toggleSort"`
 	}
 
 	QueryBar struct {
@@ -241,6 +243,10 @@ func (k *KeyBindings) loadDefaults() {
 		CopyLine: Key{
 			Runes:       []string{"c"},
 			Description: "Copy value",
+		},
+		CopyDocument: Key{
+			Runes:       []string{"C"},
+			Description: "Copy document",
 		},
 		Refresh: Key{
 			Runes:       []string{"R"},
