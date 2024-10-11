@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"strings"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
@@ -58,6 +60,13 @@ func (a *App) Run() error {
 
 func (a *App) setKeybindings() {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		// workaround for runes not being captured in input bars
+		if strings.HasPrefix(event.Name(), "Rune") &&
+			(strings.Contains(string(a.GetFocus().GetIdentifier()), "Bar") ||
+				strings.Contains(string(a.GetFocus().GetIdentifier()), "Input")) {
+			return event
+		}
+
 		switch {
 		case a.GetKeys().Contains(a.GetKeys().Global.OpenConnection, event.Name()):
 			a.renderConnection()
