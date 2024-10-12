@@ -12,11 +12,11 @@ Emphasizing ease of use without sacrificing functionality, Vi Mongo offers a
 user-friendly command-line experience for database administrators and developers
 alike.
 
-Visit [www.vi-mongo.com](https://www.vi-mongo.com) for more information.
+Visit [vi-mongo.com](https://vi-mongo.com) for more information.
 
 ## Installation
 
-[www.vi-mongo.com/docs/installation](https://www.vi-mongo.com/docs/installation)
+[vi-mongo.com/docs/installation](https://vi-mongo.com/docs/installation)
 
 ## Features
 
@@ -37,11 +37,10 @@ Visit [www.vi-mongo.com](https://www.vi-mongo.com) for more information.
 
 ## List of features to be implemented
 
-- [ ] Managing Indexes
-- [ ] Aggregation Pipeline?
-- [ ] Exporting/Importing Documents
+[vi-mongo.com/docs/roadmap](https://vi-mongo.com/docs/roadmap)
 
 ## Issues
 
 For now all issues are resolved, but if you find any new issues, please report
-them in the [GitHub Issues](https://github.com/kopecmaciej/vi-mongo/issues) page.
+them in the [GitHub Issues](https://github.com/kopecmaciej/vi-mongo/issues)
+page.
