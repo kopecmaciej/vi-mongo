@@ -26,8 +26,10 @@ type Main struct {
 	innerFlex *core.Flex
 	style     *config.GlobalStyles
 	header    *component.Header
+	tabBar    *component.TabBar
 	databases *component.Database
 	content   *component.Content
+	index     *component.Index
 }
 
 func NewMain() *Main {
@@ -36,8 +38,10 @@ func NewMain() *Main {
 		Flex:        core.NewFlex(),
 		innerFlex:   core.NewFlex(),
 		header:      component.NewHeader(),
+		tabBar:      component.NewTabBar(),
 		databases:   component.NewDatabase(),
 		content:     component.NewContent(),
+		index:       component.NewIndex(),
 	}
 
 	m.SetIdentifier(MainPage)
@@ -70,10 +74,36 @@ func (m *Main) handleEvents() {
 	})
 }
 
+func (m *Main) initComponents() error {
+	if err := m.header.Init(m.App); err != nil {
+		return err
+	}
+
+	if err := m.tabBar.Init(m.App); err != nil {
+		return err
+	}
+
+	if err := m.databases.Init(m.App); err != nil {
+		return err
+	}
+	if err := m.content.Init(m.App); err != nil {
+		return err
+	}
+
+	if err := m.index.Init(m.App); err != nil {
+		return err
+	}
+
+	m.tabBar.AddTab("Content", m.content, true)
+	m.tabBar.AddTab("Indexes", m.index, false)
+
+	return nil
+}
+
 func (m *Main) Render() {
-	m.content.Render(false)
 	m.databases.Render()
 	m.header.Render()
+	m.tabBar.Render()
 
 	m.databases.SetSelectFunc(m.content.HandleDatabaseSelection)
 
@@ -87,19 +117,6 @@ func (m *Main) UpdateDao(dao *mongo.Dao) {
 	m.content.UpdateDao(dao)
 }
 
-func (m *Main) initComponents() error {
-	if err := m.header.Init(m.App); err != nil {
-		return err
-	}
-	if err := m.databases.Init(m.App); err != nil {
-		return err
-	}
-	if err := m.content.Init(m.App); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (m *Main) render() error {
 	m.Clear()
 	m.innerFlex.Clear()
@@ -107,7 +124,9 @@ func (m *Main) render() error {
 	m.AddItem(m.databases, 30, 0, true)
 	m.AddItem(m.innerFlex, 0, 7, false)
 	m.innerFlex.AddItem(m.header, 4, 0, false)
-	m.innerFlex.AddItem(m.content, 0, 7, true)
+	m.innerFlex.AddItem(m.tabBar, 1, 0, false)
+	m.innerFlex.AddItem(m.tabBar.GetActiveComponent(), 0, 7, true)
+	m.tabBar.GetActiveComponent().Render()
 
 	m.App.Pages.AddPage(m.GetIdentifier(), m, true, true)
 	m.App.SetFocus(m)
@@ -119,23 +138,30 @@ func (m *Main) setKeybindings() {
 	k := m.App.GetKeys()
 	m.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Main.ToggleFocus, event.Name()):
-			if m.App.GetFocus() == m.databases.DbTree {
-				m.App.SetFocus(m.content)
+		case k.Contains(k.Main.FocusNext, event.Name()):
+			if m.databases.Hf() {
+				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			} else {
-				m.App.SetFocus(m.databases)
+				m.innerFlex.RemoveItem(m.tabBar.GetActiveComponent())
+				m.tabBar.NextTab()
+				m.innerFlex.AddItem(m.tabBar.GetActiveComponent(), 0, 7, true)
+				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			}
 			return nil
-		case k.Contains(k.Main.FocusDatabase, event.Name()):
-			m.App.SetFocus(m.databases)
-			return nil
-		case k.Contains(k.Main.FocusContent, event.Name()):
-			m.App.SetFocus(m.content)
+		case k.Contains(k.Main.FocusPrevious, event.Name()):
+			if m.tabBar.GetActiveTabIndex() == 0 {
+				m.App.SetFocus(m.databases)
+			} else {
+				m.innerFlex.RemoveItem(m.tabBar.GetActiveComponent())
+				m.tabBar.PreviousTab()
+				m.innerFlex.AddItem(m.tabBar.GetActiveComponent(), 0, 7, true)
+				m.App.SetFocus(m.tabBar.GetActiveComponent())
+			}
 			return nil
 		case k.Contains(k.Main.HideDatabase, event.Name()):
 			if _, ok := m.GetItem(0).(*component.Database); ok {
 				m.RemoveItem(m.databases)
-				m.App.SetFocus(m.content)
+				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			} else {
 				m.Clear()
 				m.render()

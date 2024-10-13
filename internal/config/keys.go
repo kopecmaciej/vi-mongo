@@ -51,9 +51,8 @@ type (
 	}
 
 	MainKeys struct {
-		ToggleFocus    Key `json:"toggleFocus"`
-		FocusDatabase  Key `json:"focusDatabases"`
-		FocusContent   Key `json:"focusContent"`
+		FocusNext      Key `json:"focusNext"`
+		FocusPrevious  Key `json:"focusPrevious"`
 		HideDatabase   Key `json:"hideDatabases"`
 		ShowServerInfo Key `json:"showServerInfo"`
 	}
@@ -157,17 +156,13 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Main = MainKeys{
-		ToggleFocus: Key{
-			Keys:        []string{"Tab", "Backtab"},
-			Description: "Focus next view",
-		},
-		FocusDatabase: Key{
-			Keys:        []string{"Ctrl+H"},
-			Description: "Focus databases",
-		},
-		FocusContent: Key{
-			Keys:        []string{"Ctrl+L"},
+		FocusNext: Key{
+			Keys:        []string{"Ctrl+L", "Tab"},
 			Description: "Focus content",
+		},
+		FocusPrevious: Key{
+			Keys:        []string{"Ctrl+H", "Shift+Tab"},
+			Description: "Focus databases",
 		},
 		HideDatabase: Key{
 			Keys:        []string{"Ctrl+N"},

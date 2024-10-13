@@ -24,6 +24,7 @@ type (
 		Connection  ConnectionStyle  `yaml:"connection"`
 		Header      HeaderStyle      `yaml:"header"`
 		Databases   DatabasesStyle   `yaml:"databases"`
+		TabBar      TabBarStyle      `yaml:"tabBar"`
 		Content     ContentStyle     `yaml:"content"`
 		DocPeeker   DocPeekerStyle   `yaml:"docPeeker"`
 		InputBar    InputBarStyle    `yaml:"filterBar"`
@@ -73,6 +74,13 @@ type (
 		ValueColor     Style `yaml:"valueColor"`
 		ActiveSymbol   Style `yaml:"activeSymbol"`
 		InactiveSymbol Style `yaml:"inactiveSymbol"`
+	}
+
+	// TabBarStyle is a struct that contains all the styles for the tab bar
+	TabBarStyle struct {
+		TextColor       Style `yaml:"textColor"`
+		ActiveTextColor Style `yaml:"activeTextColor"`
+		SeparatorColor  Style `yaml:"separatorColor"`
 	}
 
 	// DatabasesStyle is a struct that contains all the styles for the databases
@@ -188,6 +196,12 @@ func (s *Styles) loadDefaults() {
 		ValueColor:     "#387D44",
 		ActiveSymbol:   "●",
 		InactiveSymbol: "○",
+	}
+
+	s.TabBar = TabBarStyle{
+		TextColor:       "#E2E8F0",
+		ActiveTextColor: "#387D44",
+		SeparatorColor:  "#334155",
 	}
 
 	s.Databases = DatabasesStyle{

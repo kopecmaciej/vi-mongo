@@ -19,11 +19,11 @@ import (
 )
 
 const (
-	ContentComponent   = "Content"
-	JsonViewComponent  = "JsonView"
-	QueryBarComponent  = "QueryBar"
-	SortBarComponent   = "SortBar"
-	ContentDeleteModal = "ContentDeleteModal"
+	ContentId            = "Content"
+	JsonViewId           = "JsonView"
+	QueryBarId           = "QueryBar"
+	SortBarId            = "SortBar"
+	ContentDeleteModalId = "ContentDeleteModal"
 )
 
 type ViewType int
@@ -63,20 +63,20 @@ func NewContent() *Content {
 		tableHeader: core.NewTextView(),
 		table:       core.NewTable(),
 		view:        core.NewTextView(),
-		queryBar:    NewInputBar(QueryBarComponent, "Query"),
-		sortBar:     NewInputBar(SortBarComponent, "Sort"),
+		queryBar:    NewInputBar(QueryBarId, "Query"),
+		sortBar:     NewInputBar(SortBarId, "Sort"),
 		peeker:      NewPeeker(),
-		deleteModal: modal.NewDeleteModal(ContentDeleteModal),
+		deleteModal: modal.NewDeleteModal(ContentDeleteModalId),
 		docModifier: NewDocModifier(),
 		state:       &mongo.CollectionState{},
 		stateMap:    mongo.NewStateMap(),
 		currentView: TableView,
 	}
 
-	c.SetIdentifier(ContentComponent)
+	c.SetIdentifier(ContentId)
 	// neccesarry if focus is get back to content component
 	// it's related to how tview package works
-	c.table.SetIdentifier(ContentComponent)
+	c.table.SetIdentifier(ContentId)
 	c.SetAfterInitFunc(c.init)
 
 	return c
@@ -125,7 +125,7 @@ func (c *Content) init() error {
 }
 
 func (c *Content) handleEvents() {
-	go c.HandleEvents(ContentComponent, func(event manager.EventMsg) {
+	go c.HandleEvents(ContentId, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			c.setStyle()
@@ -252,9 +252,7 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 	return nil
 }
 
-// Rendering methods
-
-func (c *Content) Render(setFocus bool) {
+func (c *Content) Render() {
 	c.Flex.Clear()
 	c.tableFlex.Clear()
 
@@ -276,9 +274,7 @@ func (c *Content) Render(setFocus bool) {
 
 	c.Flex.AddItem(c.tableFlex, 0, 1, true)
 
-	if setFocus {
-		c.App.SetFocus(focusPrimitive)
-	}
+	c.App.SetFocus(focusPrimitive)
 }
 
 func (c *Content) renderTableView(startRow int, documents []primitive.M) {
@@ -571,7 +567,7 @@ func (c *Content) refreshDocument(ctx context.Context, doc string) {
 func (c *Content) viewJson(jsonString string) error {
 	c.view.Clear()
 
-	c.App.Pages.AddPage(JsonViewComponent, c.view, true, true)
+	c.App.Pages.AddPage(JsonViewId, c.view, true, true)
 
 	indentedJson, err := mongo.IndentJson(jsonString)
 	if err != nil {
@@ -584,7 +580,7 @@ func (c *Content) viewJson(jsonString string) error {
 	c.view.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEsc:
-			c.App.Pages.RemovePage(JsonViewComponent)
+			c.App.Pages.RemovePage(JsonViewId)
 			c.App.SetFocus(c.table)
 		}
 		return event
@@ -760,7 +756,7 @@ func (c *Content) handleToggleQuery() *tcell.EventKey {
 	} else {
 		c.queryBar.Toggle("")
 	}
-	c.Render(true)
+	c.Render()
 	return nil
 }
 
@@ -770,7 +766,7 @@ func (c *Content) handleToggleSort() *tcell.EventKey {
 	} else {
 		c.sortBar.Toggle("")
 	}
-	c.Render(true)
+	c.Render()
 	return nil
 }
 
