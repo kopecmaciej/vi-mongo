@@ -28,6 +28,10 @@ header:
   valueColor: "#0184BC"
   activeSymbol: ●
   inactiveSymbol: ○
+tabBar:
+  textColor: "#2A2A3F"
+  activeTextColor: "#FF9580"
+  activeBackgroundColor: "#0184BC"
 databases:
   nodeTextColor: "#0184BC"
   leafTextColor: "#2A2A3F"
@@ -44,8 +48,6 @@ content:
   cellTextColor: "#2A2A3F"
   activeRowColor: "#0184BC"
   selectedRowColor: "#0184BC"
-  separatorSymbol: "|"
-  separatorColor: "#B0B2C0"
 docPeeker:
   keyColor: "#FF9580"
   valueColor: "#2A2A3F"
@@ -74,6 +76,8 @@ others:
   deleteButtonSelectedBackgroundColor: "#DA3312"
   modalTextColor: "#2A2A3F"
   modalSecondaryTextColor: "#0184BC"
+  separatorSymbol: "|"
+  separatorColor: "#B0B2C0"
 styleChange:
   textColor: "#2A2A3F"
   selectedTextColor: "#FFFFFF"

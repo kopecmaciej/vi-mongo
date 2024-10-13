@@ -150,11 +150,11 @@ func (c *Content) setStyle() {
 	c.Flex.SetStyle(styles)
 	c.table.SetStyle(styles)
 
-	c.tableFlex.SetBorderColor(c.style.SeparatorColor.Color())
+	c.tableFlex.SetBorderColor(styles.Others.SeparatorColor.Color())
 	c.tableHeader.SetTextColor(c.style.StatusTextColor.Color())
 
-	c.table.SetBordersColor(c.style.SeparatorColor.Color())
-	c.table.SetSeparator(c.style.SeparatorSymbol.Rune())
+	c.table.SetBordersColor(styles.Others.SeparatorColor.Color())
+	c.table.SetSeparator(styles.Others.SeparatorSymbol.Rune())
 }
 
 func (c *Content) setStaticLayout() {
@@ -279,10 +279,10 @@ func (c *Content) Render() {
 
 func (c *Content) renderTableView(startRow int, documents []primitive.M) {
 	c.table.SetFixed(1, 0)
-	sortedKeys := util.GetSortedKeysWithTypes(documents, c.style.ColumnTypeColor.Color().String())
+	sortedHeaderKeys := util.GetSortedKeysWithTypes(documents, c.style.ColumnTypeColor.Color().String())
 
 	// Set the header row
-	for col, key := range sortedKeys {
+	for col, key := range sortedHeaderKeys {
 		c.table.SetCell(startRow, col, tview.NewTableCell(key).
 			SetTextColor(c.style.ColumnKeyColor.Color()).
 			SetSelectable(false).
@@ -293,7 +293,7 @@ func (c *Content) renderTableView(startRow int, documents []primitive.M) {
 
 	// Populate the table with document values
 	for row, doc := range documents {
-		for col, key := range sortedKeys {
+		for col, key := range sortedHeaderKeys {
 			var cellText string
 			if val, ok := doc[strings.Split(key, " ")[0]]; ok {
 				cellText = util.GetValueByType(val)

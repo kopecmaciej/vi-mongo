@@ -2,7 +2,9 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 
@@ -251,4 +253,122 @@ func (d *Dao) runAdminCommand(ctx context.Context, key string, value interface{}
 	}
 
 	return results, nil
+}
+
+// IndexInfo represents the information about an index
+type IndexInfo struct {
+	Name       string
+	Definition bson.M
+	Type       string
+	Size       int64
+	Usage      string
+	Properties []string
+}
+
+// GetIndexes fetches the indexes for a given database and collection
+func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]IndexInfo, error) {
+	coll := d.client.Database(db).Collection(collection)
+	cursor, err := coll.Indexes().List(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var indexes []IndexInfo
+	for cursor.Next(ctx) {
+		var idx bson.M
+		if err := cursor.Decode(&idx); err != nil {
+			return nil, err
+		}
+
+		indexInfo := IndexInfo{
+			Name:       idx["name"].(string),
+			Definition: idx["key"].(bson.M),
+			Type:       "REGULAR",                                                // Default type
+			Size:       0,                                                        // We'll need to calculate this separately
+			Usage:      "0 (since " + time.Now().Format("Mon Jan 02 2006") + ")", // Default usage
+			Properties: []string{},
+		}
+
+		// Determine index type and properties
+		if unique, ok := idx["unique"]; ok && unique.(bool) {
+			indexInfo.Properties = append(indexInfo.Properties, "UNIQUE")
+		}
+		if sparse, ok := idx["sparse"]; ok && sparse.(bool) {
+			indexInfo.Properties = append(indexInfo.Properties, "SPARSE")
+		}
+		if ttl, ok := idx["expireAfterSeconds"]; ok && ttl.(int32) > 0 {
+			indexInfo.Properties = append(indexInfo.Properties, "TTL")
+			indexInfo.Type = "TTL"
+		}
+		if len(indexInfo.Definition) > 1 {
+			indexInfo.Properties = append(indexInfo.Properties, "COMPOUND")
+		}
+		if indexInfo.Name == "_id_" {
+			indexInfo.Properties = append(indexInfo.Properties, "UNIQUE")
+		}
+
+		indexes = append(indexes, indexInfo)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+
+	// Fetch index sizes and usage statistics
+	stats, err := d.getIndexStats(ctx, db, collection)
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to fetch index statistics")
+	} else {
+		for i, idx := range indexes {
+			if stat, ok := stats[idx.Name]; ok {
+				indexes[i].Size = stat.Size
+				indexes[i].Usage = formatIndexUsage(stat.Accesses.Ops, stat.Accesses.Since)
+			}
+		}
+	}
+
+	return indexes, nil
+}
+
+type indexStats struct {
+	Size     int64
+	Accesses struct {
+		Ops   int64
+		Since time.Time
+	}
+}
+
+func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (map[string]indexStats, error) {
+	var result bson.M
+	err := d.client.Database(db).RunCommand(ctx, bson.D{{Key: "collStats", Value: collection}}).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	indexSizes, ok := result["indexSizes"].(bson.M)
+	if !ok {
+		return nil, fmt.Errorf("indexSizes not found in collStats result")
+	}
+
+	indexAccesses, ok := result["indexAccesses"].(bson.M)
+	if !ok {
+		log.Warn().Msg("indexAccesses not found in collStats result")
+	}
+
+	stats := make(map[string]indexStats)
+	for name, size := range indexSizes {
+		stat := indexStats{Size: int64(size.(int32))}
+		if accesses, ok := indexAccesses[name].(bson.M); ok {
+			stat.Accesses.Ops = accesses["ops"].(int64)
+			stat.Accesses.Since, _ = accesses["since"].(time.Time)
+		}
+		stats[name] = stat
+	}
+
+	return stats, nil
+}
+
+func formatIndexUsage(ops int64, since time.Time) string {
+	return fmt.Sprintf("%d (since %s)", ops, since.Format("Mon Jan 02 2006"))
 }

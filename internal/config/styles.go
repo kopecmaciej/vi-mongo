@@ -23,8 +23,8 @@ type (
 		Welcome     WelcomeStyle     `yaml:"welcome"`
 		Connection  ConnectionStyle  `yaml:"connection"`
 		Header      HeaderStyle      `yaml:"header"`
-		Databases   DatabasesStyle   `yaml:"databases"`
 		TabBar      TabBarStyle      `yaml:"tabBar"`
+		Databases   DatabasesStyle   `yaml:"databases"`
 		Content     ContentStyle     `yaml:"content"`
 		DocPeeker   DocPeekerStyle   `yaml:"docPeeker"`
 		InputBar    InputBarStyle    `yaml:"filterBar"`
@@ -78,9 +78,9 @@ type (
 
 	// TabBarStyle is a struct that contains all the styles for the tab bar
 	TabBarStyle struct {
-		TextColor       Style `yaml:"textColor"`
-		ActiveTextColor Style `yaml:"activeTextColor"`
-		SeparatorColor  Style `yaml:"separatorColor"`
+		TextColor             Style `yaml:"textColor"`
+		ActiveTextColor       Style `yaml:"activeTextColor"`
+		ActiveBackgroundColor Style `yaml:"activeBackgroundColor"`
 	}
 
 	// DatabasesStyle is a struct that contains all the styles for the databases
@@ -101,10 +101,7 @@ type (
 		ColumnKeyColor           Style `yaml:"columnKeyColor"`
 		ColumnTypeColor          Style `yaml:"columnTypeColor"`
 		CellTextColor            Style `yaml:"cellTextColor"`
-		ActiveRowColor           Style `yaml:"activeRowColor"`
 		SelectedRowColor         Style `yaml:"selectedRowColor"`
-		SeparatorSymbol          Style `yaml:"separatorSymbol"`
-		SeparatorColor           Style `yaml:"separatorColor"`
 	}
 
 	// DocPeekerStyle is a struct that contains all the styles for the json peeker
@@ -142,6 +139,7 @@ type (
 		DescriptionColor Style `yaml:"descriptionColor"`
 	}
 
+	// OthersStyle is a struct that contains all the styles shared across components
 	OthersStyle struct {
 		// buttons
 		ButtonsTextColor                    Style `yaml:"buttonsTextColor"`
@@ -150,6 +148,9 @@ type (
 		// modals specials
 		ModalTextColor          Style `yaml:"modalTextColor"`
 		ModalSecondaryTextColor Style `yaml:"modalSecondaryTextColor"`
+		// table separators
+		SeparatorSymbol Style `yaml:"separatorSymbol"`
+		SeparatorColor  Style `yaml:"separatorColor"`
 	}
 
 	StyleChangeStyle struct {
@@ -199,9 +200,9 @@ func (s *Styles) loadDefaults() {
 	}
 
 	s.TabBar = TabBarStyle{
-		TextColor:       "#E2E8F0",
-		ActiveTextColor: "#387D44",
-		SeparatorColor:  "#334155",
+		TextColor:             "#E2E8F0",
+		ActiveTextColor:       "#387D44",
+		ActiveBackgroundColor: "#FDE68A",
 	}
 
 	s.Databases = DatabasesStyle{
@@ -220,10 +221,7 @@ func (s *Styles) loadDefaults() {
 		ColumnKeyColor:           "#FDE68A",
 		ColumnTypeColor:          "#387D44",
 		CellTextColor:            "#387D44",
-		ActiveRowColor:           "#4ADE80",
 		SelectedRowColor:         "#4ADE80",
-		SeparatorSymbol:          "|",
-		SeparatorColor:           "#334155",
 	}
 
 	s.DocPeeker = DocPeekerStyle{
@@ -263,6 +261,8 @@ func (s *Styles) loadDefaults() {
 		DeleteButtonSelectedBackgroundColor: "#DA3312",
 		ModalTextColor:                      "#FDE68A",
 		ModalSecondaryTextColor:             "#387D44",
+		SeparatorSymbol:                     "|",
+		SeparatorColor:                      "#334155",
 	}
 
 	s.StyleChange = StyleChangeStyle{

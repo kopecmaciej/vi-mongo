@@ -105,7 +105,13 @@ func (m *Main) Render() {
 	m.header.Render()
 	m.tabBar.Render()
 
-	m.databases.SetSelectFunc(m.content.HandleDatabaseSelection)
+	m.databases.SetSelectFunc(func(ctx context.Context, db, coll string) error {
+		err := m.content.HandleDatabaseSelection(ctx, db, coll)
+		if err != nil {
+			return err
+		}
+		return m.index.HandleDatabaseSelection(ctx, db, coll)
+	})
 
 	m.render()
 }
@@ -115,6 +121,7 @@ func (m *Main) UpdateDao(dao *mongo.Dao) {
 	m.databases.UpdateDao(dao)
 	m.header.UpdateDao(dao)
 	m.content.UpdateDao(dao)
+	m.index.UpdateDao(dao)
 }
 
 func (m *Main) render() error {

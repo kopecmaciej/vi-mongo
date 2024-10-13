@@ -28,6 +28,10 @@ header:
   valueColor: "#387D44"
   activeSymbol: ●
   inactiveSymbol: ○
+tabBar:
+  textColor: "#E2E8F0"
+  activeTextColor: "#FDE68A"
+  activeBackgroundColor: "#387D44"
 databases:
   nodeTextColor: "#387D44"
   leafTextColor: "#E2E8F0"
@@ -74,6 +78,8 @@ others:
   deleteButtonSelectedBackgroundColor: "#DA3312"
   modalTextColor: "#FDE68A"
   modalSecondaryTextColor: "#387D44"
+  separatorSymbol: "|"
+  separatorColor: "#334155"
 styleChange:
   textColor: "#E2E8F0"
   selectedTextColor: "#0F172A"

@@ -3,7 +3,7 @@ package component
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
-	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 )
 
@@ -27,7 +27,6 @@ type TabBar struct {
 
 	active int
 	tabs   []*TabBarComponent
-	style  *config.TabBarStyle
 }
 
 func NewTabBar() *TabBar {
@@ -44,14 +43,30 @@ func NewTabBar() *TabBar {
 }
 
 func (t *TabBar) init() error {
+	t.setStaticLayout()
 	t.setStyle()
 
+	t.handleEvents()
 	return nil
 }
 
 func (t *TabBar) setStyle() {
-	t.style = &t.App.GetStyles().TabBar
+	styles := t.App.GetStyles()
+	t.SetStyle(styles)
+}
+
+func (t *TabBar) setStaticLayout() {
 	t.SetBorderPadding(0, 0, 1, 0)
+}
+
+func (t *TabBar) handleEvents() {
+	go t.HandleEvents(TabBarId, func(event manager.EventMsg) {
+		switch event.Message.Type {
+		case manager.StyleChanged:
+			t.setStyle()
+			t.Render()
+		}
+	})
 }
 
 func (t *TabBar) AddTab(name string, component TabBarPrimitive, defaultTab bool) {
@@ -76,19 +91,19 @@ func (t *TabBar) PreviousTab() {
 }
 
 func (t *TabBar) Render() {
+	styles := t.App.GetStyles()
 	t.Clear()
 	for i, tab := range t.tabs {
 		cell := tview.NewTableCell(" " + tab.id + " ")
 		if i == t.active {
-			cell.SetTextColor(t.style.ActiveTextColor.Color()).SetAttributes(tcell.AttrBold)
+			cell.SetTextColor(styles.TabBar.ActiveTextColor.Color())
+			cell.SetAttributes(tcell.AttrBold)
+			cell.SetBackgroundColor(styles.TabBar.ActiveBackgroundColor.Color())
+
 		} else {
-			cell.SetTextColor(t.style.TextColor.Color())
+			cell.SetTextColor(styles.TabBar.TextColor.Color())
 		}
 		t.SetCell(0, i, cell)
-
-		if i < len(t.tabs)-1 {
-			t.SetSeparator(rune('|'))
-		}
 	}
 }
 
