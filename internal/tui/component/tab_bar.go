@@ -81,12 +81,16 @@ func (t *TabBar) AddTab(name string, component TabBarPrimitive, defaultTab bool)
 }
 
 func (t *TabBar) NextTab() {
-	t.active = (t.active + 1) % len(t.tabs)
+	if t.active < len(t.tabs)-1 {
+		t.active++
+	}
 	t.Render()
 }
 
 func (t *TabBar) PreviousTab() {
-	t.active = (t.active - 1 + len(t.tabs)) % len(t.tabs)
+	if t.active > 0 {
+		t.active--
+	}
 	t.Render()
 }
 

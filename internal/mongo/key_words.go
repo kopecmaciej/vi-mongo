@@ -100,8 +100,13 @@ var (
 		},
 		{
 			Display:     "$regex",
-			InsertText:  "$regex: ",
-			Description: "Selects documents where values match a specified regular expression.",
+			InsertText:  "$regex: \"<$0>\"",
+			Description: "Matches values that match a specified regular expression.",
+		},
+		{
+			Display:     "$regexWithOptions",
+			InsertText:  "$regex: \"<$0>\", $options: \"\"",
+			Description: "Matches values that match a specified regular expression with options.",
 		},
 		{
 			Display:     "$text",

@@ -87,7 +87,7 @@ func (i *Index) Render() {
 		i.SetCell(row+1, 0, tview.NewTableCell(index.Name))
 		i.SetCell(row+1, 1, tview.NewTableCell(definition))
 		i.SetCell(row+1, 2, tview.NewTableCell(index.Type))
-		i.SetCell(row+1, 3, tview.NewTableCell(fmt.Sprintf("%.1f KB", float64(index.Size)/1024)))
+		i.SetCell(row+1, 3, tview.NewTableCell(index.Size))
 		i.SetCell(row+1, 4, tview.NewTableCell(index.Usage))
 		i.SetCell(row+1, 5, tview.NewTableCell(strings.Join(index.Properties, ", ")))
 	}

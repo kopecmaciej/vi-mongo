@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/kopecmaciej/vi-mongo/internal/config"
@@ -260,7 +261,7 @@ type IndexInfo struct {
 	Name       string
 	Definition bson.M
 	Type       string
-	Size       int64
+	Size       string
 	Usage      string
 	Properties []string
 }
@@ -284,9 +285,9 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]I
 		indexInfo := IndexInfo{
 			Name:       idx["name"].(string),
 			Definition: idx["key"].(bson.M),
-			Type:       "REGULAR",                                                // Default type
-			Size:       0,                                                        // We'll need to calculate this separately
-			Usage:      "0 (since " + time.Now().Format("Mon Jan 02 2006") + ")", // Default usage
+			Type:       "REGULAR",
+			Size:       "N/A",
+			Usage:      "N/A",
 			Properties: []string{},
 		}
 
@@ -323,7 +324,7 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]I
 		for i, idx := range indexes {
 			if stat, ok := stats[idx.Name]; ok {
 				indexes[i].Size = stat.Size
-				indexes[i].Usage = formatIndexUsage(stat.Accesses.Ops, stat.Accesses.Since)
+				indexes[i].Usage = formatIndexUsage(stat.Accesses["ops"].(int64), stat.Accesses["since"].(primitive.DateTime).Time())
 			}
 		}
 	}
@@ -332,41 +333,46 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]I
 }
 
 type indexStats struct {
-	Size     int64
-	Accesses struct {
-		Ops   int64
-		Since time.Time
-	}
+	Size     string
+	Accesses primitive.M
 }
 
 func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (map[string]indexStats, error) {
-	var result bson.M
-	err := d.client.Database(db).RunCommand(ctx, bson.D{{Key: "collStats", Value: collection}}).Decode(&result)
+	cursor, err := d.client.Database(db).Collection(collection).Aggregate(ctx, mongo.Pipeline{
+		bson.D{{Key: "$indexStats", Value: bson.D{}}},
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	var collStats bson.M
+	err = d.client.Database(db).RunCommand(ctx, bson.D{{Key: "collStats", Value: collection}}).Decode(&collStats)
 	if err != nil {
 		return nil, err
 	}
 
-	indexSizes, ok := result["indexSizes"].(bson.M)
-	if !ok {
-		return nil, fmt.Errorf("indexSizes not found in collStats result")
+	sizesMap := collStats["indexSizes"].(bson.M)
+
+	var stats []bson.M
+	if err := cursor.All(ctx, &stats); err != nil {
+		return nil, err
 	}
 
-	indexAccesses, ok := result["indexAccesses"].(bson.M)
-	if !ok {
-		log.Warn().Msg("indexAccesses not found in collStats result")
-	}
-
-	stats := make(map[string]indexStats)
-	for name, size := range indexSizes {
-		stat := indexStats{Size: int64(size.(int32))}
-		if accesses, ok := indexAccesses[name].(bson.M); ok {
-			stat.Accesses.Ops = accesses["ops"].(int64)
-			stat.Accesses.Since, _ = accesses["since"].(time.Time)
+	statsMap := make(map[string]indexStats)
+	for _, stat := range stats {
+		size, ok := sizesMap[stat["name"].(string)]
+		if !ok {
+			size = "N/A"
 		}
-		stats[name] = stat
+		sizeNum, err := strconv.ParseInt(fmt.Sprintf("%d", size), 10, 64)
+		if err != nil {
+			sizeNum = 0
+		}
+		statsMap[stat["name"].(string)] = indexStats{Size: fmt.Sprintf("%.1f KB", float64(sizeNum)/1024), Accesses: stat["accesses"].(primitive.M)}
 	}
 
-	return stats, nil
+	return statsMap, nil
 }
 
 func formatIndexUsage(ops int64, since time.Time) string {
