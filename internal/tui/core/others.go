@@ -114,6 +114,7 @@ func (l *List) SetStyle(style *config.Styles) {
 
 func (t *TextView) SetStyle(style *config.Styles) {
 	SetCommonStyle(t.TextView, style)
+	t.SetTextColor(style.Global.TextColor.Color())
 }
 
 func (t *TreeView) SetStyle(style *config.Styles) {
