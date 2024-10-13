@@ -10,7 +10,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/primitives"
 )
 
-const ServerInfoModalView = "ServerInfoModal"
+const ServerInfoModalId = "ServerInfoModal"
 
 type ServerInfoModal struct {
 	*core.BaseElement
@@ -26,7 +26,7 @@ func NewServerInfoModal(dao *mongo.Dao) *ServerInfoModal {
 		dao:         dao,
 	}
 
-	s.SetIdentifier(ServerInfoModalView)
+	s.SetIdentifier(ServerInfoModalId)
 	s.SetTitle("Server Info")
 	return s
 }
@@ -74,7 +74,7 @@ func (s *ServerInfoModal) Render(ctx context.Context) error {
 	})
 	s.ViewModal.AddButtons([]string{"Close"})
 	s.ViewModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		s.App.Pages.RemovePage(ServerInfoModalView)
+		s.App.Pages.RemovePage(ServerInfoModalId)
 	})
 
 	return nil

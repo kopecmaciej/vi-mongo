@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	WelcomePage = "Welcome"
+	WelcomePageId = "Welcome"
 )
 
 type Welcome struct {
@@ -33,7 +33,7 @@ func NewWelcome() *Welcome {
 		form:        core.NewForm(),
 	}
 
-	w.SetIdentifier(WelcomePage)
+	w.SetIdentifier(WelcomePageId)
 
 	return w
 }
@@ -82,7 +82,7 @@ func (w *Welcome) setStyle() {
 }
 
 func (w *Welcome) handleEvents() {
-	go w.HandleEvents(WelcomePage, func(event manager.EventMsg) {
+	go w.HandleEvents(WelcomePageId, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			w.setStyle()
@@ -103,7 +103,7 @@ func (w *Welcome) Render() {
 
 	w.AddItem(tview.NewBox(), 0, 1, false)
 
-	if page, _ := w.App.Pages.GetFrontPage(); page == WelcomePage {
+	if page, _ := w.App.Pages.GetFrontPage(); page == WelcomePageId {
 		w.App.SetFocus(w)
 	}
 }

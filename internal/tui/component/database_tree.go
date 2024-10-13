@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	InputModalView        = "InputModal"
-	ConfirmModalView      = "ConfirmModal"
-	DatabaseTreeComponent = "DatabaseTree"
-	DatabaseDeleteModal   = "DatabaseDeleteModal"
+	InputModalId          = "InputModal"
+	ConfirmModalId        = "ConfirmModal"
+	DatabaseTreeId        = "DatabaseTree"
+	DatabaseDeleteModalId = "DatabaseDeleteModal"
 )
 
 type DatabaseTree struct {
@@ -39,10 +39,10 @@ func NewDatabaseTree() *DatabaseTree {
 		BaseElement: core.NewBaseElement(),
 		TreeView:    core.NewTreeView(),
 		addModal:    primitives.NewInputModal(),
-		deleteModal: modal.NewDeleteModal(DatabaseDeleteModal),
+		deleteModal: modal.NewDeleteModal(DatabaseDeleteModalId),
 	}
 
-	d.SetIdentifier(DatabaseTreeComponent)
+	d.SetIdentifier(DatabaseTreeId)
 	d.SetAfterInitFunc(d.init)
 
 	return d
@@ -129,7 +129,7 @@ func (t *DatabaseTree) collapseAllNodes(openSymbol, closedSymbol string) {
 }
 
 func (t *DatabaseTree) handleEvents() {
-	go t.HandleEvents(DatabaseTreeComponent, func(event manager.EventMsg) {
+	go t.HandleEvents(DatabaseTreeId, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			t.setStyle()
@@ -183,7 +183,7 @@ func (t *DatabaseTree) showAddCollectionModal(ctx context.Context) error {
 
 	t.addModal.SetLabel(fmt.Sprintf("Add collection name for [%s][::b]%s", t.style.NodeTextColor.Color(), db))
 	t.addModal.SetInputCapture(t.createAddCollectionInputCapture(ctx, parent, db))
-	t.App.Pages.AddPage(InputModalView, t.addModal, true, true)
+	t.App.Pages.AddPage(InputModalId, t.addModal, true, true)
 	return nil
 }
 
@@ -216,7 +216,7 @@ func (t *DatabaseTree) handleAddCollection(ctx context.Context, parent *tview.Tr
 
 func (t *DatabaseTree) closeAddModal() {
 	t.addModal.SetText("")
-	t.App.Pages.RemovePage(InputModalView)
+	t.App.Pages.RemovePage(InputModalId)
 }
 
 func (t *DatabaseTree) showDeleteCollectionModal(ctx context.Context) error {
@@ -228,7 +228,7 @@ func (t *DatabaseTree) showDeleteCollectionModal(ctx context.Context) error {
 	t.deleteModal.SetText(t.getDeleteConfirmationText(db, coll))
 	db, coll = t.removeSymbols(db, coll)
 	t.deleteModal.SetDoneFunc(t.createDeleteCollectionDoneFunc(ctx, db, coll, parent))
-	t.App.Pages.AddPage(ConfirmModalView, t.deleteModal, true, true)
+	t.App.Pages.AddPage(ConfirmModalId, t.deleteModal, true, true)
 	return nil
 }
 
@@ -329,7 +329,7 @@ func (t *DatabaseTree) getDeleteConfirmationText(db, coll string) string {
 
 func (t *DatabaseTree) createDeleteCollectionDoneFunc(ctx context.Context, db, coll string, parent *tview.TreeNode) func(int, string) {
 	return func(buttonIndex int, buttonLabel string) {
-		defer t.App.Pages.RemovePage(ConfirmModalView)
+		defer t.App.Pages.RemovePage(ConfirmModalId)
 		if buttonIndex == 0 {
 			t.handleDeleteCollection(ctx, db, coll, parent)
 		}

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	PeekerComponent = "Peeker"
+	PeekerId = "Peeker"
 )
 
 // Peeker is a view that provides a modal view for peeking at a document
@@ -37,7 +37,7 @@ func NewPeeker() *Peeker {
 		docModifier: NewDocModifier(),
 	}
 
-	p.SetIdentifier(PeekerComponent)
+	p.SetIdentifier(PeekerId)
 	p.SetAfterInitFunc(p.init)
 
 	return p
@@ -58,7 +58,7 @@ func (p *Peeker) init() error {
 }
 
 func (p *Peeker) handleEvents() {
-	go p.HandleEvents(PeekerComponent, func(event manager.EventMsg) {
+	go p.HandleEvents(PeekerId, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			p.setStyle()

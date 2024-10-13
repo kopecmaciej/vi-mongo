@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ConnectionPage = "Connection"
+	ConnectionPageId = "Connection"
 )
 
 // Connection is a view for connecting to mongodb using tview package
@@ -41,7 +41,7 @@ func NewConnection() *Connection {
 		list:        core.NewList(),
 	}
 
-	c.SetIdentifier(ConnectionPage)
+	c.SetIdentifier(ConnectionPageId)
 
 	return c
 }
@@ -60,7 +60,7 @@ func (c *Connection) Init(app *core.App) error {
 }
 
 func (c *Connection) handleEvents() {
-	go c.HandleEvents(ConnectionPage, func(event manager.EventMsg) {
+	go c.HandleEvents(ConnectionPageId, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			c.setStyle()
@@ -148,7 +148,7 @@ func (c *Connection) Render() {
 	// easy way to center the form
 	c.AddItem(tview.NewBox(), 0, 1, false)
 
-	if page, _ := c.App.Pages.GetFrontPage(); page == ConnectionPage {
+	if page, _ := c.App.Pages.GetFrontPage(); page == ConnectionPageId {
 		if len(c.App.GetConfig().Connections) > 0 {
 			c.renderList()
 			defer c.App.SetFocus(c.list)

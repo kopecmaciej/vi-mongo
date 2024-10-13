@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	HistoryModal = "History"
-	QueryBar     = "QueryBar"
+	HistoryModalId = "History"
+	QueryBarId     = "QueryBar"
 
 	maxHistory = 10
 )
@@ -33,7 +33,7 @@ func NewHistoryModal() *History {
 		ListModal:   primitives.NewListModal(),
 	}
 
-	h.SetIdentifier(HistoryModal)
+	h.SetIdentifier(HistoryModalId)
 	h.SetAfterInitFunc(h.init)
 
 	return h
@@ -82,7 +82,7 @@ func (h *History) setKeybindings() {
 
 func (h *History) sendEventAndClose(event *tcell.EventKey) *tcell.EventKey {
 	eventKey := manager.EventMsg{EventKey: event, Sender: h.GetIdentifier()}
-	h.SendToElement(QueryBar, eventKey)
+	h.SendToElement(QueryBarId, eventKey)
 	h.App.Pages.RemovePage(h.GetIdentifier())
 
 	return nil

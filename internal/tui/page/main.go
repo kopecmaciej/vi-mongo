@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	MainPage = "Main"
+	MainPageId = "Main"
 )
 
 type Main struct {
@@ -44,7 +44,7 @@ func NewMain() *Main {
 		index:       component.NewIndex(),
 	}
 
-	m.SetIdentifier(MainPage)
+	m.SetIdentifier(MainPageId)
 	m.SetAfterInitFunc(m.init)
 
 	return m
@@ -66,7 +66,7 @@ func (m *Main) setStyles() {
 }
 
 func (m *Main) handleEvents() {
-	go m.HandleEvents(MainPage, func(event manager.EventMsg) {
+	go m.HandleEvents(MainPageId, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			m.setStyles()
@@ -190,5 +190,5 @@ func (m *Main) ShowServerInfoModal() {
 		return
 	}
 
-	m.App.Pages.AddPage(modal.ServerInfoModalView, serverInfoModal, true, true)
+	m.App.Pages.AddPage(modal.ServerInfoModalId, serverInfoModal, true, true)
 }

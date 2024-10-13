@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	DatabaseComponent = "Database"
-	FilterBarView     = "FilterBar"
+	DatabaseId  = "Database"
+	FilterBarId = "FilterBar"
 )
 
 // Database is flex container for DatabaseTree and InputBar
@@ -34,11 +34,11 @@ func NewDatabase() *Database {
 		BaseElement: core.NewBaseElement(),
 		Flex:        core.NewFlex(),
 		DbTree:      NewDatabaseTree(),
-		filterBar:   NewInputBar(FilterBarView, "Filter"),
+		filterBar:   NewInputBar(FilterBarId, "Filter"),
 		mutex:       sync.Mutex{},
 	}
 
-	d.SetIdentifier(DatabaseComponent)
+	d.SetIdentifier(DatabaseId)
 	d.SetAfterInitFunc(d.init)
 
 	return d
@@ -84,7 +84,7 @@ func (d *Database) setKeybindings() {
 }
 
 func (d *Database) handleEvents() {
-	go d.HandleEvents(DatabaseComponent, func(event manager.EventMsg) {
+	go d.HandleEvents(DatabaseId, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			d.setStyle()
@@ -113,6 +113,11 @@ func (d *Database) Render() {
 	d.DbTree.Render(context.Background(), d.dbsWithColls, false)
 
 	d.Flex.AddItem(d.DbTree, 0, 1, true)
+}
+
+func (d *Database) Hf() bool {
+	return d.App.GetFocus().GetIdentifier() == d.GetIdentifier() ||
+		d.App.GetFocus().GetIdentifier() == d.DbTree.GetIdentifier()
 }
 
 func (d *Database) filterBarHandler(ctx context.Context) {

@@ -75,15 +75,15 @@ func (a *App) setKeybindings() {
 			a.ShowStyleChangeModal()
 			return nil
 		case a.GetKeys().Contains(a.GetKeys().Global.ToggleFullScreenHelp, event.Name()):
-			if a.Pages.HasPage(page.HelpPage) {
-				a.Pages.RemovePage(page.HelpPage)
+			if a.Pages.HasPage(page.HelpPageId) {
+				a.Pages.RemovePage(page.HelpPageId)
 				return nil
 			}
 			err := a.help.Render()
 			if err != nil {
 				return event
 			}
-			a.Pages.AddPage(page.HelpPage, a.help, true, true)
+			a.Pages.AddPage(page.HelpPageId, a.help, true, true)
 			return nil
 		}
 		return event

@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	HelpPage = "Help"
+	HelpPageId = "Help"
 )
 
 // Help is a view that provides a help screen for keybindings
@@ -31,7 +31,7 @@ func NewHelp() *Help {
 		Table:       core.NewTable(),
 	}
 
-	h.SetIdentifier(HelpPage)
+	h.SetIdentifier(HelpPageId)
 	h.SetAfterInitFunc(h.init)
 
 	return h
@@ -48,7 +48,7 @@ func (h *Help) init() error {
 }
 
 func (h *Help) handleEvents() {
-	go h.HandleEvents(HelpPage, func(event manager.EventMsg) {
+	go h.HandleEvents(HelpPageId, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			h.setStyle()
@@ -185,7 +185,7 @@ func (h *Help) setKeybindings() {
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Help.Close, event.Name()):
-			h.App.Pages.RemovePage(HelpPage)
+			h.App.Pages.RemovePage(HelpPageId)
 			return nil
 		}
 		return event

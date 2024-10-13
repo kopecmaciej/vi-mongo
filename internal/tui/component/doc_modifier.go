@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	DocModifierView = "DocModifier"
+	DocModifierId = "DocModifier"
 )
 
 // DocModifier is a view that allows editing JSON documents
