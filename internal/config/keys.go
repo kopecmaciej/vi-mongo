@@ -26,9 +26,9 @@ type (
 		Main       MainKeys       `json:"main"`
 		Database   DatabaseKeys   `json:"databases"`
 		Content    ContentKeys    `json:"content"`
+		Peeker     PeekerKeys     `json:"peeker"`
 		QueryBar   QueryBar       `json:"queryBar"`
 		SortBar    SortBar        `json:"sortBar"`
-		Peeker     PeekerKeys     `json:"peeker"`
 		History    HistoryKeys    `json:"history"`
 	}
 
@@ -158,11 +158,11 @@ func (k *KeyBindings) loadDefaults() {
 	k.Main = MainKeys{
 		FocusNext: Key{
 			Keys:        []string{"Ctrl+L", "Tab"},
-			Description: "Focus content",
+			Description: "Focus next component",
 		},
 		FocusPrevious: Key{
 			Keys:        []string{"Ctrl+H", "Shift+Tab"},
-			Description: "Focus databases",
+			Description: "Focus previous component",
 		},
 		HideDatabase: Key{
 			Keys:        []string{"Ctrl+N"},

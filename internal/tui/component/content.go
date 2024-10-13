@@ -795,7 +795,7 @@ func (c *Content) handleRefresh(ctx context.Context) *tcell.EventKey {
 func (c *Content) handleNextDocument(row, col int) *tcell.EventKey {
 	if c.currentView == JsonView {
 		c.table.MoveDownUntil(row, col, func(cell *tview.TableCell) bool {
-			return strings.HasPrefix(cell.Text, `{`)
+			return strings.HasPrefix(strings.TrimSpace(cell.Text), `"_id"`)
 		})
 	} else {
 		c.table.MoveDown()
@@ -806,7 +806,7 @@ func (c *Content) handleNextDocument(row, col int) *tcell.EventKey {
 func (c *Content) handlePreviousDocument(row, col int) *tcell.EventKey {
 	if c.currentView == JsonView {
 		c.table.MoveUpUntil(row, col, func(cell *tview.TableCell) bool {
-			return strings.HasPrefix(cell.Text, `}`)
+			return strings.HasPrefix(strings.TrimSpace(cell.Text), `"_id"`)
 		})
 	} else {
 		c.table.MoveUp()
