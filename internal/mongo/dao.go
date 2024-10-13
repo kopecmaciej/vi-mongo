@@ -376,5 +376,5 @@ func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (
 }
 
 func formatIndexUsage(ops int64, since time.Time) string {
-	return fmt.Sprintf("%d (since %s)", ops, since.Format("Mon Jan 02 2006"))
+	return fmt.Sprintf("%d (since %s)", ops, since.Format("2006-01-02 15:04:05"))
 }
