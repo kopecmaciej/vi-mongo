@@ -63,11 +63,6 @@ func (d *Dao) GetLiveSessions(ctx context.Context) (int64, error) {
 	return int64(len(sessions)), nil
 }
 
-type DBsWithCollections struct {
-	DB          string
-	Collections []string
-}
-
 func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]DBsWithCollections, error) {
 	dbCollMap := []DBsWithCollections{}
 
@@ -90,11 +85,6 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 	}
 
 	return dbCollMap, nil
-}
-
-type Filter struct {
-	Key   string
-	Value string
 }
 
 func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter primitive.M, sort primitive.M) ([]primitive.M, int64, error) {
@@ -256,16 +246,6 @@ func (d *Dao) runAdminCommand(ctx context.Context, key string, value interface{}
 	return results, nil
 }
 
-// IndexInfo represents the information about an index
-type IndexInfo struct {
-	Name       string
-	Definition bson.M
-	Type       string
-	Size       string
-	Usage      string
-	Properties []string
-}
-
 // GetIndexes fetches the indexes for a given database and collection
 func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]IndexInfo, error) {
 	coll := d.client.Database(db).Collection(collection)
@@ -332,11 +312,6 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]I
 	return indexes, nil
 }
 
-type indexStats struct {
-	Size     string
-	Accesses primitive.M
-}
-
 func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (map[string]indexStats, error) {
 	cursor, err := d.client.Database(db).Collection(collection).Aggregate(ctx, mongo.Pipeline{
 		bson.D{{Key: "$indexStats", Value: bson.D{}}},
@@ -374,7 +349,6 @@ func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (
 
 	return statsMap, nil
 }
-
 func formatIndexUsage(ops int64, since time.Time) string {
 	return fmt.Sprintf("%d (since %s)", ops, since.Format("2006-01-02 15:04:05"))
 }
