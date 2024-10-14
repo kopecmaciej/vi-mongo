@@ -210,8 +210,8 @@ func (s *Styles) loadDefaults() {
 		LeafTextColor:    "#E2E8F0",
 		NodeSymbolColor:  "#FDE68A",
 		LeafSymbolColor:  "#387D44",
-		OpenNodeSymbol:   "▶",
-		ClosedNodeSymbol: "▼",
+		OpenNodeSymbol:   "▼",
+		ClosedNodeSymbol: "▶",
 		LeafSymbol:       "◆",
 	}
 
