@@ -14,6 +14,8 @@ alike.
 
 Visit [vi-mongo.com](https://vi-mongo.com) for more information.
 
+![autocomplete](./assets/autocomplete.webp)
+
 ## Installation
 
 [vi-mongo.com/docs/installation](https://vi-mongo.com/docs/installation)
