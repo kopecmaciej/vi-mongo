@@ -8,6 +8,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// CollectionState is used to store the state of a collection and use it
+// while rendering doesn't require fetching from the database
 type CollectionState struct {
 	Db     string
 	Coll   string
@@ -16,7 +18,8 @@ type CollectionState struct {
 	Count  int64
 	Sort   string
 	Filter string
-	docs   []primitive.M
+	// docs are only one private as they cannot be changed in uncontrolled way
+	docs []primitive.M
 }
 
 func (c *CollectionState) GetAllDocs() []primitive.M {
@@ -115,6 +118,7 @@ func deepCopy(doc primitive.M) primitive.M {
 	return docCopy
 }
 
+// StateMap persevere states when hopping between diffrent mongodb servers
 type StateMap struct {
 	mu     sync.RWMutex
 	states map[string]*CollectionState

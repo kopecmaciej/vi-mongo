@@ -291,42 +291,54 @@ func (m *ViewModal) calculateNextLinesToHighlight(lines []string) int {
 		return 0
 	}
 
-	currentIndent := calculateIndentation(lines[absolutePosition])
+	currentLine := lines[absolutePosition]
+	currentIndent := calculateIndentation(currentLine)
 	linesToHighlight := 0
 
-	for i := absolutePosition + 1; i < len(lines); i++ {
-		nextIndent := calculateIndentation(lines[i])
+	keyRegex := regexp.MustCompile(`^\s*"[^"]*":`)
+	objInArrayStartRegex := regexp.MustCompile(`^\s*\{`)
+	objInArrayEndRegex := regexp.MustCompile(`^\s*(\}|\},)\s*$`)
 
-		// if we have reached the end of the object or array, return the number of lines to highlight
-		if lines[i] == "}" && nextIndent == 0 {
-			return linesToHighlight
-		}
-
-		// highlight till the end if first line
-		if absolutePosition == 0 {
-			return len(lines) - 1
-		}
-
-		// if current indent is 0, highlight only given line
-		if currentIndent == 0 {
-			return linesToHighlight
-			// Case 1: Same indent, new key:value pair
-		} else if nextIndent == currentIndent {
-			return linesToHighlight
-			// Case 2: Wrapped line, continue highlighting
-		} else if nextIndent > 0 && nextIndent < currentIndent {
-			return linesToHighlight
-		} else if nextIndent == 0 {
-			linesToHighlight++
-			// Case 3: Object or array, continue until we find matching indent
-		} else if nextIndent > currentIndent {
-			linesToHighlight++
-			for j := i + 1; j < len(lines); j++ {
-				if calculateIndentation(lines[j]) == currentIndent {
-					return j - absolutePosition
-				}
+	// TODO: This should be probably so complicated
+	switch {
+	// first line and last line
+	case absolutePosition == 0:
+		return len(lines) - 1
+	// last lines
+	case absolutePosition == len(lines)-1:
+		return linesToHighlight
+	// if next identation is lesser, it means that current line is the last one in the block
+	// so we need to highlight only current line
+	case calculateIndentation(lines[absolutePosition+1]) <
+		// only exception is wrapped text which has no indentation so we need to check for that
+		currentIndent && calculateIndentation(lines[absolutePosition+1]) > 0:
+		return 0
+	case objInArrayStartRegex.MatchString(currentLine):
+		for i := absolutePosition + 1; i < len(lines); i++ {
+			if calculateIndentation(lines[i]) == currentIndent && objInArrayEndRegex.MatchString(lines[i]) {
+				return linesToHighlight + 1
 			}
+			linesToHighlight++
 		}
+	case keyRegex.MatchString(currentLine):
+		for i := absolutePosition + 1; i < len(lines); i++ {
+			if i == len(lines)-1 {
+				return i - absolutePosition - 1
+			}
+			if calculateIndentation(lines[i]) == currentIndent {
+				if strings.HasSuffix(lines[i], "},") || strings.HasSuffix(lines[i], "}") {
+					return linesToHighlight + 1
+				}
+				if strings.HasSuffix(lines[i], "],") || strings.HasSuffix(lines[i], "]") {
+					return linesToHighlight + 1
+				}
+				return linesToHighlight
+			}
+			linesToHighlight++
+		}
+
+	default:
+		return 0
 	}
 
 	return linesToHighlight
@@ -478,7 +490,6 @@ func (m *ViewModal) SetScrollable(scrollable bool) *ViewModal {
 // while "value" will copy only the value of the highlighted line.
 func (m *ViewModal) CopySelectedLine(copyFunc func(text string) error, copyType string) error {
 	_, _, width, _ := m.GetRect()
-	width = width - 4
 	lines := tview.WordWrap(m.text.Content, width)
 	selectedLineIndex := m.scrollPosition + m.selectedLine
 
@@ -493,18 +504,23 @@ func (m *ViewModal) CopySelectedLine(copyFunc func(text string) error, copyType 
 			textToCopy = util.CleanJsonWhitespaces(textToCopy)
 		case "value":
 			// Join all highlighted lines
-			fullText := strings.Join(highlightedLines, " ")
-			// Split by the first colon to separate key and value
-			parts := strings.SplitN(fullText, ":", 2)
-			if len(parts) > 1 {
-				// Trim spaces and remove trailing comma if exists
-				textToCopy = strings.TrimSpace(parts[1])
-				textToCopy = strings.TrimSuffix(textToCopy, ",")
-			} else {
-				textToCopy = strings.TrimSpace(fullText)
-			}
-			// Clean up JSON whitespaces
+			textToCopy = strings.Join(highlightedLines, "\n")
 			textToCopy = util.CleanJsonWhitespaces(textToCopy)
+			// If it's an object inside we are just removing { }
+			bracketRegex := regexp.MustCompile(`^\s*(\{.*?\})\s*$`)
+			if bracketRegex.MatchString(strings.TrimSpace(textToCopy)) {
+				textToCopy = strings.TrimSuffix(textToCopy, "}")
+				textToCopy = strings.TrimPrefix(textToCopy, "{")
+			} else {
+				// Split by the first colon to separate key and value
+				parts := strings.SplitN(textToCopy, ":", 2)
+				if len(parts) > 1 {
+					// Trim spaces
+					textToCopy = strings.TrimSpace(parts[1])
+				} else {
+					textToCopy = strings.TrimSpace(textToCopy)
+				}
+			}
 		default:
 			textToCopy = strings.Join(highlightedLines, "\n")
 		}

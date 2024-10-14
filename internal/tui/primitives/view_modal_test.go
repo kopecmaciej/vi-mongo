@@ -71,6 +71,20 @@ func TestCalculateNextLinesToHighlight(t *testing.T) {
 			selectedLine:         1,
 			nextLinesToHighlight: 4,
 		},
+		{
+			name: "Array with nested object",
+			lines: []string{
+				"{",
+				`  "array_nested": [`,
+				`    {`,
+				`      "nested_key": "value"`,
+				`    }`,
+				`  ]`,
+				`}`,
+			},
+			selectedLine:         2,
+			nextLinesToHighlight: 2,
+		},
 	}
 
 	for _, tt := range tests {
@@ -178,11 +192,12 @@ func TestCopySelectedLine(t *testing.T) {
 			name: "Copy full multiline line",
 			content: `{
   "object": {
-    "nested": "test"
+    "nested": "test_first_line_value
+test_second_line_value_in_new_line"
   }
 }`,
 			copyType: "full",
-			expected: `"object": { "nested": "test" }`,
+			expected: `"object": { "nested": "test_first_line_value test_second_line_value_in_new_line" }`,
 		},
 		{
 			name: "Copy value only",
