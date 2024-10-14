@@ -158,8 +158,12 @@ func ParseJsonValue(value interface{}) (interface{}, error) {
 			convertedArray[i] = convertedElem
 		}
 		return convertedArray, nil
+		// This is a trick as JSONed object parse all numbers as float64
+		// so we need to check if the number is a float64 or some int type
 	case float64:
-		if v == float64(int64(v)) {
+		if v == float64(int32(v)) {
+			return int32(v), nil
+		} else if v == float64(int64(v)) {
 			return int64(v), nil
 		}
 		return v, nil

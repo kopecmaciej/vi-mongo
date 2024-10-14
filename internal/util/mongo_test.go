@@ -34,7 +34,8 @@ func TestGetValueByType(t *testing.T) {
 		expected string
 	}{
 		{"String", "test", "test"},
-		{"Int", 42, "42"},
+		{"Int32", int32(56), "56"},
+		{"Int64", int64(922337203685477), "922337203685477"},
 		{"Float", 3.14, "3.140000"},
 		{"Bool", true, "true"},
 		{"ObjectID", primitive.NewObjectID(), ""},                   // Hex value will be different each time
@@ -66,8 +67,10 @@ func TestGetMongoType(t *testing.T) {
 		expected string
 	}{
 		{"String", "test", TypeString},
-		{"Int", 42, TypeInt},
-		{"Float", 3.14, TypeDouble},
+		{"Int32", int32(56), TypeInt32},
+		{"Int64", int64(922337203685477), TypeInt64},
+		{"Float32", float32(3.14), TypeDouble},
+		{"Float64", float64(3.14), TypeDouble},
 		{"Bool", true, TypeBool},
 		{"ObjectID", primitive.NewObjectID(), TypeObjectId},
 		{"DateTime", primitive.NewDateTimeFromTime(time.Now()), TypeDate},

@@ -11,7 +11,8 @@ import (
 
 const (
 	TypeString   = "String"
-	TypeInt      = "Int"
+	TypeInt32    = "Int32"
+	TypeInt64    = "Int64"
 	TypeDouble   = "Double"
 	TypeBool     = "Bool"
 	TypeObjectId = "ObjectID"
@@ -44,11 +45,12 @@ func GetSortedKeysWithTypes(documents []primitive.M, typeColor string) []string 
 	return sortedKeys
 }
 
+// GetValueByType converts a value to a string
 func GetValueByType(v interface{}) string {
 	switch t := v.(type) {
 	case string:
 		return t
-	case int, int32, int64:
+	case int32, int64:
 		return fmt.Sprintf("%d", t)
 	case float32, float64:
 		return fmt.Sprintf("%f", t)
@@ -71,8 +73,10 @@ func GetMongoType(v interface{}) string {
 	switch v.(type) {
 	case string:
 		return TypeString
-	case int, int32, int64:
-		return TypeInt
+	case int32:
+		return TypeInt32
+	case int64:
+		return TypeInt64
 	case float32, float64:
 		return TypeDouble
 	case bool:

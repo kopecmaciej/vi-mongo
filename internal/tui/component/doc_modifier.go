@@ -41,10 +41,9 @@ func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.Ob
 		return primitive.NilObjectID, nil
 	}
 
-	var document map[string]interface{}
-	err = json.Unmarshal([]byte(createdDoc), &document)
+	document, err := mongo.ParseJsonToBson(createdDoc)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("error unmarshaling JSON: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("error parsing JSON: %v", err)
 	}
 
 	rawId, err := d.Dao.InsetDocument(ctx, db, coll, document)
