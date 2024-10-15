@@ -8,7 +8,6 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -106,7 +105,9 @@ func (h *Header) Render() {
 
 	k, err := h.UpdateKeys()
 	if err != nil {
-		log.Warn().Err(err).Msg("Error while updating keys")
+		currCol += 2
+		h.Table.SetCell(0, currCol, h.keyCell("No special keys for this element"))
+		h.Table.SetCell(1, currCol, h.valueCell("Press "+"<"+h.App.GetKeys().Global.ToggleFullScreenHelp.String()+">"+" to see available keybindings"))
 		return
 	}
 

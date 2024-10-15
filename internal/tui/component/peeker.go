@@ -105,8 +105,12 @@ func (p *Peeker) setKeybindings() {
 				modal.ShowError(p.App.Pages, "Error copying value", err)
 			}
 			return nil
-		case k.Contains(k.Peeker.Refresh, event.Name()):
-			p.setText()
+		case k.Contains(k.Peeker.ToggleFullScreen, event.Name()):
+			p.ViewModal.SetFullScreen(!p.ViewModal.IsFullScreen())
+			p.ViewModal.MoveToTop()
+			return nil
+		case k.Contains(k.Peeker.Exit, event.Name()):
+			p.App.Pages.RemovePage(p.GetIdentifier())
 			return nil
 		}
 		return event

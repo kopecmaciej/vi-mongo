@@ -58,6 +58,9 @@ type ViewModal struct {
 
 	// The margin of the modal (only top and bottom)
 	marginTop, marginBottom int
+
+	// Whether the view is in full-screen mode
+	isFullScreen bool
 }
 
 // NewViewModal returns a new modal message window.
@@ -72,6 +75,7 @@ func NewViewModal() *ViewModal {
 		scrollPosition: 0,
 		marginTop:      6,
 		marginBottom:   6,
+		isFullScreen:   false,
 	}
 	m.form = tview.NewForm().
 		SetButtonsAlign(tview.AlignCenter).
@@ -223,18 +227,44 @@ func (m *ViewModal) HasFocus() bool {
 	return m.form.HasFocus()
 }
 
-func (m *ViewModal) Draw(screen tcell.Screen) {
-	// Calculate the width of this modal.
-	screenWidth, screenHeight := screen.Size()
-	width := screenWidth / 2
+// SetFullScreen toggles between full-screen and modal view
+func (m *ViewModal) SetFullScreen(fullScreen bool) *ViewModal {
+	m.isFullScreen = fullScreen
+	return m
+}
 
-	// Reset the text and find out how wide it is.
+// IsFullScreen returns true if the modal is in full-screen mode
+func (m *ViewModal) IsFullScreen() bool {
+	return m.isFullScreen
+}
+
+func (m *ViewModal) Draw(screen tcell.Screen) {
+	screenWidth, screenHeight := screen.Size()
+
+	// Calculate the width and position of this modal
+	var width, x, y int
+	if m.isFullScreen {
+		width = screenWidth
+		x, y = 0, 0
+	} else {
+		width = screenWidth / 2
+		x = (screenWidth - width) / 2
+		y = (screenHeight - (screenHeight - m.marginTop - m.marginBottom)) / 2
+	}
+
+	// Reset the text and find out how wide it is
 	m.frame.Clear()
 	lines := tview.WordWrap(m.text.Content, width)
 
 	maxLines := len(lines)
-	if maxLines > screenHeight-m.marginTop-m.marginBottom {
-		maxLines = screenHeight - m.marginTop - m.marginBottom
+	if !m.isFullScreen {
+		if maxLines > screenHeight-m.marginTop-m.marginBottom {
+			maxLines = screenHeight - m.marginTop - m.marginBottom
+		}
+	} else {
+		if maxLines > screenHeight {
+			maxLines = screenHeight - m.marginBottom
+		}
 	}
 
 	m.endPosition = maxLines
@@ -256,7 +286,7 @@ func (m *ViewModal) Draw(screen tcell.Screen) {
 		if i-startLine == m.selectedLine {
 			lines[i] = m.highlightLine(lines[i], true)
 			absolutePosition := m.scrollPosition + m.selectedLine
-			for j := absolutePosition + 1; j <= absolutePosition+numNextLinesToHighlight; j++ {
+			for j := absolutePosition + 1; j <= absolutePosition+numNextLinesToHighlight && j < len(lines); j++ {
 				lines[j] = m.highlightLine(lines[j], false)
 			}
 		} else {
@@ -268,12 +298,13 @@ func (m *ViewModal) Draw(screen tcell.Screen) {
 
 	height := maxLines + m.marginBottom
 
-	x := (screenWidth - width) / 2
-	y := (screenHeight - height) / 2
-
+	// Set the rect for the modal
 	m.SetRect(x, y, width, height)
 
-	// Draw the frame.
+	if m.isFullScreen {
+		height = screenHeight
+	}
+	// Draw the frame
 	m.frame.SetRect(x, y, width, height)
 	m.frame.Draw(screen)
 }

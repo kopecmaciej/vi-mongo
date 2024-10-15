@@ -86,7 +86,7 @@ func (c *Config) loadDefaults() {
 		CurrentStyle:  "default.yaml",
 	}
 	c.ShowConnectionPage = true
-	c.ShowWelcomePage = false
+	c.ShowWelcomePage = true
 }
 
 // GetConfigPath returns the path to the config file

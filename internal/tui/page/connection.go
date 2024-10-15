@@ -1,6 +1,7 @@
 package page
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
@@ -178,6 +179,8 @@ func (c *Connection) renderForm() *core.Form {
 	c.form.AddPasswordField("Password", "", 40, '*', nil)
 	c.form.AddInputField("Database", "", 40, nil, nil)
 	c.form.AddInputField("Timeout", "5", 10, nil, nil)
+	key := fmt.Sprintf("%s or:", c.App.GetKeys().Connection.ConnectionForm.SaveConnection.String())
+	c.form.AddTextView("Save with:", key, 30, 1, true, false)
 
 	c.AddItem(c.form, 60, 0, true)
 

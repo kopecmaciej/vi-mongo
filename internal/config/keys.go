@@ -68,20 +68,20 @@ type (
 	ContentKeys struct {
 		ChangeView        Key `json:"switchView"`
 		PeekDocument      Key `json:"peekDocument"`
-		ViewDocument      Key `json:"viewDocument"`
+		FullPagePeek      Key `json:"fullPagePeek"`
 		AddDocument       Key `json:"addDocument"`
 		EditDocument      Key `json:"editDocument"`
 		DuplicateDocument Key `json:"duplicateDocument"`
 		DeleteDocument    Key `json:"deleteDocument"`
-		CopyLine          Key `json:"copyValue"`
+		CopyHighlight     Key `json:"copyValue"`
 		CopyDocument      Key `json:"copyDocument"`
 		Refresh           Key `json:"refresh"`
-		ToggleQuery       Key `json:"toggleQuery"`
+		ToggleQueryBar    Key `json:"toggleQueryBar"`
 		NextDocument      Key `json:"nextDocument"`
 		PreviousDocument  Key `json:"previousDocument"`
 		NextPage          Key `json:"nextPage"`
 		PreviousPage      Key `json:"previousPage"`
-		ToggleSort        Key `json:"toggleSort"`
+		ToggleSortBar     Key `json:"toggleSortBar"`
 
 		// MultipleSelect    Key      `json:"multipleSelect"`
 		// ClearSelection   Key      `json:"clearSelection"`
@@ -125,11 +125,12 @@ type (
 	}
 
 	PeekerKeys struct {
-		MoveToTop     Key `json:"moveToTop"`
-		MoveToBottom  Key `json:"moveToBottom"`
-		CopyHighlight Key `json:"popyHighlight"`
-		CopyValue     Key `json:"copyValue"`
-		Refresh       Key `json:"refresh"`
+		MoveToTop        Key `json:"moveToTop"`
+		MoveToBottom     Key `json:"moveToBottom"`
+		CopyHighlight    Key `json:"popyHighlight"`
+		CopyValue        Key `json:"copyValue"`
+		ToggleFullScreen Key `json:"toggleFullScreen"`
+		Exit             Key `json:"exit"`
 	}
 
 	HistoryKeys struct {
@@ -207,24 +208,24 @@ func (k *KeyBindings) loadDefaults() {
 			Keys:        []string{"Enter"},
 			Description: "Quick peek",
 		},
-		ViewDocument: Key{
+		FullPagePeek: Key{
 			Runes:       []string{"P"},
-			Description: "View document",
+			Description: "Full page peek",
 		},
 		AddDocument: Key{
-			Runes:       []string{"a"},
+			Runes:       []string{"A"},
 			Description: "Add new",
 		},
 		EditDocument: Key{
-			Runes:       []string{"e"},
+			Runes:       []string{"E"},
 			Description: "Edit",
 		},
 		DuplicateDocument: Key{
-			Runes:       []string{"d"},
+			Runes:       []string{"D"},
 			Description: "Duplicate",
 		},
 		DeleteDocument: Key{
-			Runes:       []string{"D"},
+			Runes:       []string{"d"},
 			Description: "Delete",
 		},
 		// MultipleSelect: Key{
@@ -235,9 +236,9 @@ func (k *KeyBindings) loadDefaults() {
 		// 	Runes:       []string{"C"},
 		// 	Description: "Clear selection",
 		// },
-		CopyLine: Key{
+		CopyHighlight: Key{
 			Runes:       []string{"c"},
-			Description: "Copy value",
+			Description: "Copy highlighted",
 		},
 		CopyDocument: Key{
 			Runes:       []string{"C"},
@@ -247,13 +248,13 @@ func (k *KeyBindings) loadDefaults() {
 			Runes:       []string{"R"},
 			Description: "Refresh",
 		},
-		ToggleQuery: Key{
+		ToggleQueryBar: Key{
 			Runes:       []string{"/"},
-			Description: "Toggle query",
+			Description: "Toggle query bar",
 		},
-		ToggleSort: Key{
+		ToggleSortBar: Key{
 			Runes:       []string{"s"},
-			Description: "Toggle sort",
+			Description: "Toggle sort bar",
 		},
 		NextDocument: Key{
 			Runes:       []string{"]"},
@@ -362,12 +363,16 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Copy highlighted",
 		},
 		CopyValue: Key{
-			Runes:       []string{"v"},
+			Runes:       []string{"C"},
 			Description: "Copy only value",
 		},
-		Refresh: Key{
-			Runes:       []string{"R"},
-			Description: "Refresh document",
+		ToggleFullScreen: Key{
+			Runes:       []string{"F"},
+			Description: "Toggle full screen",
+		},
+		Exit: Key{
+			Runes:       []string{"p", "P"},
+			Description: "Exit",
 		},
 	}
 

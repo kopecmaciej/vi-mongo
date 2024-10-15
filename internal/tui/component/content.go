@@ -42,7 +42,6 @@ type Content struct {
 	tableFlex   *core.Flex
 	tableHeader *core.TextView
 	table       *core.Table
-	view        *core.TextView
 	style       *config.ContentStyle
 	queryBar    *InputBar
 	sortBar     *InputBar
@@ -62,7 +61,6 @@ func NewContent() *Content {
 		tableFlex:   core.NewFlex(),
 		tableHeader: core.NewTextView(),
 		table:       core.NewTable(),
-		view:        core.NewTextView(),
 		queryBar:    NewInputBar(QueryBarId, "Query"),
 		sortBar:     NewInputBar(SortBarId, "Sort"),
 		peeker:      NewPeeker(),
@@ -146,7 +144,6 @@ func (c *Content) setStyle() {
 
 	c.tableFlex.SetStyle(styles)
 	c.tableHeader.SetStyle(styles)
-	c.view.SetStyle(styles)
 	c.Flex.SetStyle(styles)
 	c.table.SetStyle(styles)
 
@@ -166,11 +163,6 @@ func (c *Content) setStaticLayout() {
 
 	c.tableHeader.SetText("Documents: 0, Page: 0, Limit: 0")
 
-	c.view.SetBorder(true)
-	c.view.SetTitle(" JSON View ")
-	c.view.SetTitleAlign(tview.AlignCenter)
-	c.view.SetBorderPadding(2, 0, 6, 0)
-
 	c.Flex.SetDirection(tview.FlexRow)
 }
 
@@ -185,8 +177,8 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return c.handleSwitchView(ctx)
 		case k.Contains(k.Content.PeekDocument, event.Name()):
 			return c.handlePeekDocument(ctx, row, coll)
-		case k.Contains(k.Content.ViewDocument, event.Name()):
-			return c.handleViewDocument(row, coll)
+		case k.Contains(k.Content.FullPagePeek, event.Name()):
+			return c.handleFullPagePeek(ctx, row, coll)
 		case k.Contains(k.Content.AddDocument, event.Name()):
 			return c.handleAddDocument(ctx)
 		case k.Contains(k.Content.EditDocument, event.Name()):
@@ -195,9 +187,9 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return c.handleDuplicateDocument(ctx, row, coll)
 		case k.Contains(k.Content.DeleteDocument, event.Name()):
 			return c.handleDeleteDocument(ctx, row, coll)
-		case k.Contains(k.Content.ToggleQuery, event.Name()):
+		case k.Contains(k.Content.ToggleQueryBar, event.Name()):
 			return c.handleToggleQuery()
-		case k.Contains(k.Content.ToggleSort, event.Name()):
+		case k.Contains(k.Content.ToggleSortBar, event.Name()):
 			return c.handleToggleSort()
 		// TODO: Add automatic sort by given column
 		case k.Contains(k.Content.Refresh, event.Name()):
@@ -215,7 +207,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		// 	return c.handleMultipleSelect(row)
 		// case k.Contains(k.Content.ClearSelection, event.Name()):
 		// 	return c.handleClearSelection()
-		case k.Contains(k.Content.CopyLine, event.Name()):
+		case k.Contains(k.Content.CopyHighlight, event.Name()):
 			return c.handleCopyLine(row, coll)
 		case k.Contains(k.Content.CopyDocument, event.Name()):
 			return c.handleCopyDocument(row, coll)
@@ -564,31 +556,6 @@ func (c *Content) refreshDocument(ctx context.Context, doc string) {
 	c.updateContentBasedOnState(ctx)
 }
 
-func (c *Content) viewJson(jsonString string) error {
-	c.view.Clear()
-
-	c.App.Pages.AddPage(JsonViewId, c.view, true, true)
-
-	indentedJson, err := mongo.IndentJson(jsonString)
-	if err != nil {
-		return err
-	}
-
-	c.view.SetText(indentedJson.String())
-	c.view.ScrollToBeginning()
-
-	c.view.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyEsc:
-			c.App.Pages.RemovePage(JsonViewId)
-			c.App.SetFocus(c.table)
-		}
-		return event
-	})
-
-	return nil
-}
-
 func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 	objectId, err := mongo.GetIDFromJSON(jsonString)
 	if err != nil {
@@ -676,21 +643,18 @@ func (c *Content) handlePeekDocument(ctx context.Context, row, coll int) *tcell.
 	if _id == nil {
 		return nil
 	}
+	c.peeker.SetFullScreen(false)
 	c.peeker.Render(ctx, c.state, _id)
 	return nil
 }
 
-func (c *Content) handleViewDocument(row, coll int) *tcell.EventKey {
-	doc, err := c.getDocumentBasedOnView(row, coll)
-	if err != nil {
-		modal.ShowError(c.App.Pages, "Error viewing document", err)
+func (c *Content) handleFullPagePeek(ctx context.Context, row, coll int) *tcell.EventKey {
+	_id := c.getDocumentId(row, coll)
+	if _id == nil {
 		return nil
 	}
-	err = c.viewJson(doc)
-	if err != nil {
-		modal.ShowError(c.App.Pages, "Error viewing document", err)
-		return nil
-	}
+	c.peeker.SetFullScreen(true)
+	c.peeker.Render(ctx, c.state, _id)
 	return nil
 }
 
