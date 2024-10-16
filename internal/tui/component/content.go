@@ -413,6 +413,10 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 
 	c.queryBar.LoadNewKeys(autocompleteKeys)
 	c.sortBar.LoadNewKeys(autocompleteKeys)
+	c.App.GetManager().SendTo(IndexId, manager.EventMsg{
+		Sender:  c.GetIdentifier(),
+		Message: manager.Message{Type: manager.UpdateAutocompleteKeys, Data: autocompleteKeys},
+	})
 }
 
 func (c *Content) updateContent(ctx context.Context, useState bool) error {

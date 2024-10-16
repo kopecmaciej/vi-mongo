@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	FocusChanged MessageType = "focus_changed"
-	StyleChanged MessageType = "style_changed"
+	FocusChanged           MessageType = "focus_changed"
+	StyleChanged           MessageType = "style_changed"
+	UpdateAutocompleteKeys MessageType = "update_autocomplete"
 )
 
 type (

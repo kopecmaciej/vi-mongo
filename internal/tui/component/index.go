@@ -3,6 +3,8 @@ package component
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -12,7 +14,6 @@ import (
 	int_mongo "github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
-	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -38,6 +39,7 @@ type Index struct {
 	deleteModal *modal.Delete
 	currentDB   string
 	currentColl string
+	docKeys     []string
 	indexFields []IndexField
 }
 
@@ -91,6 +93,8 @@ func (i *Index) handleEvents() {
 		case manager.StyleChanged:
 			i.setStyle()
 			i.Render()
+		case manager.UpdateAutocompleteKeys:
+			i.docKeys = event.Message.Data.([]string)
 		}
 	})
 }
@@ -121,7 +125,7 @@ func (i *Index) showAddIndexModal() {
 func (i *Index) setupAddIndexForm() {
 	i.addModal.SetBorder(true)
 	i.addModal.SetTitle("Add Index")
-	i.addModal.AddInputField("Field to index", "", 30, nil, nil)
+	i.addModal.AddInputFieldWithAutocomplete("Field to index", "", 30, i.setAutocompleteFunc, nil, nil)
 	i.addModal.AddDropDown("Field Type", []string{"1 (Ascending)", "-1 (Descending)", "text", "2dsphere"}, 0, nil)
 	i.addModal.AddTextView("Optionals", "----------------", 40, 1, false, false)
 	i.addModal.AddInputField("Index Name", "", 30, nil, nil)
@@ -131,6 +135,23 @@ func (i *Index) setupAddIndexForm() {
 	i.addModal.AddButton("Cancel", func() {
 		i.closeAddModal()
 	})
+}
+
+func (i *Index) setAutocompleteFunc(currentText string) (entries []tview.AutocompleteItem) {
+	sortedEntries := make([]tview.AutocompleteItem, 0, len(i.docKeys))
+	if i.docKeys != nil {
+		for _, keyword := range i.docKeys {
+			if matched, _ := regexp.MatchString("(?i)^"+currentText, keyword); matched {
+				sortedEntries = append(sortedEntries, tview.AutocompleteItem{Main: keyword})
+			}
+		}
+	}
+
+	sort.SliceStable(sortedEntries, func(i, j int) bool {
+		return strings.ToLower(sortedEntries[i].Main) < strings.ToLower(sortedEntries[j].Main)
+	})
+
+	return sortedEntries
 }
 
 func (i *Index) handleAddIndex() {
@@ -165,8 +186,6 @@ func (i *Index) handleAddIndex() {
 		}
 		options.SetExpireAfterSeconds(int32(ttl))
 	}
-
-	log.Info().Msgf("indexModel: %+v", options)
 
 	indexModel := mongo.IndexModel{
 		Keys:    bson.D{{Key: fieldName, Value: fieldValue}},
