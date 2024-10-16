@@ -107,16 +107,10 @@ func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter 
 	defer cursor.Close(ctx)
 
 	var documents []primitive.M
-	for cursor.Next(ctx) {
-		var document primitive.M
-		err := cursor.Decode(&document)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		documents = append(documents, document)
+	err = cursor.All(ctx, &documents)
+	if err != nil {
+		return nil, 0, err
 	}
-
 	if err := cursor.Err(); err != nil {
 		return nil, 0, err
 	}
@@ -351,4 +345,14 @@ func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (
 }
 func formatIndexUsage(ops int64, since time.Time) string {
 	return fmt.Sprintf("%d (since %s)", ops, since.Format("2006-01-02 15:04:05"))
+}
+
+func (d *Dao) CreateIndex(ctx context.Context, db, coll string, indexDef mongo.IndexModel) error {
+	_, err := d.client.Database(db).Collection(coll).Indexes().CreateOne(ctx, indexDef)
+	return err
+}
+
+func (d *Dao) DropIndex(ctx context.Context, db, coll, indexName string) error {
+	_, err := d.client.Database(db).Collection(coll).Indexes().DropOne(ctx, indexName)
+	return err
 }

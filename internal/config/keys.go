@@ -30,6 +30,7 @@ type (
 		QueryBar   QueryBar       `json:"queryBar"`
 		SortBar    SortBar        `json:"sortBar"`
 		History    HistoryKeys    `json:"history"`
+		Index      IndexKeys      `json:"index"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -137,6 +138,12 @@ type (
 		ClearHistory Key `json:"clearHistory"`
 		AcceptEntry  Key `json:"acceptEntry"`
 		CloseHistory Key `json:"closeHistory"`
+	}
+
+	IndexKeys struct {
+		ExitModal   Key `json:"exitModal"`
+		AddIndex    Key `json:"addIndex"`
+		DeleteIndex Key `json:"deleteIndex"`
 	}
 )
 
@@ -388,6 +395,21 @@ func (k *KeyBindings) loadDefaults() {
 		CloseHistory: Key{
 			Keys:        []string{"Esc", "Ctrl+Y"},
 			Description: "Close history",
+		},
+	}
+
+	k.Index = IndexKeys{
+		ExitModal: Key{
+			Keys:        []string{"Esc"},
+			Description: "Exit modal",
+		},
+		AddIndex: Key{
+			Runes:       []string{"A"},
+			Description: "Add index",
+		},
+		DeleteIndex: Key{
+			Runes:       []string{"D"},
+			Description: "Delete index",
 		},
 	}
 }
