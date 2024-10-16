@@ -53,10 +53,8 @@ func ParseBsonValue(value interface{}) interface{} {
 		parsed = primitive.M{
 			"$date": v.Time(),
 		}
-	}
-
-	if parsed == nil {
-		return value
+	default:
+		parsed = value
 	}
 
 	return parsed
@@ -120,6 +118,7 @@ func convertToBson(doc map[string]interface{}) (primitive.M, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error converting value for key %s: %w", key, err)
 		}
+
 		convertedDoc[key] = convertedValue
 	}
 	return convertedDoc, nil
@@ -139,7 +138,7 @@ func ParseJsonValue(value interface{}) (interface{}, error) {
 			}
 			return primitive.NewDateTimeFromTime(t), nil
 		}
-		convertedMap := make(map[string]interface{})
+		convertedMap := make(primitive.M)
 		for k, v := range v {
 			convertedValue, err := ParseJsonValue(v)
 			if err != nil {
@@ -149,7 +148,7 @@ func ParseJsonValue(value interface{}) (interface{}, error) {
 		}
 		return convertedMap, nil
 	case []interface{}:
-		convertedArray := make([]interface{}, len(v))
+		convertedArray := make(primitive.A, len(v))
 		for i, elem := range v {
 			convertedElem, err := ParseJsonValue(elem)
 			if err != nil {

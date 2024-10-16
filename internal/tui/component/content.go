@@ -288,7 +288,7 @@ func (c *Content) renderTableView(startRow int, documents []primitive.M) {
 		for col, key := range sortedHeaderKeys {
 			var cellText string
 			if val, ok := doc[strings.Split(key, " ")[0]]; ok {
-				cellText = util.GetValueByType(val)
+				cellText = util.StringifyMongoValueByType(val)
 			} else {
 				cellText = ""
 			}

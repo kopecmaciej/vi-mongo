@@ -47,7 +47,7 @@ func TestGetValueByType(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := GetValueByType(tc.input)
+			result := StringifyMongoValueByType(tc.input)
 			if tc.name == "ObjectID" {
 				assert.Len(t, result, 24) // ObjectID hex string length
 			} else if tc.name == "DateTime" {

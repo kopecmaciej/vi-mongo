@@ -10,17 +10,23 @@ import (
 )
 
 const (
-	TypeString   = "String"
-	TypeInt32    = "Int32"
-	TypeInt64    = "Int64"
-	TypeDouble   = "Double"
-	TypeBool     = "Bool"
-	TypeObjectId = "ObjectID"
-	TypeDate     = "Date"
-	TypeArray    = "Array"
-	TypeObject   = "Object"
-	TypeMixed    = "Mixed"
-	TypeNull     = "Null"
+	TypeString    = "String"
+	TypeInt32     = "Int32"
+	TypeInt64     = "Int64"
+	TypeDouble    = "Double"
+	TypeBool      = "Bool"
+	TypeObjectId  = "ObjectID"
+	TypeDate      = "Date"
+	TypeTimestamp = "Timestamp"
+	TypeArray     = "Array"
+	TypeObject    = "Object"
+	TypeRegex     = "Regex"
+	TypeBinary    = "Binary"
+	TypeMinKey    = "MinKey"
+	TypeMaxKey    = "MaxKey"
+	TypeMixed     = "Mixed"
+	TypeNull      = "Null"
+	TypeUndefined = "Undefined"
 )
 
 func GetSortedKeysWithTypes(documents []primitive.M, typeColor string) []string {
@@ -45,8 +51,8 @@ func GetSortedKeysWithTypes(documents []primitive.M, typeColor string) []string 
 	return sortedKeys
 }
 
-// GetValueByType converts a value to a string
-func GetValueByType(v interface{}) string {
+// StringifyMongoValueByType converts a value to a string
+func StringifyMongoValueByType(v interface{}) string {
 	switch t := v.(type) {
 	case string:
 		return t
@@ -63,6 +69,18 @@ func GetValueByType(v interface{}) string {
 	case primitive.A, primitive.D, primitive.M, map[string]interface{}, []interface{}:
 		b, _ := json.Marshal(t)
 		return string(b)
+	case primitive.E:
+		return fmt.Sprintf("%v", t)
+	case primitive.Binary:
+		return fmt.Sprintf("%v", t)
+	case primitive.Regex:
+		return fmt.Sprintf("%v", t)
+	case primitive.Undefined:
+		return fmt.Sprintf("%v", t)
+	case primitive.MinKey:
+		return fmt.Sprintf("%v", t)
+	case primitive.MaxKey:
+		return fmt.Sprintf("%v", t)
 	default:
 		return "null"
 	}
@@ -85,6 +103,18 @@ func GetMongoType(v interface{}) string {
 		return TypeObjectId
 	case primitive.DateTime:
 		return TypeDate
+	case primitive.Timestamp:
+		return TypeTimestamp
+	case primitive.Regex:
+		return TypeRegex
+	case primitive.Binary:
+		return TypeBinary
+	case primitive.MinKey:
+		return TypeMinKey
+	case primitive.MaxKey:
+		return TypeMaxKey
+	case primitive.Undefined:
+		return TypeUndefined
 	case primitive.A:
 		return TypeArray
 	case primitive.D, primitive.M:

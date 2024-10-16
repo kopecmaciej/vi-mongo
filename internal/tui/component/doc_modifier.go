@@ -11,6 +11,7 @@ import (
 
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -66,7 +67,7 @@ func (d *DocModifier) Edit(ctx context.Context, db, coll string, _id interface{}
 		return "", fmt.Errorf("error editing document: %v", err)
 	}
 
-	if strings.ReplaceAll(updatedDocument, " ", "") == strings.ReplaceAll(jsonDoc, " ", "") {
+	if util.CleanAllWhitespaces(updatedDocument) == util.CleanAllWhitespaces(jsonDoc) {
 		log.Debug().Msgf("Edited JSON is the same as original")
 		return "", nil
 	}

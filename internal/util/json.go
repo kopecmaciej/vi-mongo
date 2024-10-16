@@ -41,3 +41,11 @@ func CleanJsonWhitespaces(s string) string {
 
 	return result.String()
 }
+
+// CleanAllWhitespaces removes all whitespaces from a string
+func CleanAllWhitespaces(s string) string {
+	s = strings.ReplaceAll(s, " ", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.ReplaceAll(s, "\t", "")
+	return s
+}
