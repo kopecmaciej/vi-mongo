@@ -41,7 +41,7 @@ databases:
   closedNodeSymbol: "\U0001F5BF"
   leafSymbol: "\U0001F5CE"
 content:
-  docInfoTextColor: "#5B8C5A"
+  statusTextColor: "#5B8C5A"
   headerRowColor: "#D0E8CF"
   columnKeyColor: "#FF9580"
   columnTypeColor: "#00A86B"
@@ -53,7 +53,7 @@ docPeeker:
   valueColor: "#2C3E2D"
   bracketColor: "#FF6B8B"
   highlightColor: "#D0E8CF"
-filterBar:
+inputBar:
   labelColor: "#FF9580"
   inputColor: "#2C3E2D"
   autocomplete:

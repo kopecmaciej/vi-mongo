@@ -53,7 +53,7 @@ docPeeker:
   valueColor: "#2A2A3F"
   bracketColor: "#FF6B8B"
   highlightColor: "#e2e2e2"
-filterBar:
+inputBar:
   labelColor: "#FF9580"
   inputColor: "#2A2A3F"
   autocomplete:

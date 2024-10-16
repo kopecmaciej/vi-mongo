@@ -27,7 +27,7 @@ type (
 		Databases   DatabasesStyle   `yaml:"databases"`
 		Content     ContentStyle     `yaml:"content"`
 		DocPeeker   DocPeekerStyle   `yaml:"docPeeker"`
-		InputBar    InputBarStyle    `yaml:"filterBar"`
+		InputBar    InputBarStyle    `yaml:"inputBar"`
 		History     HistoryStyle     `yaml:"history"`
 		Help        HelpStyle        `yaml:"help"`
 		Others      OthersStyle      `yaml:"others"`
@@ -96,7 +96,7 @@ type (
 
 	// ContentStyle is a struct that contains all the styles for the content
 	ContentStyle struct {
-		StatusTextColor          Style `yaml:"docInfoTextColor"`
+		StatusTextColor          Style `yaml:"statusTextColor"`
 		HeaderRowBackgroundColor Style `yaml:"headerRowColor"`
 		ColumnKeyColor           Style `yaml:"columnKeyColor"`
 		ColumnTypeColor          Style `yaml:"columnTypeColor"`
@@ -164,9 +164,9 @@ func (s *Styles) loadDefaults() {
 	s.Global = GlobalStyles{
 		BackgroundColor:             "#0F172A",
 		ContrastBackgroundColor:     "#1E293B",
-		MoreContrastBackgroundColor: "#FDE68A",
+		MoreContrastBackgroundColor: "#387D44",
 		TextColor:                   "#E2E8F0",
-		SecondaryTextColor:          "#A0A0B0",
+		SecondaryTextColor:          "#FDE68A",
 		BorderColor:                 "#387D44",
 		FocusColor:                  "#4ADE80",
 		TitleColor:                  "#387D44",
@@ -187,7 +187,7 @@ func (s *Styles) loadDefaults() {
 		FormButtonColor:              "#387D44",
 		ListTextColor:                "#F1FA8C",
 		ListSelectedTextColor:        "#F1FA8C",
-		ListSelectedBackgroundColor:  "#163694",
+		ListSelectedBackgroundColor:  "#387D44",
 		ListSecondaryTextColor:       "#387D44",
 		ListSecondaryBackgroundColor: "#0F172A",
 	}
@@ -201,8 +201,8 @@ func (s *Styles) loadDefaults() {
 
 	s.TabBar = TabBarStyle{
 		TextColor:             "#E2E8F0",
-		ActiveTextColor:       "#387D44",
-		ActiveBackgroundColor: "#FDE68A",
+		ActiveTextColor:       "#FDE68A",
+		ActiveBackgroundColor: "#387D44",
 	}
 
 	s.Databases = DatabasesStyle{
@@ -227,15 +227,15 @@ func (s *Styles) loadDefaults() {
 	s.DocPeeker = DocPeekerStyle{
 		KeyColor:       "#387D44",
 		ValueColor:     "#E2E8F0",
-		HighlightColor: "#3a4963",
 		BracketColor:   "#FDE68A",
+		HighlightColor: "#3A4963",
 	}
 
 	s.InputBar = InputBarStyle{
 		LabelColor: "#FDE68A",
 		InputColor: "#E2E8F0",
 		Autocomplete: AutocompleteStyle{
-			BackgroundColor:       "#0F172A",
+			BackgroundColor:       "#1E293B",
 			TextColor:             "#E2E8F0",
 			ActiveBackgroundColor: "#387D44",
 			ActiveTextColor:       "#0F172A",
@@ -256,8 +256,8 @@ func (s *Styles) loadDefaults() {
 	}
 
 	s.Others = OthersStyle{
-		ButtonsTextColor:                    "#0F172A",
-		ButtonsBackgroundColor:              "#1E293B",
+		ButtonsTextColor:                    "#FDE68A",
+		ButtonsBackgroundColor:              "#387D44",
 		DeleteButtonSelectedBackgroundColor: "#DA3312",
 		ModalTextColor:                      "#FDE68A",
 		ModalSecondaryTextColor:             "#387D44",
