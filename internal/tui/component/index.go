@@ -21,35 +21,32 @@ import (
 
 const (
 	IndexId            = "Index"
-	IndexAddModalId    = "IndexAddModal"
+	IndexAddFormId     = "IndexAddForm"
 	IndexDeleteModalId = "IndexDeleteModal"
 )
 
-type IndexField struct {
-	Name string
-	Type string
-}
-
 type Index struct {
 	*core.BaseElement
-	*core.Table
+	*core.Flex
 
-	indexes     []int_mongo.IndexInfo
-	addModal    *core.Form
-	deleteModal *modal.Delete
-	currentDB   string
-	currentColl string
-	docKeys     []string
-	indexFields []IndexField
+	table            *core.Table
+	addForm          *core.Form
+	indexes          []int_mongo.IndexInfo
+	deleteModal      *modal.Delete
+	currentDB        string
+	currentColl      string
+	docKeys          []string
+	isAddFormVisible bool
 }
 
 func NewIndex() *Index {
 	i := &Index{
-		BaseElement: core.NewBaseElement(),
-		Table:       core.NewTable(),
-		addModal:    core.NewForm(),
-		deleteModal: modal.NewDeleteModal(IndexDeleteModalId),
-		indexFields: []IndexField{},
+		BaseElement:      core.NewBaseElement(),
+		Flex:             core.NewFlex(),
+		table:            core.NewTable(),
+		addForm:          core.NewForm(),
+		deleteModal:      modal.NewDeleteModal(IndexDeleteModalId),
+		isAddFormVisible: false,
 	}
 
 	i.SetIdentifier(IndexId)
@@ -58,15 +55,15 @@ func NewIndex() *Index {
 	return i
 }
 func (i *Index) init() error {
-	i.setStyle()
 	i.setStaticLayout()
-
-	i.handleEvents()
+	i.setStyle()
 	i.setKeybindings()
 
 	if err := i.deleteModal.Init(i.App); err != nil {
 		return err
 	}
+
+	i.handleEvents()
 
 	return nil
 }
@@ -75,8 +72,8 @@ func (i *Index) setStyle() {
 	globalStyle := i.App.GetStyles()
 	i.SetStyle(globalStyle)
 
-	i.SetSeparator(globalStyle.Others.SeparatorSymbol.Rune())
-	i.SetBordersColor(globalStyle.Others.SeparatorColor.Color())
+	i.table.SetSeparator(globalStyle.Others.SeparatorSymbol.Rune())
+	i.table.SetBordersColor(globalStyle.Others.SeparatorColor.Color())
 }
 
 func (i *Index) setStaticLayout() {
@@ -84,7 +81,7 @@ func (i *Index) setStaticLayout() {
 	i.SetTitle(" Indexes ")
 	i.SetTitleAlign(tview.AlignCenter)
 	i.SetBorderPadding(0, 0, 1, 1)
-	i.SetSelectable(true, true)
+	i.table.SetSelectable(true, true)
 }
 
 func (i *Index) handleEvents() {
@@ -103,12 +100,16 @@ func (i *Index) setKeybindings() {
 	k := i.App.GetKeys()
 	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Index.ExitModal, event.Name()):
-			i.closeAddModal()
-			return nil
+		case k.Contains(k.Index.ExitAddIndex, event.Name()):
+			if i.isAddFormVisible {
+				i.closeAddForm()
+				return nil
+			}
 		case k.Contains(k.Index.AddIndex, event.Name()):
-			i.showAddIndexModal()
-			return nil
+			if !i.isAddFormVisible {
+				i.addIndexForm()
+				return nil
+			}
 		case k.Contains(k.Index.DeleteIndex, event.Name()):
 			i.showDeleteIndexModal()
 			return nil
@@ -117,24 +118,67 @@ func (i *Index) setKeybindings() {
 	})
 }
 
-func (i *Index) showAddIndexModal() {
-	i.setupAddIndexForm()
-	i.App.Pages.AddPage(IndexAddModalId, i.addModal, true, true)
+func (i *Index) HandleDatabaseSelection(ctx context.Context, db, coll string) error {
+	i.currentDB = db
+	i.currentColl = coll
+	return i.refreshIndexes(ctx)
 }
 
-func (i *Index) setupAddIndexForm() {
-	i.addModal.SetBorder(true)
-	i.addModal.SetTitle("Add Index")
-	i.addModal.AddInputFieldWithAutocomplete("Field to index", "", 30, i.setAutocompleteFunc, nil, nil)
-	i.addModal.AddDropDown("Field Type", []string{"1 (Ascending)", "-1 (Descending)", "text", "2dsphere"}, 0, nil)
-	i.addModal.AddTextView("Optionals", "----------------", 40, 1, false, false)
-	i.addModal.AddInputField("Index Name", "", 30, nil, nil)
-	i.addModal.AddCheckbox("Unique", false, nil)
-	i.addModal.AddInputField("TTL (seconds)", "", 20, nil, nil)
-	i.addModal.AddButton("Create", i.handleAddIndex)
-	i.addModal.AddButton("Cancel", func() {
-		i.closeAddModal()
-	})
+func (i *Index) refreshIndexes(ctx context.Context) error {
+	indexes, err := i.Dao.GetIndexes(ctx, i.currentDB, i.currentColl)
+	if err != nil {
+		return err
+	}
+	i.indexes = indexes
+	i.Render()
+	return nil
+}
+
+func (i *Index) Render() {
+	i.Flex.Clear()
+
+	if i.isAddFormVisible {
+		i.renderAddIndexForm()
+		i.Flex.AddItem(i.addForm, 0, 1, true)
+	} else {
+		i.renderIndexTable()
+		i.Flex.AddItem(i.table, 0, 1, true)
+	}
+}
+
+func (i *Index) renderIndexTable() {
+	headers := []string{"Name", "Definition", "Type", "Size", "Usage", "Properties"}
+	for col, header := range headers {
+		cell := tview.NewTableCell(" " + header + " ").SetSelectable(false).SetAlign(tview.AlignCenter)
+		cell.SetTextColor(i.App.GetStyles().Content.ColumnKeyColor.Color())
+		cell.SetBackgroundColor(i.App.GetStyles().Content.HeaderRowBackgroundColor.Color())
+		i.table.SetCell(0, col, cell)
+	}
+
+	for row, index := range i.indexes {
+		var definition string
+		for key, value := range index.Definition {
+			definition += fmt.Sprintf("%s: %v ", key, value)
+		}
+		i.table.SetCell(row+1, 0, tview.NewTableCell(index.Name))
+		i.table.SetCell(row+1, 1, tview.NewTableCell(definition))
+		i.table.SetCell(row+1, 2, tview.NewTableCell(index.Type))
+		i.table.SetCell(row+1, 3, tview.NewTableCell(index.Size))
+		i.table.SetCell(row+1, 4, tview.NewTableCell(index.Usage))
+		i.table.SetCell(row+1, 5, tview.NewTableCell(strings.Join(index.Properties, ", ")))
+	}
+}
+
+func (i *Index) renderAddIndexForm() {
+	i.addForm.SetTitle("Add Index")
+	i.addForm.AddInputFieldWithAutocomplete("Field to index", "", 30, i.setAutocompleteFunc, nil, nil)
+	i.addForm.AddDropDown("Field Type", []string{"1 (Ascending)", "-1 (Descending)", "text", "2dsphere"}, 0, nil)
+	i.addForm.AddTextView("Optionals", "----------------", 40, 1, false, false)
+	i.addForm.AddInputField("Index Name", "", 30, nil, nil)
+	i.addForm.AddCheckbox("Unique", false, nil)
+	i.addForm.AddInputField("TTL (seconds)", "", 20, nil, nil)
+	i.addForm.AddButton("Create", i.handleAddIndex)
+	i.addForm.AddButton("Cancel", i.closeAddForm)
 }
 
 func (i *Index) setAutocompleteFunc(currentText string) (entries []tview.AutocompleteItem) {
@@ -155,11 +199,11 @@ func (i *Index) setAutocompleteFunc(currentText string) (entries []tview.Autocom
 }
 
 func (i *Index) handleAddIndex() {
-	fieldName := i.addModal.GetFormItem(0).(*tview.InputField).GetText()
-	fieldType, _ := i.addModal.GetFormItem(1).(*tview.DropDown).GetCurrentOption()
-	indexName := i.addModal.GetFormItem(3).(*tview.InputField).GetText()
-	unique := i.addModal.GetFormItem(4).(*tview.Checkbox).IsChecked()
-	ttlStr := i.addModal.GetFormItem(5).(*tview.InputField).GetText()
+	fieldName := i.addForm.GetFormItem(0).(*tview.InputField).GetText()
+	fieldType, _ := i.addForm.GetFormItem(1).(*tview.DropDown).GetCurrentOption()
+	indexName := i.addForm.GetFormItem(3).(*tview.InputField).GetText()
+	unique := i.addForm.GetFormItem(4).(*tview.Checkbox).IsChecked()
+	ttlStr := i.addForm.GetFormItem(5).(*tview.InputField).GetText()
 
 	var fieldValue interface{}
 	switch fieldType {
@@ -198,24 +242,39 @@ func (i *Index) handleAddIndex() {
 		return
 	}
 
-	i.closeAddModal()
+	i.closeAddForm()
 	err := i.refreshIndexes(ctx)
 	if err != nil {
 		modal.ShowError(i.App.Pages, "Error refreshing indexes", err)
 	}
 }
 
-func (i *Index) closeAddModal() {
-	i.addModal.Clear(true)
-	i.App.Pages.RemovePage(IndexAddModalId)
+func (i *Index) addIndexForm() {
+	if i.isAddFormVisible {
+		return
+	}
+
+	i.table.Clear()
+	i.isAddFormVisible = true
+
+	i.Render()
+	i.App.SetFocus(i.addForm)
+}
+
+func (i *Index) closeAddForm() {
+	i.addForm.Clear(true)
+	i.isAddFormVisible = false
+
+	i.Render()
+	i.App.SetFocus(i)
 }
 
 func (i *Index) showDeleteIndexModal() {
-	if i.GetCell(i.GetSelection()).Text == "" {
+	if i.table.GetCell(i.table.GetSelection()).Text == "" {
 		return
 	}
-	row, _ := i.GetSelection()
-	indexName := i.GetCell(row, 0).Text
+	row, _ := i.table.GetSelection()
+	indexName := i.table.GetCell(row, 0).Text
 
 	i.deleteModal.SetText(fmt.Sprintf("Are you sure you want to delete index [%s]%s[-:-:-]?", i.App.GetStyles().Content.ColumnKeyColor.Color(), indexName))
 	i.deleteModal.SetDoneFunc(i.createDeleteIndexDoneFunc(indexName, row))
@@ -228,8 +287,8 @@ func (i *Index) createDeleteIndexDoneFunc(indexName string, row int) func(int, s
 		if buttonIndex == 0 {
 			i.handleDeleteIndex(indexName, row)
 		}
-		i.Table.RemoveRow(row)
-		i.Table.Select(row-1, 0)
+		i.table.RemoveRow(row)
+		i.table.Select(row-1, 0)
 	}
 }
 
@@ -238,46 +297,5 @@ func (i *Index) handleDeleteIndex(indexName string, row int) {
 	if err := i.Dao.DropIndex(ctx, i.currentDB, i.currentColl, indexName); err != nil {
 		modal.ShowError(i.App.Pages, "Error deleting index", err)
 		return
-	}
-}
-
-func (i *Index) refreshIndexes(ctx context.Context) error {
-	indexes, err := i.Dao.GetIndexes(ctx, i.currentDB, i.currentColl)
-	if err != nil {
-		return err
-	}
-	i.indexes = indexes
-	i.Render()
-	return nil
-}
-
-func (i *Index) HandleDatabaseSelection(ctx context.Context, db, coll string) error {
-	i.currentDB = db
-	i.currentColl = coll
-	return i.refreshIndexes(ctx)
-}
-
-func (i *Index) Render() {
-	i.Clear()
-
-	headers := []string{"Name", "Definition", "Type", "Size", "Usage", "Properties"}
-	for col, header := range headers {
-		cell := tview.NewTableCell(" " + header + " ").SetSelectable(false).SetAlign(tview.AlignCenter)
-		cell.SetTextColor(i.App.GetStyles().Content.ColumnKeyColor.Color())
-		cell.SetBackgroundColor(i.App.GetStyles().Content.HeaderRowBackgroundColor.Color())
-		i.SetCell(0, col, cell)
-	}
-
-	for row, index := range i.indexes {
-		var definition string
-		for key, value := range index.Definition {
-			definition += fmt.Sprintf("%s: %v ", key, value)
-		}
-		i.SetCell(row+1, 0, tview.NewTableCell(index.Name))
-		i.SetCell(row+1, 1, tview.NewTableCell(definition))
-		i.SetCell(row+1, 2, tview.NewTableCell(index.Type))
-		i.SetCell(row+1, 3, tview.NewTableCell(index.Size))
-		i.SetCell(row+1, 4, tview.NewTableCell(index.Usage))
-		i.SetCell(row+1, 5, tview.NewTableCell(strings.Join(index.Properties, ", ")))
 	}
 }

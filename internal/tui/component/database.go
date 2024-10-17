@@ -115,7 +115,7 @@ func (d *Database) Render() {
 	d.Flex.AddItem(d.DbTree, 0, 1, true)
 }
 
-func (d *Database) Hf() bool {
+func (d *Database) IsFocused() bool {
 	return d.App.GetFocus().GetIdentifier() == d.GetIdentifier() ||
 		d.App.GetFocus().GetIdentifier() == d.DbTree.GetIdentifier()
 }

@@ -141,9 +141,9 @@ type (
 	}
 
 	IndexKeys struct {
-		ExitModal   Key `json:"exitModal"`
-		AddIndex    Key `json:"addIndex"`
-		DeleteIndex Key `json:"deleteIndex"`
+		ExitAddIndex Key `json:"exitModal"`
+		AddIndex     Key `json:"addIndex"`
+		DeleteIndex  Key `json:"deleteIndex"`
 	}
 )
 
@@ -399,7 +399,7 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Index = IndexKeys{
-		ExitModal: Key{
+		ExitAddIndex: Key{
 			Keys:        []string{"Esc"},
 			Description: "Exit modal",
 		},

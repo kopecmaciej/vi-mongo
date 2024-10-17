@@ -146,7 +146,7 @@ func (m *Main) setKeybindings() {
 	m.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Main.FocusNext, event.Name()):
-			if m.databases.Hf() {
+			if m.databases.IsFocused() {
 				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			} else {
 				m.innerFlex.RemoveItem(m.tabBar.GetActiveComponent())
