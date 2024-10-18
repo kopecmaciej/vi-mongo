@@ -1,7 +1,6 @@
 package component
 
 import (
-	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 )
@@ -10,19 +9,19 @@ const (
 	AIPromptTabID = "AIPromptTab"
 )
 
-type AIPromptTab struct {
+type AIPrompt struct {
 	*core.BaseElement
-	*tview.Flex
+	*core.Flex
 
 	modelDropdown *tview.DropDown
 	promptInput   *tview.TextArea
 	submitButton  *tview.Button
 }
 
-func NewAIPromptTab() *AIPromptTab {
-	a := &AIPromptTab{
+func NewAIPrompt() *AIPrompt {
+	a := &AIPrompt{
 		BaseElement: core.NewBaseElement(),
-		Flex:        tview.NewFlex().SetDirection(tview.FlexRow),
+		Flex:        core.NewFlex(),
 	}
 
 	a.SetIdentifier(AIPromptTabID)
@@ -31,7 +30,7 @@ func NewAIPromptTab() *AIPromptTab {
 	return a
 }
 
-func (a *AIPromptTab) init() error {
+func (a *AIPrompt) init() error {
 	a.setupComponents()
 	a.setLayout()
 	a.setStyle()
@@ -39,7 +38,7 @@ func (a *AIPromptTab) init() error {
 	return nil
 }
 
-func (a *AIPromptTab) setupComponents() {
+func (a *AIPrompt) setupComponents() {
 	a.modelDropdown = tview.NewDropDown().
 		SetLabel("Model: ").
 		SetOptions([]string{"OpenAI", "Anthropic"}, nil)
@@ -52,34 +51,31 @@ func (a *AIPromptTab) setupComponents() {
 		SetSelectedFunc(a.onSubmit)
 }
 
-func (a *AIPromptTab) setLayout() {
+func (a *AIPrompt) setLayout() {
 	a.AddItem(a.modelDropdown, 1, 0, false)
 	a.AddItem(a.promptInput, 0, 1, false)
 	a.AddItem(a.submitButton, 1, 0, false)
 }
 
-func (a *AIPromptTab) setStyle() {
+func (a *AIPrompt) setStyle() {
 	styles := a.App.GetStyles()
-	a.SetBackgroundColor(styles.Content.BackgroundColor.Color())
+	a.SetStyle(styles)
 
-	a.modelDropdown.SetBackgroundColor(styles.Content.BackgroundColor.Color())
-	a.modelDropdown.SetLabelColor(styles.Content.TextColor.Color())
-	a.modelDropdown.SetFieldBackgroundColor(styles.Content.BackgroundColor.Color())
-	a.modelDropdown.SetFieldTextColor(styles.Content.TextColor.Color())
+	a.modelDropdown.SetLabelColor(styles.AIPrompt.LabelColor.Color())
+	a.modelDropdown.SetFieldBackgroundColor(styles.AIPrompt.DropdownBackgroundColor.Color())
+	a.modelDropdown.SetFieldTextColor(styles.AIPrompt.DropdownTextColor.Color())
 
-	a.promptInput.SetBackgroundColor(styles.Content.BackgroundColor.Color())
-	a.promptInput.SetLabelColor(styles.Content.TextColor.Color())
-	a.promptInput.SetTextColor(styles.Content.TextColor.Color())
+	a.promptInput.SetBackgroundColor(styles.AIPrompt.InputBackgroundColor.Color())
 
-	a.submitButton.SetBackgroundColor(styles.Content.BackgroundColor.Color())
-	a.submitButton.SetLabelColor(styles.Content.TextColor.Color())
+	a.submitButton.SetBackgroundColor(styles.AIPrompt.ButtonBackgroundColor.Color())
+	a.submitButton.SetLabelColor(styles.AIPrompt.ButtonTextColor.Color())
 }
 
-func (a *AIPromptTab) onSubmit() {
+func (a *AIPrompt) onSubmit() {
 	// TODO: Implement submission logic
 }
 
-func (a *AIPromptTab) Render() {
+func (a *AIPrompt) Render() {
 	// This method is called by TabBar to render the component
 	// For now, we don't need to do anything here as the component
 	// is already set up in the init method
