@@ -52,9 +52,21 @@ func (a *AIPrompt) setupComponents() {
 }
 
 func (a *AIPrompt) setLayout() {
-	a.AddItem(a.modelDropdown, 1, 0, false)
-	a.AddItem(a.promptInput, 0, 1, false)
-	a.AddItem(a.submitButton, 1, 0, false)
+	// Create a vertical Flex layout
+	verticalFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+
+	// Add the modelDropdown and promptInput to a horizontal Flex layout
+	inputFlex := tview.NewFlex().
+		AddItem(a.modelDropdown, 0, 1, false).
+		AddItem(a.promptInput, 0, 2, false)
+
+	// Add the inputFlex and submitButton to the vertical Flex layout
+	verticalFlex.
+		AddItem(inputFlex, 0, 1, false).
+		AddItem(a.submitButton, 1, 0, false)
+
+	// Set the verticalFlex as the main layout
+	a.AddItem(verticalFlex, 0, 1, false)
 }
 
 func (a *AIPrompt) setStyle() {
