@@ -12,7 +12,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/inconshreveable/mousetrap v1.1.0 // indirect
+require (
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/sashabaranov/go-openai v1.32.2 // indirect
+)
 
 require (
 	github.com/adrg/xdg v0.4.0
