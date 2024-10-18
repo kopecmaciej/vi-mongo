@@ -32,6 +32,7 @@ type (
 		Help        HelpStyle        `yaml:"help"`
 		Others      OthersStyle      `yaml:"others"`
 		StyleChange StyleChangeStyle `yaml:"styleChange"`
+		AIPrompt    AIPromptStyle    `yaml:"aiPrompt"`
 	}
 
 	// GlobalStyles is a struct that contains all the global styles for the application
@@ -158,6 +159,16 @@ type (
 		SelectedTextColor       Style `yaml:"selectedTextColor"`
 		SelectedBackgroundColor Style `yaml:"selectedBackgroundColor"`
 	}
+
+	AIPromptStyle struct {
+		LabelColor              Style `yaml:"labelColor"`
+		InputColor              Style `yaml:"inputColor"`
+		InputBackgroundColor    Style `yaml:"inputBackgroundColor"`
+		DropdownTextColor       Style `yaml:"dropdownTextColor"`
+		DropdownBackgroundColor Style `yaml:"dropdownBackgroundColor"`
+		ButtonTextColor         Style `yaml:"buttonTextColor"`
+		ButtonBackgroundColor   Style `yaml:"buttonBackgroundColor"`
+	}
 )
 
 func (s *Styles) loadDefaults() {
@@ -269,6 +280,16 @@ func (s *Styles) loadDefaults() {
 		TextColor:               "#E2E8F0",
 		SelectedTextColor:       "#0F172A",
 		SelectedBackgroundColor: "#387D44",
+	}
+
+	s.AIPrompt = AIPromptStyle{
+		LabelColor:              "#FDE68A",
+		InputColor:              "#E2E8F0",
+		InputBackgroundColor:    "#1E293B",
+		DropdownTextColor:       "#E2E8F0",
+		DropdownBackgroundColor: "#1E293B",
+		ButtonTextColor:         "#0F172A",
+		ButtonBackgroundColor:   "#387D44",
 	}
 }
 
