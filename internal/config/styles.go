@@ -163,6 +163,7 @@ type (
 	AIPromptStyle struct {
 		LabelColor              Style `yaml:"labelColor"`
 		InputColor              Style `yaml:"inputColor"`
+		InputTextColor          Style `yaml:"inputTextColor"`
 		InputBackgroundColor    Style `yaml:"inputBackgroundColor"`
 		DropdownTextColor       Style `yaml:"dropdownTextColor"`
 		DropdownBackgroundColor Style `yaml:"dropdownBackgroundColor"`
