@@ -30,6 +30,7 @@ type Main struct {
 	databases *component.Database
 	content   *component.Content
 	index     *component.Index
+	aiPrompt  *component.AIPrompt
 }
 
 func NewMain() *Main {
@@ -42,6 +43,7 @@ func NewMain() *Main {
 		databases:   component.NewDatabase(),
 		content:     component.NewContent(),
 		index:       component.NewIndex(),
+		aiPrompt:    component.NewAIPrompt(),
 	}
 
 	m.SetIdentifier(MainPageId)
@@ -94,8 +96,13 @@ func (m *Main) initComponents() error {
 		return err
 	}
 
+	if err := m.aiPrompt.Init(m.App); err != nil {
+		return err
+	}
+
 	m.tabBar.AddTab("Content", m.content, true)
 	m.tabBar.AddTab("Indexes", m.index, false)
+	m.tabBar.AddTab("AI", m.aiPrompt, false)
 
 	return nil
 }
@@ -132,8 +139,7 @@ func (m *Main) render() error {
 	m.AddItem(m.innerFlex, 0, 7, false)
 	m.innerFlex.AddItem(m.header, 4, 0, false)
 	m.innerFlex.AddItem(m.tabBar, 1, 0, false)
-	m.innerFlex.AddItem(m.tabBar.GetActiveComponent(), 0, 7, true)
-	m.tabBar.GetActiveComponent().Render()
+	m.innerFlex.AddItem(m.tabBar.GetActiveComponentAndRender(), 0, 7, true)
 
 	m.App.Pages.AddPage(m.GetIdentifier(), m, true, true)
 	m.App.SetFocus(m)
@@ -155,7 +161,8 @@ func (m *Main) setKeybindings() {
 			} else {
 				m.innerFlex.RemoveItem(m.tabBar.GetActiveComponent())
 				m.tabBar.NextTab()
-				m.innerFlex.AddItem(m.tabBar.GetActiveComponent(), 0, 7, true)
+				m.innerFlex.AddItem(m.tabBar.GetActiveComponentAndRender(), 0, 7, true)
+
 				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			}
 			return nil
@@ -168,7 +175,7 @@ func (m *Main) setKeybindings() {
 			} else {
 				m.innerFlex.RemoveItem(m.tabBar.GetActiveComponent())
 				m.tabBar.PreviousTab()
-				m.innerFlex.AddItem(m.tabBar.GetActiveComponent(), 0, 7, true)
+				m.innerFlex.AddItem(m.tabBar.GetActiveComponentAndRender(), 0, 7, true)
 				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			}
 			return nil
