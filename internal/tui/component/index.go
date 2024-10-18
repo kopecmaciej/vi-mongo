@@ -220,9 +220,11 @@ func (i *Index) handleAddIndex() {
 	options := options.Index()
 	if unique {
 		options.SetUnique(unique)
-	} else if indexName != "" {
+	}
+	if indexName != "" {
 		options.SetName(indexName)
-	} else if ttlStr != "" {
+	}
+	if ttlStr != "" {
 		ttl, err := strconv.Atoi(ttlStr)
 		if err != nil {
 			modal.ShowError(i.App.Pages, "Invalid TTL value", err)
