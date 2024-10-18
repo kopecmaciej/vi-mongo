@@ -1,7 +1,9 @@
 package component
 
 import (
+	"fmt"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/ai"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 )
 
