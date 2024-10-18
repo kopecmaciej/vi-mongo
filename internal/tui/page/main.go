@@ -146,6 +146,10 @@ func (m *Main) setKeybindings() {
 	m.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Main.FocusNext, event.Name()):
+			// TODO: figure out how to handle key priorities
+			if m.index.IsAddFormFocused() {
+				return event
+			}
 			if m.databases.IsFocused() {
 				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			} else {
@@ -156,6 +160,9 @@ func (m *Main) setKeybindings() {
 			}
 			return nil
 		case k.Contains(k.Main.FocusPrevious, event.Name()):
+			if m.index.IsAddFormFocused() {
+				return event
+			}
 			if m.tabBar.GetActiveTabIndex() == 0 {
 				m.App.SetFocus(m.databases)
 			} else {

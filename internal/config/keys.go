@@ -169,7 +169,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Focus next component",
 		},
 		FocusPrevious: Key{
-			Keys:        []string{"Ctrl+H", "Shift+Tab"},
+			Keys:        []string{"Ctrl+H", "Backtab"},
 			Description: "Focus previous component",
 		},
 		HideDatabase: Key{
@@ -177,7 +177,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Hide databases",
 		},
 		ShowServerInfo: Key{
-			Keys:        []string{"Ctrl+K"},
+			Keys:        []string{"Ctrl+S"},
 			Description: "Show server info",
 		},
 	}

@@ -299,3 +299,7 @@ func (i *Index) handleDeleteIndex(indexName string, row int) {
 		return
 	}
 }
+
+func (i *Index) IsAddFormFocused() bool {
+	return i.isAddFormVisible
+}
