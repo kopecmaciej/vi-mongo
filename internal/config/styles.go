@@ -26,13 +26,13 @@ type (
 		TabBar      TabBarStyle      `yaml:"tabBar"`
 		Databases   DatabasesStyle   `yaml:"databases"`
 		Content     ContentStyle     `yaml:"content"`
+		AIPrompt    AIPromptStyle    `yaml:"aiPrompt"`
 		DocPeeker   DocPeekerStyle   `yaml:"docPeeker"`
 		InputBar    InputBarStyle    `yaml:"inputBar"`
 		History     HistoryStyle     `yaml:"history"`
 		Help        HelpStyle        `yaml:"help"`
 		Others      OthersStyle      `yaml:"others"`
 		StyleChange StyleChangeStyle `yaml:"styleChange"`
-		AIPrompt    AIPromptStyle    `yaml:"aiPrompt"`
 	}
 
 	// GlobalStyles is a struct that contains all the global styles for the application

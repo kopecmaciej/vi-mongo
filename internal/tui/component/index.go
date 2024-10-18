@@ -291,14 +291,14 @@ func (i *Index) createDeleteIndexDoneFunc(indexName string, row int) func(int, s
 	return func(buttonIndex int, buttonLabel string) {
 		defer i.App.Pages.RemovePage(IndexDeleteModalId)
 		if buttonIndex == 0 {
-			i.handleDeleteIndex(indexName, row)
+			i.handleDeleteIndex(indexName)
 		}
 		i.table.RemoveRow(row)
 		i.table.Select(row-1, 0)
 	}
 }
 
-func (i *Index) handleDeleteIndex(indexName string, row int) {
+func (i *Index) handleDeleteIndex(indexName string) {
 	ctx := context.Background()
 	if err := i.Dao.DropIndex(ctx, i.currentDB, i.currentColl, indexName); err != nil {
 		modal.ShowError(i.App.Pages, "Error deleting index", err)
