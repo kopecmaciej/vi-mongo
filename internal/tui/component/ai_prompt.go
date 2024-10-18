@@ -2,6 +2,7 @@ package component
 
 import (
 	"fmt"
+
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/ai"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
@@ -87,13 +88,14 @@ func (a *AIPrompt) setStyle() {
 
 func (a *AIPrompt) onSubmit() {
 	var driver ai.AIDriver
-	switch a.modelDropdown.GetCurrentOption() {
+
+	_, options := a.modelDropdown.GetCurrentOption()
+	switch options {
 	case "OpenAI":
 		driver = ai.NewOpenAIDriver("your-openai-api-key") // Replace with actual API key
 	case "Anthropic":
 		driver = ai.NewAnthropicDriver("your-anthropic-api-key") // Replace with actual API key
 	default:
-		a.App.ErrorMsg("Invalid model selected")
 		return
 	}
 
@@ -103,7 +105,7 @@ func (a *AIPrompt) onSubmit() {
 	prompt := a.promptInput.GetText()
 	response, err := driver.GetResponse(prompt)
 	if err != nil {
-		a.App.ErrorMsg(fmt.Sprintf("Error getting response: %v", err))
+		a.App.Error(fmt.Sprintf("Error getting response: %v", err))
 		return
 	}
 
