@@ -139,8 +139,7 @@ func (m *Main) render() error {
 	m.AddItem(m.innerFlex, 0, 7, false)
 	m.innerFlex.AddItem(m.header, 4, 0, false)
 	m.innerFlex.AddItem(m.tabBar, 1, 0, false)
-	m.innerFlex.AddItem(m.tabBar.GetActiveComponent(), 0, 7, true)
-	m.tabBar.GetActiveComponent().Render()
+	m.innerFlex.AddItem(m.tabBar.GetActiveComponentAndRender(), 0, 7, true)
 
 	m.App.Pages.AddPage(m.GetIdentifier(), m, true, true)
 	m.App.SetFocus(m)
@@ -162,7 +161,8 @@ func (m *Main) setKeybindings() {
 			} else {
 				m.innerFlex.RemoveItem(m.tabBar.GetActiveComponent())
 				m.tabBar.NextTab()
-				m.innerFlex.AddItem(m.tabBar.GetActiveComponent(), 0, 7, true)
+				m.innerFlex.AddItem(m.tabBar.GetActiveComponentAndRender(), 0, 7, true)
+
 				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			}
 			return nil
@@ -175,7 +175,7 @@ func (m *Main) setKeybindings() {
 			} else {
 				m.innerFlex.RemoveItem(m.tabBar.GetActiveComponent())
 				m.tabBar.PreviousTab()
-				m.innerFlex.AddItem(m.tabBar.GetActiveComponent(), 0, 7, true)
+				m.innerFlex.AddItem(m.tabBar.GetActiveComponentAndRender(), 0, 7, true)
 				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			}
 			return nil

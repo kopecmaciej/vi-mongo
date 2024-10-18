@@ -18,7 +18,8 @@ type TabBarPrimitive interface {
 
 type TabBarComponent struct {
 	id        string
-	component TabBarPrimitive
+	primitive TabBarPrimitive
+	rendered  bool
 }
 
 type TabBar struct {
@@ -43,7 +44,7 @@ func NewTabBar() *TabBar {
 }
 
 func (t *TabBar) init() error {
-	t.setStaticLayout()
+	t.setLayout()
 	t.setStyle()
 
 	t.handleEvents()
@@ -55,7 +56,7 @@ func (t *TabBar) setStyle() {
 	t.SetStyle(styles)
 }
 
-func (t *TabBar) setStaticLayout() {
+func (t *TabBar) setLayout() {
 	t.SetBorderPadding(0, 0, 1, 0)
 }
 
@@ -72,7 +73,7 @@ func (t *TabBar) handleEvents() {
 func (t *TabBar) AddTab(name string, component TabBarPrimitive, defaultTab bool) {
 	t.tabs = append(t.tabs, &TabBarComponent{
 		id:        name,
-		component: component,
+		primitive: component,
 	})
 	if defaultTab {
 		t.active = len(t.tabs) - 1
@@ -112,7 +113,16 @@ func (t *TabBar) Render() {
 }
 
 func (t *TabBar) GetActiveComponent() TabBarPrimitive {
-	return t.tabs[t.active].component
+	return t.tabs[t.active].primitive
+}
+
+func (t *TabBar) GetActiveComponentAndRender() TabBarPrimitive {
+	component := t.tabs[t.active]
+	if !component.rendered {
+		component.primitive.Render()
+		component.rendered = true
+	}
+	return component.primitive
 }
 
 func (t *TabBar) GetActiveTabIndex() int {

@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
+const anthropicAPIURL = "https://api.anthropic.com/v1/messages"
 
 type AnthropicDriver struct {
 	apiKey        string
@@ -19,10 +19,6 @@ func NewAnthropicDriver(apiKey string) *AnthropicDriver {
 	return &AnthropicDriver{
 		apiKey: apiKey,
 	}
-}
-
-func (d *AnthropicDriver) GetModels() []string {
-	return []string{"claude-2", "claude-3-opus", "claude-3-sonnet"}
 }
 
 func (d *AnthropicDriver) SetSystemMessage(message string) {
@@ -77,4 +73,8 @@ func (d *AnthropicDriver) GetResponse(prompt string, model string) (string, erro
 	}
 
 	return completion, nil
+}
+
+func GetAnthropicModels() []string {
+	return []string{"claude-2", "claude-3-opus", "claude-3-sonnet"}
 }
