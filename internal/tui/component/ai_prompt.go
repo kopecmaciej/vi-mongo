@@ -1,7 +1,9 @@
 package component
 
 import (
+	"fmt"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/ai"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 )
 
@@ -84,7 +86,29 @@ func (a *AIPrompt) setStyle() {
 }
 
 func (a *AIPrompt) onSubmit() {
-	// TODO: Implement submission logic
+	var driver ai.AIDriver
+	switch a.modelDropdown.GetCurrentOption() {
+	case "OpenAI":
+		driver = ai.NewOpenAIDriver("your-openai-api-key") // Replace with actual API key
+	case "Anthropic":
+		driver = ai.NewAnthropicDriver("your-anthropic-api-key") // Replace with actual API key
+	default:
+		a.App.ErrorMsg("Invalid model selected")
+		return
+	}
+
+	systemMessage := `This prompt is for a query to MongoDB using the Query Bar. Example: { name: { $regex: "^catelyn", "$options": "i" } }`
+	driver.SetSystemMessage(systemMessage)
+
+	prompt := a.promptInput.GetText()
+	response, err := driver.GetResponse(prompt)
+	if err != nil {
+		a.App.ErrorMsg(fmt.Sprintf("Error getting response: %v", err))
+		return
+	}
+
+	// TODO: Display the response in the UI
+	fmt.Println("Response:", response)
 }
 
 func (a *AIPrompt) Render() {
