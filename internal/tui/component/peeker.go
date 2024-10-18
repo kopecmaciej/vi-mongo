@@ -45,7 +45,7 @@ func NewPeeker() *Peeker {
 
 func (p *Peeker) init() error {
 	p.setStyle()
-	p.setStaticLayout()
+	p.setLayout()
 	p.setKeybindings()
 
 	if err := p.docModifier.Init(p.App); err != nil {
@@ -66,7 +66,7 @@ func (p *Peeker) handleEvents() {
 	})
 }
 
-func (p *Peeker) setStaticLayout() {
+func (p *Peeker) setLayout() {
 	p.SetBorder(true)
 	p.SetTitle("Document Details")
 	p.SetTitleAlign(tview.AlignLeft)

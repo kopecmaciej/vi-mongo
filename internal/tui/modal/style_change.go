@@ -32,7 +32,7 @@ func NewStyleChangeModal() *StyleChange {
 }
 
 func (sc *StyleChange) init() error {
-	sc.setStaticLayout()
+	sc.setLayout()
 	sc.setStyle()
 	sc.setKeybindings()
 	sc.setContent()
@@ -40,7 +40,7 @@ func (sc *StyleChange) init() error {
 	return nil
 }
 
-func (sc *StyleChange) setStaticLayout() {
+func (sc *StyleChange) setLayout() {
 	sc.SetTitle(" Change Style ")
 	sc.SetBorder(true)
 	sc.ShowSecondaryText(false)

@@ -55,7 +55,7 @@ func NewIndex() *Index {
 	return i
 }
 func (i *Index) init() error {
-	i.setStaticLayout()
+	i.setLayout()
 	i.setStyle()
 	i.setKeybindings()
 
@@ -76,7 +76,7 @@ func (i *Index) setStyle() {
 	i.table.SetBordersColor(globalStyle.Others.SeparatorColor.Color())
 }
 
-func (i *Index) setStaticLayout() {
+func (i *Index) setLayout() {
 	i.SetBorder(true)
 	i.SetTitle(" Indexes ")
 	i.SetTitleAlign(tview.AlignCenter)

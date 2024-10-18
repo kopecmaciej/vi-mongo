@@ -28,7 +28,7 @@ func NewDeleteModal(id tview.Identifier) *Delete {
 }
 
 func (d *Delete) init() error {
-	d.setStaticLayout()
+	d.setLayout()
 	d.setStyle()
 	d.setKeybindings()
 
@@ -37,7 +37,7 @@ func (d *Delete) init() error {
 	return nil
 }
 
-func (d *Delete) setStaticLayout() {
+func (d *Delete) setLayout() {
 	d.AddButtons([]string{"Delete", "Cancel"})
 	d.SetBorder(true)
 	d.SetTitle(" Delete ")

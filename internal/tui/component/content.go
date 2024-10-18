@@ -83,7 +83,7 @@ func NewContent() *Content {
 func (c *Content) init() error {
 	ctx := context.Background()
 
-	c.setStaticLayout()
+	c.setLayout()
 	c.setStyle()
 	c.setKeybindings(ctx)
 
@@ -154,7 +154,7 @@ func (c *Content) setStyle() {
 	c.table.SetSeparator(styles.Others.SeparatorSymbol.Rune())
 }
 
-func (c *Content) setStaticLayout() {
+func (c *Content) setLayout() {
 	c.tableFlex.SetBorder(true)
 	c.tableFlex.SetDirection(tview.FlexRow)
 	c.tableFlex.SetTitle(" Content ")

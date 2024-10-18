@@ -46,7 +46,7 @@ func NewInputBar(barId tview.Identifier, label string) *InputBar {
 func (i *InputBar) init() error {
 	i.setStyle()
 	i.setKeybindings()
-	i.setStaticLayout()
+	i.setLayout()
 
 	cpFunc := func(text string) {
 		err := clipboard.WriteAll(text)
@@ -69,7 +69,7 @@ func (i *InputBar) init() error {
 	return nil
 }
 
-func (i *InputBar) setStaticLayout() {
+func (i *InputBar) setLayout() {
 	i.SetBorder(true)
 }
 

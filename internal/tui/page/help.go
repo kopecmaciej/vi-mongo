@@ -38,7 +38,7 @@ func NewHelp() *Help {
 }
 
 func (h *Help) init() error {
-	h.setStaticLayout()
+	h.setLayout()
 	h.setStyle()
 	h.setKeybindings()
 
@@ -170,7 +170,7 @@ func (h *Help) setStyle() {
 	h.SetStyle(h.App.GetStyles())
 }
 
-func (h *Help) setStaticLayout() {
+func (h *Help) setLayout() {
 	h.Table.SetBorder(true)
 	h.Table.SetTitle(" Help ")
 	h.Table.SetBorderPadding(1, 1, 3, 3)

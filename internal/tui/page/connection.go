@@ -51,7 +51,7 @@ func NewConnection() *Connection {
 func (c *Connection) Init(app *core.App) error {
 	c.App = app
 
-	c.setStaticLayout()
+	c.setLayout()
 	c.setStyle()
 	c.setKeybindings()
 
@@ -72,7 +72,7 @@ func (c *Connection) handleEvents() {
 	})
 }
 
-func (c *Connection) setStaticLayout() {
+func (c *Connection) setLayout() {
 	c.form.SetTitle(" New connection ")
 	c.form.SetBorder(true)
 

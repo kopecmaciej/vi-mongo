@@ -41,7 +41,7 @@ func NewWelcome() *Welcome {
 func (w *Welcome) Init(app *core.App) error {
 	w.App = app
 
-	w.setStaticLayout()
+	w.setLayout()
 	w.setStyle()
 
 	w.handleEvents()
@@ -49,7 +49,7 @@ func (w *Welcome) Init(app *core.App) error {
 	return nil
 }
 
-func (w *Welcome) setStaticLayout() {
+func (w *Welcome) setLayout() {
 	w.form.SetBorder(true)
 	w.form.SetTitle(" Welcome to Vi Mongo ")
 	w.form.SetTitleAlign(tview.AlignCenter)

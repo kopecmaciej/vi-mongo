@@ -52,7 +52,7 @@ func (t *DatabaseTree) init() error {
 	ctx := context.Background()
 
 	t.setStyle()
-	t.setStaticLayout()
+	t.setLayout()
 	t.setKeybindings(ctx)
 	t.SetSelectedFunc(func(node *tview.TreeNode) {
 		t.SetCurrentNode(node)
@@ -67,7 +67,7 @@ func (t *DatabaseTree) init() error {
 	return nil
 }
 
-func (t *DatabaseTree) setStaticLayout() {
+func (t *DatabaseTree) setLayout() {
 	t.SetBorder(true)
 	t.SetTitle(" Databases ")
 	t.SetBorderPadding(0, 0, 1, 1)

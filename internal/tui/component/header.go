@@ -52,14 +52,14 @@ func NewHeader() *Header {
 
 func (h *Header) init() error {
 	h.setStyle()
-	h.setStaticLayout()
+	h.setLayout()
 
 	h.handleEvents()
 
 	return nil
 }
 
-func (h *Header) setStaticLayout() {
+func (h *Header) setLayout() {
 	h.Table.SetBorder(true)
 	h.Table.SetTitle(" Basic Info ")
 	h.Table.SetBorderPadding(0, 0, 1, 1)
