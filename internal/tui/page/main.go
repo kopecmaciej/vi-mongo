@@ -30,6 +30,7 @@ type Main struct {
 	databases *component.Database
 	content   *component.Content
 	index     *component.Index
+	aiPrompt  *component.AIPrompt
 }
 
 func NewMain() *Main {
@@ -42,6 +43,7 @@ func NewMain() *Main {
 		databases:   component.NewDatabase(),
 		content:     component.NewContent(),
 		index:       component.NewIndex(),
+		aiPrompt:    component.NewAIPrompt(),
 	}
 
 	m.SetIdentifier(MainPageId)
@@ -94,8 +96,13 @@ func (m *Main) initComponents() error {
 		return err
 	}
 
+	if err := m.aiPrompt.Init(m.App); err != nil {
+		return err
+	}
+
 	m.tabBar.AddTab("Content", m.content, true)
 	m.tabBar.AddTab("Indexes", m.index, false)
+	m.tabBar.AddTab("AI", m.aiPrompt, false)
 
 	return nil
 }

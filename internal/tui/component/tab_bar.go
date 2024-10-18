@@ -47,7 +47,6 @@ func (t *TabBar) init() error {
 	t.setStyle()
 
 	t.handleEvents()
-	t.addDefaultTabs()
 	return nil
 }
 
@@ -68,12 +67,6 @@ func (t *TabBar) handleEvents() {
 			t.Render()
 		}
 	})
-}
-
-func (t *TabBar) addDefaultTabs() {
-	aiPromptTab := NewAIPromptTab()
-	t.AddTab("AI Prompt", aiPromptTab, true)
-	// Add other default tabs here if needed
 }
 
 func (t *TabBar) AddTab(name string, component TabBarPrimitive, defaultTab bool) {
