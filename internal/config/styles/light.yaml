@@ -41,7 +41,7 @@ databases:
   closedNodeSymbol: "\U0001F5BF"
   leafSymbol: "\U0001F5CE"
 content:
-  docInfoTextColor: "#4A5B8C"
+  statusTextColor: "#4A5B8C"
   headerRowColor: "#C8CAD5"
   columnKeyColor: "#FF9580"
   columnTypeColor: "#00A86B"

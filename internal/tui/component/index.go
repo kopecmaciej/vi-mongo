@@ -71,6 +71,8 @@ func (i *Index) init() error {
 func (i *Index) setStyle() {
 	globalStyle := i.App.GetStyles()
 	i.SetStyle(globalStyle)
+	i.table.SetStyle(globalStyle)
+	i.addForm.SetStyle(globalStyle)
 
 	i.table.SetSeparator(globalStyle.Others.SeparatorSymbol.Rune())
 	i.table.SetBordersColor(globalStyle.Others.SeparatorColor.Color())
@@ -138,9 +140,11 @@ func (i *Index) Render() {
 	i.Flex.Clear()
 
 	if i.isAddFormVisible {
+		i.addForm.Clear(true)
 		i.renderAddIndexForm()
 		i.Flex.AddItem(i.addForm, 0, 1, true)
 	} else {
+		i.table.Clear()
 		i.renderIndexTable()
 		i.Flex.AddItem(i.table, 0, 1, true)
 	}
