@@ -27,11 +27,12 @@ func (d *AnthropicDriver) SetSystemMessage(message string) {
 
 func (d *AnthropicDriver) GetResponse(prompt string, model string) (string, error) {
 	requestBody, err := json.Marshal(map[string]interface{}{
-		"model":                model,
-		"prompt":               fmt.Sprintf("Human: %s\n\nAssistant: %s\n\nHuman: %s\n\nAssistant:", d.systemMessage, d.systemMessage, prompt),
-		"max_tokens_to_sample": 300,
-		"stop_sequences":       []string{"\n\nHuman:"},
-		"temperature":          0.7,
+		"model":      model,
+		"max_tokens": 1024,
+		"system":     d.systemMessage,
+		"messages": []map[string]string{
+			{"role": "user", "content": prompt},
+		},
 	})
 	if err != nil {
 		return "", fmt.Errorf("error marshaling request body: %w", err)
@@ -44,6 +45,7 @@ func (d *AnthropicDriver) GetResponse(prompt string, model string) (string, erro
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-API-Key", d.apiKey)
+	req.Header.Set("anthropic-version", "2023-06-01")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -61,20 +63,25 @@ func (d *AnthropicDriver) GetResponse(prompt string, model string) (string, erro
 		return "", fmt.Errorf("API request failed with status code %d: %s", resp.StatusCode, string(body))
 	}
 
-	var result map[string]interface{}
+	var result struct {
+		Content []struct {
+			Text string `json:"text"`
+		} `json:"content"`
+	}
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return "", fmt.Errorf("error unmarshaling response: %w", err)
 	}
 
-	completion, ok := result["completion"].(string)
-	if !ok {
+	if len(result.Content) == 0 || result.Content[0].Text == "" {
 		return "", fmt.Errorf("unexpected response format")
 	}
 
-	return completion, nil
+	return result.Content[0].Text, nil
 }
 
-func GetAnthropicModels() []string {
-	return []string{"claude-2", "claude-3-opus", "claude-3-sonnet"}
+func GetAnthropicModels() ([]string, int) {
+	models := []string{"claude-3-opus-20240229", "claude-3-haiku-20240307", "claude-3-sonnet-20240229"}
+	defaultModelIndex := 2
+	return models, defaultModelIndex
 }

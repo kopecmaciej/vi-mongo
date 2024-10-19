@@ -66,6 +66,9 @@ func (a *AIPrompt) setStyle() {
 	a.form.SetFocusStyle(tcell.StyleDefault.
 		Foreground(styles.Global.FocusColor.Color()).
 		Background(styles.Global.BackgroundColor.Color()))
+
+	a.form.SetButtonBackgroundColor(styles.Others.ButtonsBackgroundColor.Color())
+	a.form.SetButtonTextColor(styles.Others.ButtonsTextColor.Color())
 }
 
 func (a *AIPrompt) setKeybindings() {
@@ -74,6 +77,9 @@ func (a *AIPrompt) setKeybindings() {
 		switch {
 		case k.Contains(k.AIPrompt.CloseModal, event.Name()):
 			a.App.Pages.RemovePage(AIPromptID)
+			return nil
+		case k.Contains(k.AIPrompt.ClearPrompt, event.Name()):
+			a.form.GetFormItem(1).(*tview.InputField).SetText("")
 			return nil
 		}
 		return event
@@ -105,12 +111,11 @@ func (a *AIPrompt) handleEvents() {
 func (a *AIPrompt) Render() {
 	a.form.Clear(true)
 
-	openaiModels := ai.GetOpenAiModels()
-	anthropicModels := ai.GetAnthropicModels()
+	models, defaultModelIndex := ai.GetAiModels()
 
-	a.form.AddDropDown("Model:", append(openaiModels, anthropicModels...), 0, nil).
+	a.form.AddDropDown("Model:", models, defaultModelIndex, nil).
 		AddInputField("Prompt:", "", 0, nil, nil).
-		AddButton("Submit", a.onSubmit).
+		AddButton("Ask LLM", a.onSubmit).
 		AddButton("Apply Query", a.onApplyQuery).
 		AddTextView("Response:", "", 0, 3, true, false)
 }
@@ -121,15 +126,17 @@ func (a *AIPrompt) onSubmit() {
 	_, model := a.form.GetFormItem(0).(*tview.DropDown).GetCurrentOption()
 	prompt := a.form.GetFormItem(1).(*tview.InputField).GetText()
 
+	gptModels, _ := ai.GetGptModels()
+	anthropicModels, _ := ai.GetAnthropicModels()
 	switch {
-	case slices.Contains(ai.GetOpenAiModels(), model):
+	case slices.Contains(gptModels, model):
 		apiKey := os.Getenv("OPENAI_API_KEY")
 		if apiKey == "" {
 			a.showError("OpenAI API key not found in environment variables")
 			return
 		}
 		driver = ai.NewOpenAIDriver(apiKey)
-	case slices.Contains(ai.GetAnthropicModels(), model):
+	case slices.Contains(anthropicModels, model):
 		apiKey := os.Getenv("ANTHROPIC_API_KEY")
 		if apiKey == "" {
 			a.showError("Anthropic API key not found in environment variables")
@@ -142,7 +149,8 @@ func (a *AIPrompt) onSubmit() {
 	}
 
 	systemMessage := fmt.Sprintf(`You are an assistant helping to create MongoDB queries. 
-	Respond with valid MongoDB query syntax that can be directly used in a query.
+	Respond with valid MongoDB query syntax that can be directly used in a query bar. It's
+	text based query, so don't use any Javascript or other programming language.
 	
 	Rules:
 	1. Always use proper MongoDB operators (e.g., $regex, $exists, $gt, $lt, $in).
@@ -153,9 +161,9 @@ func (a *AIPrompt) onSubmit() {
 	
 	If the user makes a mistake with a key name, correct it based on the available keys.
 	
-	Example query: { name: { $regex: "^john", $options: "i" }, age: { $gt: 30 }, isActive: true }
-	
-	Respond only with the query, without any additional explanation.`, strings.Join(a.docKeys, ", "))
+	Important: Respond only with the exact query, without any additional explanation, 
+	Example: { name: { $regex: "^john", $options: "i" }, age: { $gt: 30 }, isActive: true }
+	`, strings.Join(a.docKeys, ", "))
 
 	driver.SetSystemMessage(systemMessage)
 

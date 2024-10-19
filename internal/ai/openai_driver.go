@@ -47,6 +47,8 @@ func (d *OpenAIDriver) GetResponse(prompt string, model string) (string, error) 
 	return resp.Choices[0].Message.Content, nil
 }
 
-func GetOpenAiModels() []string {
-	return []string{"gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"}
+func GetGptModels() ([]string, int) {
+	models := []string{"gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"}
+	defaultModelIndex := 2
+	return models, defaultModelIndex
 }

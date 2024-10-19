@@ -149,9 +149,10 @@ type (
 	}
 
 	AIPromptKeys struct {
-		CloseModal Key `json:"closeModal"`
-		NextItem   Key `json:"nextItem"`
-		PrevItem   Key `json:"prevItem"`
+		CloseModal  Key `json:"closeModal"`
+		ClearPrompt Key `json:"clearPrompt"`
+		NextItem    Key `json:"nextItem"`
+		PrevItem    Key `json:"prevItem"`
 	}
 )
 
@@ -429,6 +430,10 @@ func (k *KeyBindings) loadDefaults() {
 		CloseModal: Key{
 			Keys:        []string{"Esc"},
 			Description: "Close modal",
+		},
+		ClearPrompt: Key{
+			Keys:        []string{"Ctrl+D"},
+			Description: "Clear prompt",
 		},
 		NextItem: Key{
 			Keys:        []string{"Ctrl+J"},
