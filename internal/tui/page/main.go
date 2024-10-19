@@ -153,7 +153,7 @@ func (m *Main) setKeybindings() {
 		switch {
 		case k.Contains(k.Main.FocusNext, event.Name()):
 			// TODO: figure out how to handle key priorities
-			if m.index.IsAddFormFocused() {
+			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIPromptFocused() {
 				return event
 			}
 			if m.databases.IsFocused() {
@@ -167,7 +167,7 @@ func (m *Main) setKeybindings() {
 			}
 			return nil
 		case k.Contains(k.Main.FocusPrevious, event.Name()):
-			if m.index.IsAddFormFocused() {
+			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIPromptFocused() {
 				return event
 			}
 			if m.tabBar.GetActiveTabIndex() == 0 {

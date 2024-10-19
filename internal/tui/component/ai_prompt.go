@@ -3,8 +3,10 @@ package component
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/ai"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
@@ -39,6 +41,9 @@ func NewAIPrompt() *AIPrompt {
 func (a *AIPrompt) init() error {
 	a.setLayout()
 	a.setStyle()
+	// a.setKeybindings()
+
+	a.handleEvents()
 
 	return nil
 }
@@ -54,14 +59,69 @@ func (a *AIPrompt) setStyle() {
 	styles := a.App.GetStyles()
 	a.SetStyle(styles)
 
-	a.SetButtonBackgroundColor(styles.AIPrompt.ButtonBackgroundColor.Color())
-	a.SetButtonTextColor(styles.AIPrompt.ButtonTextColor.Color())
-	a.SetLabelColor(styles.AIPrompt.LabelColor.Color())
-	a.SetFieldBackgroundColor(styles.AIPrompt.InputBackgroundColor.Color())
-	a.SetFieldTextColor(styles.AIPrompt.InputTextColor.Color())
-
 	a.responseArea.SetBackgroundColor(styles.AIPrompt.InputBackgroundColor.Color())
 	a.responseArea.SetTextColor(styles.AIPrompt.InputTextColor.Color())
+}
+
+func (a *AIPrompt) setKeybindings() {
+	k := a.App.GetKeys()
+	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch {
+		case k.Contains(k.AIPrompt.NextItem, event.Name()):
+			curItem, curButton := a.Form.GetFocusedItemIndex()
+			totalItems := a.Form.GetFormItemCount()
+			totalButtons := a.Form.GetButtonCount()
+
+			if curItem >= 0 {
+				if curItem < totalItems-1 {
+					a.Form.SetFocus(curItem + 1)
+				} else if totalButtons > 0 {
+					a.Form.SetFocus(totalItems)
+				} else {
+					a.Form.SetFocus(0)
+				}
+			} else if curButton >= 0 {
+				if curButton < totalButtons-1 {
+					a.Form.SetFocus(totalItems + curButton + 1)
+				} else {
+					a.Form.SetFocus(0)
+				}
+			}
+			return nil
+		case k.Contains(k.AIPrompt.PrevItem, event.Name()):
+			curItem, curButton := a.Form.GetFocusedItemIndex()
+			totalItems := a.Form.GetFormItemCount()
+			totalButtons := a.Form.GetButtonCount()
+
+			if curItem >= 0 {
+				if curItem > 0 {
+					a.Form.SetFocus(curItem - 1)
+				} else if totalButtons > 0 {
+					a.Form.SetFocus(totalItems + totalButtons - 1)
+				} else {
+					a.Form.SetFocus(totalItems - 1)
+				}
+			} else if curButton >= 0 {
+				if curButton > 0 {
+					a.Form.SetFocus(totalItems + curButton - 1)
+				} else {
+					a.Form.SetFocus(totalItems - 1)
+				}
+			}
+			return nil
+		}
+		return event
+	})
+}
+
+func (a *AIPrompt) IsAIPromptFocused() bool {
+	if a.App.GetFocus() == a.Form {
+		return true
+	}
+	if a.App.GetFocus().GetIdentifier() == a.GetIdentifier() {
+		return true
+	}
+	return false
 }
 
 func (a *AIPrompt) handleEvents() {
@@ -95,15 +155,15 @@ func (a *AIPrompt) onSubmit() {
 	_, model := a.Form.GetFormItem(0).(*tview.DropDown).GetCurrentOption()
 	prompt := a.Form.GetFormItem(1).(*tview.TextArea).GetText()
 
-	switch model {
-	case "OpenAI":
+	switch {
+	case slices.Contains(ai.GetOpenAiModels(), model):
 		apiKey := os.Getenv("OPENAI_API_KEY")
 		if apiKey == "" {
 			a.showError("OpenAI API key not found in environment variables")
 			return
 		}
 		driver = ai.NewOpenAIDriver(apiKey)
-	case "Anthropic":
+	case slices.Contains(ai.GetAnthropicModels(), model):
 		apiKey := os.Getenv("ANTHROPIC_API_KEY")
 		if apiKey == "" {
 			a.showError("Anthropic API key not found in environment variables")
@@ -111,7 +171,7 @@ func (a *AIPrompt) onSubmit() {
 		}
 		driver = ai.NewAnthropicDriver(apiKey)
 	default:
-		a.showError("Invalid AI model selected")
+		a.showError(fmt.Sprintf("Invalid AI model selected: %s", model))
 		return
 	}
 
@@ -120,9 +180,8 @@ func (a *AIPrompt) onSubmit() {
 	
 	Rules:
 	1. Always use proper MongoDB operators (e.g., $regex, $exists, $gt, $lt, $in).
-	2. Keys should always be quoted, but values should not be quoted unless they are strings.
-	3. Numbers and booleans should not be in quotes.
-	4. Use proper formatting for regex patterns (e.g., "^pattern").
+	2. Quote values that are not numbers or booleans.
+	3. Use proper formatting for regex patterns (e.g., "^pattern").
 	
 	Available document keys: %s
 	
@@ -144,9 +203,9 @@ func (a *AIPrompt) onSubmit() {
 }
 
 func (a *AIPrompt) showError(message string) {
-	a.responseArea.SetText(fmt.Sprintf("[red]Error: %s[-]", message))
+	a.responseArea.SetText(fmt.Sprintf("Error: %s[-]", message))
 }
 
 func (a *AIPrompt) showResponse(response string) {
-	a.responseArea.SetText(fmt.Sprintf("[green]Response:[-]\n%s", response))
+	a.responseArea.SetText(fmt.Sprintf("Response:[-]\n%s", response))
 }
