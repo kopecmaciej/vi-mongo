@@ -57,6 +57,9 @@ type (
 	ListModal struct {
 		*primitives.ListModal
 	}
+	FormModal struct {
+		*primitives.FormModal
+	}
 )
 
 // Constructor functions
@@ -94,6 +97,10 @@ func NewViewModal() *ViewModal {
 
 func NewListModal() *ListModal {
 	return &ListModal{ListModal: primitives.NewListModal()}
+}
+
+func NewFormModal() *FormModal {
+	return &FormModal{FormModal: primitives.NewFormModal()}
 }
 
 func (f *Flex) SetStyle(style *config.Styles) {
@@ -143,4 +150,8 @@ func (v *ViewModal) SetStyle(style *config.Styles) {
 
 func (l *ListModal) SetStyle(style *config.Styles) {
 	SetCommonStyle(l.ListModal, style)
+}
+
+func (f *FormModal) SetStyle(style *config.Styles) {
+	SetCommonStyle(f.FormModal, style)
 }

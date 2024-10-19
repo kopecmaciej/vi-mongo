@@ -29,8 +29,9 @@ type (
 		Peeker     PeekerKeys     `json:"peeker"`
 		QueryBar   QueryBar       `json:"queryBar"`
 		SortBar    SortBar        `json:"sortBar"`
-		History    HistoryKeys    `json:"history"`
 		Index      IndexKeys      `json:"index"`
+		AIPrompt   AIPromptKeys   `json:"aiPrompt"`
+		History    HistoryKeys    `json:"history"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -55,6 +56,7 @@ type (
 		FocusNext      Key `json:"focusNext"`
 		FocusPrevious  Key `json:"focusPrevious"`
 		HideDatabase   Key `json:"hideDatabases"`
+		ShowAIPrompt   Key `json:"showAIPrompt"`
 		ShowServerInfo Key `json:"showServerInfo"`
 	}
 
@@ -128,7 +130,7 @@ type (
 	PeekerKeys struct {
 		MoveToTop        Key `json:"moveToTop"`
 		MoveToBottom     Key `json:"moveToBottom"`
-		CopyHighlight    Key `json:"popyHighlight"`
+		CopyHighlight    Key `json:"copyHighlight"`
 		CopyValue        Key `json:"copyValue"`
 		ToggleFullScreen Key `json:"toggleFullScreen"`
 		Exit             Key `json:"exit"`
@@ -144,6 +146,12 @@ type (
 		ExitAddIndex Key `json:"exitModal"`
 		AddIndex     Key `json:"addIndex"`
 		DeleteIndex  Key `json:"deleteIndex"`
+	}
+
+	AIPromptKeys struct {
+		CloseModal Key `json:"closeModal"`
+		NextItem   Key `json:"nextItem"`
+		PrevItem   Key `json:"prevItem"`
 	}
 )
 
@@ -179,6 +187,10 @@ func (k *KeyBindings) loadDefaults() {
 		ShowServerInfo: Key{
 			Keys:        []string{"Ctrl+S"},
 			Description: "Show server info",
+		},
+		ShowAIPrompt: Key{
+			Keys:        []string{"Ctrl+A"},
+			Description: "Show AI prompt",
 		},
 	}
 
@@ -410,6 +422,21 @@ func (k *KeyBindings) loadDefaults() {
 		DeleteIndex: Key{
 			Runes:       []string{"D"},
 			Description: "Delete index",
+		},
+	}
+
+	k.AIPrompt = AIPromptKeys{
+		CloseModal: Key{
+			Keys:        []string{"Esc"},
+			Description: "Close modal",
+		},
+		NextItem: Key{
+			Keys:        []string{"Ctrl+J"},
+			Description: "Next item",
+		},
+		PrevItem: Key{
+			Keys:        []string{"Ctrl+K"},
+			Description: "Previous item",
 		},
 	}
 }

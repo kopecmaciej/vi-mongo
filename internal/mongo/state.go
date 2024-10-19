@@ -54,7 +54,7 @@ func (c *CollectionState) GetJsonDocById(id interface{}) (string, error) {
 	return indentedJson.String(), nil
 }
 
-func (c *CollectionState) UpdateFilter(filter string) {
+func (c *CollectionState) SetFilter(filter string) {
 	filter = util.CleanJsonWhitespaces(filter)
 	if util.IsJsonEmpty(filter) {
 		c.Filter = ""
@@ -64,7 +64,7 @@ func (c *CollectionState) UpdateFilter(filter string) {
 	c.Page = 0
 }
 
-func (c *CollectionState) UpdateSort(sort string) {
+func (c *CollectionState) SetSort(sort string) {
 	sort = util.CleanJsonWhitespaces(sort)
 	if util.IsJsonEmpty(sort) {
 		c.Sort = ""
@@ -109,7 +109,6 @@ func (c *CollectionState) DeleteDoc(id interface{}) {
 		}
 	}
 }
-
 func deepCopy(doc primitive.M) primitive.M {
 	docCopy := make(primitive.M)
 	for key, value := range doc {
