@@ -56,6 +56,7 @@ type (
 		FocusNext      Key `json:"focusNext"`
 		FocusPrevious  Key `json:"focusPrevious"`
 		HideDatabase   Key `json:"hideDatabases"`
+		ShowAIPrompt   Key `json:"showAIPrompt"`
 		ShowServerInfo Key `json:"showServerInfo"`
 	}
 
@@ -148,8 +149,9 @@ type (
 	}
 
 	AIPromptKeys struct {
-		NextItem Key `json:"nextItem"`
-		PrevItem Key `json:"prevItem"`
+		CloseModal Key `json:"closeModal"`
+		NextItem   Key `json:"nextItem"`
+		PrevItem   Key `json:"prevItem"`
 	}
 )
 
@@ -185,6 +187,10 @@ func (k *KeyBindings) loadDefaults() {
 		ShowServerInfo: Key{
 			Keys:        []string{"Ctrl+S"},
 			Description: "Show server info",
+		},
+		ShowAIPrompt: Key{
+			Keys:        []string{"Ctrl+A"},
+			Description: "Show AI prompt",
 		},
 	}
 
@@ -420,6 +426,10 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.AIPrompt = AIPromptKeys{
+		CloseModal: Key{
+			Keys:        []string{"Esc"},
+			Description: "Close modal",
+		},
 		NextItem: Key{
 			Keys:        []string{"Ctrl+J"},
 			Description: "Next item",

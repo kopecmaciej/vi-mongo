@@ -76,6 +76,7 @@ func (i *InputBar) setLayout() {
 func (i *InputBar) setStyle() {
 	i.SetStyle(i.App.GetStyles())
 	i.style = &i.App.GetStyles().InputBar
+	i.SetLabelColor(i.style.LabelColor.Color())
 	i.SetFieldTextColor(i.style.InputColor.Color())
 
 	// Autocomplete styles
@@ -154,10 +155,8 @@ func (i *InputBar) DoneFuncHandler(accept func(string), reject func()) {
 			i.Toggle("")
 			reject()
 		case tcell.KeyEnter:
-			log.Debug().Msg("Enter key pressed")
 			i.Toggle("")
 			text := i.GetText()
-			log.Debug().Msgf("Saving query to history: %s", text)
 			if i.historyModal != nil {
 				err := i.historyModal.SaveToHistory(text)
 				if err != nil {

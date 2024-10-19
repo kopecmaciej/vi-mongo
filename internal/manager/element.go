@@ -11,6 +11,7 @@ const (
 	FocusChanged           MessageType = "focus_changed"
 	StyleChanged           MessageType = "style_changed"
 	UpdateAutocompleteKeys MessageType = "update_autocomplete"
+	UpdateQueryBar         MessageType = "update_query_bar"
 )
 
 type (

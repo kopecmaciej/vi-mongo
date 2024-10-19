@@ -102,7 +102,6 @@ func (m *Main) initComponents() error {
 
 	m.tabBar.AddTab("Content", m.content, true)
 	m.tabBar.AddTab("Indexes", m.index, false)
-	m.tabBar.AddTab("AI", m.aiPrompt, false)
 
 	return nil
 }
@@ -191,6 +190,9 @@ func (m *Main) setKeybindings() {
 		case k.Contains(k.Main.ShowServerInfo, event.Name()):
 			m.ShowServerInfoModal()
 			return nil
+		case k.Contains(k.Main.ShowAIPrompt, event.Name()):
+			m.ShowAIPrompt()
+			return nil
 		}
 		return event
 	})
@@ -212,4 +214,9 @@ func (m *Main) ShowServerInfoModal() {
 	}
 
 	m.App.Pages.AddPage(modal.ServerInfoModalId, serverInfoModal, true, true)
+}
+
+func (m *Main) ShowAIPrompt() {
+	m.aiPrompt.Render()
+	m.App.Pages.AddPage(component.AIPromptID, m.aiPrompt, true, true)
 }

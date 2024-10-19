@@ -10,27 +10,27 @@ import (
 func TestCollectionState_UpdateFilter(t *testing.T) {
 	cs := &CollectionState{Filter: `{"old": "filter"}`, Page: 5}
 
-	cs.UpdateFilter(`{"new": "filter"}`)
+	cs.SetFilter(`{"new": "filter"}`)
 	assert.Equal(t, `{"new": "filter"}`, cs.Filter)
 	assert.Equal(t, int64(0), cs.Page)
 
-	cs.UpdateFilter("  ")
+	cs.SetFilter("  ")
 	assert.Equal(t, "", cs.Filter)
 
-	cs.UpdateFilter("{}")
+	cs.SetFilter("{}")
 	assert.Equal(t, "", cs.Filter)
 }
 
 func TestCollectionState_UpdateSort(t *testing.T) {
 	cs := &CollectionState{Sort: `{"old": 1}`}
 
-	cs.UpdateSort(`{"new": -1}`)
+	cs.SetSort(`{"new": -1}`)
 	assert.Equal(t, `{"new": -1}`, cs.Sort)
 
-	cs.UpdateSort("  ")
+	cs.SetSort("  ")
 	assert.Equal(t, "", cs.Sort)
 
-	cs.UpdateSort("{}")
+	cs.SetSort("{}")
 	assert.Equal(t, "", cs.Sort)
 }
 

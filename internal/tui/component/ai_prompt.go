@@ -19,17 +19,18 @@ const (
 
 type AIPrompt struct {
 	*core.BaseElement
-	*core.Form
+	*core.FormModal
 
-	responseArea *core.TextView
-	docKeys      []string
+	form    *tview.Form
+	docKeys []string
 }
 
 func NewAIPrompt() *AIPrompt {
+	formModal := core.NewFormModal()
 	a := &AIPrompt{
-		BaseElement:  core.NewBaseElement(),
-		Form:         core.NewForm(),
-		responseArea: core.NewTextView(),
+		BaseElement: core.NewBaseElement(),
+		FormModal:   formModal,
+		form:        formModal.GetForm(),
 	}
 
 	a.SetIdentifier(AIPromptID)
@@ -41,7 +42,7 @@ func NewAIPrompt() *AIPrompt {
 func (a *AIPrompt) init() error {
 	a.setLayout()
 	a.setStyle()
-	// a.setKeybindings()
+	a.setKeybindings()
 
 	a.handleEvents()
 
@@ -59,55 +60,20 @@ func (a *AIPrompt) setStyle() {
 	styles := a.App.GetStyles()
 	a.SetStyle(styles)
 
-	a.responseArea.SetBackgroundColor(styles.AIPrompt.InputBackgroundColor.Color())
-	a.responseArea.SetTextColor(styles.AIPrompt.InputTextColor.Color())
+	a.form.SetBackgroundColor(styles.Global.BackgroundColor.Color())
+	a.form.SetBorderColor(styles.Global.BorderColor.Color())
+	a.form.SetTitleColor(styles.Global.TitleColor.Color())
+	a.form.SetFocusStyle(tcell.StyleDefault.
+		Foreground(styles.Global.FocusColor.Color()).
+		Background(styles.Global.BackgroundColor.Color()))
 }
 
 func (a *AIPrompt) setKeybindings() {
 	k := a.App.GetKeys()
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.AIPrompt.NextItem, event.Name()):
-			curItem, curButton := a.Form.GetFocusedItemIndex()
-			totalItems := a.Form.GetFormItemCount()
-			totalButtons := a.Form.GetButtonCount()
-
-			if curItem >= 0 {
-				if curItem < totalItems-1 {
-					a.Form.SetFocus(curItem + 1)
-				} else if totalButtons > 0 {
-					a.Form.SetFocus(totalItems)
-				} else {
-					a.Form.SetFocus(0)
-				}
-			} else if curButton >= 0 {
-				if curButton < totalButtons-1 {
-					a.Form.SetFocus(totalItems + curButton + 1)
-				} else {
-					a.Form.SetFocus(0)
-				}
-			}
-			return nil
-		case k.Contains(k.AIPrompt.PrevItem, event.Name()):
-			curItem, curButton := a.Form.GetFocusedItemIndex()
-			totalItems := a.Form.GetFormItemCount()
-			totalButtons := a.Form.GetButtonCount()
-
-			if curItem >= 0 {
-				if curItem > 0 {
-					a.Form.SetFocus(curItem - 1)
-				} else if totalButtons > 0 {
-					a.Form.SetFocus(totalItems + totalButtons - 1)
-				} else {
-					a.Form.SetFocus(totalItems - 1)
-				}
-			} else if curButton >= 0 {
-				if curButton > 0 {
-					a.Form.SetFocus(totalItems + curButton - 1)
-				} else {
-					a.Form.SetFocus(totalItems - 1)
-				}
-			}
+		case k.Contains(k.AIPrompt.CloseModal, event.Name()):
+			a.App.Pages.RemovePage(AIPromptID)
 			return nil
 		}
 		return event
@@ -115,7 +81,7 @@ func (a *AIPrompt) setKeybindings() {
 }
 
 func (a *AIPrompt) IsAIPromptFocused() bool {
-	if a.App.GetFocus() == a.Form {
+	if a.App.GetFocus() == a.FormModal {
 		return true
 	}
 	if a.App.GetFocus().GetIdentifier() == a.GetIdentifier() {
@@ -137,23 +103,23 @@ func (a *AIPrompt) handleEvents() {
 }
 
 func (a *AIPrompt) Render() {
-	a.Form.Clear(true)
+	a.form.Clear(true)
 
 	openaiModels := ai.GetOpenAiModels()
 	anthropicModels := ai.GetAnthropicModels()
 
-	a.AddDropDown("Model:", append(openaiModels, anthropicModels...), 0, nil).
-		AddTextArea("Prompt:", "", 0, 3, 0, nil).
-		AddButton("Submit", a.onSubmit)
-
-	a.AddFormItem(a.responseArea)
+	a.form.AddDropDown("Model:", append(openaiModels, anthropicModels...), 0, nil).
+		AddInputField("Prompt:", "", 0, nil, nil).
+		AddButton("Submit", a.onSubmit).
+		AddButton("Apply Query", a.onApplyQuery).
+		AddTextView("Response:", "", 0, 3, true, false)
 }
 
 func (a *AIPrompt) onSubmit() {
 	var driver ai.AIDriver
 
-	_, model := a.Form.GetFormItem(0).(*tview.DropDown).GetCurrentOption()
-	prompt := a.Form.GetFormItem(1).(*tview.TextArea).GetText()
+	_, model := a.form.GetFormItem(0).(*tview.DropDown).GetCurrentOption()
+	prompt := a.form.GetFormItem(1).(*tview.InputField).GetText()
 
 	switch {
 	case slices.Contains(ai.GetOpenAiModels(), model):
@@ -203,9 +169,29 @@ func (a *AIPrompt) onSubmit() {
 }
 
 func (a *AIPrompt) showError(message string) {
-	a.responseArea.SetText(fmt.Sprintf("Error: %s[-]", message))
+	a.form.GetFormItem(2).(*tview.TextView).SetText(fmt.Sprintf("Error: %s", message)).SetTextColor(tcell.ColorRed)
 }
 
 func (a *AIPrompt) showResponse(response string) {
-	a.responseArea.SetText(fmt.Sprintf("Response:[-]\n%s", response))
+	a.form.GetFormItem(2).(*tview.TextView).SetText(fmt.Sprintf("Response:\n%s", response)).SetTextColor(tcell.ColorGreen)
+}
+
+func (a *AIPrompt) onApplyQuery() {
+	response := a.form.GetFormItem(2).(*tview.TextView).GetText(true)
+	if response == "" {
+		a.showError("No query to apply. Please submit a prompt first.")
+		return
+	}
+
+	query := strings.TrimPrefix(response, "Response:\n")
+
+	a.App.GetManager().SendTo(ContentId, manager.EventMsg{
+		Sender: a.GetIdentifier(),
+		Message: manager.Message{
+			Type: manager.UpdateQueryBar,
+			Data: query,
+		},
+	})
+
+	a.App.Pages.RemovePage(AIPromptID)
 }

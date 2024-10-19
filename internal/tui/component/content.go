@@ -117,17 +117,27 @@ func (c *Content) init() error {
 		c.updateContent(ctx, true)
 	})
 
-	c.handleEvents()
+	c.handleEvents(ctx)
 
 	return nil
 }
 
-func (c *Content) handleEvents() {
+func (c *Content) handleEvents(ctx context.Context) {
 	go c.HandleEvents(ContentId, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			c.setStyle()
-			c.updateContent(context.Background(), true)
+			c.updateContent(ctx, true)
+		case manager.UpdateQueryBar:
+			query, ok := event.Message.Data.(string)
+			if !ok {
+				modal.ShowError(c.App.Pages, "Invalid query", nil)
+				return
+			}
+			go c.App.QueueUpdateDraw(func() {
+				c.applyQuery(ctx, query)
+				c.App.SetFocus(c)
+			})
 		}
 	})
 }
@@ -452,10 +462,15 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 
 	if count == 0 {
-		// TODO: find why if selectable is set to false, program crashes
 		c.table.SetCell(0, 0, tview.NewTableCell("No documents found"))
+		return nil
 	}
 
+	c.renderView(documents)
+	return nil
+}
+
+func (c *Content) renderView(documents []primitive.M) {
 	c.table.SetSelectable(true, c.currentView == TableView)
 	startRow := 0
 	switch c.currentView {
@@ -466,8 +481,6 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	case SingleLineView:
 		c.renderSingleRowView(startRow, documents)
 	}
-
-	return nil
 }
 
 func (c *Content) jsonViewDocument(doc string, row *int, _id interface{}) {
@@ -518,15 +531,29 @@ func (c *Content) jsonViewDocument(doc string, row *int, _id interface{}) {
 	*row++
 }
 
+func (c *Content) applyQuery(ctx context.Context, query string) {
+	c.state.SetFilter(query)
+	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
+	err := c.updateContent(ctx, false)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error updating content", err)
+		return
+	}
+}
+
+func (c *Content) applySort(ctx context.Context, sort string) {
+	c.state.SetSort(sort)
+	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
+	err := c.updateContent(ctx, false)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error updating content", err)
+		return
+	}
+}
+
 func (c *Content) queryBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.UpdateFilter(text)
-		c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
-		err := c.updateContent(ctx, false)
-		if err != nil {
-			modal.ShowError(c.App.Pages, "Error updating content", err)
-			return
-		}
+		c.applyQuery(ctx, text)
 		c.Flex.RemoveItem(c.queryBar)
 		c.App.SetFocus(c.table)
 	}
@@ -540,7 +567,7 @@ func (c *Content) queryBarListener(ctx context.Context) {
 
 func (c *Content) sortBarListener(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.UpdateSort(text)
+		c.state.SetSort(text)
 		c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 		c.updateContent(ctx, false)
 		c.Flex.RemoveItem(c.sortBar)
@@ -836,9 +863,6 @@ func (c *Content) handleCopyDocument(row, col int) *tcell.EventKey {
 }
 
 func (c *Content) updateContentBasedOnState(ctx context.Context) error {
-	if c.state.Filter != "" || c.state.Sort != "" {
-		return c.updateContent(ctx, false)
-	} else {
-		return c.updateContent(ctx, true)
-	}
+	useState := c.state.Filter == "" && c.state.Sort == ""
+	return c.updateContent(ctx, useState)
 }
