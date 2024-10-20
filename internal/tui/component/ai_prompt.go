@@ -49,7 +49,7 @@ func (a *AIPrompt) init() error {
 
 func (a *AIPrompt) setLayout() {
 	a.SetBorder(true)
-	a.SetTitle("AI Prompt")
+	a.SetTitle(" AI Prompt ")
 	a.SetTitleAlign(tview.AlignCenter)
 	a.Form.SetBorderPadding(2, 2, 2, 2)
 }
@@ -141,13 +141,15 @@ func (a *AIPrompt) onSubmit() {
 	}
 
 	systemMessage := fmt.Sprintf(`You are an assistant helping to create MongoDB queries. 
-	Respond with valid MongoDB query syntax that can be directly used in a query bar. It's
-	text based query, so don't use any Javascript or other programming language.
+	Respond with valid MongoDB query syntax that can be directly used in a query bar. 
 	
 	Rules:
 	1. Always use proper MongoDB operators (e.g., $regex, $exists, $gt, $lt, $in).
-	2. Quote values that are not numbers or booleans.
-	3. Use proper formatting for regex patterns (e.g., "^pattern").
+	2. It's text based query, so don't use any Javascript or other programming language,
+	   so you have to use { $date: "..." } instead of ISODate() or { $oid: "..." } instead of ObjectId(),
+	3. Quote values that are not numbers or booleans.
+	4. Use proper formatting for regex patterns (e.g., "^pattern").
+	5. Dates are in format: 2024-01-01T00:00:00.000Z
 	
 	Available document keys: %s
 	
