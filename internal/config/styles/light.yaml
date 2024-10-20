@@ -9,7 +9,6 @@ global:
   titleColor: "#0184BC"
   graphicsColor: "#0184BC"
 welcome:
-  textColor: "#4A5B8C"
   formLabelColor: "#FF9580"
   formInputColor: "#2A2A3F"
   formInputBackgroundColor: "#ECEDF2"
@@ -29,7 +28,6 @@ header:
   activeSymbol: ●
   inactiveSymbol: ○
 tabBar:
-  textColor: "#2A2A3F"
   activeTextColor: "#FF9580"
   activeBackgroundColor: "#0184BC"
 databases:
@@ -82,3 +80,7 @@ styleChange:
   textColor: "#2A2A3F"
   selectedTextColor: "#FFFFFF"
   selectedBackgroundColor: "#0184BC"
+aiPrompt:
+  formLabelColor: "#FF9580"
+  formInputColor: "#2A2A3F"
+  formInputBackgroundColor: "#ECEDF2"

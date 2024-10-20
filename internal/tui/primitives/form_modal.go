@@ -8,8 +8,7 @@ import (
 // FormModal is a modal window that contains a form.
 type FormModal struct {
 	*tview.Box
-	form   *tview.Form
-	frame  *tview.Frame
+	Form   *tview.Form
 	done   func(buttonIndex int, buttonLabel string)
 	cancel func()
 }
@@ -19,22 +18,18 @@ func NewFormModal() *FormModal {
 	m := &FormModal{
 		Box: tview.NewBox(),
 	}
-	m.form = tview.NewForm().
+	m.Form = tview.NewForm().
 		SetButtonsAlign(tview.AlignCenter).
 		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
 		SetButtonTextColor(tview.Styles.PrimaryTextColor)
-	m.form.SetBackgroundColor(tview.Styles.ContrastBackgroundColor).SetBorderPadding(0, 0, 0, 0)
-	m.frame = tview.NewFrame(m.form).SetBorders(0, 0, 1, 0, 0, 0)
-	m.frame.SetBorder(true).
-		SetBackgroundColor(tview.Styles.ContrastBackgroundColor).
-		SetBorderPadding(1, 1, 1, 1)
+	m.Form.SetBackgroundColor(tview.Styles.ContrastBackgroundColor).SetBorderPadding(0, 0, 0, 0)
 
 	return m
 }
 
 // GetForm returns the form.
 func (m *FormModal) GetForm() *tview.Form {
-	return m.form
+	return m.Form
 }
 
 // SetDoneFunc sets a handler which is called when one of the buttons was
@@ -53,25 +48,33 @@ func (m *FormModal) SetCancelFunc(handler func()) *FormModal {
 // Draw draws this primitive onto the screen.
 func (m *FormModal) Draw(screen tcell.Screen) {
 	screenWidth, screenHeight := screen.Size()
+
 	width, height := screenWidth/2, screenHeight/2
+
+	// Calculate the position of the popup (centered)
 	x := (screenWidth - width) / 2
 	y := (screenHeight - height) / 2
 
 	m.SetRect(x, y, width, height)
+
 	m.Box.DrawForSubclass(screen, m)
 
-	m.frame.SetRect(x, y, width, height)
-	m.frame.Draw(screen)
+	// add padding
+	x, y, width, height = x+1, y+1, width-2, height-2
+
+	m.Form.SetRect(x, y, width, height)
+
+	m.Form.Draw(screen)
 }
 
 // Focus is called when this primitive receives focus.
 func (m *FormModal) Focus(delegate func(p tview.Primitive)) {
-	delegate(m.form)
+	delegate(m.Form)
 }
 
 // HasFocus returns whether or not this primitive has focus.
 func (m *FormModal) HasFocus() bool {
-	return m.form.HasFocus()
+	return m.Form.HasFocus()
 }
 
 // MouseHandler returns the mouse handler for this primitive.
@@ -81,7 +84,7 @@ func (m *FormModal) MouseHandler() func(action tview.MouseAction, event *tcell.E
 			return false, nil
 		}
 
-		consumed, capture = m.form.MouseHandler()(action, event, setFocus)
+		consumed, capture = m.Form.MouseHandler()(action, event, setFocus)
 		if consumed {
 			setFocus(m)
 		}
@@ -98,7 +101,7 @@ func (m *FormModal) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 			}
 			return
 		}
-		if handler := m.form.InputHandler(); handler != nil {
+		if handler := m.Form.InputHandler(); handler != nil {
 			handler(event, setFocus)
 		}
 	})

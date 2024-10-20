@@ -21,7 +21,6 @@ type AIPrompt struct {
 	*core.BaseElement
 	*core.FormModal
 
-	form    *tview.Form
 	docKeys []string
 }
 
@@ -30,7 +29,6 @@ func NewAIPrompt() *AIPrompt {
 	a := &AIPrompt{
 		BaseElement: core.NewBaseElement(),
 		FormModal:   formModal,
-		form:        formModal.GetForm(),
 	}
 
 	a.SetIdentifier(AIPromptID)
@@ -53,22 +51,16 @@ func (a *AIPrompt) setLayout() {
 	a.SetBorder(true)
 	a.SetTitle("AI Prompt")
 	a.SetTitleAlign(tview.AlignCenter)
-	a.SetBorderPadding(0, 0, 1, 1)
+	a.Form.SetBorderPadding(2, 2, 2, 2)
 }
 
 func (a *AIPrompt) setStyle() {
 	styles := a.App.GetStyles()
 	a.SetStyle(styles)
 
-	a.form.SetBackgroundColor(styles.Global.BackgroundColor.Color())
-	a.form.SetBorderColor(styles.Global.BorderColor.Color())
-	a.form.SetTitleColor(styles.Global.TitleColor.Color())
-	a.form.SetFocusStyle(tcell.StyleDefault.
-		Foreground(styles.Global.FocusColor.Color()).
-		Background(styles.Global.BackgroundColor.Color()))
-
-	a.form.SetButtonBackgroundColor(styles.Others.ButtonsBackgroundColor.Color())
-	a.form.SetButtonTextColor(styles.Others.ButtonsTextColor.Color())
+	a.Form.SetFieldTextColor(styles.Connection.FormInputColor.Color())
+	a.Form.SetFieldBackgroundColor(styles.Connection.FormInputBackgroundColor.Color())
+	a.Form.SetLabelColor(styles.Connection.FormLabelColor.Color())
 }
 
 func (a *AIPrompt) setKeybindings() {
@@ -79,7 +71,7 @@ func (a *AIPrompt) setKeybindings() {
 			a.App.Pages.RemovePage(AIPromptID)
 			return nil
 		case k.Contains(k.AIPrompt.ClearPrompt, event.Name()):
-			a.form.GetFormItem(1).(*tview.InputField).SetText("")
+			a.Form.GetFormItem(1).(*tview.InputField).SetText("")
 			return nil
 		}
 		return event
@@ -109,11 +101,11 @@ func (a *AIPrompt) handleEvents() {
 }
 
 func (a *AIPrompt) Render() {
-	a.form.Clear(true)
+	a.Form.Clear(true)
 
 	models, defaultModelIndex := ai.GetAiModels()
 
-	a.form.AddDropDown("Model:", models, defaultModelIndex, nil).
+	a.Form.AddDropDown("Model:", models, defaultModelIndex, nil).
 		AddInputField("Prompt:", "", 0, nil, nil).
 		AddButton("Ask LLM", a.onSubmit).
 		AddButton("Apply Query", a.onApplyQuery).
@@ -123,8 +115,8 @@ func (a *AIPrompt) Render() {
 func (a *AIPrompt) onSubmit() {
 	var driver ai.AIDriver
 
-	_, model := a.form.GetFormItem(0).(*tview.DropDown).GetCurrentOption()
-	prompt := a.form.GetFormItem(1).(*tview.InputField).GetText()
+	_, model := a.Form.GetFormItem(0).(*tview.DropDown).GetCurrentOption()
+	prompt := a.Form.GetFormItem(1).(*tview.InputField).GetText()
 
 	gptModels, _ := ai.GetGptModels()
 	anthropicModels, _ := ai.GetAnthropicModels()
@@ -177,15 +169,15 @@ func (a *AIPrompt) onSubmit() {
 }
 
 func (a *AIPrompt) showError(message string) {
-	a.form.GetFormItem(2).(*tview.TextView).SetText(fmt.Sprintf("Error: %s", message)).SetTextColor(tcell.ColorRed)
+	a.Form.GetFormItem(2).(*tview.TextView).SetText(fmt.Sprintf("Error: %s", message)).SetTextColor(tcell.ColorRed)
 }
 
 func (a *AIPrompt) showResponse(response string) {
-	a.form.GetFormItem(2).(*tview.TextView).SetText(fmt.Sprintf("Response:\n%s", response)).SetTextColor(tcell.ColorGreen)
+	a.Form.GetFormItem(2).(*tview.TextView).SetText(fmt.Sprintf("Response:\n%s", response)).SetTextColor(tcell.ColorGreen)
 }
 
 func (a *AIPrompt) onApplyQuery() {
-	response := a.form.GetFormItem(2).(*tview.TextView).GetText(true)
+	response := a.Form.GetFormItem(2).(*tview.TextView).GetText(true)
 	if response == "" {
 		a.showError("No query to apply. Please submit a prompt first.")
 		return

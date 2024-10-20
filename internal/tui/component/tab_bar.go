@@ -106,7 +106,7 @@ func (t *TabBar) Render() {
 			cell.SetBackgroundColor(styles.TabBar.ActiveBackgroundColor.Color())
 
 		} else {
-			cell.SetTextColor(styles.TabBar.TextColor.Color())
+			cell.SetTextColor(styles.Global.TextColor.Color())
 		}
 		t.SetCell(0, i, cell)
 	}

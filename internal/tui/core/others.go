@@ -154,4 +154,8 @@ func (l *ListModal) SetStyle(style *config.Styles) {
 
 func (f *FormModal) SetStyle(style *config.Styles) {
 	SetCommonStyle(f.FormModal, style)
+	SetCommonStyle(f.FormModal.Form, style)
+
+	f.Form.SetButtonBackgroundColor(style.Others.ButtonsBackgroundColor.Color())
+	f.Form.SetButtonTextColor(style.Others.ButtonsTextColor.Color())
 }

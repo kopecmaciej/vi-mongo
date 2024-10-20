@@ -27,7 +27,7 @@ func (lm *ListModal) Draw(screen tcell.Screen) {
 	width, height := screenWidth/2, screenHeight/2
 
 	// Calculate the position of the popup (centered)
-	x := (screenWidth-width)/2 + (screenWidth-width)/16
+	x := (screenWidth - width) / 2
 	y := (screenHeight - height) / 2
 
 	lm.SetRect(x, y, width, height)
@@ -47,6 +47,12 @@ func (lm *ListModal) GetText() string {
 	selected := lm.list.GetCurrentItem()
 	mainText, _ := lm.list.GetItemText(selected)
 	return mainText
+}
+
+// SetBorderPadding sets the border padding of the modal
+func (lm *ListModal) SetBorderPadding(top, right, bottom, left int) *ListModal {
+	lm.list.SetBorderPadding(top, right, bottom, left)
+	return lm
 }
 
 // AddItem adds item to the list

@@ -37,6 +37,7 @@ type (
 
 	// GlobalStyles is a struct that contains all the global styles for the application
 	GlobalStyles struct {
+		// tview package styles
 		BackgroundColor             Style `yaml:"backgroundColor"`
 		ContrastBackgroundColor     Style `yaml:"contrastBackgroundColor"`
 		MoreContrastBackgroundColor Style `yaml:"moreContrastBackgroundColor"`
@@ -50,7 +51,6 @@ type (
 
 	// WelcomeStyle is a struct that contains all the styles for the welcome screen
 	WelcomeStyle struct {
-		TextColor                Style `yaml:"textColor"`
 		FormLabelColor           Style `yaml:"formLabelColor"`
 		FormInputColor           Style `yaml:"formInputColor"`
 		FormInputBackgroundColor Style `yaml:"formInputBackgroundColor"`
@@ -61,7 +61,6 @@ type (
 		FormLabelColor               Style `yaml:"formLabelColor"`
 		FormInputBackgroundColor     Style `yaml:"formInputBackgroundColor"`
 		FormInputColor               Style `yaml:"formInputColor"`
-		FormButtonColor              Style `yaml:"formButtonColor"`
 		ListTextColor                Style `yaml:"listTextColor"`
 		ListSelectedTextColor        Style `yaml:"listSelectedTextColor"`
 		ListSelectedBackgroundColor  Style `yaml:"listSelectedBackgroundColor"`
@@ -79,7 +78,6 @@ type (
 
 	// TabBarStyle is a struct that contains all the styles for the tab bar
 	TabBarStyle struct {
-		TextColor             Style `yaml:"textColor"`
 		ActiveTextColor       Style `yaml:"activeTextColor"`
 		ActiveBackgroundColor Style `yaml:"activeBackgroundColor"`
 	}
@@ -161,14 +159,9 @@ type (
 	}
 
 	AIPromptStyle struct {
-		LabelColor              Style `yaml:"labelColor"`
-		InputColor              Style `yaml:"inputColor"`
-		InputTextColor          Style `yaml:"inputTextColor"`
-		InputBackgroundColor    Style `yaml:"inputBackgroundColor"`
-		DropdownTextColor       Style `yaml:"dropdownTextColor"`
-		DropdownBackgroundColor Style `yaml:"dropdownBackgroundColor"`
-		ButtonTextColor         Style `yaml:"buttonTextColor"`
-		ButtonBackgroundColor   Style `yaml:"buttonBackgroundColor"`
+		FormLabelColor           Style `yaml:"formLabelColor"`
+		FormInputBackgroundColor Style `yaml:"formInputBackgroundColor"`
+		FormInputColor           Style `yaml:"formInputColor"`
 	}
 )
 
@@ -186,7 +179,6 @@ func (s *Styles) loadDefaults() {
 	}
 
 	s.Welcome = WelcomeStyle{
-		TextColor:                "#FDE68A",
 		FormLabelColor:           "#FDE68A",
 		FormInputColor:           "#E2E8F0",
 		FormInputBackgroundColor: "#1E293B",
@@ -196,7 +188,6 @@ func (s *Styles) loadDefaults() {
 		FormLabelColor:               "#F1FA8C",
 		FormInputBackgroundColor:     "#163694",
 		FormInputColor:               "#F1FA8C",
-		FormButtonColor:              "#387D44",
 		ListTextColor:                "#F1FA8C",
 		ListSelectedTextColor:        "#F1FA8C",
 		ListSelectedBackgroundColor:  "#387D44",
@@ -212,7 +203,6 @@ func (s *Styles) loadDefaults() {
 	}
 
 	s.TabBar = TabBarStyle{
-		TextColor:             "#E2E8F0",
 		ActiveTextColor:       "#FDE68A",
 		ActiveBackgroundColor: "#387D44",
 	}
@@ -284,13 +274,9 @@ func (s *Styles) loadDefaults() {
 	}
 
 	s.AIPrompt = AIPromptStyle{
-		LabelColor:              "#FDE68A",
-		InputColor:              "#E2E8F0",
-		InputBackgroundColor:    "#1E293B",
-		DropdownTextColor:       "#E2E8F0",
-		DropdownBackgroundColor: "#1E293B",
-		ButtonTextColor:         "#0F172A",
-		ButtonBackgroundColor:   "#387D44",
+		FormLabelColor:           "#F1FA8C",
+		FormInputBackgroundColor: "#163694",
+		FormInputColor:           "#F1FA8C",
 	}
 }
 

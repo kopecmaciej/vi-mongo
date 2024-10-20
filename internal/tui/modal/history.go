@@ -41,19 +41,24 @@ func NewHistoryModal() *History {
 
 // Init initializes HistoryModal
 func (h *History) init() error {
+	h.SetLayout()
 	h.setStyle()
 	h.setKeybindings()
 
 	return nil
 }
 
+func (h *History) SetLayout() {
+	h.SetTitle(" History ")
+	h.SetBorder(true)
+	h.ShowSecondaryText(false)
+	h.ListModal.SetBorderPadding(1, 1, 2, 2)
+}
+
 func (h *History) setStyle() {
 	h.style = &h.App.GetStyles().History
 	globalBackground := h.App.GetStyles().Global.BackgroundColor.Color()
 
-	h.SetTitle(" History ")
-	h.SetBorder(true)
-	h.ShowSecondaryText(false)
 	mainStyle := tcell.StyleDefault.
 		Foreground(h.style.TextColor.Color()).
 		Background(globalBackground)
