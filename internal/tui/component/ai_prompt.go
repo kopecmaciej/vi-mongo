@@ -124,14 +124,14 @@ func (a *AIPrompt) onSubmit() {
 	case slices.Contains(gptModels, model):
 		apiKey := os.Getenv("OPENAI_API_KEY")
 		if apiKey == "" {
-			a.showError("OpenAI API key not found in environment variables")
+			a.showError("OPENAI_API_KEY not found in environment variables")
 			return
 		}
 		driver = ai.NewOpenAIDriver(apiKey)
 	case slices.Contains(anthropicModels, model):
 		apiKey := os.Getenv("ANTHROPIC_API_KEY")
 		if apiKey == "" {
-			a.showError("Anthropic API key not found in environment variables")
+			a.showError("ANTHROPIC_API_KEY not found in environment variables")
 			return
 		}
 		driver = ai.NewAnthropicDriver(apiKey)
