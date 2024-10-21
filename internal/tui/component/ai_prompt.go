@@ -175,7 +175,7 @@ func (a *AIPrompt) showError(message string) {
 }
 
 func (a *AIPrompt) showResponse(response string) {
-	a.Form.GetFormItem(2).(*tview.TextView).SetText(fmt.Sprintf("Response:\n%s", response)).SetTextColor(tcell.ColorGreen)
+	a.Form.GetFormItem(2).(*tview.TextView).SetText(fmt.Sprintf("%s", response)).SetTextColor(tcell.ColorGreen)
 }
 
 func (a *AIPrompt) onApplyQuery() {
@@ -185,13 +185,11 @@ func (a *AIPrompt) onApplyQuery() {
 		return
 	}
 
-	query := strings.TrimPrefix(response, "Response:\n")
-
 	a.App.GetManager().SendTo(ContentId, manager.EventMsg{
 		Sender: a.GetIdentifier(),
 		Message: manager.Message{
 			Type: manager.UpdateQueryBar,
-			Data: query,
+			Data: response,
 		},
 	})
 
