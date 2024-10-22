@@ -30,7 +30,7 @@ type (
 		QueryBar   QueryBar       `json:"queryBar"`
 		SortBar    SortBar        `json:"sortBar"`
 		Index      IndexKeys      `json:"index"`
-		AIPrompt   AIPromptKeys   `json:"aiPrompt"`
+		AIQuery    AIQuery        `json:"aiPrompt"`
 		History    HistoryKeys    `json:"history"`
 	}
 
@@ -56,7 +56,7 @@ type (
 		FocusNext      Key `json:"focusNext"`
 		FocusPrevious  Key `json:"focusPrevious"`
 		HideDatabase   Key `json:"hideDatabases"`
-		ShowAIPrompt   Key `json:"showAIPrompt"`
+		ShowAIQuery    Key `json:"showAIQuery"`
 		ShowServerInfo Key `json:"showServerInfo"`
 	}
 
@@ -148,8 +148,8 @@ type (
 		DeleteIndex  Key `json:"deleteIndex"`
 	}
 
-	AIPromptKeys struct {
-		CloseModal  Key `json:"closeModal"`
+	AIQuery struct {
+		ExitAIQuery Key `json:"exitAIQuery"`
 		ClearPrompt Key `json:"clearPrompt"`
 	}
 )
@@ -187,7 +187,7 @@ func (k *KeyBindings) loadDefaults() {
 			Keys:        []string{"Ctrl+S"},
 			Description: "Show server info",
 		},
-		ShowAIPrompt: Key{
+		ShowAIQuery: Key{
 			Keys:        []string{"Ctrl+A"},
 			Description: "Show AI prompt",
 		},
@@ -424,10 +424,10 @@ func (k *KeyBindings) loadDefaults() {
 		},
 	}
 
-	k.AIPrompt = AIPromptKeys{
-		CloseModal: Key{
+	k.AIQuery = AIQuery{
+		ExitAIQuery: Key{
 			Keys:        []string{"Esc"},
-			Description: "Close modal",
+			Description: "Exit AI query",
 		},
 		ClearPrompt: Key{
 			Keys:        []string{"Ctrl+D"},

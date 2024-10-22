@@ -14,30 +14,30 @@ import (
 )
 
 const (
-	AIPromptID = "AIPrompt"
+	AIQueryId = "AIQuery"
 )
 
-type AIPrompt struct {
+type AIQuery struct {
 	*core.BaseElement
 	*core.FormModal
 
 	docKeys []string
 }
 
-func NewAIPrompt() *AIPrompt {
+func NewAIQuery() *AIQuery {
 	formModal := core.NewFormModal()
-	a := &AIPrompt{
+	a := &AIQuery{
 		BaseElement: core.NewBaseElement(),
 		FormModal:   formModal,
 	}
 
-	a.SetIdentifier(AIPromptID)
+	a.SetIdentifier(AIQueryId)
 	a.SetAfterInitFunc(a.init)
 
 	return a
 }
 
-func (a *AIPrompt) init() error {
+func (a *AIQuery) init() error {
 	a.setLayout()
 	a.setStyle()
 	a.setKeybindings()
@@ -47,14 +47,14 @@ func (a *AIPrompt) init() error {
 	return nil
 }
 
-func (a *AIPrompt) setLayout() {
+func (a *AIQuery) setLayout() {
 	a.SetBorder(true)
-	a.SetTitle(" AI Prompt ")
+	a.SetTitle(" AI Query ")
 	a.SetTitleAlign(tview.AlignCenter)
 	a.Form.SetBorderPadding(2, 2, 2, 2)
 }
 
-func (a *AIPrompt) setStyle() {
+func (a *AIQuery) setStyle() {
 	styles := a.App.GetStyles()
 	a.SetStyle(styles)
 
@@ -63,14 +63,14 @@ func (a *AIPrompt) setStyle() {
 	a.Form.SetLabelColor(styles.Connection.FormLabelColor.Color())
 }
 
-func (a *AIPrompt) setKeybindings() {
+func (a *AIQuery) setKeybindings() {
 	k := a.App.GetKeys()
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.AIPrompt.CloseModal, event.Name()):
-			a.App.Pages.RemovePage(AIPromptID)
+		case k.Contains(k.AIQuery.ExitAIQuery, event.Name()):
+			a.App.Pages.RemovePage(AIQueryId)
 			return nil
-		case k.Contains(k.AIPrompt.ClearPrompt, event.Name()):
+		case k.Contains(k.AIQuery.ClearPrompt, event.Name()):
 			a.Form.GetFormItem(1).(*tview.InputField).SetText("")
 			return nil
 		}
@@ -78,7 +78,7 @@ func (a *AIPrompt) setKeybindings() {
 	})
 }
 
-func (a *AIPrompt) IsAIPromptFocused() bool {
+func (a *AIQuery) IsAIQueryFocused() bool {
 	if a.App.GetFocus() == a.FormModal {
 		return true
 	}
@@ -88,8 +88,8 @@ func (a *AIPrompt) IsAIPromptFocused() bool {
 	return false
 }
 
-func (a *AIPrompt) handleEvents() {
-	go a.HandleEvents(AIPromptID, func(event manager.EventMsg) {
+func (a *AIQuery) handleEvents() {
+	go a.HandleEvents(AIQueryId, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			a.setStyle()
@@ -100,7 +100,7 @@ func (a *AIPrompt) handleEvents() {
 	})
 }
 
-func (a *AIPrompt) Render() {
+func (a *AIQuery) Render() {
 	a.Form.Clear(true)
 
 	models, defaultModelIndex := ai.GetAiModels()
@@ -112,7 +112,7 @@ func (a *AIPrompt) Render() {
 		AddTextView("Response:", "", 0, 3, true, false)
 }
 
-func (a *AIPrompt) onSubmit() {
+func (a *AIQuery) onSubmit() {
 	var driver ai.AIDriver
 
 	_, model := a.Form.GetFormItem(0).(*tview.DropDown).GetCurrentOption()
@@ -170,15 +170,15 @@ func (a *AIPrompt) onSubmit() {
 	a.showResponse(response)
 }
 
-func (a *AIPrompt) showError(message string) {
+func (a *AIQuery) showError(message string) {
 	a.Form.GetFormItem(2).(*tview.TextView).SetText(fmt.Sprintf("Error: %s", message)).SetTextColor(tcell.ColorRed)
 }
 
-func (a *AIPrompt) showResponse(response string) {
+func (a *AIQuery) showResponse(response string) {
 	a.Form.GetFormItem(2).(*tview.TextView).SetText(fmt.Sprintf("%s", response)).SetTextColor(tcell.ColorGreen)
 }
 
-func (a *AIPrompt) onApplyQuery() {
+func (a *AIQuery) onApplyQuery() {
 	response := a.Form.GetFormItem(2).(*tview.TextView).GetText(true)
 	if response == "" {
 		a.showError("No query to apply. Please submit a prompt first.")
@@ -193,5 +193,5 @@ func (a *AIPrompt) onApplyQuery() {
 		},
 	})
 
-	a.App.Pages.RemovePage(AIPromptID)
+	a.App.Pages.RemovePage(AIQueryId)
 }

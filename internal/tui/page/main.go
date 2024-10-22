@@ -30,7 +30,7 @@ type Main struct {
 	databases *component.Database
 	content   *component.Content
 	index     *component.Index
-	aiPrompt  *component.AIPrompt
+	aiPrompt  *component.AIQuery
 }
 
 func NewMain() *Main {
@@ -43,7 +43,7 @@ func NewMain() *Main {
 		databases:   component.NewDatabase(),
 		content:     component.NewContent(),
 		index:       component.NewIndex(),
-		aiPrompt:    component.NewAIPrompt(),
+		aiPrompt:    component.NewAIQuery(),
 	}
 
 	m.SetIdentifier(MainPageId)
@@ -152,7 +152,7 @@ func (m *Main) setKeybindings() {
 		switch {
 		case k.Contains(k.Main.FocusNext, event.Name()):
 			// TODO: figure out how to handle key priorities
-			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIPromptFocused() {
+			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIQueryFocused() {
 				return event
 			}
 			if m.databases.IsFocused() {
@@ -166,7 +166,7 @@ func (m *Main) setKeybindings() {
 			}
 			return nil
 		case k.Contains(k.Main.FocusPrevious, event.Name()):
-			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIPromptFocused() {
+			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIQueryFocused() {
 				return event
 			}
 			if m.tabBar.GetActiveTabIndex() == 0 {
@@ -190,7 +190,7 @@ func (m *Main) setKeybindings() {
 		case k.Contains(k.Main.ShowServerInfo, event.Name()):
 			m.ShowServerInfoModal()
 			return nil
-		case k.Contains(k.Main.ShowAIPrompt, event.Name()):
+		case k.Contains(k.Main.ShowAIQuery, event.Name()):
 			m.ShowAIPrompt()
 			return nil
 		}
@@ -218,5 +218,5 @@ func (m *Main) ShowServerInfoModal() {
 
 func (m *Main) ShowAIPrompt() {
 	m.aiPrompt.Render()
-	m.App.Pages.AddPage(component.AIPromptID, m.aiPrompt, true, true)
+	m.App.Pages.AddPage(component.AIQueryId, m.aiPrompt, true, true)
 }
