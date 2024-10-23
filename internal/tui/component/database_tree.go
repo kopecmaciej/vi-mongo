@@ -409,19 +409,18 @@ func (t *DatabaseTree) showRenameCollectionModal(ctx context.Context) error {
 	if t.GetCurrentNode().GetLevel() < 2 {
 		return fmt.Errorf("cannot rename database")
 	}
-	parent := t.GetCurrentNode().GetReference().(*tview.TreeNode)
-	db, coll := parent.GetText(), t.GetCurrentNode().GetText()
+	db, coll := t.GetCurrentNode().GetReference().(*tview.TreeNode).GetText(), t.GetCurrentNode().GetText()
 	t.inputModal.SetLabel(fmt.Sprintf("Rename collection name for [%s][::b]%s", t.style.NodeTextColor.Color(), db))
-	t.inputModal.SetInputCapture(t.createRenameCollectionInputCapture(ctx, parent, db, coll))
+	t.inputModal.SetInputCapture(t.createRenameCollectionInputCapture(ctx, db, coll))
 	t.App.Pages.AddPage(InputModalId, t.inputModal, true, true)
 	return nil
 }
 
-func (t *DatabaseTree) createRenameCollectionInputCapture(ctx context.Context, parent *tview.TreeNode, db, coll string) func(*tcell.EventKey) *tcell.EventKey {
+func (t *DatabaseTree) createRenameCollectionInputCapture(ctx context.Context, db, coll string) func(*tcell.EventKey) *tcell.EventKey {
 	return func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEnter:
-			t.handleRenameCollection(ctx, parent, db, coll)
+			t.handleRenameCollection(ctx, db, coll)
 		case tcell.KeyEscape:
 			t.closeAddModal()
 		}
@@ -429,7 +428,7 @@ func (t *DatabaseTree) createRenameCollectionInputCapture(ctx context.Context, p
 	}
 }
 
-func (t *DatabaseTree) handleRenameCollection(ctx context.Context, parent *tview.TreeNode, db, coll string) {
+func (t *DatabaseTree) handleRenameCollection(ctx context.Context, db, coll string) {
 	newCollectionName := t.inputModal.GetText()
 	if newCollectionName == "" {
 		return
@@ -441,11 +440,11 @@ func (t *DatabaseTree) handleRenameCollection(ctx context.Context, parent *tview
 		modal.ShowError(t.App.Pages, "Error renaming collection", err)
 		return
 	}
-	t.renameCollectionNode(coll, newCollectionName)
+	t.renameCollectionNode(newCollectionName)
 	t.closeAddModal()
 }
 
-func (t *DatabaseTree) renameCollectionNode(oldName, newName string) {
+func (t *DatabaseTree) renameCollectionNode(newName string) {
 	currentNode := t.GetCurrentNode()
 	leafSymbol := config.SymbolWithColor(t.style.LeafSymbol, t.style.LeafSymbolColor)
 	newText := fmt.Sprintf("%s %s", leafSymbol, newName)
