@@ -366,12 +366,11 @@ func (d *Dao) ExecuteCommand(ctx context.Context, command string) ([]byte, error
 		return nil, err
 	}
 
-	var buf bytes.Buffer
-	enc, err := bson.NewEncoder(&buf)
-	err = enc.Encode(result)
+	// Convert BSON to JSON
+	jsonBytes, err := bson.MarshalExtJSON(result, true, true)
 	if err != nil {
 		return nil, err
 	}
 
-	return buf.Bytes(), nil
+	return jsonBytes, nil
 }
