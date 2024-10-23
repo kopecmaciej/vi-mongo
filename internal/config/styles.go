@@ -26,7 +26,7 @@ type (
 		TabBar      TabBarStyle      `yaml:"tabBar"`
 		Databases   DatabasesStyle   `yaml:"databases"`
 		Content     ContentStyle     `yaml:"content"`
-		AIPrompt    AIPromptStyle    `yaml:"aiPrompt"`
+		AIPrompt    AIQueryStyle     `yaml:"aiQuery"`
 		DocPeeker   DocPeekerStyle   `yaml:"docPeeker"`
 		InputBar    InputBarStyle    `yaml:"inputBar"`
 		History     HistoryStyle     `yaml:"history"`
@@ -158,7 +158,7 @@ type (
 		SelectedBackgroundColor Style `yaml:"selectedBackgroundColor"`
 	}
 
-	AIPromptStyle struct {
+	AIQueryStyle struct {
 		FormLabelColor           Style `yaml:"formLabelColor"`
 		FormInputBackgroundColor Style `yaml:"formInputBackgroundColor"`
 		FormInputColor           Style `yaml:"formInputColor"`
@@ -273,7 +273,7 @@ func (s *Styles) loadDefaults() {
 		SelectedBackgroundColor: "#387D44",
 	}
 
-	s.AIPrompt = AIPromptStyle{
+	s.AIPrompt = AIQueryStyle{
 		FormLabelColor:           "#F1FA8C",
 		FormInputBackgroundColor: "#163694",
 		FormInputColor:           "#F1FA8C",
