@@ -402,3 +402,50 @@ func (t *DatabaseTree) updateLeafSymbol(node *tview.TreeNode) {
 	}
 	node.SetText(fmt.Sprintf("%s %s", leafSymbol, currText[1]))
 }
+func (t *DatabaseTree) showRenameCollectionModal(ctx context.Context) error {
+    if t.GetCurrentNode().GetLevel() < 2 {
+        return fmt.Errorf("cannot rename database")
+    }
+    parent := t.GetCurrentNode().GetReference().(*tview.TreeNode)
+    db, coll := parent.GetText(), t.GetCurrentNode().GetText()
+    t.addModal.SetLabel(fmt.Sprintf("Rename collection name for [%s][::b]%s", t.style.NodeTextColor.Color(), db))
+    t.addModal.SetInputCapture(t.createRenameCollectionInputCapture(ctx, parent, db, coll))
+    t.App.Pages.AddPage(InputModalId, t.addModal, true, true)
+    return nil
+}
+
+func (t *DatabaseTree) createRenameCollectionInputCapture(ctx context.Context, parent *tview.TreeNode, db, coll string) func(*tcell.EventKey) *tcell.EventKey {
+    return func(event *tcell.EventKey) *tcell.EventKey {
+        switch event.Key() {
+        case tcell.KeyEnter:
+            t.handleRenameCollection(ctx, parent, db, coll)
+        case tcell.KeyEscape:
+            t.closeAddModal()
+        }
+        return event
+    }
+}
+
+func (t *DatabaseTree) handleRenameCollection(ctx context.Context, parent *tview.TreeNode, db, coll string) {
+    newCollectionName := t.addModal.GetText()
+    if newCollectionName == "" {
+        return
+    }
+    db, coll = t.removeSymbols(db, coll)
+    err := t.Dao.RenameCollection(ctx, db, coll, newCollectionName)
+    if err != nil {
+        log.Error().Err(err).Msg("Error renaming collection")
+        return
+    }
+    t.renameCollectionNode(parent, coll, newCollectionName)
+    t.closeAddModal()
+}
+
+func (t *DatabaseTree) renameCollectionNode(parent *tview.TreeNode, oldName, newName string) {
+    for _, child := range parent.GetChildren() {
+        if child.GetText() == oldName {
+            child.SetText(newName)
+            break
+        }
+    }
+}
