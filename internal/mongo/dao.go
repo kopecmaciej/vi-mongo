@@ -219,9 +219,14 @@ func (d *Dao) DeleteCollection(ctx context.Context, db string, collection string
 }
 
 func (d *Dao) RenameCollection(ctx context.Context, db string, oldCollection string, newCollection string) error {
-	err := d.client.Database(db).Collection(oldCollection).Rename(ctx, newCollection)
+	renameCmd := bson.D{
+		{Key: "renameCollection", Value: fmt.Sprintf("%s.%s", db, oldCollection)},
+		{Key: "to", Value: fmt.Sprintf("%s.%s", db, newCollection)},
+	}
+
+	err := d.client.Database("admin").RunCommand(ctx, renameCmd).Err()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to rename collection: %w", err)
 	}
 
 	log.Debug().Msgf("Collection renamed, db: %v, old collection: %v, new collection: %v", db, oldCollection, newCollection)

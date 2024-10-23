@@ -66,6 +66,7 @@ type (
 		CollapseAll      Key `json:"collapseAll"`
 		AddCollection    Key `json:"addCollection"`
 		DeleteCollection Key `json:"deleteCollection"`
+		RenameCollection Key `json:"renameCollection"`
 	}
 
 	ContentKeys struct {
@@ -213,6 +214,10 @@ func (k *KeyBindings) loadDefaults() {
 		DeleteCollection: Key{
 			Runes:       []string{"D"},
 			Description: "Delete collection",
+		},
+		RenameCollection: Key{
+			Runes:       []string{"R"},
+			Description: "Rename collection",
 		},
 	}
 

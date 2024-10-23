@@ -27,7 +27,7 @@ type DatabaseTree struct {
 	*core.BaseElement
 	*core.TreeView
 
-	addModal    *primitives.InputModal
+	inputModal  *primitives.InputModal
 	deleteModal *modal.Delete
 	style       *config.DatabasesStyle
 
@@ -38,7 +38,7 @@ func NewDatabaseTree() *DatabaseTree {
 	d := &DatabaseTree{
 		BaseElement: core.NewBaseElement(),
 		TreeView:    core.NewTreeView(),
-		addModal:    primitives.NewInputModal(),
+		inputModal:  primitives.NewInputModal(),
 		deleteModal: modal.NewDeleteModal(DatabaseDeleteModalId),
 	}
 
@@ -73,8 +73,8 @@ func (t *DatabaseTree) setLayout() {
 	t.SetBorderPadding(0, 0, 1, 1)
 	t.SetGraphics(false)
 
-	t.addModal.SetBorder(true)
-	t.addModal.SetTitle("Add collection")
+	t.inputModal.SetBorder(true)
+	t.inputModal.SetTitle("Add collection")
 }
 
 func (t *DatabaseTree) setStyle() {
@@ -82,10 +82,10 @@ func (t *DatabaseTree) setStyle() {
 	t.TreeView.SetStyle(globalStyle)
 	t.style = &globalStyle.Databases
 
-	t.addModal.SetBorderColor(globalStyle.Global.BorderColor.Color())
-	t.addModal.SetBackgroundColor(globalStyle.Global.BackgroundColor.Color())
-	t.addModal.SetFieldTextColor(globalStyle.Others.ModalTextColor.Color())
-	t.addModal.SetFieldBackgroundColor(globalStyle.Global.ContrastBackgroundColor.Color())
+	t.inputModal.SetBorderColor(globalStyle.Global.BorderColor.Color())
+	t.inputModal.SetBackgroundColor(globalStyle.Global.BackgroundColor.Color())
+	t.inputModal.SetFieldTextColor(globalStyle.Others.ModalTextColor.Color())
+	t.inputModal.SetFieldBackgroundColor(globalStyle.Global.ContrastBackgroundColor.Color())
 }
 
 func (t *DatabaseTree) setKeybindings(ctx context.Context) {
@@ -184,9 +184,9 @@ func (t *DatabaseTree) showAddCollectionModal(ctx context.Context) error {
 	}
 	db := parent.GetText()
 
-	t.addModal.SetLabel(fmt.Sprintf("Add collection name for [%s][::b]%s", t.style.NodeTextColor.Color(), db))
-	t.addModal.SetInputCapture(t.createAddCollectionInputCapture(ctx, parent, db))
-	t.App.Pages.AddPage(InputModalId, t.addModal, true, true)
+	t.inputModal.SetLabel(fmt.Sprintf("Add collection name for [%s][::b]%s", t.style.NodeTextColor.Color(), db))
+	t.inputModal.SetInputCapture(t.createAddCollectionInputCapture(ctx, parent, db))
+	t.App.Pages.AddPage(InputModalId, t.inputModal, true, true)
 	return nil
 }
 
@@ -203,7 +203,7 @@ func (t *DatabaseTree) createAddCollectionInputCapture(ctx context.Context, pare
 }
 
 func (t *DatabaseTree) handleAddCollection(ctx context.Context, parent *tview.TreeNode, db string) {
-	collectionName := t.addModal.GetText()
+	collectionName := t.inputModal.GetText()
 	if collectionName == "" {
 		return
 	}
@@ -218,7 +218,7 @@ func (t *DatabaseTree) handleAddCollection(ctx context.Context, parent *tview.Tr
 }
 
 func (t *DatabaseTree) closeAddModal() {
-	t.addModal.SetText("")
+	t.inputModal.SetText("")
 	t.App.Pages.RemovePage(InputModalId)
 }
 
@@ -406,49 +406,48 @@ func (t *DatabaseTree) updateLeafSymbol(node *tview.TreeNode) {
 	node.SetText(fmt.Sprintf("%s %s", leafSymbol, currText[1]))
 }
 func (t *DatabaseTree) showRenameCollectionModal(ctx context.Context) error {
-    if t.GetCurrentNode().GetLevel() < 2 {
-        return fmt.Errorf("cannot rename database")
-    }
-    parent := t.GetCurrentNode().GetReference().(*tview.TreeNode)
-    db, coll := parent.GetText(), t.GetCurrentNode().GetText()
-    t.addModal.SetLabel(fmt.Sprintf("Rename collection name for [%s][::b]%s", t.style.NodeTextColor.Color(), db))
-    t.addModal.SetInputCapture(t.createRenameCollectionInputCapture(ctx, parent, db, coll))
-    t.App.Pages.AddPage(InputModalId, t.addModal, true, true)
-    return nil
+	if t.GetCurrentNode().GetLevel() < 2 {
+		return fmt.Errorf("cannot rename database")
+	}
+	parent := t.GetCurrentNode().GetReference().(*tview.TreeNode)
+	db, coll := parent.GetText(), t.GetCurrentNode().GetText()
+	t.inputModal.SetLabel(fmt.Sprintf("Rename collection name for [%s][::b]%s", t.style.NodeTextColor.Color(), db))
+	t.inputModal.SetInputCapture(t.createRenameCollectionInputCapture(ctx, parent, db, coll))
+	t.App.Pages.AddPage(InputModalId, t.inputModal, true, true)
+	return nil
 }
 
 func (t *DatabaseTree) createRenameCollectionInputCapture(ctx context.Context, parent *tview.TreeNode, db, coll string) func(*tcell.EventKey) *tcell.EventKey {
-    return func(event *tcell.EventKey) *tcell.EventKey {
-        switch event.Key() {
-        case tcell.KeyEnter:
-            t.handleRenameCollection(ctx, parent, db, coll)
-        case tcell.KeyEscape:
-            t.closeAddModal()
-        }
-        return event
-    }
+	return func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyEnter:
+			t.handleRenameCollection(ctx, parent, db, coll)
+		case tcell.KeyEscape:
+			t.closeAddModal()
+		}
+		return event
+	}
 }
 
 func (t *DatabaseTree) handleRenameCollection(ctx context.Context, parent *tview.TreeNode, db, coll string) {
-    newCollectionName := t.addModal.GetText()
-    if newCollectionName == "" {
-        return
-    }
-    db, coll = t.removeSymbols(db, coll)
-    err := t.Dao.RenameCollection(ctx, db, coll, newCollectionName)
-    if err != nil {
-        log.Error().Err(err).Msg("Error renaming collection")
-        return
-    }
-    t.renameCollectionNode(parent, coll, newCollectionName)
-    t.closeAddModal()
+	newCollectionName := t.inputModal.GetText()
+	if newCollectionName == "" {
+		return
+	}
+	db, coll = t.removeSymbols(db, coll)
+	err := t.Dao.RenameCollection(ctx, db, coll, newCollectionName)
+	if err != nil {
+		log.Error().Err(err).Msg("Error renaming collection")
+		modal.ShowError(t.App.Pages, "Error renaming collection", err)
+		return
+	}
+	t.renameCollectionNode(coll, newCollectionName)
+	t.closeAddModal()
 }
 
-func (t *DatabaseTree) renameCollectionNode(parent *tview.TreeNode, oldName, newName string) {
-    for _, child := range parent.GetChildren() {
-        if child.GetText() == oldName {
-            child.SetText(newName)
-            break
-        }
-    }
+func (t *DatabaseTree) renameCollectionNode(oldName, newName string) {
+	currentNode := t.GetCurrentNode()
+	leafSymbol := config.SymbolWithColor(t.style.LeafSymbol, t.style.LeafSymbolColor)
+	newText := fmt.Sprintf("%s %s", leafSymbol, newName)
+	currentNode.SetText(newText)
 }
