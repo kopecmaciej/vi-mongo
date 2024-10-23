@@ -16,6 +16,12 @@ type TabBarPrimitive interface {
 	Render()
 }
 
+type ShellPrimitive interface {
+	tview.Primitive
+	Render()
+	Init() error
+}
+
 type TabBarComponent struct {
 	id        string
 	primitive TabBarPrimitive
@@ -81,6 +87,17 @@ func (t *TabBar) AddTab(name string, component TabBarPrimitive, defaultTab bool)
 	t.Render()
 }
 
+func (t *TabBar) AddShellTab(name string, shell ShellPrimitive, defaultTab bool) {
+	t.tabs = append(t.tabs, &TabBarComponent{
+		id:        name,
+		primitive: shell,
+	})
+	if defaultTab {
+		t.active = len(t.tabs) - 1
+	}
+	t.Render()
+}
+
 func (t *TabBar) NextTab() {
 	if t.active < len(t.tabs)-1 {
 		t.active++
@@ -112,6 +129,11 @@ func (t *TabBar) Render() {
 	}
 }
 
+func (t *TabBar) RenderActiveTab() {
+	component := t.GetActiveComponentAndRender()
+	t.App.SetRoot(component, true)
+}
+
 func (t *TabBar) GetActiveComponent() TabBarPrimitive {
 	return t.tabs[t.active].primitive
 }
@@ -119,6 +141,9 @@ func (t *TabBar) GetActiveComponent() TabBarPrimitive {
 func (t *TabBar) GetActiveComponentAndRender() TabBarPrimitive {
 	component := t.tabs[t.active]
 	if !component.rendered {
+		if shell, ok := component.primitive.(ShellPrimitive); ok {
+			shell.Init()
+		}
 		component.primitive.Render()
 		component.rendered = true
 	}

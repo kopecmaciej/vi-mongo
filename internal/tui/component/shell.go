@@ -39,6 +39,10 @@ func NewShell() *Shell {
 	return s
 }
 
+func (s *Shell) Init() error {
+	return s.init()
+}
+
 func (s *Shell) init() error {
 	s.setLayout()
 	s.setStyle()
