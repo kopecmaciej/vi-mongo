@@ -123,6 +123,7 @@ func (m *Main) Render() {
 		if err != nil {
 			return err
 		}
+		m.shell.SetDb(db)
 		return m.index.HandleDatabaseSelection(ctx, db, coll)
 	})
 

@@ -1,16 +1,12 @@
 package component
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"os/exec"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -23,6 +19,7 @@ type Shell struct {
 
 	output *tview.TextView
 	input  *tview.InputField
+	db     string
 }
 
 func NewShell() *Shell {
@@ -73,7 +70,9 @@ func (s *Shell) setKeybindings() {
 	s.input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEnter:
-			go s.handleInput()
+			go s.App.QueueUpdateDraw(func() {
+				s.handleInput()
+			})
 			return nil
 		}
 		return event
@@ -88,6 +87,10 @@ func (s *Shell) handleEvents() {
 			s.Render()
 		}
 	})
+}
+
+func (s *Shell) SetDb(db string) {
+	s.db = db
 }
 
 func (s *Shell) Render() {
@@ -107,14 +110,13 @@ func (s *Shell) handleInput() {
 
 	output, err := s.executeCommand(command)
 	if err != nil {
-		s.output.Write([]byte("Error: " + err.Error() + "\n"))
+		s.output.SetText("Error: " + err.Error())
 		return
 	}
 
-	s.output.Write(output)
-	s.output.Write([]byte("\n"))
+	s.output.SetText(string(output))
 }
 
 func (s *Shell) executeCommand(command string) ([]byte, error) {
-	return s.Dao.ExecuteCommand(context.Background(), command)
+	return s.Dao.ExecuteCommand(context.Background(), s.db, command)
 }

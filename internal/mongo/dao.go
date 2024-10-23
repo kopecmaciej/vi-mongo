@@ -1,7 +1,6 @@
 package mongo
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"reflect"
@@ -358,15 +357,13 @@ func (d *Dao) DropIndex(ctx context.Context, db, coll, indexName string) error {
 	return err
 }
 
-// ExecuteCommand executes an arbitrary MongoDB command
-func (d *Dao) ExecuteCommand(ctx context.Context, command string) ([]byte, error) {
+func (d *Dao) ExecuteCommand(ctx context.Context, db, command string) ([]byte, error) {
 	var result bson.M
-	err := d.client.Database(d.Config.Database).RunCommand(ctx, bson.D{{Key: "eval", Value: command}}).Decode(&result)
+	err := d.client.Database(db).RunCommand(ctx, bson.D{{Key: "eval", Value: command}}).Decode(&result)
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert BSON to JSON
 	jsonBytes, err := bson.MarshalExtJSON(result, true, true)
 	if err != nil {
 		return nil, err
