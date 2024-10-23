@@ -218,6 +218,17 @@ func (d *Dao) DeleteCollection(ctx context.Context, db string, collection string
 	return nil
 }
 
+func (d *Dao) RenameCollection(ctx context.Context, db string, oldCollection string, newCollection string) error {
+	err := d.client.Database(db).Collection(oldCollection).Rename(ctx, newCollection)
+	if err != nil {
+		return err
+	}
+
+	log.Debug().Msgf("Collection renamed, db: %v, old collection: %v, new collection: %v", db, oldCollection, newCollection)
+
+	return nil
+}
+
 func (d *Dao) ForceClose(ctx context.Context) error {
 	if err := d.client.Disconnect(ctx); err != nil {
 		log.Error().Err(err).Msg("Error disconnecting from the database")

@@ -106,6 +106,9 @@ func (t *DatabaseTree) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Database.DeleteCollection, event.Name()):
 			t.showDeleteCollectionModal(ctx)
 			return nil
+		case k.Contains(k.Database.RenameCollection, event.Name()):
+			t.showRenameCollectionModal(ctx)
+			return nil
 		}
 		return event
 	})
