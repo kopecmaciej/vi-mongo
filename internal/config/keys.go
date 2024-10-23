@@ -58,6 +58,7 @@ type (
 		HideDatabase   Key `json:"hideDatabases"`
 		ShowAIQuery    Key `json:"showAIQuery"`
 		ShowServerInfo Key `json:"showServerInfo"`
+		ShowShell      Key `json:"showShell"`
 	}
 
 	DatabaseKeys struct {
@@ -184,12 +185,16 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Hide databases",
 		},
 		ShowServerInfo: Key{
-			Keys:        []string{"Ctrl+S"},
+			Keys:        []string{"Ctrl+I"},
 			Description: "Show server info",
 		},
 		ShowAIQuery: Key{
 			Keys:        []string{"Ctrl+A"},
 			Description: "Show AI prompt",
+		},
+		ShowShell: Key{
+			Keys:        []string{"Ctrl+S"},
+			Description: "Show shell",
 		},
 	}
 

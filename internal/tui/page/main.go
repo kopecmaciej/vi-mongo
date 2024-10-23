@@ -31,6 +31,7 @@ type Main struct {
 	content   *component.Content
 	index     *component.Index
 	aiPrompt  *component.AIQuery
+	shell     *component.Shell
 }
 
 func NewMain() *Main {
@@ -44,6 +45,7 @@ func NewMain() *Main {
 		content:     component.NewContent(),
 		index:       component.NewIndex(),
 		aiPrompt:    component.NewAIQuery(),
+		shell:       component.NewShell(),
 	}
 
 	m.SetIdentifier(MainPageId)
@@ -193,6 +195,12 @@ func (m *Main) setKeybindings() {
 		case k.Contains(k.Main.ShowAIQuery, event.Name()):
 			m.ShowAIPrompt()
 			return nil
+		case k.Contains(k.Main.ShowAIQuery, event.Name()):
+			m.ShowAIPrompt()
+			return nil
+		case k.Contains(k.Main.ShowShell, event.Name()):
+			m.ShowShell()
+			return nil
 		}
 		return event
 	})
@@ -219,4 +227,9 @@ func (m *Main) ShowServerInfoModal() {
 func (m *Main) ShowAIPrompt() {
 	m.aiPrompt.Render()
 	m.App.Pages.AddPage(component.AIQueryId, m.aiPrompt, true, true)
+}
+
+func (m *Main) ShowShell() {
+	m.shell.Render()
+	m.App.Pages.AddPage(component.ShellId, m.shell, true, true)
 }
