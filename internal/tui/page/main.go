@@ -102,8 +102,13 @@ func (m *Main) initComponents() error {
 		return err
 	}
 
+	if err := m.shell.Init(m.App); err != nil {
+		return err
+	}
+
 	m.tabBar.AddTab("Content", m.content, true)
 	m.tabBar.AddTab("Indexes", m.index, false)
+	m.tabBar.AddTab("Shell", m.shell, false)
 
 	return nil
 }

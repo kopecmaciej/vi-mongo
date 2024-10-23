@@ -116,22 +116,5 @@ func (s *Shell) handleInput() {
 }
 
 func (s *Shell) executeCommand(command string) ([]byte, error) {
-	ctx := context.Background()
-	cmd := exec.CommandContext(ctx, "mongosh", "--eval", command)
-
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-	if err != nil {
-		log.Error().Err(err).Msg("Error executing mongosh command")
-		return nil, err
-	}
-
-	if stderr.Len() > 0 {
-		return nil, fmt.Errorf(stderr.String())
-	}
-
-	return stdout.Bytes(), nil
+	return s.Dao.ExecuteCommand(context.Background(), command)
 }
