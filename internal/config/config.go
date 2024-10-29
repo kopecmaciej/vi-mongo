@@ -271,12 +271,15 @@ func ParseMongoDBURI(uri string) (host, port, db string, err error) {
 		db = ""
 	}
 
-	hostPortSplit := strings.Split(trimURI, ":")
-	host = hostPortSplit[0]
-	if len(hostPortSplit) > 1 {
-		port = hostPortSplit[1]
+	hosts := strings.Split(trimURI, ",")
+	hostPort := strings.Split(hosts[0], ":")
+
+	host = hostPort[0]
+	if len(hostPort) > 1 {
+		port = hostPort[1]
 	} else {
 		port = "27017"
 	}
+
 	return host, port, db, nil
 }

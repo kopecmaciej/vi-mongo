@@ -53,6 +53,22 @@ func TestParseMongoDBURI(t *testing.T) {
 			wantDb:   "mydatabase",
 			wantErr:  false,
 		},
+		{
+			name:     "Sharded cluster URI with multiple hosts",
+			uri:      "mongodb://mongodb1.example.com:27317,mongodb2.example.com:27017/mydatabase",
+			wantHost: "mongodb1.example.com",
+			wantPort: "27317",
+			wantDb:   "mydatabase",
+			wantErr:  false,
+		},
+		{
+			name:     "Complex sharded cluster URI with options",
+			uri:      "mongodb://myDatabaseUser:D1fficultP%40ssw0rd@mongodb1.example.com:27317,mongodb2.example.com:27017/?replicaSet=mySet&authSource=authDB&connectTimeoutMS=10000&authMechanism=SCRAM-SHA-1",
+			wantHost: "mongodb1.example.com",
+			wantPort: "27317",
+			wantDb:   "",
+			wantErr:  false,
+		},
 	}
 
 	for _, tt := range tests {
