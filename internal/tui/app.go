@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
@@ -60,10 +61,7 @@ func (a *App) Run() error {
 
 func (a *App) setKeybindings() {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// workaround for runes not being captured in input bars
-		if strings.HasPrefix(event.Name(), "Rune") &&
-			(strings.Contains(string(a.GetFocus().GetIdentifier()), "Bar") ||
-				strings.Contains(string(a.GetFocus().GetIdentifier()), "Input")) {
+		if a.shouldHandleRune(event) {
 			return event
 		}
 
@@ -91,6 +89,28 @@ func (a *App) setKeybindings() {
 		}
 		return event
 	})
+}
+
+// shouldHandleRune checks if the rune event should be passed through to input fields
+// it's needed if we want to assign rune to global keybindings and this rune should be captured
+// by input fields
+func (a *App) shouldHandleRune(event *tcell.EventKey) bool {
+	if !strings.HasPrefix(event.Name(), "Rune") {
+		return false
+	}
+
+	focus := a.GetFocus()
+	identifier := string(focus.GetIdentifier())
+
+	if strings.Contains(identifier, "Bar") || strings.Contains(identifier, "Input") {
+		return true
+	}
+
+	_, isInputField := focus.(*tview.InputField)
+	_, isCustomInputField := focus.(*core.InputField)
+	_, isFormItem := focus.(tview.FormItem)
+
+	return isInputField || isCustomInputField || isFormItem
 }
 
 func (a *App) connectToMongo() error {
