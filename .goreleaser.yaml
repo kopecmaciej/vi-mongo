@@ -19,7 +19,10 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X github.com/kopecmaciej/vi-mongo/cmd.version={{.Tag}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+      - -s -w
+      - -X github.com/kopecmaciej/vi-mongo/cmd.version={{.Tag}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
 
 archives:
   - format: tar.gz
@@ -35,11 +38,33 @@ archives:
       format: zip
 
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
+  format: |
+    # Release {{ .Tag }}
+
+    🚀 **What's New**
+
+    This release brings enhancements, bug fixes, and more!
+
+    ## Features
+    {{ range .Commits -}}
+      {{ if (contains .Subject "feat:") }}
+    - {{ .Subject | trimPrefix "feat:" }}
+      {{ end }}
+    {{ end }}
+
+    ## Bug Fixes
+    {{ range .Commits -}}
+      {{ if (contains .Subject "fix:") }}
+    - {{ .Subject | trimPrefix "fix:" }}
+      {{ end }}
+    {{ end }}
+
+    ## Maintenance
+    {{ range .Commits -}}
+      {{ if (contains .Subject "chore:" "refactor:") }}
+    - {{ .Subject }}
+      {{ end }}
+    {{ end }}
 
 release:
   github:
@@ -48,3 +73,6 @@ release:
 
   # for now it will be a pre-release
   prerelease: true
+
+checksum:
+  name_template: "{{ .ProjectName }}_checksum_sha256.txt"
