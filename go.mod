@@ -6,16 +6,14 @@ require (
 	github.com/gdamore/tcell/v2 v2.7.1
 	github.com/kopecmaciej/tview v0.1.0
 	github.com/rs/zerolog v1.32.0
+	github.com/sashabaranov/go-openai v1.32.2
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
 	go.mongodb.org/mongo-driver v1.14.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require (
-	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/sashabaranov/go-openai v1.32.2 // indirect
-)
+require github.com/inconshreveable/mousetrap v1.1.0 // indirect
 
 require (
 	github.com/adrg/xdg v0.4.0
