@@ -47,6 +47,7 @@ type (
 	// for the application, they can be triggered from any view
 	// as keys are passed from top to bottom
 	GlobalKeys struct {
+		CloseApp             Key `json:"closeApp"`
 		ToggleFullScreenHelp Key `json:"toggleFullScreenHelp"`
 		OpenConnection       Key `json:"openConnection"`
 		ShowStyleModal       Key `json:"showStyleModal"`
@@ -157,6 +158,11 @@ type (
 
 func (k *KeyBindings) loadDefaults() {
 	k.Global = GlobalKeys{
+		CloseApp: Key{
+			Keys:        []string{"Ctrl+C"},
+			Runes:       []string{"q"},
+			Description: "Close application",
+		},
 		ToggleFullScreenHelp: Key{
 			Runes:       []string{"?"},
 			Description: "Toggle full screen help",

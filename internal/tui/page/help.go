@@ -2,6 +2,7 @@ package page
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
@@ -142,18 +143,15 @@ func (h *Help) addHeaderSection(name string, row, col int) {
 func (h *Help) AddKeySection(name string, keys []config.Key, row *int, col int) {
 	for _, key := range keys {
 		var keyString string
-		var iter []string
-		if len(key.Keys) > 0 {
-			iter = key.Keys
-		} else {
-			iter = key.Runes
-		}
-		for i, k := range iter {
-			if i == 0 {
-				keyString = k
-			} else {
-				keyString = fmt.Sprintf("%s, %s", keyString, k)
-			}
+
+		if len(key.Keys) > 0 && len(key.Runes) > 0 {
+			keyString = fmt.Sprintf("%s, %s",
+				strings.Join(key.Keys, ", "),
+				strings.Join(key.Runes, ", "))
+		} else if len(key.Keys) > 0 {
+			keyString = strings.Join(key.Keys, ", ")
+		} else if len(key.Runes) > 0 {
+			keyString = strings.Join(key.Runes, ", ")
 		}
 
 		h.Table.SetCell(*row, col, tview.NewTableCell(keyString).SetTextColor(h.style.KeyColor.Color()))

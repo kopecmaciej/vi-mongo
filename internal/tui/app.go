@@ -68,6 +68,9 @@ func (a *App) setKeybindings() {
 		}
 
 		switch {
+		case a.GetKeys().Contains(a.GetKeys().Global.CloseApp, event.Name()):
+			a.Stop()
+			return nil
 		case a.GetKeys().Contains(a.GetKeys().Global.OpenConnection, event.Name()):
 			a.renderConnection()
 			return nil
