@@ -4,7 +4,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -12,8 +11,6 @@ const (
 )
 
 func NewInfo(message string) *tview.Modal {
-	log.Info().Msg(message)
-
 	message = "[White::b] " + message + " [::]"
 
 	infoModal := tview.NewModal()

@@ -185,7 +185,7 @@ func (c *Config) AddConnection(mongoConfig *MongoConfig) error {
 // AddConnectionFromUri adds a MongoDB connection to the config file
 // using a URI
 func (c *Config) AddConnectionFromUri(mongoConfig *MongoConfig) error {
-	log.Info().Msgf("Adding connection from URI: %s", mongoConfig.Uri)
+	log.Info().Msgf("Adding connection from URI: %s", mongoConfig.GetSafeUri())
 	host, port, db, err := ParseMongoDBURI(mongoConfig.Uri)
 	if err != nil {
 		return err

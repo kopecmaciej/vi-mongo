@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/kopecmaciej/vi-mongo/internal/config"
-	"github.com/rs/zerolog/log"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -34,8 +33,6 @@ func (m *Client) Connect() error {
 	}
 
 	m.Client = client
-
-	log.Info().Msgf("Connected to %s", uri)
 
 	return nil
 }
