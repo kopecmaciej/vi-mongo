@@ -71,17 +71,42 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 		filter = primitive.M{"name": primitive.Regex{Pattern: nameRegex, Options: "i"}}
 	}
 
-	dbs, err := d.client.ListDatabaseNames(ctx, filter)
+	dbNames, err := d.client.ListDatabaseNames(ctx, filter)
 	if err != nil {
+		log.Error().Err(err).Msg("Error listing databases")
 		return nil, err
 	}
 
-	for _, db := range dbs {
-		colls, err := d.client.Database(db).ListCollectionNames(ctx, primitive.M{})
+	for _, db := range dbNames {
+		listCollOptions := options.ListCollections().SetNameOnly(true)
+
+		cursor, err := d.client.Database(db).ListCollections(ctx, primitive.M{}, listCollOptions)
 		if err != nil {
-			return nil, err
+			log.Debug().Err(err).Msgf("Skipping database %s due to permission error", db)
+			continue
 		}
-		dbCollMap = append(dbCollMap, DBsWithCollections{DB: db, Collections: colls})
+
+		var collections []string
+		for cursor.Next(ctx) {
+			var result struct {
+				Name string `bson:"name"`
+			}
+			if err := cursor.Decode(&result); err != nil {
+				log.Debug().Err(err).Msgf("Error decoding collection name in database %s", db)
+				continue
+			}
+			collections = append(collections, result.Name)
+		}
+
+		if err := cursor.Err(); err != nil {
+			log.Debug().Err(err).Msgf("Error iterating collections in database %s", db)
+			continue
+		}
+		cursor.Close(ctx)
+
+		if len(collections) > 0 {
+			dbCollMap = append(dbCollMap, DBsWithCollections{DB: db, Collections: collections})
+		}
 	}
 
 	return dbCollMap, nil
@@ -261,6 +286,7 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]I
 	coll := d.client.Database(db).Collection(collection)
 	cursor, err := coll.Indexes().List(ctx)
 	if err != nil {
+		log.Error().Err(err).Msgf("Error fetching indexes for database %s, collection %s", db, collection)
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -303,13 +329,14 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]I
 	}
 
 	if err := cursor.Err(); err != nil {
+		log.Error().Err(err).Msgf("Error iterating indexes for database %s, collection %s", db, collection)
 		return nil, err
 	}
 
 	// Fetch index sizes and usage statistics
 	stats, err := d.getIndexStats(ctx, db, collection)
 	if err != nil {
-		log.Warn().Err(err).Msg("Failed to fetch index statistics")
+		log.Debug().Err(err).Msgf("Error fetching index statistics for database %s, collection %s", db, collection)
 	} else {
 		for i, idx := range indexes {
 			if stat, ok := stats[idx.Name]; ok {
