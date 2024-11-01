@@ -38,11 +38,11 @@ func Execute() error {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.config/vi-mongo/config.yaml)")
-	rootCmd.Flags().BoolVar(&showVersion, "version", false, "Show version")
-	rootCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug mode")
-	rootCmd.Flags().BoolVar(&welcomePage, "welcome-page", false, "Show welcome page on startup")
-	rootCmd.Flags().BoolVar(&connectionPage, "connection-page", false, "Show connection page on startup")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.config/vi-mongo/config.yaml)")
+	rootCmd.Flags().BoolVarP(&showVersion, "version", "v", false, "Show version")
+	rootCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Enable debug mode")
+	rootCmd.Flags().BoolVarP(&welcomePage, "welcome-page", "w", false, "Show welcome page on startup")
+	rootCmd.Flags().BoolVarP(&connectionPage, "connection-page", "n", false, "Show connection page on startup")
 }
 
 func runApp(cmd *cobra.Command, args []string) {
