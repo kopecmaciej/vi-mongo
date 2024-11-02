@@ -71,17 +71,23 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 		filter = primitive.M{"name": primitive.Regex{Pattern: nameRegex, Options: "i"}}
 	}
 
-	dbs, err := d.client.ListDatabaseNames(ctx, filter)
+	listDbOptions := options.ListDatabases().SetAuthorizedDatabases(true)
+	dbNames, err := d.client.ListDatabaseNames(ctx, filter, listDbOptions)
 	if err != nil {
+		log.Error().Err(err).Msg("Error listing databases")
 		return nil, err
 	}
 
-	for _, db := range dbs {
-		colls, err := d.client.Database(db).ListCollectionNames(ctx, primitive.M{})
+	for _, dbName := range dbNames {
+		listCollOptions := options.ListCollections().SetAuthorizedCollections(true)
+
+		collNames, err := d.client.Database(dbName).ListCollectionNames(ctx, primitive.M{}, listCollOptions)
 		if err != nil {
-			return nil, err
+			log.Error().Err(err).Msgf("Error listing collections for database %s", dbName)
+			continue
 		}
-		dbCollMap = append(dbCollMap, DBsWithCollections{DB: db, Collections: colls})
+
+		dbCollMap = append(dbCollMap, DBsWithCollections{DB: dbName, Collections: collNames})
 	}
 
 	return dbCollMap, nil
@@ -261,6 +267,7 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]I
 	coll := d.client.Database(db).Collection(collection)
 	cursor, err := coll.Indexes().List(ctx)
 	if err != nil {
+		log.Error().Err(err).Msgf("Error fetching indexes for database %s, collection %s", db, collection)
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -269,6 +276,7 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]I
 	for cursor.Next(ctx) {
 		var idx bson.M
 		if err := cursor.Decode(&idx); err != nil {
+			log.Error().Err(err).Msgf("Error unmarshalling indexes info for database %s, collection %s", db, collection)
 			return nil, err
 		}
 
@@ -303,13 +311,14 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]I
 	}
 
 	if err := cursor.Err(); err != nil {
+		log.Error().Err(err).Msgf("Error iterating indexes for database %s, collection %s", db, collection)
 		return nil, err
 	}
 
 	// Fetch index sizes and usage statistics
 	stats, err := d.getIndexStats(ctx, db, collection)
 	if err != nil {
-		log.Warn().Err(err).Msg("Failed to fetch index statistics")
+		log.Debug().Err(err).Msgf("Error fetching index statistics for database %s, collection %s", db, collection)
 	} else {
 		for i, idx := range indexes {
 			if stat, ok := stats[idx.Name]; ok {

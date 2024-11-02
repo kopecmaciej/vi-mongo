@@ -94,6 +94,7 @@ func (d *Database) handleEvents() {
 }
 
 func (d *Database) Render() {
+	ctx := context.Background()
 	d.Flex.Clear()
 
 	var primitive tview.Primitive
@@ -105,12 +106,12 @@ func (d *Database) Render() {
 	}
 	defer d.App.SetFocus(primitive)
 
-	if err := d.listDbsAndCollections(context.Background()); err != nil {
-		modal.ShowError(d.App.Pages, "Failed to list databases and collections", err)
+	if err := d.listDbsAndCollections(ctx); err != nil {
+		modal.ShowError(d.App.Pages, "Failed to list databases and collections", nil)
 		return
 	}
 
-	d.DbTree.Render(context.Background(), d.dbsWithColls, false)
+	d.DbTree.Render(ctx, d.dbsWithColls, false)
 
 	d.Flex.AddItem(d.DbTree, 0, 1, true)
 }
