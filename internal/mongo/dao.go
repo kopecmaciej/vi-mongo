@@ -78,7 +78,7 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 	}
 
 	for _, db := range dbNames {
-		listCollOptions := options.ListCollections().SetNameOnly(true)
+		listCollOptions := options.ListCollections().SetNameOnly(true).SetAuthorizedCollections(true)
 
 		cursor, err := d.client.Database(db).ListCollections(ctx, primitive.M{}, listCollOptions)
 		if err != nil {
@@ -104,9 +104,7 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 		}
 		cursor.Close(ctx)
 
-		if len(collections) > 0 {
-			dbCollMap = append(dbCollMap, DBsWithCollections{DB: db, Collections: collections})
-		}
+		dbCollMap = append(dbCollMap, DBsWithCollections{DB: db, Collections: collections})
 	}
 
 	return dbCollMap, nil
@@ -295,6 +293,7 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]I
 	for cursor.Next(ctx) {
 		var idx bson.M
 		if err := cursor.Decode(&idx); err != nil {
+			log.Error().Err(err).Msgf("Error unmarshalling indexes info for database %s, collection %s", db, collection)
 			return nil, err
 		}
 

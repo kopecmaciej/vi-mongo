@@ -116,7 +116,8 @@ func (m *Main) Render() {
 		if err != nil {
 			return err
 		}
-		return m.index.HandleDatabaseSelection(ctx, db, coll)
+		m.index.HandleDatabaseSelection(ctx, db, coll)
+		return nil
 	})
 
 	m.render()
