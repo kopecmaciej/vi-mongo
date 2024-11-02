@@ -71,40 +71,23 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 		filter = primitive.M{"name": primitive.Regex{Pattern: nameRegex, Options: "i"}}
 	}
 
-	dbNames, err := d.client.ListDatabaseNames(ctx, filter)
+	listDbOptions := options.ListDatabases().SetAuthorizedDatabases(true)
+	dbNames, err := d.client.ListDatabaseNames(ctx, filter, listDbOptions)
 	if err != nil {
 		log.Error().Err(err).Msg("Error listing databases")
 		return nil, err
 	}
 
-	for _, db := range dbNames {
-		listCollOptions := options.ListCollections().SetNameOnly(true).SetAuthorizedCollections(true)
+	for _, dbName := range dbNames {
+		listCollOptions := options.ListCollections().SetAuthorizedCollections(true)
 
-		cursor, err := d.client.Database(db).ListCollections(ctx, primitive.M{}, listCollOptions)
+		collNames, err := d.client.Database(dbName).ListCollectionNames(ctx, primitive.M{}, listCollOptions)
 		if err != nil {
-			log.Debug().Err(err).Msgf("Skipping database %s due to permission error", db)
+			log.Error().Err(err).Msgf("Error listing collections for database %s", dbName)
 			continue
 		}
 
-		var collections []string
-		for cursor.Next(ctx) {
-			var result struct {
-				Name string `bson:"name"`
-			}
-			if err := cursor.Decode(&result); err != nil {
-				log.Debug().Err(err).Msgf("Error decoding collection name in database %s", db)
-				continue
-			}
-			collections = append(collections, result.Name)
-		}
-
-		if err := cursor.Err(); err != nil {
-			log.Debug().Err(err).Msgf("Error iterating collections in database %s", db)
-			continue
-		}
-		cursor.Close(ctx)
-
-		dbCollMap = append(dbCollMap, DBsWithCollections{DB: db, Collections: collections})
+		dbCollMap = append(dbCollMap, DBsWithCollections{DB: dbName, Collections: collNames})
 	}
 
 	return dbCollMap, nil
