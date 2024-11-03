@@ -13,7 +13,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/inconshreveable/mousetrap v1.1.0 // indirect
+require (
+	github.com/cosiner/argv v0.1.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+)
 
 require (
 	github.com/adrg/xdg v0.4.0

@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/cosiner/argv"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
@@ -160,6 +161,18 @@ func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error getting editor command: %v", err)
 	}
+
+	edArgs := []string{}
+
+	if len(ed) > 0 {
+		argsIn, err := argv.Argv(ed, nil, nil)
+		if err != nil {
+			return "", fmt.Errorf("error parsing editor command: %v", err)
+		}
+		ed = argsIn[0][0]
+		edArgs = argsIn[0][1:]
+	}
+
 	editor, err := exec.LookPath(ed)
 	if err != nil {
 		return "", fmt.Errorf("error looking for editor: %v", err)
@@ -167,8 +180,10 @@ func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 
 	updatedDocument := ""
 
+	edArgs = append(edArgs, tmpFile.Name())
+
 	d.App.Suspend(func() {
-		cmd := exec.Command(editor, tmpFile.Name())
+		cmd := exec.Command(editor, edArgs...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
