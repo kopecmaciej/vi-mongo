@@ -107,8 +107,9 @@ func (d *Database) Render() {
 	defer d.App.SetFocus(primitive)
 
 	if err := d.listDbsAndCollections(ctx); err != nil {
+		// TODO: refactor how rendering is handled as this error will not be shown
 		modal.ShowError(d.App.Pages, "Failed to list databases and collections", nil)
-		return
+		d.dbsWithColls = []mongo.DBsWithCollections{}
 	}
 
 	d.DbTree.Render(ctx, d.dbsWithColls, false)
