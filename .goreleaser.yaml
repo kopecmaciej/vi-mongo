@@ -38,45 +38,27 @@ archives:
       format: zip
 
 changelog:
-  use: github
-  format: |
-    # {{ .Tag }} ({{ .CommitDate }})
-
-    🚀 **What's New**
-
-    This release brings enhancements, bug fixes, and more!
-
-    {{ if .Prerelease }}
-    ## 🚧 Alpha Release
-    {{ end }}
-
-    {{ range .Commits -}}
-    {{ if (contains .Message "feat:") }}
-    ### 🎉 New Features
-    - {{ .Message | trimprefix "feat:" | trim }}
-    {{ end }}
-    {{ end }}
-
-    {{ range .Commits -}}
-    {{ if (contains .Message "fix:") }}
-    ### 🐛 Bug Fixes
-    - {{ .Message | trimprefix "fix:" | trim }}
-    {{ end }}
-    {{ end }}
-
-    {{ range .Commits -}}
-    {{ if or (contains .Message "chore:") (contains .Message "refactor:") }}
-    ### 🔧 Maintenance
-    - {{ .Message | trim }}
-    {{ end }}
-    {{ end }}
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+  groups:
+    - title: '🎉 New Features'
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: '🐛 Bug Fixes'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: '🔧 Maintenance'
+      regexp: '^.*?(chore|refactor):.+$'
+      order: 2
 
 release:
   github:
     owner: kopecmaciej
     name: vi-mongo
-
-  # for now it will be a pre-release
   prerelease: true
 
 checksum:
