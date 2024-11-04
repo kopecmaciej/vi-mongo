@@ -40,31 +40,35 @@ archives:
 changelog:
   use: github
   format: |
-    # Release {{ .Tag }}
+    # {{ .Tag }} ({{ .CommitDate }})
 
     🚀 **What's New**
 
     This release brings enhancements, bug fixes, and more!
 
-    ## Features
-    {{ range .Commits -}}
-      {{ if (contains .Subject "feat:") }}
-    - {{ .Subject | trimPrefix "feat:" }}
-      {{ end }}
+    {{ if .Prerelease }}
+    ## 🚧 Alpha Release
     {{ end }}
 
-    ## Bug Fixes
     {{ range .Commits -}}
-      {{ if (contains .Subject "fix:") }}
-    - {{ .Subject | trimPrefix "fix:" }}
-      {{ end }}
+    {{ if (contains .Message "feat:") }}
+    ### 🎉 New Features
+    - {{ .Message | trimprefix "feat:" | trim }}
+    {{ end }}
     {{ end }}
 
-    ## Maintenance
     {{ range .Commits -}}
-      {{ if (contains .Subject "chore:" "refactor:") }}
-    - {{ .Subject }}
-      {{ end }}
+    {{ if (contains .Message "fix:") }}
+    ### 🐛 Bug Fixes
+    - {{ .Message | trimprefix "fix:" | trim }}
+    {{ end }}
+    {{ end }}
+
+    {{ range .Commits -}}
+    {{ if or (contains .Message "chore:") (contains .Message "refactor:") }}
+    ### 🔧 Maintenance
+    - {{ .Message | trim }}
+    {{ end }}
     {{ end }}
 
 release:
