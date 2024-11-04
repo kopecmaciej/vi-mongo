@@ -38,6 +38,7 @@ archives:
       format: zip
 
 changelog:
+  use: github
   format: |
     # Release {{ .Tag }}
 

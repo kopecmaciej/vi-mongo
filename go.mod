@@ -3,6 +3,7 @@ module github.com/kopecmaciej/vi-mongo
 go 1.22.1
 
 require (
+	github.com/cosiner/argv v0.1.0
 	github.com/gdamore/tcell/v2 v2.7.1
 	github.com/kopecmaciej/tview v0.1.0
 	github.com/rs/zerolog v1.32.0
@@ -13,10 +14,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require (
-	github.com/cosiner/argv v0.1.0 // indirect
-	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-)
+require github.com/inconshreveable/mousetrap v1.1.0 // indirect
 
 require (
 	github.com/adrg/xdg v0.4.0
