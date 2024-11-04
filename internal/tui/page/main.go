@@ -117,6 +117,7 @@ func (m *Main) Render() {
 			return err
 		}
 		m.index.HandleDatabaseSelection(ctx, db, coll)
+		m.App.SetFocus(m.tabBar.GetActiveComponent())
 		return nil
 	})
 
