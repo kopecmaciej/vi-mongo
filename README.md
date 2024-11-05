@@ -43,6 +43,16 @@ If you are using [Neovim](https://neovim.io/) you can install the plugin from [n
 
 [vi-mongo.com/docs/roadmap](https://vi-mongo.com/docs/roadmap)
 
+## Contributing
+
+All contributions are welcome!
+
+1. Create an issue
+2. Fork the repository
+3. Go with the flow
+
+If possible please write tests for your changes.
+
 ## Issues
 
 For now all issues are resolved, but if you find any new issues, please report
