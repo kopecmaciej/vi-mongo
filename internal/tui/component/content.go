@@ -538,7 +538,12 @@ func (c *Content) applyQuery(ctx context.Context, query string) error {
 		c.state.SetFilter("")
 		return err
 	}
-
+	if query != "" && strings.ReplaceAll(query, " ", "") != "{}" {
+		err = c.queryBar.historyModal.SaveToHistory(query)
+		if err != nil {
+			return err
+		}
+	}
 	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 	return nil
 }
