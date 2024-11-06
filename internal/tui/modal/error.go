@@ -12,14 +12,14 @@ const (
 )
 
 func NewError(message string, err error) *tview.Modal {
-	message = "[White::b] " + message + " [::]"
+	taggedMessage := "[White::b] " + message + " [::]"
 
 	if err != nil {
 		log.Error().Err(err).Msg(message)
 
 		errMsg := err.Error()
 		if errMsg != "" {
-			message += "\n" + errMsg
+			taggedMessage += "\n" + errMsg
 		}
 	}
 
@@ -28,7 +28,7 @@ func NewError(message string, err error) *tview.Modal {
 	errModal.SetBorderPadding(0, 0, 1, 1)
 	errModal.SetBackgroundColor(tview.Styles.ContrastBackgroundColor)
 	errModal.SetTextColor(tcell.ColorRed)
-	errModal.SetText(message)
+	errModal.SetText(taggedMessage)
 	errModal.AddButtons([]string{"Ok"})
 
 	return errModal
