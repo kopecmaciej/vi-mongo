@@ -110,8 +110,8 @@ func (c *Content) init() error {
 	c.sortBar.EnableAutocomplete()
 	c.sortBar.SetDefaultText("{ <$0> }")
 
-	c.queryBarListener(ctx)
-	c.sortBarListener(ctx)
+	c.queryBarHandler(ctx)
+	c.sortBarHandler(ctx)
 
 	c.peeker.SetDoneFunc(func() {
 		c.updateContent(ctx, true)
@@ -430,8 +430,6 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 }
 
 func (c *Content) updateContent(ctx context.Context, useState bool) error {
-	c.table.Clear()
-
 	var documents []primitive.M
 	var count int64
 
@@ -446,6 +444,8 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 		documents = docs
 		count = c
 	}
+
+	c.table.Clear()
 
 	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.Page, c.state.Limit)
 
@@ -531,31 +531,39 @@ func (c *Content) jsonViewDocument(doc string, row *int, _id interface{}) {
 	*row++
 }
 
-func (c *Content) applyQuery(ctx context.Context, query string) {
+func (c *Content) applyQuery(ctx context.Context, query string) error {
 	c.state.SetFilter(query)
-	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 	err := c.updateContent(ctx, false)
 	if err != nil {
-		modal.ShowError(c.App.Pages, "Error updating content", err)
-		return
+		c.state.SetFilter("")
+		return err
 	}
+
+	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
+	return nil
 }
 
-func (c *Content) applySort(ctx context.Context, sort string) {
+func (c *Content) applySort(ctx context.Context, sort string) error {
 	c.state.SetSort(sort)
-	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 	err := c.updateContent(ctx, false)
 	if err != nil {
-		modal.ShowError(c.App.Pages, "Error updating content", err)
-		return
+		c.state.SetSort("")
+		return err
 	}
+
+	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
+	return nil
 }
 
-func (c *Content) queryBarListener(ctx context.Context) {
+func (c *Content) queryBarHandler(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.applyQuery(ctx, text)
-		c.Flex.RemoveItem(c.queryBar)
-		c.App.SetFocus(c.table)
+		err := c.applyQuery(ctx, text)
+		if err != nil {
+			modal.ShowError(c.App.Pages, "Error applying query", err)
+		} else {
+			c.Flex.RemoveItem(c.queryBar)
+			c.App.SetFocus(c.table)
+		}
 	}
 	rejectFunc := func() {
 		c.Flex.RemoveItem(c.queryBar)
@@ -565,13 +573,15 @@ func (c *Content) queryBarListener(ctx context.Context) {
 	c.queryBar.DoneFuncHandler(acceptFunc, rejectFunc)
 }
 
-func (c *Content) sortBarListener(ctx context.Context) {
+func (c *Content) sortBarHandler(ctx context.Context) {
 	acceptFunc := func(text string) {
-		c.state.SetSort(text)
-		c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
-		c.updateContent(ctx, false)
-		c.Flex.RemoveItem(c.sortBar)
-		c.App.SetFocus(c.table)
+		err := c.applySort(ctx, text)
+		if err != nil {
+			modal.ShowError(c.App.Pages, "Error applying sort", err)
+		} else {
+			c.Flex.RemoveItem(c.sortBar)
+			c.App.SetFocus(c.table)
+		}
 	}
 	rejectFunc := func() {
 		c.Flex.RemoveItem(c.sortBar)
