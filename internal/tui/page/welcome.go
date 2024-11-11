@@ -125,8 +125,8 @@ func (w *Welcome) renderForm() {
 
 	welcomeText := "All configuration can be set in " + configFile + " file. You can also set it here."
 	w.form.AddTextView("Welcome info", welcomeText, 0, 2, true, false)
-	w.form.AddTextView(" ", "-------------------------------------------", 0, 1, true, false)
-	w.form.AddTextView("Editor", "Set command (vim, nano etc) or env variable ($ENV) to open editor", 0, 2, true, false)
+	w.form.AddTextView(" ", "----------------------------------------------------------", 0, 1, true, false)
+	w.form.AddTextView("Editor", "Set command (vim, nano etc) or env ($ENV)", 0, 1, true, false)
 	editorCmd, err := cfg.GetEditorCmd()
 	if err != nil {
 		editorCmd = ""
