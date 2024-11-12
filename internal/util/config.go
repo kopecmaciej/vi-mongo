@@ -74,7 +74,6 @@ func LoadConfigFile[T any](defaultConfig *T, configPath string) (*T, error) {
 		return nil, err
 	}
 
-	// Merge loaded config with default config
 	MergeConfigs(config, defaultConfig)
 
 	return config, nil

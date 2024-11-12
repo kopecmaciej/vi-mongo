@@ -71,7 +71,7 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 		filter = primitive.M{"name": primitive.Regex{Pattern: nameRegex, Options: "i"}}
 	}
 
-	listDbOptions := options.ListDatabases().SetAuthorizedDatabases(true)
+	listDbOptions := options.ListDatabases().SetAuthorizedDatabases(*d.Config.GetOptions().AuthorizedDatabases)
 	dbNames, err := d.client.ListDatabaseNames(ctx, filter, listDbOptions)
 	if err != nil {
 		log.Error().Err(err).Msg("Error listing databases")
@@ -79,7 +79,7 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 	}
 
 	for _, dbName := range dbNames {
-		listCollOptions := options.ListCollections().SetAuthorizedCollections(true)
+		listCollOptions := options.ListCollections().SetAuthorizedCollections(*d.Config.GetOptions().AuthorizedCollections)
 
 		collNames, err := d.client.Database(dbName).ListCollectionNames(ctx, primitive.M{}, listCollOptions)
 		if err != nil {

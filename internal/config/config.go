@@ -16,15 +16,21 @@ const (
 	LogPath    = "/tmp/vi-mongo.log"
 )
 
+type MongoOptions struct {
+	AuthorizedDatabases   *bool `yaml:"authorizedDatabases,omitempty"`
+	AuthorizedCollections *bool `yaml:"authorizedCollections,omitempty"`
+}
+
 type MongoConfig struct {
-	Uri      string `yaml:"url"`
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Database string `yaml:"database"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Name     string `yaml:"name"`
-	Timeout  int    `yaml:"timeout"`
+	Uri      string       `yaml:"url"`
+	Host     string       `yaml:"host"`
+	Port     int          `yaml:"port"`
+	Database string       `yaml:"database"`
+	Username string       `yaml:"username"`
+	Password string       `yaml:"password"`
+	Name     string       `yaml:"name"`
+	Timeout  int          `yaml:"timeout"`
+	Options  MongoOptions `yaml:"options"`
 }
 
 type LogConfig struct {
@@ -242,6 +248,23 @@ func (m *MongoConfig) GetUri() string {
 func (m *MongoConfig) GetSafeUri() string {
 	uri := m.GetUri()
 	return util.HidePasswordInUri(uri)
+}
+
+// GetOptions returns the options from the config file
+// if they are not set, it returns the default values
+func (c *MongoConfig) GetOptions() MongoOptions {
+	boolPtr := true
+	defaults := MongoOptions{
+		AuthorizedDatabases:   &boolPtr,
+		AuthorizedCollections: &boolPtr,
+	}
+	if c.Options.AuthorizedDatabases == nil {
+		c.Options.AuthorizedDatabases = defaults.AuthorizedDatabases
+	}
+	if c.Options.AuthorizedCollections == nil {
+		c.Options.AuthorizedCollections = defaults.AuthorizedCollections
+	}
+	return c.Options
 }
 
 func ParseMongoDBURI(uri string) (host, port, db string, err error) {
