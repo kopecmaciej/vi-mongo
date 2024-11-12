@@ -22,7 +22,10 @@ func MergeConfigs(loaded, defaultConfig interface{}) {
 	mergeConfigsRecursive(loadedVal, defaultVal)
 }
 
-// mergeConfigsRecursive recursively merges nested structs
+// mergeConfigsRecursive recursively merges nested structs.
+// This may be a bit complicated for such a simple merge, but it allows for
+// more flexibility in the future if we want to add more complex merging logic
+// TODO: probably merging keybindings and config should be split into two functions
 func mergeConfigsRecursive(loaded, defaultValue reflect.Value) {
 	for i := 0; i < loaded.NumField(); i++ {
 		field := loaded.Field(i)
