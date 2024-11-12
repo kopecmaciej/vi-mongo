@@ -17,7 +17,9 @@ const (
 
 // MergeConfigs merges the loaded config with the default config
 func MergeConfigs(loaded, defaultConfig interface{}) {
-	mergeConfigsRecursive(reflect.ValueOf(loaded).Elem(), reflect.ValueOf(defaultConfig).Elem())
+	loadedVal := reflect.ValueOf(loaded).Elem()
+	defaultVal := reflect.ValueOf(defaultConfig).Elem()
+	mergeConfigsRecursive(loadedVal, defaultVal)
 }
 
 // mergeConfigsRecursive recursively merges nested structs
@@ -26,18 +28,23 @@ func mergeConfigsRecursive(loaded, defaultValue reflect.Value) {
 		field := loaded.Field(i)
 		defaultField := defaultValue.Field(i)
 
+		// Special handling for Key structs
+		if field.Type().Name() == "Key" {
+			// If any field in the Key struct is set, keep the entire struct as-is
+			if !isEmptyKey(field) {
+				continue
+			}
+			// If the Key struct is completely empty, use the default
+			field.Set(defaultField)
+			continue
+		}
+
 		switch field.Kind() {
 		case reflect.String:
 			if field.String() == "" {
 				field.Set(defaultField)
 			}
 		case reflect.Slice:
-			if field.Type().String() == "[]string" && isKeyStruct(loaded.Type().Field(i).Name, loaded) {
-				parentStruct := loaded
-				if hasKeyValues(parentStruct) {
-					continue
-				}
-			}
 			if field.Len() == 0 {
 				field.Set(defaultField)
 			}
@@ -47,21 +54,22 @@ func mergeConfigsRecursive(loaded, defaultValue reflect.Value) {
 	}
 }
 
-// hasKeyValues checks if a Key struct has any values set in Keys or Runes
-func hasKeyValues(keyStruct reflect.Value) bool {
-	keysField := keyStruct.FieldByName("Keys")
-	runesField := keyStruct.FieldByName("Runes")
-
-	return (keysField.IsValid() && keysField.Len() > 0) ||
-		(runesField.IsValid() && runesField.Len() > 0)
-}
-
-// isKeyStruct checks if the field is part of a Key struct by looking at its parent
-func isKeyStruct(fieldName string, value reflect.Value) bool {
-	if (fieldName == "Keys" || fieldName == "Runes") && value.Type().Name() == "Key" {
-		return true
+// isEmptyKey checks if a Key struct is completely empty
+func isEmptyKey(keyValue reflect.Value) bool {
+	for i := 0; i < keyValue.NumField(); i++ {
+		field := keyValue.Field(i)
+		switch field.Kind() {
+		case reflect.String:
+			if field.String() != "" {
+				return false
+			}
+		case reflect.Slice:
+			if field.Len() > 0 {
+				return false
+			}
+		}
 	}
-	return false
+	return true
 }
 
 // LoadConfigFile loads a configuration file, merges it with defaults, and returns the result

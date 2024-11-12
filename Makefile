@@ -14,6 +14,9 @@ run:
 	env $$(cat .env) $(BUILD_DIR)/$(SVC_NAME)
 
 test:
+	go test ./...
+
+test-verbose:
 	go test -v ./...
 
 debug:
