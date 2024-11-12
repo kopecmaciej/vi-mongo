@@ -52,8 +52,14 @@ changelog:
       regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
       order: 1
     - title: '🔧 Maintenance'
-      regexp: '^.*?(chore|refactor):.+$'
+      regexp: '^.*?(chore|refactor)(\([[:word:]]+\))??!?:.+$'
       order: 2
+    - title: '💅 Styling'
+      regexp: '^.*?style(\([[:word:]]+\))??!?:.+$'
+      order: 3
+    - title: '💡 Documentation'
+      regexp: '^.*?docs(\([[:word:]]+\))??!?:.+$'
+      order: 4
 
 release:
   github:
