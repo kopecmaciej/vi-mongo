@@ -17,14 +17,30 @@ const (
 
 // MergeConfigs merges the loaded config with the default config
 func MergeConfigs(loaded, defaultConfig interface{}) {
-	mergeConfigsRecursive(reflect.ValueOf(loaded).Elem(), reflect.ValueOf(defaultConfig).Elem())
+	loadedVal := reflect.ValueOf(loaded).Elem()
+	defaultVal := reflect.ValueOf(defaultConfig).Elem()
+	mergeConfigsRecursive(loadedVal, defaultVal)
 }
 
-// mergeConfigsRecursive recursively merges nested structs
+// mergeConfigsRecursive recursively merges nested structs.
+// This may be a bit complicated for such a simple merge, but it allows for
+// more flexibility in the future if we want to add more complex merging logic
+// TODO: probably merging keybindings and config should be split into two functions
 func mergeConfigsRecursive(loaded, defaultValue reflect.Value) {
 	for i := 0; i < loaded.NumField(); i++ {
 		field := loaded.Field(i)
 		defaultField := defaultValue.Field(i)
+
+		// Special handling for Key structs
+		if field.Type().Name() == "Key" {
+			// If any field in the Key struct is set, keep the entire struct as-is
+			if !isEmptyKey(field) {
+				continue
+			}
+			// If the Key struct is completely empty, use the default
+			field.Set(defaultField)
+			continue
+		}
 
 		switch field.Kind() {
 		case reflect.String:
@@ -39,6 +55,24 @@ func mergeConfigsRecursive(loaded, defaultValue reflect.Value) {
 			mergeConfigsRecursive(field, defaultField)
 		}
 	}
+}
+
+// isEmptyKey checks if a Key struct is completely empty
+func isEmptyKey(keyValue reflect.Value) bool {
+	for i := 0; i < keyValue.NumField(); i++ {
+		field := keyValue.Field(i)
+		switch field.Kind() {
+		case reflect.String:
+			if field.String() != "" {
+				return false
+			}
+		case reflect.Slice:
+			if field.Len() > 0 {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // LoadConfigFile loads a configuration file, merges it with defaults, and returns the result

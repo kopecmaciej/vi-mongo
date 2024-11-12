@@ -136,7 +136,7 @@ func (w *Welcome) renderForm() {
 	w.form.AddInputField("Log File", cfg.Log.Path, 30, nil, nil)
 	logLevels := []string{"debug", "info", "warn", "error", "fatal", "panic"}
 	w.form.AddDropDown("Log Level", logLevels, getLogLevelIndex(cfg.Log.Level, logLevels), nil)
-	w.form.AddCheckbox("Use symbols     󰈙", cfg.Styles.BetterSymbols, nil)
+	w.form.AddCheckbox("Use symbols 🗁 🖿 🗎", cfg.Styles.BetterSymbols, nil)
 	w.form.AddTextView("Show on start", "Set pages to show on every start", 60, 1, true, false)
 	w.form.AddCheckbox("Connection page", cfg.ShowConnectionPage, nil)
 	w.form.AddCheckbox("Welcome page", cfg.ShowWelcomePage, nil)
