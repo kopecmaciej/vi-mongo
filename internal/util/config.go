@@ -83,7 +83,7 @@ func LoadConfigFile[T any](defaultConfig *T, configPath string) (*T, error) {
 func marshalConfig[T any](config *T, configPath string) ([]byte, error) {
 	switch filepath.Ext(configPath) {
 	case ".json":
-		return json.Marshal(config)
+		return json.MarshalIndent(config, "", "    ")
 	case ".yaml", ".yml":
 		return yaml.Marshal(config)
 	default:
