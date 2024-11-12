@@ -1,9 +1,13 @@
 {
   "global": {
-    "toggleHelp": {
-      "keys": ["Ctrl+Y"],
-      "runes": [""],
-      "description": "Global keybindings"
+    "toggleFullScreenHelp": {
+      "keys": [
+        "Ctrl+P"
+      ],
+      "runes": [
+        "?"
+      ],
+      "description": "Toggle full screen help"
     }
   }
 }

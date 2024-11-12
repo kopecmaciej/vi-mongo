@@ -32,6 +32,12 @@ func mergeConfigsRecursive(loaded, defaultValue reflect.Value) {
 				field.Set(defaultField)
 			}
 		case reflect.Slice:
+			if field.Type().String() == "[]string" && isKeyStruct(loaded.Type().Field(i).Name, loaded) {
+				parentStruct := loaded
+				if hasKeyValues(parentStruct) {
+					continue
+				}
+			}
 			if field.Len() == 0 {
 				field.Set(defaultField)
 			}
@@ -39,6 +45,23 @@ func mergeConfigsRecursive(loaded, defaultValue reflect.Value) {
 			mergeConfigsRecursive(field, defaultField)
 		}
 	}
+}
+
+// hasKeyValues checks if a Key struct has any values set in Keys or Runes
+func hasKeyValues(keyStruct reflect.Value) bool {
+	keysField := keyStruct.FieldByName("Keys")
+	runesField := keyStruct.FieldByName("Runes")
+
+	return (keysField.IsValid() && keysField.Len() > 0) ||
+		(runesField.IsValid() && runesField.Len() > 0)
+}
+
+// isKeyStruct checks if the field is part of a Key struct by looking at its parent
+func isKeyStruct(fieldName string, value reflect.Value) bool {
+	if (fieldName == "Keys" || fieldName == "Runes") && value.Type().Name() == "Key" {
+		return true
+	}
+	return false
 }
 
 // LoadConfigFile loads a configuration file, merges it with defaults, and returns the result
