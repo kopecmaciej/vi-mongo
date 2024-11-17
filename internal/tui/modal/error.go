@@ -19,14 +19,17 @@ func NewError(message string, err error) *tview.Modal {
 
 		errMsg := err.Error()
 		if errMsg != "" {
+			log.Info().Msgf(errMsg)
+			if len(errMsg) > 240 {
+				errMsg = errMsg[:240] + " ..."
+			}
 			taggedMessage += "\n" + errMsg
 		}
 	}
 
 	errModal := tview.NewModal()
 	errModal.SetTitle(" Error ")
-	errModal.SetBorderPadding(0, 0, 1, 1)
-	errModal.SetBackgroundColor(tview.Styles.ContrastBackgroundColor)
+	errModal.SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor)
 	errModal.SetTextColor(tcell.ColorRed)
 	errModal.SetText(taggedMessage)
 	errModal.AddButtons([]string{"Ok"})
