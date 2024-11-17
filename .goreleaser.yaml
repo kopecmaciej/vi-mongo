@@ -65,7 +65,6 @@ release:
   github:
     owner: kopecmaciej
     name: vi-mongo
-  prerelease: true
 
 checksum:
   name_template: "{{ .ProjectName }}_checksum_sha256.txt"
