@@ -552,6 +552,7 @@ func (m *ViewModal) CopySelectedLine(copyFunc func(text string) error, copyType 
 					textToCopy = strings.TrimSpace(textToCopy)
 				}
 			}
+
 		default:
 			textToCopy = strings.Join(highlightedLines, "\n")
 		}
