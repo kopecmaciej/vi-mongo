@@ -36,8 +36,8 @@ func TestCleanJsonWhitespaces(t *testing.T) {
 	}{
 		{
 			name:     "Remove newlines and extra spaces",
-			input:    "{\n  \"key1\": \"value1\",\n  \"key2\": \"value2\"\n}",
-			expected: `{ "key1": "value1", "key2": "value2" }`,
+			input:    "{\n\"key1\": \"value1\",\n  \"key2\": \"value2\"\n}",
+			expected: `{"key1": "value1", "key2": "value2"}`,
 		},
 		{
 			name:     "Remove trailing comma",
@@ -59,7 +59,7 @@ func TestCleanJsonWhitespaces(t *testing.T) {
 				},
 				"key4": "value with \\"quotes\\""
 			}`,
-			expected: `{ "key1": "value1", "key2": [1, 2, 3], "key3": { "nested": "object" }, "key4": "value with \\"quotes\\"" }`,
+			expected: `{"key1": "value1","key2": [1, 2, 3],"key3": {"nested": "object"},"key4": "value with \\"quotes\\""}`,
 		},
 	}
 

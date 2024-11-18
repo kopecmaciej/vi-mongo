@@ -192,12 +192,12 @@ func TestCopySelectedLine(t *testing.T) {
 			name: "Copy full multiline line",
 			content: `{
   "object": {
-    "nested": "test_first_line_value
+    "nested": "test_first_line_value_
 test_second_line_value_in_new_line"
   }
 }`,
 			copyType: "full",
-			expected: `"object": { "nested": "test_first_line_value test_second_line_value_in_new_line" }`,
+			expected: `"object": { "nested": "test_first_line_value_test_second_line_value_in_new_line" }`,
 		},
 		{
 			name: "Copy value only",

@@ -15,7 +15,7 @@ func IsJsonEmpty(s string) bool {
 // and also removes comma from the end of the string
 func CleanJsonWhitespaces(s string) string {
 	s = strings.TrimSuffix(s, ",")
-	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.ReplaceAll(s, "\n", "")
 	s = strings.ReplaceAll(s, "\t", "")
 
 	var result strings.Builder
