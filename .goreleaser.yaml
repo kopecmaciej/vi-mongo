@@ -21,8 +21,6 @@ builds:
     ldflags:
       - -s -w
       - -X github.com/kopecmaciej/vi-mongo/cmd.version={{.Tag}}
-      - -X main.commit={{.Commit}}
-      - -X main.date={{.Date}}
 
 archives:
   - format: tar.gz
