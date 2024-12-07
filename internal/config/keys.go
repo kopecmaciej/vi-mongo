@@ -71,23 +71,25 @@ type (
 	}
 
 	ContentKeys struct {
-		ChangeView        Key `json:"switchView"`
-		PeekDocument      Key `json:"peekDocument"`
-		FullPagePeek      Key `json:"fullPagePeek"`
-		AddDocument       Key `json:"addDocument"`
-		EditDocument      Key `json:"editDocument"`
-		DuplicateDocument Key `json:"duplicateDocument"`
-		DeleteDocument    Key `json:"deleteDocument"`
-		CopyHighlight     Key `json:"copyValue"`
-		CopyDocument      Key `json:"copyDocument"`
-		Refresh           Key `json:"refresh"`
-		ToggleQueryBar    Key `json:"toggleQueryBar"`
-		NextDocument      Key `json:"nextDocument"`
-		PreviousDocument  Key `json:"previousDocument"`
-		NextPage          Key `json:"nextPage"`
-		PreviousPage      Key `json:"previousPage"`
-		ToggleSortBar     Key `json:"toggleSortBar"`
-		SortByColumn      Key `json:"sortByColumn"`
+		ChangeView         Key `json:"switchView"`
+		PeekDocument       Key `json:"peekDocument"`
+		FullPagePeek       Key `json:"fullPagePeek"`
+		AddDocument        Key `json:"addDocument"`
+		EditDocument       Key `json:"editDocument"`
+		DuplicateDocument  Key `json:"duplicateDocument"`
+		DeleteDocument     Key `json:"deleteDocument"`
+		CopyHighlight      Key `json:"copyValue"`
+		CopyDocument       Key `json:"copyDocument"`
+		Refresh            Key `json:"refresh"`
+		ToggleQueryBar     Key `json:"toggleQueryBar"`
+		NextDocument       Key `json:"nextDocument"`
+		PreviousDocument   Key `json:"previousDocument"`
+		NextPage           Key `json:"nextPage"`
+		PreviousPage       Key `json:"previousPage"`
+		ToggleSortBar      Key `json:"toggleSortBar"`
+		SortByColumn       Key `json:"sortByColumn"`
+		HideColumn         Key `json:"hideColumn"`
+		ResetHiddenColumns Key `json:"resetHiddenColumns"`
 
 		// MultipleSelect    Key      `json:"multipleSelect"`
 		// ClearSelection   Key      `json:"clearSelection"`
@@ -289,6 +291,14 @@ func (k *KeyBindings) loadDefaults() {
 		SortByColumn: Key{
 			Runes:       []string{"S"},
 			Description: "Sort by current column",
+		},
+		HideColumn: Key{
+			Runes:       []string{"H"},
+			Description: "Hide current column",
+		},
+		ResetHiddenColumns: Key{
+			Runes:       []string{"R"},
+			Description: "Reset hidden columns",
 		},
 		NextDocument: Key{
 			Runes:       []string{"]"},
