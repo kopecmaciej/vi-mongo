@@ -201,7 +201,8 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return c.handleToggleQuery()
 		case k.Contains(k.Content.ToggleSortBar, event.Name()):
 			return c.handleToggleSort()
-		// TODO: Add automatic sort by given column
+		case k.Contains(k.Content.SortByColumn, event.Name()):
+			return c.handleSortByColumn(ctx, coll)
 		case k.Contains(k.Content.Refresh, event.Name()):
 			return c.handleRefresh(ctx)
 		case k.Contains(k.Content.NextPage, event.Name()):
@@ -874,6 +875,37 @@ func (c *Content) handleCopyDocument(row, col int) *tcell.EventKey {
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error copying document", err)
 	}
+	return nil
+}
+
+// Automatic sort (1 or -1) for given column, only in TableView
+func (c *Content) handleSortByColumn(ctx context.Context, col int) *tcell.EventKey {
+	if c.currentView != TableView {
+		return nil
+	}
+
+	headerCell := c.table.GetCell(0, col)
+	if headerCell == nil {
+		return nil
+	}
+
+	columnName := strings.Split(headerCell.Text, " ")[0]
+	currentSort := c.state.Sort
+
+	var newSort string
+	if currentSort == fmt.Sprintf(`{ "%s": 1 }`, columnName) {
+		newSort = fmt.Sprintf(`{ "%s": -1 }`, columnName)
+	} else {
+		newSort = fmt.Sprintf(`{ "%s": 1 }`, columnName)
+	}
+
+	err := c.applySort(ctx, newSort)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error applying sort", err)
+	}
+
+	c.table.Select(1, col)
+
 	return nil
 }
 

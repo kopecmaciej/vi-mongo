@@ -87,6 +87,7 @@ type (
 		NextPage          Key `json:"nextPage"`
 		PreviousPage      Key `json:"previousPage"`
 		ToggleSortBar     Key `json:"toggleSortBar"`
+		SortByColumn      Key `json:"sortByColumn"`
 
 		// MultipleSelect    Key      `json:"multipleSelect"`
 		// ClearSelection   Key      `json:"clearSelection"`
@@ -284,6 +285,10 @@ func (k *KeyBindings) loadDefaults() {
 		ToggleSortBar: Key{
 			Runes:       []string{"s"},
 			Description: "Toggle sort bar",
+		},
+		SortByColumn: Key{
+			Runes:       []string{"S"},
+			Description: "Sort by current column",
 		},
 		NextDocument: Key{
 			Runes:       []string{"]"},
