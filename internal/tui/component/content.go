@@ -122,33 +122,6 @@ func (c *Content) init() error {
 	return nil
 }
 
-func (c *Content) handleHideColumn(ctx context.Context, col int) *tcell.EventKey {
-	if c.currentView != TableView {
-		return nil
-	}
-
-	headerCell := c.table.GetCell(0, col)
-	if headerCell == nil {
-		return nil
-	}
-
-	columnName := strings.Split(headerCell.Text, " ")[0]
-	c.state.HiddenColumns[columnName] = true
-	
-	c.updateContent(ctx, true)
-	return nil
-}
-
-func (c *Content) handleResetHiddenColumns(ctx context.Context) *tcell.EventKey {
-	if c.currentView != TableView {
-		return nil
-	}
-
-	c.state.HiddenColumns = make(map[string]bool)
-	c.updateContent(ctx, true)
-	return nil
-}
-
 func (c *Content) handleEvents(ctx context.Context) {
 	go c.HandleEvents(ContentId, func(event manager.EventMsg) {
 		switch event.Message.Type {
@@ -312,12 +285,13 @@ func (c *Content) Render() {
 func (c *Content) renderTableView(startRow int, documents []primitive.M) {
 	c.table.SetFixed(1, 0)
 	allHeaderKeys := util.GetSortedKeysWithTypes(documents, c.style.ColumnTypeColor.Color().String())
-	
+
 	// Filter out hidden columns
 	var sortedHeaderKeys []string
+	hiddenCols := c.stateMap.GetHiddenColumns(c.state.Db, c.state.Coll)
 	for _, key := range allHeaderKeys {
 		columnName := strings.Split(key, " ")[0]
-		if !c.state.HiddenColumns[columnName] {
+		if !contains(hiddenCols, columnName) {
 			sortedHeaderKeys = append(sortedHeaderKeys, key)
 		}
 	}
@@ -947,7 +921,42 @@ func (c *Content) handleSortByColumn(ctx context.Context, col int) *tcell.EventK
 	return nil
 }
 
+func (c *Content) handleHideColumn(ctx context.Context, col int) *tcell.EventKey {
+	if c.currentView != TableView {
+		return nil
+	}
+
+	headerCell := c.table.GetCell(0, col)
+	if headerCell == nil {
+		return nil
+	}
+
+	columnName := strings.Split(headerCell.Text, " ")[0]
+	c.stateMap.AddHiddenColumn(c.state.Db, c.state.Coll, columnName)
+
+	c.updateContent(ctx, true)
+	return nil
+}
+
+func (c *Content) handleResetHiddenColumns(ctx context.Context) *tcell.EventKey {
+	if c.currentView != TableView {
+		return nil
+	}
+
+	c.stateMap.ResetHiddenColumns(c.state.Db, c.state.Coll)
+	c.updateContent(ctx, true)
+	return nil
+}
+
 func (c *Content) updateContentBasedOnState(ctx context.Context) error {
 	useState := c.state.Filter == "" && c.state.Sort == ""
 	return c.updateContent(ctx, useState)
+}
+func contains(slice []string, str string) bool {
+	for _, s := range slice {
+		if s == str {
+			return true
+		}
+	}
+	return false
 }

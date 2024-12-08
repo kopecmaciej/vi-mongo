@@ -18,7 +18,6 @@ type CollectionState struct {
 	Count         int64
 	Sort          string
 	Filter        string
-	HiddenColumns map[string]bool
 	// docs are only one private as they cannot be changed in uncontrolled way
 	docs []primitive.M
 }
@@ -56,9 +55,7 @@ func (c *CollectionState) GetJsonDocById(id interface{}) (string, error) {
 }
 
 func NewCollectionState() *CollectionState {
-	return &CollectionState{
-		HiddenColumns: make(map[string]bool),
-	}
+	return &CollectionState{}
 }
 
 func (c *CollectionState) SetFilter(filter string) {
@@ -126,13 +123,36 @@ func deepCopy(doc primitive.M) primitive.M {
 
 // StateMap persevere states when hopping between diffrent mongodb servers
 type StateMap struct {
-	mu     sync.RWMutex
-	states map[string]*CollectionState
+	mu            sync.RWMutex
+	states        map[string]*CollectionState
+	hiddenColumns map[string][]string
+}
+
+func (sm *StateMap) AddHiddenColumn(db, coll, column string) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	key := sm.Key(db, coll)
+	sm.hiddenColumns[key] = append(sm.hiddenColumns[key], column)
+}
+
+func (sm *StateMap) GetHiddenColumns(db, coll string) []string {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+	key := sm.Key(db, coll)
+	return sm.hiddenColumns[key]
+}
+
+func (sm *StateMap) ResetHiddenColumns(db, coll string) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	key := sm.Key(db, coll)
+	sm.hiddenColumns[key] = nil
 }
 
 func NewStateMap() *StateMap {
 	return &StateMap{
-		states: make(map[string]*CollectionState),
+		states:        make(map[string]*CollectionState),
+		hiddenColumns: make(map[string][]string),
 	}
 }
 
