@@ -54,8 +54,12 @@ func (c *CollectionState) GetJsonDocById(id interface{}) (string, error) {
 	return indentedJson.String(), nil
 }
 
-func NewCollectionState() *CollectionState {
-	return &CollectionState{}
+func NewCollectionState(db, coll string) *CollectionState {
+	return &CollectionState{
+    Db: db,
+    Coll: coll,
+    Page: 0,
+  }
 }
 
 func (c *CollectionState) SetFilter(filter string) {

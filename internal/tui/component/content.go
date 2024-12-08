@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/atotto/clipboard"
@@ -241,9 +242,7 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 	if ok {
 		c.state = state
 	} else {
-		c.state = mongo.NewCollectionState()
-		c.state.Db = db
-		c.state.Coll = coll
+		c.state = mongo.NewCollectionState(db, coll)
 		_, _, _, height := c.table.GetInnerRect()
 		c.state.Limit = int64(height - 1)
 	}
@@ -291,7 +290,7 @@ func (c *Content) renderTableView(startRow int, documents []primitive.M) {
 	hiddenCols := c.stateMap.GetHiddenColumns(c.state.Db, c.state.Coll)
 	for _, key := range allHeaderKeys {
 		columnName := strings.Split(key, " ")[0]
-		if !contains(hiddenCols, columnName) {
+		if !slices.Contains(hiddenCols, columnName) {
 			sortedHeaderKeys = append(sortedHeaderKeys, key)
 		}
 	}
@@ -951,12 +950,4 @@ func (c *Content) handleResetHiddenColumns(ctx context.Context) *tcell.EventKey 
 func (c *Content) updateContentBasedOnState(ctx context.Context) error {
 	useState := c.state.Filter == "" && c.state.Sort == ""
 	return c.updateContent(ctx, useState)
-}
-func contains(slice []string, str string) bool {
-	for _, s := range slice {
-		if s == str {
-			return true
-		}
-	}
-	return false
 }
