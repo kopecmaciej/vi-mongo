@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/atotto/clipboard"
@@ -203,6 +204,10 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return c.handleToggleSort()
 		case k.Contains(k.Content.SortByColumn, event.Name()):
 			return c.handleSortByColumn(ctx, coll)
+		case k.Contains(k.Content.HideColumn, event.Name()):
+			return c.handleHideColumn(ctx, coll)
+		case k.Contains(k.Content.ResetHiddenColumns, event.Name()):
+			return c.handleResetHiddenColumns(ctx)
 		case k.Contains(k.Content.Refresh, event.Name()):
 			return c.handleRefresh(ctx)
 		case k.Contains(k.Content.NextPage, event.Name()):
@@ -237,11 +242,7 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 	if ok {
 		c.state = state
 	} else {
-		c.state = &mongo.CollectionState{
-			Page: 0,
-			Db:   db,
-			Coll: coll,
-		}
+		c.state = mongo.NewCollectionState(db, coll)
 		_, _, _, height := c.table.GetInnerRect()
 		c.state.Limit = int64(height - 1)
 	}
@@ -282,7 +283,17 @@ func (c *Content) Render() {
 
 func (c *Content) renderTableView(startRow int, documents []primitive.M) {
 	c.table.SetFixed(1, 0)
-	sortedHeaderKeys := util.GetSortedKeysWithTypes(documents, c.style.ColumnTypeColor.Color().String())
+	allHeaderKeys := util.GetSortedKeysWithTypes(documents, c.style.ColumnTypeColor.Color().String())
+
+	// Filter out hidden columns
+	var sortedHeaderKeys []string
+	hiddenCols := c.stateMap.GetHiddenColumns(c.state.Db, c.state.Coll)
+	for _, key := range allHeaderKeys {
+		columnName := strings.Split(key, " ")[0]
+		if !slices.Contains(hiddenCols, columnName) {
+			sortedHeaderKeys = append(sortedHeaderKeys, key)
+		}
+	}
 
 	// Set the header row
 	for col, key := range sortedHeaderKeys {
@@ -906,6 +917,33 @@ func (c *Content) handleSortByColumn(ctx context.Context, col int) *tcell.EventK
 
 	c.table.Select(1, col)
 
+	return nil
+}
+
+func (c *Content) handleHideColumn(ctx context.Context, col int) *tcell.EventKey {
+	if c.currentView != TableView {
+		return nil
+	}
+
+	headerCell := c.table.GetCell(0, col)
+	if headerCell == nil {
+		return nil
+	}
+
+	columnName := strings.Split(headerCell.Text, " ")[0]
+	c.stateMap.AddHiddenColumn(c.state.Db, c.state.Coll, columnName)
+
+	c.updateContent(ctx, true)
+	return nil
+}
+
+func (c *Content) handleResetHiddenColumns(ctx context.Context) *tcell.EventKey {
+	if c.currentView != TableView {
+		return nil
+	}
+
+	c.stateMap.ResetHiddenColumns(c.state.Db, c.state.Coll)
+	c.updateContent(ctx, true)
 	return nil
 }
 

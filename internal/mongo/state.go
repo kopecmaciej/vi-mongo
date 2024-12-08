@@ -54,6 +54,14 @@ func (c *CollectionState) GetJsonDocById(id interface{}) (string, error) {
 	return indentedJson.String(), nil
 }
 
+func NewCollectionState(db, coll string) *CollectionState {
+	return &CollectionState{
+		Db:   db,
+		Coll: coll,
+		Page: 0,
+	}
+}
+
 func (c *CollectionState) SetFilter(filter string) {
 	filter = util.CleanJsonWhitespaces(filter)
 	if util.IsJsonEmpty(filter) {
@@ -119,13 +127,36 @@ func deepCopy(doc primitive.M) primitive.M {
 
 // StateMap persevere states when hopping between diffrent mongodb servers
 type StateMap struct {
-	mu     sync.RWMutex
-	states map[string]*CollectionState
+	mu            sync.RWMutex
+	states        map[string]*CollectionState
+	hiddenColumns map[string][]string
+}
+
+func (sm *StateMap) AddHiddenColumn(db, coll, column string) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	key := sm.Key(db, coll)
+	sm.hiddenColumns[key] = append(sm.hiddenColumns[key], column)
+}
+
+func (sm *StateMap) GetHiddenColumns(db, coll string) []string {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+	key := sm.Key(db, coll)
+	return sm.hiddenColumns[key]
+}
+
+func (sm *StateMap) ResetHiddenColumns(db, coll string) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	key := sm.Key(db, coll)
+	sm.hiddenColumns[key] = nil
 }
 
 func NewStateMap() *StateMap {
 	return &StateMap{
-		states: make(map[string]*CollectionState),
+		states:        make(map[string]*CollectionState),
+		hiddenColumns: make(map[string][]string),
 	}
 }
 
