@@ -12,7 +12,6 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/component"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -203,7 +202,7 @@ func (m *Main) setKeybindings() {
 func (m *Main) ShowServerInfoModal() {
 	serverInfoModal := modal.NewServerInfoModal(m.Dao)
 	if err := serverInfoModal.Init(m.App); err != nil {
-		log.Error().Err(err).Msg("Failed to initialize server info modal")
+		modal.ShowError(m.App.Pages, "Failed to initialize server info modal", err)
 		return
 	}
 
@@ -211,7 +210,7 @@ func (m *Main) ShowServerInfoModal() {
 	defer cancel()
 
 	if err := serverInfoModal.Render(ctx); err != nil {
-		log.Error().Err(err).Msg("Failed to render server info modal")
+		modal.ShowError(m.App.Pages, "Failed to render server info modal", err)
 		return
 	}
 

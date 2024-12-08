@@ -19,7 +19,6 @@ func NewError(message string, err error) *tview.Modal {
 
 		errMsg := err.Error()
 		if errMsg != "" {
-			log.Info().Msgf(errMsg)
 			if len(errMsg) > 240 {
 				errMsg = errMsg[:240] + " ..."
 			}
