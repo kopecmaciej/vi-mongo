@@ -11,13 +11,13 @@ import (
 // CollectionState is used to store the state of a collection and use it
 // while rendering doesn't require fetching from the database
 type CollectionState struct {
-	Db            string
-	Coll          string
-	Page          int64
-	Limit         int64
-	Count         int64
-	Sort          string
-	Filter        string
+	Db     string
+	Coll   string
+	Page   int64
+	Limit  int64
+	Count  int64
+	Sort   string
+	Filter string
 	// docs are only one private as they cannot be changed in uncontrolled way
 	docs []primitive.M
 }
@@ -56,10 +56,10 @@ func (c *CollectionState) GetJsonDocById(id interface{}) (string, error) {
 
 func NewCollectionState(db, coll string) *CollectionState {
 	return &CollectionState{
-    Db: db,
-    Coll: coll,
-    Page: 0,
-  }
+		Db:   db,
+		Coll: coll,
+		Page: 0,
+	}
 }
 
 func (c *CollectionState) SetFilter(filter string) {
