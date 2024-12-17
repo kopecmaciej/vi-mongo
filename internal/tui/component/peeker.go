@@ -98,13 +98,13 @@ func (p *Peeker) setKeybindings() {
 			return nil
 		case k.Contains(k.Peeker.CopyHighlight, event.Name()):
 			if err := p.ViewModal.CopySelectedLine(clipboard.WriteAll, "full"); err != nil {
-        log.Error().Err(err).Msg("Error copying full line")
+				log.Error().Err(err).Msg("Error copying full line")
 				modal.ShowError(p.App.Pages, "Error copying full line", err)
 			}
 			return nil
 		case k.Contains(k.Peeker.CopyValue, event.Name()):
 			if err := p.ViewModal.CopySelectedLine(clipboard.WriteAll, "value"); err != nil {
-        log.Error().Err(err).Msg("Error copying value")
+				log.Error().Err(err).Msg("Error copying value")
 				modal.ShowError(p.App.Pages, "Error copying value", err)
 			}
 			return nil
