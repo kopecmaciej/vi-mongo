@@ -35,7 +35,6 @@ func NewDocModifier() *DocModifier {
 func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.ObjectID, error) {
 	createdDoc, err := d.openEditor("{}")
 	if err != nil {
-		log.Error().Err(err).Msg("Error opening editor")
 		return primitive.NilObjectID, nil
 	}
 	if strings.ReplaceAll(createdDoc, " ", "") == "{}" {
@@ -65,7 +64,7 @@ func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.Ob
 func (d *DocModifier) Edit(ctx context.Context, db, coll string, _id interface{}, jsonDoc string) (string, error) {
 	updatedDocument, err := d.openEditor(jsonDoc)
 	if err != nil {
-		return "", fmt.Errorf("error editing document: %v", err)
+		return "", err
 	}
 
 	if util.CleanAllWhitespaces(updatedDocument) == util.CleanAllWhitespaces(jsonDoc) {
@@ -90,7 +89,7 @@ func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocumen
 
 	duplicateDoc, err := d.openEditor(replacedDoc)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("error editing document: %v", err)
+		return primitive.NilObjectID, err
 	}
 	if duplicateDoc == "" {
 		log.Debug().Msgf("Document not duplicated")
@@ -125,11 +124,13 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, _id i
 
 	parsedDoc, err := mongo.ParseJsonToBson(rawDocument)
 	if err != nil {
+		log.Error().Err(err).Msg("Error parsing JSON")
 		return fmt.Errorf("error parsing JSON: %v", err)
 	}
 
 	parsedOriginalDoc, err := mongo.ParseJsonToBson(originalDoc)
 	if err != nil {
+		log.Error().Err(err).Msg("Error parsing JSON")
 		return fmt.Errorf("error parsing JSON: %v", err)
 	}
 
@@ -138,7 +139,7 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, _id i
 	err = d.Dao.UpdateDocument(ctx, db, coll, _id, parsedOriginalDoc, parsedDoc)
 	if err != nil {
 		log.Error().Msgf("error updating document: %v", err)
-		return nil
+		return err
 	}
 
 	return nil
@@ -148,17 +149,20 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, _id i
 func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 	prettyJsonBuffer, err := mongo.IndentJson(rawDocument)
 	if err != nil {
+		log.Error().Err(err).Msg("Error indenting JSON")
 		return "", fmt.Errorf("error indenting JSON: %v", err)
 	}
 
 	tmpFile, err := d.writeToTempFile(prettyJsonBuffer)
 	if err != nil {
+		log.Error().Err(err).Msg("Error writing to temp file")
 		return "", fmt.Errorf("error writing to temp file: %v", err)
 	}
 	defer os.Remove(tmpFile.Name())
 
 	ed, err := d.App.GetConfig().GetEditorCmd()
 	if err != nil {
+		log.Error().Err(err).Msg("Error getting editor command")
 		return "", fmt.Errorf("error getting editor command: %v", err)
 	}
 
@@ -167,6 +171,7 @@ func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 	if len(ed) > 0 {
 		argsIn, err := argv.Argv(ed, nil, nil)
 		if err != nil {
+			log.Error().Err(err).Msg("Error parsing editor command")
 			return "", fmt.Errorf("error parsing editor command: %v", err)
 		}
 		ed = argsIn[0][0]
@@ -175,6 +180,7 @@ func (d *DocModifier) openEditor(rawDocument string) (string, error) {
 
 	editor, err := exec.LookPath(ed)
 	if err != nil {
+		log.Error().Err(err).Msg("Error looking for command")
 		return "", fmt.Errorf("error looking for editor: %v", err)
 	}
 
@@ -237,6 +243,7 @@ func removeField(jsonStr, fieldToRemove string) (string, error) {
 	var data map[string]interface{}
 	err := json.Unmarshal([]byte(jsonStr), &data)
 	if err != nil {
+		log.Error().Err(err).Msg("Error while unmarshalling JSON")
 		return "", err
 	}
 
@@ -246,6 +253,7 @@ func removeField(jsonStr, fieldToRemove string) (string, error) {
 	// Marshal the map back into a JSON string
 	modifiedJSON, err := json.Marshal(data)
 	if err != nil {
+		log.Error().Err(err).Msg("Error while marshalling JSON")
 		return "", err
 	}
 

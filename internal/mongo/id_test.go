@@ -27,21 +27,21 @@ func TestGetIDFromDocument(t *testing.T) {
 	t.Run("Document with ObjectID", func(t *testing.T) {
 		objectID := primitive.NewObjectID()
 		doc := map[string]interface{}{"_id": objectID}
-		id, err := GetIDFromDocument(doc)
+		id, err := getIdFromDocument(doc)
 		assert.NoError(t, err)
 		assert.Equal(t, objectID, id)
 	})
 
 	t.Run("Document with string ID", func(t *testing.T) {
 		doc := map[string]interface{}{"_id": "123456"}
-		id, err := GetIDFromDocument(doc)
+		id, err := getIdFromDocument(doc)
 		assert.NoError(t, err)
 		assert.Equal(t, "123456", id)
 	})
 
 	t.Run("Document with $oid", func(t *testing.T) {
 		doc := map[string]interface{}{"_id": map[string]interface{}{"$oid": "5f8f9e5f1c9d440000d1b3c5"}}
-		id, err := GetIDFromDocument(doc)
+		id, err := getIdFromDocument(doc)
 		assert.NoError(t, err)
 		assert.IsType(t, primitive.ObjectID{}, id)
 		assert.Equal(t, "5f8f9e5f1c9d440000d1b3c5", id.(primitive.ObjectID).Hex())
@@ -49,7 +49,7 @@ func TestGetIDFromDocument(t *testing.T) {
 
 	t.Run("Document without _id", func(t *testing.T) {
 		doc := map[string]interface{}{"name": "John"}
-		_, err := GetIDFromDocument(doc)
+		_, err := getIdFromDocument(doc)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "document has no _id")
 	})

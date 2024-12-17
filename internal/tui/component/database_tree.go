@@ -13,7 +13,6 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/primitives"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -210,7 +209,7 @@ func (t *DatabaseTree) handleAddCollection(ctx context.Context, parent *tview.Tr
 	db, collectionName = t.removeSymbols(db, collectionName)
 	err := t.Dao.AddCollection(ctx, db, collectionName)
 	if err != nil {
-		log.Error().Err(err).Msg("Error adding collection")
+		modal.ShowError(t.App.Pages, "Error adding collection", err)
 		return
 	}
 	t.addChildNode(ctx, parent, collectionName, true)
@@ -436,7 +435,6 @@ func (t *DatabaseTree) handleRenameCollection(ctx context.Context, db, coll stri
 	db, coll = t.removeSymbols(db, coll)
 	err := t.Dao.RenameCollection(ctx, db, coll, newCollectionName)
 	if err != nil {
-		log.Error().Err(err).Msg("Error renaming collection")
 		modal.ShowError(t.App.Pages, "Error renaming collection", err)
 		return
 	}

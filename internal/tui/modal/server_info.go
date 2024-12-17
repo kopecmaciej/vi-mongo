@@ -31,10 +31,9 @@ func NewServerInfoModal(dao *mongo.Dao) *ServerInfoModal {
 	return s
 }
 
-func (s *ServerInfoModal) Init(app *core.App) error {
+func (s *ServerInfoModal) Init(app *core.App) {
 	s.App = app
 	s.setStyle()
-	return nil
 }
 
 func (s *ServerInfoModal) setStyle() {

@@ -109,7 +109,8 @@ func GetConfigPath() (string, error) {
 func (c *Config) UpdateConfig() error {
 	updatedConfig, err := yaml.Marshal(c)
 	if err != nil {
-		return err
+		log.Error().Err(err).Msg("Failed to marshal config")
+		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
 	configPath, err := GetConfigPath()
@@ -117,7 +118,12 @@ func (c *Config) UpdateConfig() error {
 		return err
 	}
 
-	return os.WriteFile(configPath, updatedConfig, 0644)
+	if err := os.WriteFile(configPath, updatedConfig, 0644); err != nil {
+		log.Error().Err(err).Msg("Failed to write config file")
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	return nil
 }
 
 // GetEditorCmd returns the editor command from the config file
@@ -140,7 +146,8 @@ func (c *Config) SetCurrentConnection(name string) error {
 
 	updatedConfig, err := yaml.Marshal(c)
 	if err != nil {
-		return err
+		log.Error().Err(err).Msg("Failed to marshal config")
+		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
 	configPath, err := GetConfigPath()
@@ -148,7 +155,12 @@ func (c *Config) SetCurrentConnection(name string) error {
 		return err
 	}
 
-	return os.WriteFile(configPath, updatedConfig, 0644)
+	if err := os.WriteFile(configPath, updatedConfig, 0644); err != nil {
+		log.Error().Err(err).Msg("Failed to write config file")
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	return nil
 }
 
 // GetCurrentConnection gets the current connection from the config file

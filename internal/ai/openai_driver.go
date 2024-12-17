@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/rs/zerolog/log"
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -41,7 +42,8 @@ func (d *OpenAIDriver) GetResponse(prompt string, model string) (string, error) 
 	)
 
 	if err != nil {
-		return "", fmt.Errorf("chat completion failed: %w", err)
+		log.Error().Err(err).Msg("Failed to create chat completion")
+		return "", fmt.Errorf("failed to create chat completion: %w", err)
 	}
 
 	return resp.Choices[0].Message.Content, nil
