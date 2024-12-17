@@ -60,7 +60,7 @@ func (h *Help) handleEvents() {
 	})
 }
 
-func (h *Help) Render() error {
+func (h *Help) Render() {
 	h.Table.Clear()
 
 	allKeys := h.App.GetKeys().GetAvaliableKeys()
@@ -95,8 +95,6 @@ func (h *Help) Render() error {
 	}
 
 	h.Table.ScrollToBeginning()
-
-	return nil
 }
 
 // calculateMaxWidth calculates the maximum width of the row

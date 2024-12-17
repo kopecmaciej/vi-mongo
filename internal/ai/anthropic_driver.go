@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/rs/zerolog/log"
 )
 
 const anthropicAPIURL = "https://api.anthropic.com/v1/messages"
@@ -35,12 +37,14 @@ func (d *AnthropicDriver) GetResponse(prompt string, model string) (string, erro
 		},
 	})
 	if err != nil {
+		log.Error().Err(err).Msg("Error marshaling request body")
 		return "", fmt.Errorf("error marshaling request body: %w", err)
 	}
 
 	req, err := http.NewRequest("POST", anthropicAPIURL, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return "", fmt.Errorf("error creating request: %w", err)
+		log.Error().Err(err).Msg("Error creating anthropic request")
+		return "", fmt.Errorf("error creating anthropic request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -50,17 +54,20 @@ func (d *AnthropicDriver) GetResponse(prompt string, model string) (string, erro
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Error().Err(err).Msg("Error sending request")
 		return "", fmt.Errorf("error sending request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Error().Err(err).Msg("Error reading response body")
 		return "", fmt.Errorf("error reading response body: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("API request failed with status code %d: %s", resp.StatusCode, string(body))
+		log.Error().Err(err).Msgf("API request failed with status code %d: body: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("api request failed with status code %d", resp.StatusCode)
 	}
 
 	var result struct {
@@ -70,10 +77,12 @@ func (d *AnthropicDriver) GetResponse(prompt string, model string) (string, erro
 	}
 	err = json.Unmarshal(body, &result)
 	if err != nil {
+		log.Error().Err(err).Msg("Error unmarshaling response")
 		return "", fmt.Errorf("error unmarshaling response: %w", err)
 	}
 
 	if len(result.Content) == 0 || result.Content[0].Text == "" {
+		log.Error().Msg("Unexpected response format")
 		return "", fmt.Errorf("unexpected response format")
 	}
 

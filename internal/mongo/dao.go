@@ -29,14 +29,20 @@ func NewDao(client *mongo.Client, config *config.MongoConfig) *Dao {
 }
 
 func (d *Dao) Ping(ctx context.Context) error {
-	return d.client.Ping(ctx, nil)
+	err := d.client.Ping(ctx, nil)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to ping MongoDB")
+		return fmt.Errorf("failed to ping MongoDB: %w", err)
+	}
+	return nil
 }
 
 func (d *Dao) GetServerStatus(ctx context.Context) (*ServerStatus, error) {
 	var status ServerStatus
 	err := d.client.Database("admin").RunCommand(ctx, primitive.D{{Key: "serverStatus", Value: 1}}).Decode(&status)
 	if err != nil {
-		return nil, err
+		log.Error().Err(err).Msg("Failed to get server status")
+		return nil, fmt.Errorf("failed to get server status: %w", err)
 	}
 
 	isMaster, err := d.runAdminCommand(ctx, "isMaster", 1)
@@ -74,8 +80,8 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 	listDbOptions := options.ListDatabases().SetAuthorizedDatabases(*d.Config.GetOptions().AuthorizedDatabases)
 	dbNames, err := d.client.ListDatabaseNames(ctx, filter, listDbOptions)
 	if err != nil {
-		log.Error().Err(err).Msg("Error listing databases")
-		return nil, err
+		log.Error().Err(err).Msg("Failed to list databases")
+		return nil, fmt.Errorf("failed to list databases: %w", err)
 	}
 
 	for _, dbName := range dbNames {
@@ -83,7 +89,7 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 
 		collNames, err := d.client.Database(dbName).ListCollectionNames(ctx, primitive.M{}, listCollOptions)
 		if err != nil {
-			log.Error().Err(err).Msgf("Error listing collections for database %s", dbName)
+			log.Error().Err(err).Str("database", dbName).Msg("Failed to list collections")
 			continue
 		}
 
@@ -96,7 +102,8 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter primitive.M, sort primitive.M) ([]primitive.M, int64, error) {
 	count, err := d.client.Database(state.Db).Collection(state.Coll).CountDocuments(ctx, filter)
 	if err != nil {
-		return nil, 0, err
+		log.Error().Err(err).Str("db", state.Db).Str("collection", state.Coll).Msg("Failed to count documents")
+		return nil, 0, fmt.Errorf("failed to count documents: %w", err)
 	}
 	coll := d.client.Database(state.Db).Collection(state.Coll)
 
@@ -108,14 +115,16 @@ func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter 
 
 	cursor, err := coll.Find(ctx, filter, &options)
 	if err != nil {
-		return nil, 0, err
+		log.Error().Err(err).Str("db", state.Db).Str("collection", state.Coll).Msg("Failed to find documents")
+		return nil, 0, fmt.Errorf("failed to find documents: %w", err)
 	}
 	defer cursor.Close(ctx)
 
 	var documents []primitive.M
 	err = cursor.All(ctx, &documents)
 	if err != nil {
-		return nil, 0, err
+		log.Error().Err(err).Str("db", state.Db).Str("collection", state.Coll).Msg("Failed to decode documents")
+		return nil, 0, fmt.Errorf("failed to decode documents: %w", err)
 	}
 	if err := cursor.Err(); err != nil {
 		return nil, 0, err
@@ -124,27 +133,29 @@ func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter 
 	return documents, count, nil
 }
 
-func (d *Dao) GetDocument(ctx context.Context, db string, collection string, id primitive.ObjectID) (primitive.M, error) {
+func (d *Dao) GetDocument(ctx context.Context, db string, coll string, id primitive.ObjectID) (primitive.M, error) {
 	var document primitive.M
-	err := d.client.Database(db).Collection(collection).FindOne(ctx, primitive.M{"_id": id}).Decode(&document)
+	err := d.client.Database(db).Collection(coll).FindOne(ctx, primitive.M{"_id": id}).Decode(&document)
 	if err != nil {
-		return nil, err
+		log.Error().Err(err).Str("db", db).Str("collection", coll).Str("id", id.Hex()).Msg("Failed to get document")
+		return nil, fmt.Errorf("failed to get document: %w", err)
 	}
 	return document, nil
 }
 
-func (d *Dao) InsetDocument(ctx context.Context, db string, collection string, document primitive.M) (interface{}, error) {
-	res, err := d.client.Database(db).Collection(collection).InsertOne(ctx, document)
+func (d *Dao) InsetDocument(ctx context.Context, db string, coll string, document primitive.M) (interface{}, error) {
+	res, err := d.client.Database(db).Collection(coll).InsertOne(ctx, document)
 	if err != nil {
-		return nil, err
+		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Failed to insert document")
+		return nil, fmt.Errorf("failed to insert document: %w", err)
 	}
 
-	log.Debug().Msgf("Document inserted, document: %v, db: %v, collection: %v", document, db, collection)
+	log.Debug().Msgf("Document inserted, document: %v, db: %v, collection: %v", document, db, coll)
 
 	return res.InsertedID, nil
 }
 
-func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, id interface{}, originalDoc, document primitive.M) error {
+func (d *Dao) UpdateDocument(ctx context.Context, db string, coll string, id interface{}, originalDoc, document primitive.M) error {
 	setOps := bson.M{}
 	unsetOps := bson.M{}
 
@@ -172,70 +183,76 @@ func (d *Dao) UpdateDocument(ctx context.Context, db string, collection string, 
 		return nil
 	}
 
-	updated, err := d.client.Database(db).Collection(collection).UpdateOne(ctx, primitive.M{"_id": id}, update)
+	updated, err := d.client.Database(db).Collection(coll).UpdateOne(ctx, primitive.M{"_id": id}, update)
 	if err != nil {
-		log.Error().Msgf("Error updating document: %v", err)
-		return err
+		log.Error().Err(err).Str("db", db).Str("collection", coll).Interface("id", id).Msg("Failed to update document")
+		return fmt.Errorf("failed to update document: %w", err)
 	}
 
 	if updated.MatchedCount == 0 {
+		log.Error().Str("db", db).Str("collection", coll).Interface("id", id).Msg("No document found to update")
 		return mongo.ErrNoDocuments
 	}
 
-	log.Debug().Msgf("Document updated, id: %v, document: %v, db: %v, collection: %v", id, document, db, collection)
+	log.Debug().Msgf("Document updated, id: %v, document: %v, db: %v, collection: %v", id, document, db, coll)
 
 	return nil
 }
 
-func (d *Dao) DeleteDocument(ctx context.Context, db string, collection string, id interface{}) error {
-	deleted, err := d.client.Database(db).Collection(collection).DeleteOne(ctx, primitive.M{"_id": id})
+func (d *Dao) DeleteDocument(ctx context.Context, db string, coll string, id interface{}) error {
+	deleted, err := d.client.Database(db).Collection(coll).DeleteOne(ctx, primitive.M{"_id": id})
 	if err != nil {
-		return err
+		log.Error().Err(err).Str("db", db).Str("collection", coll).Interface("id", id).Msg("Failed to delete document")
+		return fmt.Errorf("failed to delete document: %w", err)
 	}
 
 	if deleted.DeletedCount == 0 {
+		log.Error().Str("db", db).Str("collection", coll).Interface("id", id).Msg("No document found to delete")
 		return mongo.ErrNoDocuments
 	}
 
-	log.Debug().Msgf("Document deleted, id: %v, db: %v, collection: %v", id, db, collection)
+	log.Debug().Msgf("Document deleted, id: %v, db: %v, collection: %v", id, db, coll)
 
 	return nil
 }
 
-func (d *Dao) AddCollection(ctx context.Context, db string, collection string) error {
-	err := d.client.Database(db).CreateCollection(ctx, collection)
+func (d *Dao) AddCollection(ctx context.Context, db string, coll string) error {
+	err := d.client.Database(db).CreateCollection(ctx, coll)
 	if err != nil {
+		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Failed to add collection")
 		return err
 	}
 
-	log.Debug().Msgf("Collection added, db: %v, collection: %v", db, collection)
+	log.Debug().Msgf("Collection added, db: %v, collection: %v", db, coll)
 
 	return nil
 }
 
-func (d *Dao) DeleteCollection(ctx context.Context, db string, collection string) error {
-	err := d.client.Database(db).Collection(collection).Drop(ctx)
+func (d *Dao) DeleteCollection(ctx context.Context, db string, coll string) error {
+	err := d.client.Database(db).Collection(coll).Drop(ctx)
 	if err != nil {
+		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Failed to delete collection")
 		return err
 	}
 
-	log.Debug().Msgf("Collection deleted, db: %v, collection: %v", db, collection)
+	log.Debug().Msgf("Collection deleted, db: %v, collection: %v", db, coll)
 
 	return nil
 }
 
-func (d *Dao) RenameCollection(ctx context.Context, db string, oldCollection string, newCollection string) error {
+func (d *Dao) RenameCollection(ctx context.Context, db string, oldColl string, newColl string) error {
 	renameCmd := bson.D{
-		{Key: "renameCollection", Value: fmt.Sprintf("%s.%s", db, oldCollection)},
-		{Key: "to", Value: fmt.Sprintf("%s.%s", db, newCollection)},
+		{Key: "renameCollection", Value: fmt.Sprintf("%s.%s", db, oldColl)},
+		{Key: "to", Value: fmt.Sprintf("%s.%s", db, newColl)},
 	}
 
 	err := d.client.Database("admin").RunCommand(ctx, renameCmd).Err()
 	if err != nil {
-		return fmt.Errorf("failed to rename collection: %w", err)
+		log.Error().Err(err).Msg("Failed to rename collection")
+		return err
 	}
 
-	log.Debug().Msgf("Collection renamed, db: %v, old collection: %v, new collection: %v", db, oldCollection, newCollection)
+	log.Debug().Msgf("Collection renamed, db: %v, old collection: %v, new collection: %v", db, oldColl, newColl)
 
 	return nil
 }
@@ -256,6 +273,7 @@ func (d *Dao) runAdminCommand(ctx context.Context, key string, value interface{}
 
 	err := d.client.Database("admin").RunCommand(ctx, command).Decode(&results)
 	if err != nil {
+		log.Error().Err(err).Str("key", key).Interface("value", value).Msg("Failed to run addmin command")
 		return nil, err
 	}
 
@@ -263,11 +281,11 @@ func (d *Dao) runAdminCommand(ctx context.Context, key string, value interface{}
 }
 
 // GetIndexes fetches the indexes for a given database and collection
-func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]IndexInfo, error) {
-	coll := d.client.Database(db).Collection(collection)
-	cursor, err := coll.Indexes().List(ctx)
+func (d *Dao) GetIndexes(ctx context.Context, db string, coll string) ([]IndexInfo, error) {
+	collHandle := d.client.Database(db).Collection(coll)
+	cursor, err := collHandle.Indexes().List(ctx)
 	if err != nil {
-		log.Error().Err(err).Msgf("Error fetching indexes for database %s, collection %s", db, collection)
+		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error fetching indexes")
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -276,7 +294,7 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]I
 	for cursor.Next(ctx) {
 		var idx bson.M
 		if err := cursor.Decode(&idx); err != nil {
-			log.Error().Err(err).Msgf("Error unmarshalling indexes info for database %s, collection %s", db, collection)
+			log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error unmarshalling indexes")
 			return nil, err
 		}
 
@@ -311,14 +329,14 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, collection string) ([]I
 	}
 
 	if err := cursor.Err(); err != nil {
-		log.Error().Err(err).Msgf("Error iterating indexes for database %s, collection %s", db, collection)
+		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error unmarshalling indexes")
 		return nil, err
 	}
 
 	// Fetch index sizes and usage statistics
-	stats, err := d.getIndexStats(ctx, db, collection)
+	stats, err := d.getIndexStats(ctx, db, coll)
 	if err != nil {
-		log.Debug().Err(err).Msgf("Error fetching index statistics for database %s, collection %s", db, collection)
+		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error fetching index statistics")
 	} else {
 		for i, idx := range indexes {
 			if stat, ok := stats[idx.Name]; ok {
@@ -336,6 +354,7 @@ func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (
 		bson.D{{Key: "$indexStats", Value: bson.D{}}},
 	})
 	if err != nil {
+		log.Error().Err(err).Str("db", db).Str("collection", collection).Msg("Error getting indexes")
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -343,6 +362,7 @@ func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (
 	var collStats bson.M
 	err = d.client.Database(db).RunCommand(ctx, bson.D{{Key: "collStats", Value: collection}}).Decode(&collStats)
 	if err != nil {
+		log.Error().Err(err).Str("db", db).Str("collection", collection).Msg("Error while running command collStats")
 		return nil, err
 	}
 
@@ -350,6 +370,7 @@ func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (
 
 	var stats []bson.M
 	if err := cursor.All(ctx, &stats); err != nil {
+		log.Error().Err(err).Str("db", db).Str("collection", collection).Msg("Error decoding stats")
 		return nil, err
 	}
 
@@ -374,10 +395,16 @@ func formatIndexUsage(ops int64, since time.Time) string {
 
 func (d *Dao) CreateIndex(ctx context.Context, db, coll string, indexDef mongo.IndexModel) error {
 	_, err := d.client.Database(db).Collection(coll).Indexes().CreateOne(ctx, indexDef)
-	return err
+	if err != nil {
+		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error creating index")
+	}
+	return nil
 }
 
 func (d *Dao) DropIndex(ctx context.Context, db, coll, indexName string) error {
 	_, err := d.client.Database(db).Collection(coll).Indexes().DropOne(ctx, indexName)
-	return err
+	if err != nil {
+		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error droping index")
+	}
+	return nil
 }

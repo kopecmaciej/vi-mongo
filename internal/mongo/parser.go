@@ -103,7 +103,8 @@ func ParseJsonToBson(jsonDoc string) (primitive.M, error) {
 	var doc map[string]interface{}
 	err := json.Unmarshal([]byte(jsonDoc), &doc)
 	if err != nil {
-		return primitive.M{}, fmt.Errorf("error unmarshaling JSON: %w", err)
+		log.Error().Err(err).Msg("Error unmarshaling JSON")
+		return primitive.M{}, fmt.Errorf("Error unmarshaling JSON: %w", err)
 	}
 
 	return convertToBson(doc)
@@ -116,7 +117,7 @@ func convertToBson(doc map[string]interface{}) (primitive.M, error) {
 	for key, value := range doc {
 		convertedValue, err := ParseJsonValue(value)
 		if err != nil {
-			return nil, fmt.Errorf("error converting value for key %s: %w", key, err)
+			return nil, fmt.Errorf("Error converting value for key %s: %w", key, err)
 		}
 
 		convertedDoc[key] = convertedValue
@@ -134,7 +135,7 @@ func ParseJsonValue(value interface{}) (interface{}, error) {
 		if date, ok := v["$date"]; ok {
 			t, err := time.Parse(time.RFC3339, date.(string))
 			if err != nil {
-				return nil, fmt.Errorf("error parsing date: %w", err)
+				return nil, fmt.Errorf("Error parsing date: %w", err)
 			}
 			return primitive.NewDateTimeFromTime(t), nil
 		}

@@ -9,6 +9,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
+	"github.com/rs/zerolog/log"
 )
 
 //go:embed styles
@@ -304,7 +305,8 @@ func LoadStyles(styleName string, useBetterSymbols bool) (*Styles, error) {
 
 	styles, err := util.LoadConfigFile(defaultStyles, stylePath)
 	if err != nil {
-		return nil, err
+		log.Error().Err(err).Msg("Failed to load config file")
+		return nil, fmt.Errorf("failed to load config file: %w", err)
 	}
 
 	if !useBetterSymbols {
@@ -426,19 +428,22 @@ func ExtractStyles() error {
 	// Populate styles directory
 	entries, err := stylesFS.ReadDir("styles")
 	if err != nil {
-		return err
+		log.Error().Err(err).Msg("Failed to read embedded styles directory")
+		return fmt.Errorf("failed to read embedded styles directory: %w", err)
 	}
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			content, err := stylesFS.ReadFile("styles/" + entry.Name())
 			if err != nil {
-				return err
+				log.Error().Err(err).Str("File", entry.Name()).Msg("styles: failed to read embedded style file")
+				return fmt.Errorf("failed to read embedded style file: %w", err)
 			}
 
 			err = os.WriteFile(stylesDir+"/"+entry.Name(), content, 0644)
 			if err != nil {
-				return err
+				log.Error().Err(err).Str("File", entry.Name()).Msg("styles: failed to write style file")
+				return fmt.Errorf("failed to write style file: %w", err)
 			}
 		}
 	}

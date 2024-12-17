@@ -17,7 +17,7 @@ func GetIDFromJSON(jsonString string) (interface{}, error) {
 		return nil, err
 	}
 
-	objectID, err := GetIDFromDocument(doc)
+	objectID, err := getIdFromDocument(doc)
 	if err != nil {
 		log.Error().Err(err).Msg("Error converting _id to ObjectID")
 		return nil, err
@@ -26,8 +26,8 @@ func GetIDFromJSON(jsonString string) (interface{}, error) {
 	return objectID, nil
 }
 
-// GetIDFromDocument returns the _id field of a document as a primitive.ObjectID
-func GetIDFromDocument(document map[string]interface{}) (interface{}, error) {
+// getIdFromDocument returns the _id field of a document as a primitive.ObjectID
+func getIdFromDocument(document map[string]interface{}) (interface{}, error) {
 	rawId, ok := document["_id"]
 	if !ok {
 		return nil, fmt.Errorf("document has no _id")

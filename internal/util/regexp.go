@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -50,6 +51,7 @@ func ParseDateToBson(s string) (string, error) {
 		return fmt.Sprintf(`{"$date":{"$numberLong":"%d"}}`, primitive.NewDateTimeFromTime(t).Time().UnixMilli())
 	})
 	if parseError != nil {
+		log.Error().Err(parseError).Msg("Failed to parse date string to BSON")
 		return s, parseError
 	}
 	return query, nil
