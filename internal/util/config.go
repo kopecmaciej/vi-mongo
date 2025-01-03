@@ -8,6 +8,7 @@ import (
 	"reflect"
 
 	"github.com/adrg/xdg"
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
 
@@ -77,39 +78,39 @@ func isEmptyKey(keyValue reflect.Value) bool {
 
 // LoadConfigFile loads a configuration file, merges it with defaults, and returns the result
 func LoadConfigFile[T any](defaultConfig *T, configPath string) (*T, error) {
-	// Ensure the config directory exists
 	err := ensureConfigDirExist()
 	if err != nil {
-		return nil, err
+		log.Error().Err(err).Msg("Failed to ensure config directory exists")
+		return nil, fmt.Errorf("failed to ensure config directory exists: %w", err)
 	}
 
-	// Read the config file
 	bytes, err := os.ReadFile(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// If the file does not exist, create it with default settings
 			bytes, err = marshalConfig(defaultConfig, configPath)
 			if err != nil {
-				return nil, err
+				log.Error().Err(err).Str("path", configPath).Msg("Failed to marshal default config")
+				return nil, fmt.Errorf("failed to marshal default config: %w", err)
 			}
 			err = os.WriteFile(configPath, bytes, 0644)
 			if err != nil {
-				return nil, err
+				log.Error().Err(err).Str("path", configPath).Msg("Failed to write default config file")
+				return nil, fmt.Errorf("failed to write default config file: %w", err)
 			}
 			return defaultConfig, nil
 		}
-		return nil, err
+		log.Error().Err(err).Str("path", configPath).Msg("Failed to read config file")
+		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	// Unmarshal the config file
 	config := new(T)
 	err = unmarshalConfig(bytes, configPath, config)
 	if err != nil {
-		return nil, err
+		log.Error().Err(err).Str("path", configPath).Msg("Failed to unmarshal config file")
+		return nil, fmt.Errorf("failed to unmarshal config file: %w", err)
 	}
 
 	MergeConfigs(config, defaultConfig)
-
 	return config, nil
 }
 
@@ -154,6 +155,7 @@ func ensureConfigDirExist() error {
 func GetConfigDir() (string, error) {
 	configPath, err := xdg.ConfigFile(ConfigDir)
 	if err != nil {
+		log.Error().Err(err).Msg("Error while getting config path directory")
 		return "", err
 	}
 	return configPath, nil

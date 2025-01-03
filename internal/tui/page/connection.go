@@ -48,7 +48,7 @@ func NewConnection() *Connection {
 }
 
 // Init overrides the Init function from the BaseElement struct
-func (c *Connection) Init(app *core.App) error {
+func (c *Connection) Init(app *core.App) {
 	c.App = app
 
 	c.setLayout()
@@ -56,8 +56,6 @@ func (c *Connection) Init(app *core.App) error {
 	c.setKeybindings()
 
 	c.handleEvents()
-
-	return nil
 }
 
 func (c *Connection) handleEvents() {

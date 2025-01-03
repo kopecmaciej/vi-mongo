@@ -10,6 +10,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/page"
+	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -48,10 +49,7 @@ func (a *App) Init() error {
 	}
 	a.setKeybindings()
 
-	if err := a.connection.Init(a.App); err != nil {
-		return err
-	}
-
+	a.connection.Init(a.App)
 	return nil
 }
 
@@ -80,10 +78,7 @@ func (a *App) setKeybindings() {
 				a.Pages.RemovePage(page.HelpPageId)
 				return nil
 			}
-			err := a.help.Render()
-			if err != nil {
-				return event
-			}
+			a.help.Render()
 			a.Pages.AddPage(page.HelpPageId, a.help, true, true)
 			return nil
 		}
@@ -121,9 +116,11 @@ func (a *App) connectToMongo() error {
 
 	client := mongo.NewClient(currConn)
 	if err := client.Connect(); err != nil {
+		log.Error().Err(err).Msg("Failed to connect to mongo")
 		return err
 	}
 	if err := client.Ping(); err != nil {
+		log.Error().Err(err).Msg("Failed to ping to mongo")
 		return err
 	}
 	a.SetDao(mongo.NewDao(client.Client, client.Config))

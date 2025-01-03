@@ -4,7 +4,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -15,8 +14,6 @@ func NewError(message string, err error) *tview.Modal {
 	taggedMessage := "[White::b] " + message + " [::]"
 
 	if err != nil {
-		log.Error().Err(err).Msg(message)
-
 		errMsg := err.Error()
 		if errMsg != "" {
 			if len(errMsg) > 240 {

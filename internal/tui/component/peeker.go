@@ -8,6 +8,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/primitives"
+	"github.com/rs/zerolog/log"
 
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
@@ -97,11 +98,13 @@ func (p *Peeker) setKeybindings() {
 			return nil
 		case k.Contains(k.Peeker.CopyHighlight, event.Name()):
 			if err := p.ViewModal.CopySelectedLine(clipboard.WriteAll, "full"); err != nil {
+				log.Error().Err(err).Msg("Error copying full line")
 				modal.ShowError(p.App.Pages, "Error copying full line", err)
 			}
 			return nil
 		case k.Contains(k.Peeker.CopyValue, event.Name()):
 			if err := p.ViewModal.CopySelectedLine(clipboard.WriteAll, "value"); err != nil {
+				log.Error().Err(err).Msg("Error copying value")
 				modal.ShowError(p.App.Pages, "Error copying value", err)
 			}
 			return nil

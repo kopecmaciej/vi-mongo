@@ -201,10 +201,7 @@ func (m *Main) setKeybindings() {
 
 func (m *Main) ShowServerInfoModal() {
 	serverInfoModal := modal.NewServerInfoModal(m.Dao)
-	if err := serverInfoModal.Init(m.App); err != nil {
-		modal.ShowError(m.App.Pages, "Failed to initialize server info modal", err)
-		return
-	}
+	serverInfoModal.Init(m.App)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
