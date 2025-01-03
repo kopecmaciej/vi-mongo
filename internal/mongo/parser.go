@@ -80,6 +80,7 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 	var filter primitive.M
 	err = bson.UnmarshalExtJSON([]byte(query), true, &filter)
 	if err != nil {
+		log.Error().Err(err).Msgf("Error parsing query %s", query)
 		return nil, fmt.Errorf("error parsing query %s: %w", query, err)
 	}
 

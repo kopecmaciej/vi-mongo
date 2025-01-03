@@ -155,6 +155,7 @@ func ensureConfigDirExist() error {
 func GetConfigDir() (string, error) {
 	configPath, err := xdg.ConfigFile(ConfigDir)
 	if err != nil {
+		log.Error().Err(err).Msg("Error while getting config path directory")
 		return "", err
 	}
 	return configPath, nil

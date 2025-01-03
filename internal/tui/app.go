@@ -10,6 +10,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/page"
+	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -115,9 +116,11 @@ func (a *App) connectToMongo() error {
 
 	client := mongo.NewClient(currConn)
 	if err := client.Connect(); err != nil {
+		log.Error().Err(err).Msg("Failed to connect to mongo")
 		return err
 	}
 	if err := client.Ping(); err != nil {
+		log.Error().Err(err).Msg("Failed to ping to mongo")
 		return err
 	}
 	a.SetDao(mongo.NewDao(client.Client, client.Config))

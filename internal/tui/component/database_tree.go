@@ -13,6 +13,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/primitives"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -246,6 +247,7 @@ func (t *DatabaseTree) addChildNode(ctx context.Context, parent *tview.TreeNode,
 		db, coll := t.removeSymbols(parent.GetText(), collNode.GetText())
 		err := t.nodeSelectFunc(ctx, db, coll)
 		if err != nil {
+			log.Error().Err(err).Msg("Error selecting node")
 			modal.ShowError(t.App.Pages, "Error selecting node", err)
 		}
 	})
