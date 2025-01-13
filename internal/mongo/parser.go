@@ -95,23 +95,11 @@ func IndentJson(jsonString string) (bytes.Buffer, error) {
 
 // ParseJsonToBson converts a JSON string to a primitive.M document
 func ParseJsonToBson(jsonDoc string) (primitive.M, error) {
-	var doc map[string]interface{}
+	var doc primitive.M
 	err := bson.UnmarshalExtJSON([]byte(jsonDoc), false, &doc)
 	if err != nil {
 		log.Error().Err(err).Msg("Error unmarshaling JSON")
 		return primitive.M{}, fmt.Errorf("Error unmarshaling JSON: %w", err)
 	}
-
-	return convertToBson(doc)
-}
-
-// convertToBson converts a map[string]interface{} to a primitive.M document
-// with MongoDB-compatible types (ObjectID for $oid and DateTime for $date)
-func convertToBson(doc map[string]interface{}) (primitive.M, error) {
-	convertedDoc := make(primitive.M)
-	for key, value := range doc {
-
-		convertedDoc[key] = value
-	}
-	return convertedDoc, nil
+	return doc, nil
 }
