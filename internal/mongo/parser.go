@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
-	"time"
 
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
@@ -27,11 +27,10 @@ func ParseBsonDocument(document map[string]interface{}) (string, error) {
 // mongo compatible JSON
 func ParseBsonDocuments(documents []primitive.M) ([]string, error) {
 	var docs []string
+
 	for _, doc := range documents {
-		for key, value := range doc {
-			doc[key] = ParseBsonValue(value)
-		}
-		jsonBytes, err := json.Marshal(doc)
+		sortedDoc := sortDocumentKeys(doc)
+		jsonBytes, err := bson.MarshalExtJSON(sortedDoc, false, false)
 		if err != nil {
 			log.Error().Err(err).Msg("Error marshaling JSON")
 			continue
@@ -42,22 +41,22 @@ func ParseBsonDocuments(documents []primitive.M) ([]string, error) {
 	return docs, nil
 }
 
-func ParseBsonValue(value interface{}) interface{} {
-	var parsed interface{}
-	switch v := value.(type) {
-	case primitive.ObjectID:
-		parsed = primitive.M{
-			"$oid": v.Hex(),
-		}
-	case primitive.DateTime:
-		parsed = primitive.M{
-			"$date": v.Time(),
-		}
-	default:
-		parsed = value
+func sortDocumentKeys(doc primitive.M) primitive.D {
+	keys := make([]string, 0, len(doc))
+	for key := range doc {
+		keys = append(keys, key)
 	}
 
-	return parsed
+	sort.SliceStable(keys, func(i, j int) bool {
+		return strings.Compare(keys[i], keys[j]) < 0
+	})
+
+	sortedDoc := primitive.D{}
+	for _, key := range keys {
+		sortedDoc = append(sortedDoc, bson.E{Key: key, Value: doc[key]})
+	}
+
+	return sortedDoc
 }
 
 // ParseStringQuery transforms a query string with ObjectID into a filter map compatible with MongoDB's BSON.
@@ -72,13 +71,8 @@ func ParseStringQuery(query string) (map[string]interface{}, error) {
 	query = strings.ReplaceAll(query, "ObjectID(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "\")", "\"}")
 
-	query, err := util.ParseDateToBson(query)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing date: %w", err)
-	}
-
 	var filter primitive.M
-	err = bson.UnmarshalExtJSON([]byte(query), true, &filter)
+	err := bson.UnmarshalExtJSON([]byte(query), false, &filter)
 	if err != nil {
 		log.Error().Err(err).Msgf("Error parsing query %s", query)
 		return nil, fmt.Errorf("error parsing query %s: %w", query, err)
@@ -102,7 +96,7 @@ func IndentJson(jsonString string) (bytes.Buffer, error) {
 // ParseJsonToBson converts a JSON string to a primitive.M document
 func ParseJsonToBson(jsonDoc string) (primitive.M, error) {
 	var doc map[string]interface{}
-	err := json.Unmarshal([]byte(jsonDoc), &doc)
+	err := bson.UnmarshalExtJSON([]byte(jsonDoc), false, &doc)
 	if err != nil {
 		log.Error().Err(err).Msg("Error unmarshaling JSON")
 		return primitive.M{}, fmt.Errorf("Error unmarshaling JSON: %w", err)
@@ -116,59 +110,8 @@ func ParseJsonToBson(jsonDoc string) (primitive.M, error) {
 func convertToBson(doc map[string]interface{}) (primitive.M, error) {
 	convertedDoc := make(primitive.M)
 	for key, value := range doc {
-		convertedValue, err := ParseJsonValue(value)
-		if err != nil {
-			return nil, fmt.Errorf("Error converting value for key %s: %w", key, err)
-		}
 
-		convertedDoc[key] = convertedValue
+		convertedDoc[key] = value
 	}
 	return convertedDoc, nil
-}
-
-// ParseJsonValue converts a value to a compatible MongoDB type
-func ParseJsonValue(value interface{}) (interface{}, error) {
-	switch v := value.(type) {
-	case map[string]interface{}:
-		if oid, ok := v["$oid"]; ok {
-			return primitive.ObjectIDFromHex(oid.(string))
-		}
-		if date, ok := v["$date"]; ok {
-			t, err := time.Parse(time.RFC3339, date.(string))
-			if err != nil {
-				return nil, fmt.Errorf("Error parsing date: %w", err)
-			}
-			return primitive.NewDateTimeFromTime(t), nil
-		}
-		convertedMap := make(primitive.M)
-		for k, v := range v {
-			convertedValue, err := ParseJsonValue(v)
-			if err != nil {
-				return nil, err
-			}
-			convertedMap[k] = convertedValue
-		}
-		return convertedMap, nil
-	case []interface{}:
-		convertedArray := make(primitive.A, len(v))
-		for i, elem := range v {
-			convertedElem, err := ParseJsonValue(elem)
-			if err != nil {
-				return nil, err
-			}
-			convertedArray[i] = convertedElem
-		}
-		return convertedArray, nil
-		// This is a trick as JSONed object parse all numbers as float64
-		// so we need to check if the number is a float64 or some int type
-	case float64:
-		if v == float64(int32(v)) {
-			return int32(v), nil
-		} else if v == float64(int64(v)) {
-			return int64(v), nil
-		}
-		return v, nil
-	default:
-		return v, nil
-	}
 }
