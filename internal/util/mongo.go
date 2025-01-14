@@ -59,13 +59,13 @@ func StringifyMongoValueByType(v interface{}) string {
 	case int32, int64:
 		return fmt.Sprintf("%d", t)
 	case float32, float64:
-		return fmt.Sprintf("%f", t)
+		return fmt.Sprintf("%g", t)
 	case bool:
 		return fmt.Sprintf("%t", t)
 	case primitive.ObjectID:
 		return t.Hex()
 	case primitive.DateTime:
-		return t.Time().Format(time.RFC3339)
+		return t.Time().UTC().Format(time.RFC3339)
 	case primitive.A, primitive.D, primitive.M, map[string]interface{}, []interface{}:
 		b, _ := json.Marshal(t)
 		return string(b)

@@ -28,6 +28,11 @@ func TestGetSortedKeysWithTypes(t *testing.T) {
 }
 
 func TestGetValueByType(t *testing.T) {
+	objId := primitive.NewObjectID()
+	dateUtc := "2023-10-05T14:34:24Z"
+	fixedDate := time.Date(2023, 10, 5, 14, 34, 24, 0, time.UTC)
+	date := primitive.NewDateTimeFromTime(fixedDate)
+
 	testCases := []struct {
 		name     string
 		input    interface{}
@@ -36,10 +41,10 @@ func TestGetValueByType(t *testing.T) {
 		{"String", "test", "test"},
 		{"Int32", int32(56), "56"},
 		{"Int64", int64(922337203685477), "922337203685477"},
-		{"Float", 3.14, "3.140000"},
+		{"Float", 3.14, "3.14"},
 		{"Bool", true, "true"},
-		{"ObjectID", primitive.NewObjectID(), ""},                   // Hex value will be different each time
-		{"DateTime", primitive.NewDateTimeFromTime(time.Now()), ""}, // Formatted time will be different
+		{"ObjectID", objId, objId.Hex()},
+		{"DateTime", date, dateUtc},
 		{"Array", primitive.A{"a", "b"}, `["a","b"]`},
 		{"Object", primitive.M{"key": "value"}, `{"key":"value"}`},
 		{"Null", nil, "null"},
@@ -48,14 +53,7 @@ func TestGetValueByType(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := StringifyMongoValueByType(tc.input)
-			if tc.name == "ObjectID" {
-				assert.Len(t, result, 24) // ObjectID hex string length
-			} else if tc.name == "DateTime" {
-				_, err := time.Parse(time.RFC3339, result)
-				assert.NoError(t, err)
-			} else {
-				assert.Equal(t, tc.expected, result)
-			}
+			assert.Equal(t, tc.expected, result)
 		})
 	}
 }
