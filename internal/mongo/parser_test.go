@@ -1,6 +1,8 @@
 package mongo
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -123,5 +125,116 @@ func TestParseBsonDocument(t *testing.T) {
 	result, err := ParseBsonDocument(input)
 	assert.NoError(t, err)
 	assert.Equal(t, result, expected)
+}
+
+func TestSortDocumentKeys(t *testing.T) {
+    cases := []struct {
+        name     string
+        input    primitive.M
+        expected string
+        hasError bool
+    }{
+        {
+            name: "Nested documents and arrays",
+            input: primitive.M{
+                "name": "John Doe",
+                "contacts": primitive.A{
+                    primitive.M{"phone": "123-456-789", "email": "john@example.com"},
+                    primitive.M{"website": "john.com", "social": "twitter.com/john"},
+                },
+                "address": primitive.M{
+                    "zip": "12345",
+                    "street": "Main St",
+                    "city": "New York",
+                },
+                "metadata": primitive.A{
+                    primitive.M{
+                        "settings": primitive.M{
+                            "theme": "dark",
+                            "active": true,
+                        },
+                    },
+                },
+            },
+            expected: `{
+  "address": {
+    "city": "New York",
+    "street": "Main St",
+    "zip": "12345"
+  },
+  "contacts": [
+    {
+      "email": "john@example.com",
+      "phone": "123-456-789"
+    },
+    {
+      "social": "twitter.com/john",
+      "website": "john.com"
+    }
+  ],
+  "metadata": [
+    {
+      "settings": {
+        "active": true,
+        "theme": "dark"
+      }
+    }
+  ],
+  "name": "John Doe"
+}`,
+            hasError: false,
+        },
+        {
+            name: "Deep nested arrays with user data",
+            input: primitive.M{
+                "users": primitive.A{
+                    primitive.M{
+                        "permissions": primitive.A{
+                            primitive.M{"role": "admin", "level": 3, "access": true},
+                            primitive.M{"role": "user", "level": 1, "access": true},
+                        },
+                    },
+                },
+                "version": "1.0.0",
+            },
+            expected: `{
+  "users": [
+    {
+      "permissions": [
+        {
+          "access": true,
+          "level": 3,
+          "role": "admin"
+        },
+        {
+          "access": true,
+          "level": 1,
+          "role": "user"
+        }
+      ]
+    }
+  ],
+  "version": "1.0.0"
+}`,
+            hasError: false,
+        },
+    }
+
+    for _, tc := range cases {
+        t.Run(tc.name, func(t *testing.T) {
+            result, err := ParseBsonDocument(tc.input)
+            if tc.hasError {
+                assert.Error(t, err)
+            } else {
+                assert.NoError(t, err)
+
+                var prettyResult bytes.Buffer
+                err = json.Indent(&prettyResult, []byte(result), "", "  ")
+                assert.NoError(t, err)
+
+                assert.Equal(t, tc.expected, prettyResult.String())
+            }
+        })
+    }
 }
 

@@ -41,23 +41,49 @@ func ParseBsonDocuments(documents []primitive.M) ([]string, error) {
 	return docs, nil
 }
 
+// TODO: Remove this and convert everything to primitive.D
 func sortDocumentKeys(doc primitive.M) primitive.D {
-	keys := make([]string, 0, len(doc))
-	for key := range doc {
-		keys = append(keys, key)
-	}
+    keys := make([]string, 0, len(doc))
+    for key := range doc {
+        keys = append(keys, key)
+    }
 
-	sort.SliceStable(keys, func(i, j int) bool {
-		return strings.Compare(keys[i], keys[j]) < 0
-	})
+    sort.SliceStable(keys, func(i, j int) bool {
+        return strings.Compare(keys[i], keys[j]) < 0
+    })
 
-	sortedDoc := primitive.D{}
-	for _, key := range keys {
-		sortedDoc = append(sortedDoc, bson.E{Key: key, Value: doc[key]})
-	}
+    sortedDoc := primitive.D{}
+    for _, key := range keys {
+        value := doc[key]
+        sortedValue := sortValue(value)
+        sortedDoc = append(sortedDoc, bson.E{Key: key, Value: sortedValue})
+    }
 
-	return sortedDoc
+    return sortedDoc
 }
+
+func sortValue(value interface{}) interface{} {
+    switch v := value.(type) {
+    case primitive.M:
+        return sortDocumentKeys(v)
+    case []interface{}:
+        return sortArray(v)
+    case primitive.A:
+        return sortArray([]interface{}(v))
+    default:
+        return value
+    }
+}
+
+func sortArray(arr []interface{}) primitive.A {
+    sorted := make(primitive.A, len(arr))
+    for i, v := range arr {
+        sorted[i] = sortValue(v)
+    }
+    return sorted
+}
+
+
 
 // ParseStringQuery transforms a query string with ObjectID into a filter map compatible with MongoDB's BSON.
 // If keys are not quoted, this function will quote them.
