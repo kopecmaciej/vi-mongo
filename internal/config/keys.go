@@ -297,7 +297,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Hide current column",
 		},
 		ResetHiddenColumns: Key{
-			Runes:       []string{"R"},
+			Keys:        []string{"Ctrl+R"},
 			Description: "Reset hidden columns",
 		},
 		NextDocument: Key{
