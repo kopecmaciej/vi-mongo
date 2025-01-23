@@ -37,6 +37,7 @@ type Index struct {
 	currentColl      string
 	docKeys          []string
 	isAddFormVisible bool
+	indexFieldsCount int
 }
 
 func NewIndex() *Index {
@@ -47,6 +48,7 @@ func NewIndex() *Index {
 		addForm:          core.NewForm(),
 		deleteModal:      modal.NewDeleteModal(IndexDeleteModalId),
 		isAddFormVisible: false,
+		indexFieldsCount: 1,
 	}
 
 	i.SetIdentifier(IndexId)
@@ -175,12 +177,17 @@ func (i *Index) renderIndexTable() {
 
 func (i *Index) renderAddIndexForm() {
 	i.addForm.SetTitle("Add Index")
-	i.addForm.AddInputFieldWithAutocomplete("Field to index", "", 30, i.setAutocompleteFunc, nil, nil)
-	i.addForm.AddDropDown("Field Type", []string{"1 (Ascending)", "-1 (Descending)", "text", "2dsphere"}, 0, nil)
+
+	for range i.indexFieldsCount {
+		i.addForm.AddInputFieldWithAutocomplete("Field to index", "", 30, i.setAutocompleteFunc, nil, nil)
+		i.addForm.AddDropDown("Field Type", []string{"1 (Ascending)", "-1 (Descending)", "text", "2dsphere"}, 0, nil)
+	}
+
 	i.addForm.AddTextView("Optionals", "----------------", 40, 1, false, false)
 	i.addForm.AddInputField("Index Name", "", 30, nil, nil)
 	i.addForm.AddCheckbox("Unique", false, nil)
 	i.addForm.AddInputField("TTL (seconds)", "", 20, nil, nil)
+	i.addForm.AddButton("+", i.addIndexField)
 	i.addForm.AddButton("Create", i.handleAddIndex)
 	i.addForm.AddButton("Cancel", i.closeAddForm)
 }
@@ -202,24 +209,39 @@ func (i *Index) setAutocompleteFunc(currentText string) (entries []tview.Autocom
 	return sortedEntries
 }
 
+func (i *Index) addIndexField() {
+	i.indexFieldsCount += 1
+	i.addForm.Clear(true)
+	i.renderAddIndexForm()
+	i.App.SetFocus(i.addForm)
+}
 func (i *Index) handleAddIndex() {
-	fieldName := i.addForm.GetFormItem(0).(*tview.InputField).GetText()
-	fieldType, _ := i.addForm.GetFormItem(1).(*tview.DropDown).GetCurrentOption()
-	indexName := i.addForm.GetFormItem(3).(*tview.InputField).GetText()
-	unique := i.addForm.GetFormItem(4).(*tview.Checkbox).IsChecked()
-	ttlStr := i.addForm.GetFormItem(5).(*tview.InputField).GetText()
+	keys := bson.D{}
+	pairCount := ((i.addForm.GetFormItemCount()) - 4) / 2
 
-	var fieldValue interface{}
-	switch fieldType {
-	case 0:
-		fieldValue = 1
-	case 1:
-		fieldValue = -1
-	case 2:
-		fieldValue = "text"
-	case 3:
-		fieldValue = "2dsphere"
+	for pair := 0; pair < pairCount; pair++ {
+		formIdx := pair * 2
+		field := i.addForm.GetFormItem(formIdx).(*tview.InputField).GetText()
+		fieldType, _ := i.addForm.GetFormItem(formIdx + 1).(*tview.DropDown).GetCurrentOption()
+
+		var fieldValue interface{}
+		switch fieldType {
+		case 0:
+			fieldValue = 1
+		case 1:
+			fieldValue = -1
+		case 2:
+			fieldValue = "text"
+		case 3:
+			fieldValue = "2dsphere"
+		}
+
+		keys = append(keys, bson.E{Key: field, Value: fieldValue})
 	}
+
+	indexName := i.addForm.GetFormItemByLabel("Index Name").(*tview.InputField).GetText()
+	unique := i.addForm.GetFormItemByLabel("Unique").(*tview.Checkbox).IsChecked()
+	ttlStr := i.addForm.GetFormItemByLabel("TTL (seconds)").(*tview.InputField).GetText()
 
 	options := options.Index()
 	if unique {
@@ -238,7 +260,7 @@ func (i *Index) handleAddIndex() {
 	}
 
 	indexModel := mongo.IndexModel{
-		Keys:    bson.D{{Key: fieldName, Value: fieldValue}},
+		Keys:    keys,
 		Options: options,
 	}
 
@@ -250,6 +272,7 @@ func (i *Index) handleAddIndex() {
 
 	i.closeAddForm()
 	err := i.refreshIndexes(ctx)
+	i.indexFieldsCount = 1
 	if err != nil {
 		modal.ShowError(i.App.Pages, "Error refreshing indexes", err)
 	}
