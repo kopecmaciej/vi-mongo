@@ -37,7 +37,6 @@ type Index struct {
 	currentColl      string
 	docKeys          []string
 	isAddFormVisible bool
-	indexFieldsCount int
 }
 
 func NewIndex() *Index {
@@ -48,7 +47,6 @@ func NewIndex() *Index {
 		addForm:          core.NewForm(),
 		deleteModal:      modal.NewDeleteModal(IndexDeleteModalId),
 		isAddFormVisible: false,
-		indexFieldsCount: 1,
 	}
 
 	i.SetIdentifier(IndexId)
@@ -175,13 +173,23 @@ func (i *Index) renderIndexTable() {
 	}
 }
 
+func (i *Index) InsertPairedFields(pos int) {
+	inputField := tview.NewInputField().
+		SetLabel("Field to index").
+		SetFieldWidth(30)
+	inputField.SetAutocompleteFunc(i.setAutocompleteFunc)
+
+	dropdown := tview.NewDropDown().
+		SetLabel("Field Type").
+		SetOptions([]string{"1 (Ascending)", "-1 (Descending)", "text", "2dsphere"}, nil)
+
+	i.addForm.InsertFormItem(pos, inputField)
+	i.addForm.InsertFormItem(pos+1, dropdown)
+}
+
 func (i *Index) renderAddIndexForm() {
 	i.addForm.SetTitle("Add Index")
-
-	for range i.indexFieldsCount {
-		i.addForm.AddInputFieldWithAutocomplete("Field to index", "", 30, i.setAutocompleteFunc, nil, nil)
-		i.addForm.AddDropDown("Field Type", []string{"1 (Ascending)", "-1 (Descending)", "text", "2dsphere"}, 0, nil)
-	}
+	i.InsertPairedFields(0)
 
 	i.addForm.AddTextView("Optionals", "----------------", 40, 1, false, false)
 	i.addForm.AddInputField("Index Name", "", 30, nil, nil)
@@ -190,6 +198,24 @@ func (i *Index) renderAddIndexForm() {
 	i.addForm.AddButton("+", i.addIndexField)
 	i.addForm.AddButton("Create", i.handleAddIndex)
 	i.addForm.AddButton("Cancel", i.closeAddForm)
+}
+
+func (i *Index) addIndexField() {
+	optionalsIndex := -1
+	for idx := 0; idx < i.addForm.GetFormItemCount(); idx++ {
+		if textView, ok := i.addForm.GetFormItem(idx).(*tview.TextView); ok && textView.GetText(true) == "----------------" {
+			optionalsIndex = idx
+			break
+		}
+	}
+	if optionalsIndex != -1 {
+		i.InsertPairedFields(optionalsIndex)
+	}
+
+	i.addForm.AddButton("+", i.addIndexField)
+	i.addForm.AddButton("Create", i.handleAddIndex)
+	i.addForm.AddButton("Cancel", i.closeAddForm)
+	i.App.SetFocus(i.addForm)
 }
 
 func (i *Index) setAutocompleteFunc(currentText string) (entries []tview.AutocompleteItem) {
@@ -209,12 +235,6 @@ func (i *Index) setAutocompleteFunc(currentText string) (entries []tview.Autocom
 	return sortedEntries
 }
 
-func (i *Index) addIndexField() {
-	i.indexFieldsCount += 1
-	i.addForm.Clear(true)
-	i.renderAddIndexForm()
-	i.App.SetFocus(i.addForm)
-}
 func (i *Index) handleAddIndex() {
 	keys := bson.D{}
 	pairCount := ((i.addForm.GetFormItemCount()) - 4) / 2
@@ -272,7 +292,6 @@ func (i *Index) handleAddIndex() {
 
 	i.closeAddForm()
 	err := i.refreshIndexes(ctx)
-	i.indexFieldsCount = 1
 	if err != nil {
 		modal.ShowError(i.App.Pages, "Error refreshing indexes", err)
 	}
