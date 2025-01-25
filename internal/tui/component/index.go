@@ -211,6 +211,8 @@ func (i *Index) addIndexField() {
 	if optionalsIndex != -1 {
 		i.InsertPairedFields(optionalsIndex)
 	}
+	ttl := i.addForm.GetFormItemByLabel("TTL (seconds)")
+	ttl.SetDisabled(true)
 
 	i.addForm.AddButton("+", i.addIndexField)
 	i.addForm.AddButton("Create", i.handleAddIndex)
