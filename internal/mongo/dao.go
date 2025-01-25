@@ -397,6 +397,7 @@ func (d *Dao) CreateIndex(ctx context.Context, db, coll string, indexDef mongo.I
 	_, err := d.client.Database(db).Collection(coll).Indexes().CreateOne(ctx, indexDef)
 	if err != nil {
 		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error creating index")
+		return err
 	}
 	return nil
 }
@@ -405,6 +406,7 @@ func (d *Dao) DropIndex(ctx context.Context, db, coll, indexName string) error {
 	_, err := d.client.Database(db).Collection(coll).Indexes().DropOne(ctx, indexName)
 	if err != nil {
 		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error droping index")
+		return err
 	}
 	return nil
 }

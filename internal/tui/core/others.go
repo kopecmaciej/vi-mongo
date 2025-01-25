@@ -33,9 +33,6 @@ type (
 	Flex struct {
 		*tview.Flex
 	}
-	Form struct {
-		*tview.Form
-	}
 	List struct {
 		*tview.List
 	}
@@ -65,10 +62,6 @@ type (
 // Constructor functions
 func NewFlex() *Flex {
 	return &Flex{Flex: tview.NewFlex()}
-}
-
-func NewForm() *Form {
-	return &Form{Form: tview.NewForm()}
 }
 
 func NewList() *List {
@@ -105,14 +98,6 @@ func NewFormModal() *FormModal {
 
 func (f *Flex) SetStyle(style *config.Styles) {
 	SetCommonStyle(f.Flex, style)
-}
-
-func (f *Form) SetStyle(style *config.Styles) {
-	SetCommonStyle(f.Form, style)
-	if f.GetButtonCount() > 0 {
-		f.SetButtonBackgroundColor(style.Others.ButtonsBackgroundColor.Color())
-		f.SetButtonTextColor(style.Others.ButtonsTextColor.Color())
-	}
 }
 
 func (l *List) SetStyle(style *config.Styles) {
