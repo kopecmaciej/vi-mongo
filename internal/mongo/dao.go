@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
 	"strconv"
 	"time"
 
@@ -92,6 +93,8 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 			log.Error().Err(err).Str("database", dbName).Msg("Failed to list collections")
 			continue
 		}
+
+		slices.Sort(collNames)
 
 		dbCollMap = append(dbCollMap, DBsWithCollections{DB: dbName, Collections: collNames})
 	}
