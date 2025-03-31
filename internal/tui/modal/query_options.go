@@ -3,6 +3,7 @@ package modal
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
@@ -57,12 +58,19 @@ func (qo *QueryOptionsModal) setStyle() {
 }
 
 func (qo *QueryOptionsModal) setKeybindings() {
+	k := qo.App.GetKeys()
 	qo.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
-		case tcell.KeyEscape:
-			qo.App.Pages.RemovePage(QueryOptionsModalId)
+		case tcell.KeyEsc:
+			qo.Hide()
 			return nil
 		}
+		switch {
+		case k.Contains(k.Content.ToggleQueryOptions, event.Name()):
+			qo.Hide()
+			return nil
+		}
+
 		return event
 	})
 }
@@ -74,7 +82,7 @@ func (qo *QueryOptionsModal) SetApplyCallback(callback func()) {
 func (qo *QueryOptionsModal) Render(ctx context.Context, state *mongo.CollectionState) error {
 	qo.Form.Clear(true)
 
-	qo.Form.AddInputField("Projection", state.Projection, 60, nil, nil)
+	qo.Form.AddInputField("Projection", state.Projection, 40, nil, nil)
 
 	limitStr := strconv.FormatInt(state.Limit, 10)
 	qo.Form.AddInputField("Limit", limitStr, 20,
@@ -91,11 +99,11 @@ func (qo *QueryOptionsModal) Render(ctx context.Context, state *mongo.Collection
 		}, nil)
 
 	qo.Form.AddButton("Apply", func() {
-		projText := qo.Form.GetFormItemByLabel("Projection").(*tview.InputField).GetText()
 		limitText := qo.Form.GetFormItemByLabel("Limit").(*tview.InputField).GetText()
 		skipText := qo.Form.GetFormItemByLabel("Skip").(*tview.InputField).GetText()
+		projText := qo.Form.GetFormItemByLabel("Projection").(*tview.InputField).GetText()
 
-		if limitText != "" {
+		if strings.Trim(limitText, " ") != "" {
 			val, err := strconv.ParseInt(limitText, 10, 64)
 			if err != nil {
 				ShowError(qo.App.Pages, "Invalid limit value", err)
@@ -104,7 +112,7 @@ func (qo *QueryOptionsModal) Render(ctx context.Context, state *mongo.Collection
 			state.Limit = val
 		}
 
-		if skipText != "" {
+		if strings.Trim(skipText, " ") != "" {
 			val, err := strconv.ParseInt(skipText, 10, 64)
 			if err != nil {
 				ShowError(qo.App.Pages, "Invalid skip value", err)
@@ -121,7 +129,7 @@ func (qo *QueryOptionsModal) Render(ctx context.Context, state *mongo.Collection
 	})
 
 	qo.Form.AddButton("Cancel", func() {
-		qo.App.Pages.RemovePage(QueryOptionsModalId)
+		qo.Hide()
 	})
 
 	qo.Show()

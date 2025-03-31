@@ -141,7 +141,7 @@ func (w *Welcome) renderForm() {
 	w.form.AddCheckbox("Connection page", cfg.ShowConnectionPage, nil)
 	w.form.AddCheckbox("Welcome page", cfg.ShowWelcomePage, nil)
 	w.form.AddTextView("Show help", fmt.Sprintf("Press %s to show key help", w.App.GetKeys().Global.ToggleFullScreenHelp.String()), 60, 1, true, false)
-	w.form.AddTextView("Motions", "Use basic vim motions or normal arrow keys to move around", 60, 1, true, false)
+	w.form.AddTextView("Motions", "Use basic vim motions or normal arrow keys to move around", 60, 2, true, false)
 }
 
 func (w *Welcome) saveConfig() error {

@@ -123,6 +123,15 @@ func (c *Content) init() error {
 		c.updateContent(ctx, true)
 	})
 
+	c.queryOptionsModal.SetApplyCallback(func() {
+		err := c.updateContent(ctx, false)
+		if err != nil {
+			modal.ShowError(c.App.Pages, "Error while applying query options", err)
+			return
+		}
+		c.queryOptionsModal.Hide()
+	})
+
 	c.handleEvents(ctx)
 
 	return nil
@@ -449,14 +458,15 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 		autocompleteKeys = append(autocompleteKeys, key)
 	}
 
-	c.queryBar.LoadNewKeys(autocompleteKeys)
-	c.sortBar.LoadNewKeys(autocompleteKeys)
+	c.queryBar.LoadAutocomleteKeys(autocompleteKeys)
+	c.sortBar.LoadAutocomleteKeys(autocompleteKeys)
 	c.App.GetManager().Broadcast(manager.EventMsg{
 		Sender:  c.GetIdentifier(),
 		Message: manager.Message{Type: manager.UpdateAutocompleteKeys, Data: autocompleteKeys},
 	})
 }
 
+// TODO: maybe show error modal here?
 func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	var documents []primitive.M
 	var count int64
@@ -812,6 +822,11 @@ func (c *Content) handleToggleSort() *tcell.EventKey {
 	return nil
 }
 
+func (c *Content) handleShowQueryOptions(ctx context.Context) *tcell.EventKey {
+	c.queryOptionsModal.Render(ctx, c.state)
+	return nil
+}
+
 func (c *Content) handleDeleteDocument(ctx context.Context, row, coll int) *tcell.EventKey {
 	doc, err := c.getDocumentBasedOnView(row, coll)
 	if err != nil {
@@ -873,19 +888,6 @@ func (c *Content) handlePreviousPage(ctx context.Context) *tcell.EventKey {
 	c.state.SetSkip(c.state.Skip - c.state.Limit)
 	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 	c.updateContent(ctx, false)
-	return nil
-}
-
-func (c *Content) handleShowQueryOptions(ctx context.Context) *tcell.EventKey {
-	c.queryOptionsModal.Render(ctx, c.state)
-	c.queryOptionsModal.SetApplyCallback(func() {
-		err := c.updateContent(ctx, false)
-		if err != nil {
-			modal.ShowError(c.App.Pages, "Error while applying query options", err)
-			return
-		}
-		c.queryOptionsModal.Hide()
-	})
 	return nil
 }
 
