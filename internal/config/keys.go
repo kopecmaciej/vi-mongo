@@ -90,6 +90,7 @@ type (
 		SortByColumn       Key `json:"sortByColumn"`
 		HideColumn         Key `json:"hideColumn"`
 		ResetHiddenColumns Key `json:"resetHiddenColumns"`
+		ToggleQueryOptions Key `json:"toggleQueryOptions"`
 
 		// MultipleSelect    Key      `json:"multipleSelect"`
 		// ClearSelection   Key      `json:"clearSelection"`
@@ -315,6 +316,10 @@ func (k *KeyBindings) loadDefaults() {
 		PreviousPage: Key{
 			Runes:       []string{"b"},
 			Description: "Previous page",
+		},
+		ToggleQueryOptions: Key{
+			Keys:        []string{"Alt+o"},
+			Description: "Toggle query options",
 		},
 	}
 
@@ -558,6 +563,18 @@ func (kb *KeyBindings) Contains(configKey Key, namedKey string) bool {
 	// in some terminals ctrl+H often is seen as backspace
 	if namedKey == "Backspace" {
 		namedKey = "Ctrl+H"
+	}
+	// Handle Alt+Rune combinations
+	if strings.HasPrefix(namedKey, "Alt+Rune[") && len(namedKey) >= 10 {
+		runeChar := namedKey[9:10]
+		altCombo := "Alt+" + runeChar
+
+		for _, k := range configKey.Keys {
+			if k == altCombo {
+				return true
+			}
+		}
+		return false
 	}
 
 	if strings.HasPrefix(namedKey, "Rune") {

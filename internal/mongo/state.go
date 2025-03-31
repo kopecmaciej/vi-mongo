@@ -11,13 +11,14 @@ import (
 // CollectionState is used to store the state of a collection and use it
 // while rendering doesn't require fetching from the database
 type CollectionState struct {
-	Db     string
-	Coll   string
-	Page   int64
-	Limit  int64
-	Count  int64
-	Sort   string
-	Filter string
+	Db         string
+	Coll       string
+	Skip       int64
+	Limit      int64
+	Count      int64
+	Sort       string
+	Filter     string
+	Projection string
 	// docs are only one private as they cannot be changed in uncontrolled way
 	docs []primitive.M
 }
@@ -54,11 +55,38 @@ func (c *CollectionState) GetJsonDocById(id interface{}) (string, error) {
 	return indentedJson.String(), nil
 }
 
+func (c *CollectionState) SetSkip(skip int64) {
+	if skip < 0 {
+		c.Skip = 0
+	} else {
+		c.Skip = skip
+	}
+}
+
+func (c *CollectionState) GetCurrentPage() int64 {
+	if c.Limit == 0 {
+		return 1
+	}
+	return (c.Skip / c.Limit) + 1
+}
+
+func (c *CollectionState) GetTotalPages() int64 {
+	if c.Limit == 0 {
+		return 1
+	}
+
+	totalPages := c.Count / c.Limit
+	if c.Count%c.Limit > 0 {
+		totalPages++
+	}
+	return totalPages
+}
+
 func NewCollectionState(db, coll string) *CollectionState {
 	return &CollectionState{
 		Db:   db,
 		Coll: coll,
-		Page: 0,
+		Skip: 0,
 	}
 }
 
@@ -69,7 +97,7 @@ func (c *CollectionState) SetFilter(filter string) {
 		return
 	}
 	c.Filter = filter
-	c.Page = 0
+	c.Skip = 0
 }
 
 func (c *CollectionState) SetSort(sort string) {
@@ -79,6 +107,15 @@ func (c *CollectionState) SetSort(sort string) {
 		return
 	}
 	c.Sort = sort
+}
+
+func (c *CollectionState) SetProjection(projection string) {
+	projection = util.CleanJsonWhitespaces(projection)
+	if util.IsJsonEmpty(projection) {
+		c.Projection = ""
+		return
+	}
+	c.Projection = projection
 }
 
 func (c *CollectionState) PopulateDocs(docs []primitive.M) {

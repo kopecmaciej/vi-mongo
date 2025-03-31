@@ -229,9 +229,9 @@ func (i *InputBar) EnableAutocomplete() {
 	})
 }
 
-// LoadNewKeys loads new keys for autocomplete
+// LoadAutocomleteKeys loads new keys for autocomplete
 // It is used when switching databases or collections
-func (i *InputBar) LoadNewKeys(keys []string) {
+func (i *InputBar) LoadAutocomleteKeys(keys []string) {
 	i.docKeys = keys
 }
 

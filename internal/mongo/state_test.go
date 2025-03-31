@@ -8,11 +8,11 @@ import (
 )
 
 func TestCollectionState_UpdateFilter(t *testing.T) {
-	cs := &CollectionState{Filter: `{"old": "filter"}`, Page: 5}
+	cs := &CollectionState{Filter: `{"old": "filter"}`, Skip: 5}
 
 	cs.SetFilter(`{"new": "filter"}`)
 	assert.Equal(t, `{"new": "filter"}`, cs.Filter)
-	assert.Equal(t, int64(0), cs.Page)
+	assert.Equal(t, int64(0), cs.Skip)
 
 	cs.SetFilter("  ")
 	assert.Equal(t, "", cs.Filter)
@@ -32,6 +32,19 @@ func TestCollectionState_UpdateSort(t *testing.T) {
 
 	cs.SetSort("{}")
 	assert.Equal(t, "", cs.Sort)
+}
+
+func TestCollectionState_UpdateProjection(t *testing.T) {
+	cs := &CollectionState{Projection: `{"old": 1}`}
+
+	cs.SetProjection(`{"new": 1, "field": 0}`)
+	assert.Equal(t, `{"new": 1, "field": 0}`, cs.Projection)
+
+	cs.SetProjection("  ")
+	assert.Equal(t, "", cs.Projection)
+
+	cs.SetProjection("{}")
+	assert.Equal(t, "", cs.Projection)
 }
 
 func TestCollectionState_GetDocById(t *testing.T) {

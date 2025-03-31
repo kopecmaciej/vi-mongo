@@ -102,7 +102,7 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 	return dbCollMap, nil
 }
 
-func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter primitive.M, sort primitive.M) ([]primitive.M, int64, error) {
+func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter primitive.M, sort primitive.M, projection primitive.M) ([]primitive.M, int64, error) {
 	count, err := d.client.Database(state.Db).Collection(state.Coll).CountDocuments(ctx, filter)
 	if err != nil {
 		log.Error().Err(err).Str("db", state.Db).Str("collection", state.Coll).Msg("Failed to count documents")
@@ -111,9 +111,10 @@ func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter 
 	coll := d.client.Database(state.Db).Collection(state.Coll)
 
 	options := options.FindOptions{
-		Limit: &state.Limit,
-		Skip:  &state.Page,
-		Sort:  sort,
+		Limit:      &state.Limit,
+		Skip:       &state.Skip,
+		Sort:       sort,
+		Projection: projection,
 	}
 
 	cursor, err := coll.Find(ctx, filter, &options)

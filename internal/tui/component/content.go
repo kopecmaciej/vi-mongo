@@ -40,18 +40,19 @@ type Content struct {
 	*core.BaseElement
 	*core.Flex
 
-	tableFlex   *core.Flex
-	tableHeader *core.TextView
-	table       *core.Table
-	style       *config.ContentStyle
-	queryBar    *InputBar
-	sortBar     *InputBar
-	peeker      *Peeker
-	deleteModal *modal.Delete
-	docModifier *DocModifier
-	state       *mongo.CollectionState
-	stateMap    *mongo.StateMap
-	currentView ViewType
+	tableFlex         *core.Flex
+	tableHeader       *core.TextView
+	table             *core.Table
+	style             *config.ContentStyle
+	queryBar          *InputBar
+	sortBar           *InputBar
+	peeker            *Peeker
+	deleteModal       *modal.Delete
+	queryOptionsModal *modal.QueryOptionsModal
+	docModifier       *DocModifier
+	state             *mongo.CollectionState
+	stateMap          *mongo.StateMap
+	currentView       ViewType
 }
 
 func NewContent() *Content {
@@ -59,17 +60,18 @@ func NewContent() *Content {
 		BaseElement: core.NewBaseElement(),
 		Flex:        core.NewFlex(),
 
-		tableFlex:   core.NewFlex(),
-		tableHeader: core.NewTextView(),
-		table:       core.NewTable(),
-		queryBar:    NewInputBar(QueryBarId, "Query"),
-		sortBar:     NewInputBar(SortBarId, "Sort"),
-		peeker:      NewPeeker(),
-		deleteModal: modal.NewDeleteModal(ContentDeleteModalId),
-		docModifier: NewDocModifier(),
-		state:       &mongo.CollectionState{},
-		stateMap:    mongo.NewStateMap(),
-		currentView: TableView,
+		tableFlex:         core.NewFlex(),
+		tableHeader:       core.NewTextView(),
+		table:             core.NewTable(),
+		queryBar:          NewInputBar(QueryBarId, "Query"),
+		sortBar:           NewInputBar(SortBarId, "Sort"),
+		peeker:            NewPeeker(),
+		deleteModal:       modal.NewDeleteModal(ContentDeleteModalId),
+		queryOptionsModal: modal.NewQueryOptionsModal(),
+		docModifier:       NewDocModifier(),
+		state:             &mongo.CollectionState{},
+		stateMap:          mongo.NewStateMap(),
+		currentView:       TableView,
 	}
 
 	c.SetIdentifier(ContentId)
@@ -97,6 +99,9 @@ func (c *Content) init() error {
 	if err := c.deleteModal.Init(c.App); err != nil {
 		return err
 	}
+	if err := c.queryOptionsModal.Init(c.App); err != nil {
+		return err
+	}
 	if err := c.queryBar.Init(c.App); err != nil {
 		return err
 	}
@@ -116,6 +121,15 @@ func (c *Content) init() error {
 
 	c.peeker.SetDoneFunc(func() {
 		c.updateContent(ctx, true)
+	})
+
+	c.queryOptionsModal.SetApplyCallback(func() {
+		err := c.updateContent(ctx, false)
+		if err != nil {
+			modal.ShowError(c.App.Pages, "Error while applying query options", err)
+			return
+		}
+		c.queryOptionsModal.Hide()
 	})
 
 	c.handleEvents(ctx)
@@ -172,7 +186,7 @@ func (c *Content) setLayout() {
 	c.tableFlex.SetTitleAlign(tview.AlignCenter)
 	c.tableFlex.SetBorderPadding(0, 0, 1, 1)
 
-	c.tableHeader.SetText("Documents: 0, Page: 0, Limit: 0")
+	c.tableHeader.SetText("Documents: 0, Page: 0/0 (0), Limit: 0")
 
 	c.Flex.SetDirection(tview.FlexRow)
 }
@@ -218,6 +232,9 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return c.handlePreviousDocument(row, coll)
 		case k.Contains(k.Content.PreviousPage, event.Name()):
 			return c.handlePreviousPage(ctx)
+		case k.Contains(k.Content.ToggleQueryOptions, event.Name()):
+			return c.handleShowQueryOptions(ctx)
+
 		// TODO: use this in multiple delete, think of other usage
 		// case k.Contains(k.Content.MultipleSelect, event.Name()):
 		// 	return c.handleMultipleSelect(row)
@@ -378,7 +395,15 @@ func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, int64, erro
 		return nil, 0, err
 	}
 
-	documents, count, err := c.Dao.ListDocuments(ctx, c.state, filter, sort)
+	var projection primitive.M
+	if c.state.Projection != "" {
+		projection, err = mongo.ParseStringQuery(c.state.Projection)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	documents, count, err := c.Dao.ListDocuments(ctx, c.state, filter, sort, projection)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -433,14 +458,15 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 		autocompleteKeys = append(autocompleteKeys, key)
 	}
 
-	c.queryBar.LoadNewKeys(autocompleteKeys)
-	c.sortBar.LoadNewKeys(autocompleteKeys)
+	c.queryBar.LoadAutocomleteKeys(autocompleteKeys)
+	c.sortBar.LoadAutocomleteKeys(autocompleteKeys)
 	c.App.GetManager().Broadcast(manager.EventMsg{
 		Sender:  c.GetIdentifier(),
 		Message: manager.Message{Type: manager.UpdateAutocompleteKeys, Data: autocompleteKeys},
 	})
 }
 
+// TODO: maybe show error modal here?
 func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	var documents []primitive.M
 	var count int64
@@ -459,7 +485,8 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 
 	c.table.Clear()
 
-	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.Page, c.state.Limit)
+	headerInfo := fmt.Sprintf("Documents: %d, Page: %d/%d (%d), Limit: %d",
+		count, c.state.GetCurrentPage(), c.state.GetTotalPages(), c.state.Skip, c.state.Limit)
 
 	if c.state.Filter != "" {
 		headerInfo += fmt.Sprintf(" | Filter: %s", c.state.Filter)
@@ -468,6 +495,9 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	if c.state.Sort != "" {
 		headerInfo += fmt.Sprintf(" | Sort: %s", c.state.Sort)
 		c.sortBar.SetText(c.state.Sort)
+	}
+	if c.state.Projection != "" {
+		headerInfo += fmt.Sprintf(" | Projection: %s", c.state.Projection)
 	}
 	c.tableHeader.SetText(headerInfo)
 
@@ -792,6 +822,11 @@ func (c *Content) handleToggleSort() *tcell.EventKey {
 	return nil
 }
 
+func (c *Content) handleShowQueryOptions(ctx context.Context) *tcell.EventKey {
+	c.queryOptionsModal.Render(ctx, c.state)
+	return nil
+}
+
 func (c *Content) handleDeleteDocument(ctx context.Context, row, coll int) *tcell.EventKey {
 	doc, err := c.getDocumentBasedOnView(row, coll)
 	if err != nil {
@@ -837,20 +872,20 @@ func (c *Content) handlePreviousDocument(row, col int) *tcell.EventKey {
 }
 
 func (c *Content) handleNextPage(ctx context.Context) *tcell.EventKey {
-	if c.state.Page+c.state.Limit >= c.state.Count {
+	if c.state.Skip+c.state.Limit >= c.state.Count {
 		return nil
 	}
-	c.state.Page += c.state.Limit
+	c.state.SetSkip(c.state.Skip + c.state.Limit)
 	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 	c.updateContent(ctx, false)
 	return nil
 }
 
 func (c *Content) handlePreviousPage(ctx context.Context) *tcell.EventKey {
-	if c.state.Page == 0 {
+	if c.state.Skip == 0 {
 		return nil
 	}
-	c.state.Page -= c.state.Limit
+	c.state.SetSkip(c.state.Skip - c.state.Limit)
 	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 	c.updateContent(ctx, false)
 	return nil
