@@ -18,8 +18,7 @@ type QueryOptionsModal struct {
 	*core.BaseElement
 	*core.FormModal
 
-	state         *mongo.CollectionState
-	applyCallback func(projection string, limit int64) error
+	applyCallback func()
 }
 
 func NewQueryOptionsModal() *QueryOptionsModal {
@@ -68,21 +67,24 @@ func (qo *QueryOptionsModal) setKeybindings() {
 	})
 }
 
-func (qo *QueryOptionsModal) SetState(state *mongo.CollectionState) {
-	qo.state = state
-}
-
-func (qo *QueryOptionsModal) SetApplyCallback(callback func(projection string, limit int64) error) {
+func (qo *QueryOptionsModal) SetApplyCallback(callback func()) {
 	qo.applyCallback = callback
 }
 
-func (qo *QueryOptionsModal) Render(ctx context.Context) error {
+func (qo *QueryOptionsModal) Render(ctx context.Context, state *mongo.CollectionState) error {
 	qo.Form.Clear(true)
 
-	qo.Form.AddInputField("Projection", "", 50, nil, nil)
+	qo.Form.AddInputField("Projection", state.Projection, 60, nil, nil)
 
-	limitStr := strconv.FormatInt(qo.state.Limit, 10)
+	limitStr := strconv.FormatInt(state.Limit, 10)
 	qo.Form.AddInputField("Limit", limitStr, 20,
+		func(textToCheck string, lastChar rune) bool {
+			_, err := strconv.Atoi(textToCheck)
+			return err == nil || textToCheck == ""
+		}, nil)
+
+	skipStr := strconv.FormatInt(state.Skip, 10)
+	qo.Form.AddInputField("Skip", skipStr, 20,
 		func(textToCheck string, lastChar rune) bool {
 			_, err := strconv.Atoi(textToCheck)
 			return err == nil || textToCheck == ""
@@ -91,37 +93,46 @@ func (qo *QueryOptionsModal) Render(ctx context.Context) error {
 	qo.Form.AddButton("Apply", func() {
 		projText := qo.Form.GetFormItemByLabel("Projection").(*tview.InputField).GetText()
 		limitText := qo.Form.GetFormItemByLabel("Limit").(*tview.InputField).GetText()
+		skipText := qo.Form.GetFormItemByLabel("Skip").(*tview.InputField).GetText()
 
-		var limitVal int64
 		if limitText != "" {
 			val, err := strconv.ParseInt(limitText, 10, 64)
 			if err != nil {
 				ShowError(qo.App.Pages, "Invalid limit value", err)
 				return
 			}
-			limitVal = val
-		} else {
-			limitVal = qo.state.Limit
+			state.Limit = val
 		}
 
-		if qo.applyCallback != nil {
-			err := qo.applyCallback(projText, limitVal)
+		if skipText != "" {
+			val, err := strconv.ParseInt(skipText, 10, 64)
 			if err != nil {
-				ShowError(qo.App.Pages, "Error applying query options", err)
+				ShowError(qo.App.Pages, "Invalid skip value", err)
 				return
 			}
+			state.Skip = val
 		}
 
-		qo.App.Pages.RemovePage(QueryOptionsModalId)
+		state.Projection = projText
+
+		if qo.applyCallback != nil {
+			qo.applyCallback()
+		}
 	})
 
 	qo.Form.AddButton("Cancel", func() {
 		qo.App.Pages.RemovePage(QueryOptionsModalId)
 	})
 
+	qo.Show()
+
 	return nil
 }
 
 func (qo *QueryOptionsModal) Show() {
 	qo.App.Pages.AddPage(QueryOptionsModalId, qo, true, true)
+}
+
+func (qo *QueryOptionsModal) Hide() {
+	qo.App.Pages.RemovePage(QueryOptionsModalId)
 }
