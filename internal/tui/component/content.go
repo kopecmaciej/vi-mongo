@@ -16,6 +16,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -40,18 +41,19 @@ type Content struct {
 	*core.BaseElement
 	*core.Flex
 
-	tableFlex   *core.Flex
-	tableHeader *core.TextView
-	table       *core.Table
-	style       *config.ContentStyle
-	queryBar    *InputBar
-	sortBar     *InputBar
-	peeker      *Peeker
-	deleteModal *modal.Delete
-	docModifier *DocModifier
-	state       *mongo.CollectionState
-	stateMap    *mongo.StateMap
-	currentView ViewType
+	tableFlex         *core.Flex
+	tableHeader       *core.TextView
+	table             *core.Table
+	style             *config.ContentStyle
+	queryBar          *InputBar
+	sortBar           *InputBar
+	peeker            *Peeker
+	deleteModal       *modal.Delete
+	queryOptionsModal *modal.QueryOptionsModal
+	docModifier       *DocModifier
+	state             *mongo.CollectionState
+	stateMap          *mongo.StateMap
+	currentView       ViewType
 }
 
 func NewContent() *Content {
@@ -59,17 +61,18 @@ func NewContent() *Content {
 		BaseElement: core.NewBaseElement(),
 		Flex:        core.NewFlex(),
 
-		tableFlex:   core.NewFlex(),
-		tableHeader: core.NewTextView(),
-		table:       core.NewTable(),
-		queryBar:    NewInputBar(QueryBarId, "Query"),
-		sortBar:     NewInputBar(SortBarId, "Sort"),
-		peeker:      NewPeeker(),
-		deleteModal: modal.NewDeleteModal(ContentDeleteModalId),
-		docModifier: NewDocModifier(),
-		state:       &mongo.CollectionState{},
-		stateMap:    mongo.NewStateMap(),
-		currentView: TableView,
+		tableFlex:         core.NewFlex(),
+		tableHeader:       core.NewTextView(),
+		table:             core.NewTable(),
+		queryBar:          NewInputBar(QueryBarId, "Query"),
+		sortBar:           NewInputBar(SortBarId, "Sort"),
+		peeker:            NewPeeker(),
+		deleteModal:       modal.NewDeleteModal(ContentDeleteModalId),
+		queryOptionsModal: modal.NewQueryOptionsModal(),
+		docModifier:       NewDocModifier(),
+		state:             &mongo.CollectionState{},
+		stateMap:          mongo.NewStateMap(),
+		currentView:       TableView,
 	}
 
 	c.SetIdentifier(ContentId)
@@ -95,6 +98,9 @@ func (c *Content) init() error {
 		return err
 	}
 	if err := c.deleteModal.Init(c.App); err != nil {
+		return err
+	}
+	if err := c.queryOptionsModal.Init(c.App); err != nil {
 		return err
 	}
 	if err := c.queryBar.Init(c.App); err != nil {
@@ -181,6 +187,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 	k := c.App.GetKeys()
 
 	c.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		log.Info().Msgf("%v", event.Name())
 		row, coll := c.table.GetSelection()
 		c.handleScrolling(row)
 		switch {
@@ -218,6 +225,9 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return c.handlePreviousDocument(row, coll)
 		case k.Contains(k.Content.PreviousPage, event.Name()):
 			return c.handlePreviousPage(ctx)
+		case k.Contains(k.Content.ToggleQueryOptions, event.Name()):
+			return c.handleShowQueryOptions()
+
 		// TODO: use this in multiple delete, think of other usage
 		// case k.Contains(k.Content.MultipleSelect, event.Name()):
 		// 	return c.handleMultipleSelect(row)
@@ -378,7 +388,15 @@ func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, int64, erro
 		return nil, 0, err
 	}
 
-	documents, count, err := c.Dao.ListDocuments(ctx, c.state, filter, sort)
+	var projection primitive.M
+	if c.state.Projection != "" {
+		projection, err = mongo.ParseStringQuery(c.state.Projection)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	documents, count, err := c.Dao.ListDocuments(ctx, c.state, filter, sort, projection)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -468,6 +486,9 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	if c.state.Sort != "" {
 		headerInfo += fmt.Sprintf(" | Sort: %s", c.state.Sort)
 		c.sortBar.SetText(c.state.Sort)
+	}
+	if c.state.Projection != "" {
+		headerInfo += fmt.Sprintf(" | Projection: %s", c.state.Projection)
 	}
 	c.tableHeader.SetText(headerInfo)
 
@@ -853,6 +874,14 @@ func (c *Content) handlePreviousPage(ctx context.Context) *tcell.EventKey {
 	c.state.Page -= c.state.Limit
 	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 	c.updateContent(ctx, false)
+	return nil
+}
+
+func (c *Content) handleShowQueryOptions() *tcell.EventKey {
+	log.Info().Msgf("Hello")
+	c.queryOptionsModal.SetState(c.state)
+	c.queryOptionsModal.Render(context.Background())
+	c.queryOptionsModal.Show()
 	return nil
 }
 
