@@ -112,7 +112,7 @@ func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter 
 
 	options := options.FindOptions{
 		Limit:      &state.Limit,
-		Skip:       &state.Page,
+		Skip:       &state.Skip,
 		Sort:       sort,
 		Projection: projection,
 	}

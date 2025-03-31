@@ -16,7 +16,6 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
-	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -178,7 +177,7 @@ func (c *Content) setLayout() {
 	c.tableFlex.SetTitleAlign(tview.AlignCenter)
 	c.tableFlex.SetBorderPadding(0, 0, 1, 1)
 
-	c.tableHeader.SetText("Documents: 0, Page: 0, Limit: 0")
+	c.tableHeader.SetText("Documents: 0, Page: 0/0 (0), Limit: 0")
 
 	c.Flex.SetDirection(tview.FlexRow)
 }
@@ -187,7 +186,6 @@ func (c *Content) setKeybindings(ctx context.Context) {
 	k := c.App.GetKeys()
 
 	c.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		log.Info().Msgf("%v", event.Name())
 		row, coll := c.table.GetSelection()
 		c.handleScrolling(row)
 		switch {
@@ -226,7 +224,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Content.PreviousPage, event.Name()):
 			return c.handlePreviousPage(ctx)
 		case k.Contains(k.Content.ToggleQueryOptions, event.Name()):
-			return c.handleShowQueryOptions()
+			return c.handleShowQueryOptions(ctx)
 
 		// TODO: use this in multiple delete, think of other usage
 		// case k.Contains(k.Content.MultipleSelect, event.Name()):
@@ -477,7 +475,8 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 
 	c.table.Clear()
 
-	headerInfo := fmt.Sprintf("Documents: %d, Page: %d, Limit: %d", count, c.state.Page, c.state.Limit)
+	headerInfo := fmt.Sprintf("Documents: %d, Page: %d/%d (%d), Limit: %d",
+		count, c.state.GetCurrentPage(), c.state.GetTotalPages(), c.state.Skip, c.state.Limit)
 
 	if c.state.Filter != "" {
 		headerInfo += fmt.Sprintf(" | Filter: %s", c.state.Filter)
@@ -858,30 +857,35 @@ func (c *Content) handlePreviousDocument(row, col int) *tcell.EventKey {
 }
 
 func (c *Content) handleNextPage(ctx context.Context) *tcell.EventKey {
-	if c.state.Page+c.state.Limit >= c.state.Count {
+	if c.state.Skip+c.state.Limit >= c.state.Count {
 		return nil
 	}
-	c.state.Page += c.state.Limit
+	c.state.SetSkip(c.state.Skip + c.state.Limit)
 	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 	c.updateContent(ctx, false)
 	return nil
 }
 
 func (c *Content) handlePreviousPage(ctx context.Context) *tcell.EventKey {
-	if c.state.Page == 0 {
+	if c.state.Skip == 0 {
 		return nil
 	}
-	c.state.Page -= c.state.Limit
+	c.state.SetSkip(c.state.Skip - c.state.Limit)
 	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 	c.updateContent(ctx, false)
 	return nil
 }
 
-func (c *Content) handleShowQueryOptions() *tcell.EventKey {
-	log.Info().Msgf("Hello")
-	c.queryOptionsModal.SetState(c.state)
-	c.queryOptionsModal.Render(context.Background())
-	c.queryOptionsModal.Show()
+func (c *Content) handleShowQueryOptions(ctx context.Context) *tcell.EventKey {
+	c.queryOptionsModal.Render(ctx, c.state)
+	c.queryOptionsModal.SetApplyCallback(func() {
+		err := c.updateContent(ctx, false)
+		if err != nil {
+			modal.ShowError(c.App.Pages, "Error while applying query options", err)
+			return
+		}
+		c.queryOptionsModal.Hide()
+	})
 	return nil
 }
 
