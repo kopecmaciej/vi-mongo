@@ -566,11 +566,11 @@ func (kb *KeyBindings) Contains(configKey Key, namedKey string) bool {
 	}
 	// Handle Alt+Rune combinations
 	if strings.HasPrefix(namedKey, "Alt+Rune[") && len(namedKey) >= 10 {
-		runeChar := strings.ToLower(namedKey[9:10])
+		runeChar := namedKey[9:10]
 		altCombo := "Alt+" + runeChar
 
 		for _, k := range configKey.Keys {
-			if strings.EqualFold(k, altCombo) {
+			if k == altCombo {
 				return true
 			}
 		}
