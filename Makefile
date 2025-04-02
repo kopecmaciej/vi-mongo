@@ -1,6 +1,5 @@
 BUILD_DIR := .build
 SVC_NAME := vi-mongo
-VERSION := $(shell git describe --tags --abbrev=0)
 REPOSITORY := github.com/kopecmaciej/vi-mongo
 
 .PHONY: build run
@@ -29,15 +28,18 @@ debug:
 lint:
 	golangci-lint run
 
-release: check-version
-	git tag -a $(INC_VERSION) -m "Release $(INC_VERSION)"
-	git push origin $(INC_VERSION)
-
-check-version:
-	@if [ -z "$(INC_VERSION)" ]; then \
-		echo "Error: INC_VERSION is not set"; \
+# Release with GoReleaser using the latest tag
+release:
+	@if [ ! -f "./release-notes/$(VERSION).md" ]; then \
+		echo "Error: Release notes not found for $(VERSION)"; \
+		echo "Expected file: ./release-notes/$(VERSION).md"; \
 		exit 1; \
 	fi
+	goreleaser release --release-notes ./release-notes/$(VERSION).md --clean
+
+# Snapshot release (without requiring release notes)
+snapshot:
+	goreleaser release --snapshot --clean
 
 bump-version:
 	@git describe --tags --abbrev=0 | awk -F. '{OFS="."; $NF+=1; print $0}'
