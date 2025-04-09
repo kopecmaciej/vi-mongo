@@ -17,8 +17,9 @@ const (
 )
 
 type MongoOptions struct {
-	AuthorizedDatabases   *bool `yaml:"authorizedDatabases,omitempty"`
-	AuthorizedCollections *bool `yaml:"authorizedCollections,omitempty"`
+	AuthorizedDatabases   *bool  `yaml:"authorizedDatabases,omitempty"`
+	AuthorizedCollections *bool  `yaml:"authorizedCollections,omitempty"`
+	Limit                 *int64 `yaml:"limit,omitempty"`
 }
 
 type MongoConfig struct {

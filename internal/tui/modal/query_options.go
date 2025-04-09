@@ -79,7 +79,7 @@ func (qo *QueryOptionsModal) SetApplyCallback(callback func()) {
 	qo.applyCallback = callback
 }
 
-func (qo *QueryOptionsModal) Render(ctx context.Context, state *mongo.CollectionState) error {
+func (qo *QueryOptionsModal) Render(ctx context.Context, state *mongo.CollectionState, defaultLimit int64) error {
 	qo.Form.Clear(true)
 
 	qo.Form.AddInputField("Projection", state.Projection, 40, nil, nil)
@@ -110,6 +110,8 @@ func (qo *QueryOptionsModal) Render(ctx context.Context, state *mongo.Collection
 				return
 			}
 			state.Limit = val
+		} else {
+			state.Limit = defaultLimit
 		}
 
 		if strings.Trim(skipText, " ") != "" {
@@ -119,6 +121,8 @@ func (qo *QueryOptionsModal) Render(ctx context.Context, state *mongo.Collection
 				return
 			}
 			state.Skip = val
+		} else {
+			state.Skip = 0
 		}
 
 		state.Projection = projText

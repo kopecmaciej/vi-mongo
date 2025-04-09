@@ -471,6 +471,10 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	var documents []primitive.M
 	var count int64
 
+	if c.Dao.Config.Options.Limit != nil {
+		c.state.Limit = *c.Dao.Config.Options.Limit
+	}
+
 	if useState {
 		documents = c.state.GetAllDocs()
 		count = c.state.Count
@@ -823,7 +827,9 @@ func (c *Content) handleToggleSort() *tcell.EventKey {
 }
 
 func (c *Content) handleShowQueryOptions(ctx context.Context) *tcell.EventKey {
-	c.queryOptionsModal.Render(ctx, c.state)
+	_, _, _, height := c.table.GetInnerRect()
+	defaultLimit := int64(height - 1)
+	c.queryOptionsModal.Render(ctx, c.state, defaultLimit)
 	return nil
 }
 
