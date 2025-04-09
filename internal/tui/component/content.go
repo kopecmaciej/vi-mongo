@@ -260,8 +260,13 @@ func (c *Content) HandleDatabaseSelection(ctx context.Context, db, coll string) 
 		c.state = state
 	} else {
 		c.state = mongo.NewCollectionState(db, coll)
-		_, _, _, height := c.table.GetInnerRect()
-		c.state.Limit = int64(height - 1)
+
+		if c.Dao.Config.Options.Limit != nil {
+			c.state.Limit = *c.Dao.Config.Options.Limit
+		} else {
+			_, _, _, height := c.table.GetInnerRect()
+			c.state.Limit = int64(height - 1)
+		}
 	}
 
 	err := c.updateContent(ctx, false)
@@ -470,10 +475,6 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	var documents []primitive.M
 	var count int64
-
-	if c.Dao.Config.Options.Limit != nil {
-		c.state.Limit = *c.Dao.Config.Options.Limit
-	}
 
 	if useState {
 		documents = c.state.GetAllDocs()
