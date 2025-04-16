@@ -411,19 +411,7 @@ func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, error) {
 	countCallback := func(count int64) {
 		c.state.Count = count
 		c.App.QueueUpdateDraw(func() {
-			headerInfo := fmt.Sprintf("Documents: %d, Page: %d/%d (%d), Limit: %d",
-				count, c.state.GetCurrentPage(), c.state.GetTotalPages(), c.state.Skip, c.state.Limit)
-
-			if c.state.Filter != "" {
-				headerInfo += fmt.Sprintf(" | Filter: %s", c.state.Filter)
-			}
-			if c.state.Sort != "" {
-				headerInfo += fmt.Sprintf(" | Sort: %s", c.state.Sort)
-			}
-			if c.state.Projection != "" {
-				headerInfo += fmt.Sprintf(" | Projection: %s", c.state.Projection)
-			}
-			c.tableHeader.SetText(headerInfo)
+			c.tableHeader.SetText(c.buildHeaderInfo())
 		})
 	}
 
@@ -492,11 +480,9 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 // TODO: maybe show error modal here?
 func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	var documents []primitive.M
-	var count int64
 
 	if useState {
 		documents = c.state.GetAllDocs()
-		count = c.state.Count
 	} else {
 		docs, err := c.listDocuments(ctx)
 		if err != nil {
@@ -506,23 +492,7 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	}
 
 	c.table.Clear()
-
-	headerInfo := fmt.Sprintf("Documents: %d, Page: %d/%d (%d), Limit: %d",
-		count, c.state.GetCurrentPage(), c.state.GetTotalPages(), c.state.Skip, c.state.Limit)
-
-	if c.state.Filter != "" {
-		headerInfo += fmt.Sprintf(" | Filter: %s", c.state.Filter)
-		c.queryBar.SetText(c.state.Filter)
-	}
-	if c.state.Sort != "" {
-		headerInfo += fmt.Sprintf(" | Sort: %s", c.state.Sort)
-		c.sortBar.SetText(c.state.Sort)
-	}
-	if c.state.Projection != "" {
-		headerInfo += fmt.Sprintf(" | Projection: %s", c.state.Projection)
-	}
-	c.tableHeader.SetText(headerInfo)
-
+	c.tableHeader.SetText(c.buildHeaderInfo())
 	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 
 	if len(documents) == 0 {
@@ -593,6 +563,23 @@ func (c *Content) jsonViewDocument(doc string, row *int, _id interface{}) {
 		SetReference(_id))
 
 	*row++
+}
+
+func (c *Content) buildHeaderInfo() string {
+	headerInfo := fmt.Sprintf("Documents: %d, Page: %d/%d (%d), Limit: %d",
+		c.state.Count, c.state.GetCurrentPage(), c.state.GetTotalPages(), c.state.Skip, c.state.Limit)
+
+	if c.state.Filter != "" {
+		headerInfo += fmt.Sprintf(" | Filter: %s", c.state.Filter)
+	}
+	if c.state.Sort != "" {
+		headerInfo += fmt.Sprintf(" | Sort: %s", c.state.Sort)
+	}
+	if c.state.Projection != "" {
+		headerInfo += fmt.Sprintf(" | Projection: %s", c.state.Projection)
+	}
+
+	return headerInfo
 }
 
 func (c *Content) applyQuery(ctx context.Context, query string) error {
