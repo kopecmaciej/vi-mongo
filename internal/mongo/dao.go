@@ -102,12 +102,9 @@ func (d *Dao) ListDbsWithCollections(ctx context.Context, nameRegex string) ([]D
 	return dbCollMap, nil
 }
 
-func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter primitive.M, sort primitive.M, projection primitive.M) ([]primitive.M, int64, error) {
-	count, err := d.client.Database(state.Db).Collection(state.Coll).CountDocuments(ctx, filter)
-	if err != nil {
-		log.Error().Err(err).Str("db", state.Db).Str("collection", state.Coll).Msg("Failed to count documents")
-		return nil, 0, fmt.Errorf("failed to count documents: %w", err)
-	}
+func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter primitive.M, sort primitive.M,
+	projection primitive.M, countCallback func(int64)) ([]primitive.M, error) {
+
 	coll := d.client.Database(state.Db).Collection(state.Coll)
 
 	options := options.FindOptions{
@@ -120,7 +117,7 @@ func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter 
 	cursor, err := coll.Find(ctx, filter, &options)
 	if err != nil {
 		log.Error().Err(err).Str("db", state.Db).Str("collection", state.Coll).Msg("Failed to find documents")
-		return nil, 0, fmt.Errorf("failed to find documents: %w", err)
+		return nil, fmt.Errorf("failed to find documents: %w", err)
 	}
 	defer cursor.Close(ctx)
 
@@ -128,13 +125,25 @@ func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter 
 	err = cursor.All(ctx, &documents)
 	if err != nil {
 		log.Error().Err(err).Str("db", state.Db).Str("collection", state.Coll).Msg("Failed to decode documents")
-		return nil, 0, fmt.Errorf("failed to decode documents: %w", err)
+		return nil, fmt.Errorf("failed to decode documents: %w", err)
 	}
 	if err := cursor.Err(); err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
-	return documents, count, nil
+	go func() {
+		count, err := coll.CountDocuments(ctx, filter)
+		if err != nil {
+			log.Error().Err(err).Str("db", state.Db).Str("collection", state.Coll).Msg("Failed to count documents")
+			return
+		}
+
+		if countCallback != nil {
+			countCallback(count)
+		}
+	}()
+
+	return documents, nil
 }
 
 func (d *Dao) GetDocument(ctx context.Context, db string, coll string, id primitive.ObjectID) (primitive.M, error) {
