@@ -390,38 +390,44 @@ func (c *Content) renderSingleRowView(startRow int, documents []primitive.M) {
 	c.table.Select(0, 0)
 }
 
-func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, int64, error) {
+func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, error) {
 	filter, err := mongo.ParseStringQuery(c.state.Filter)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	sort, err := mongo.ParseStringQuery(c.state.Sort)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	var projection primitive.M
 	if c.state.Projection != "" {
 		projection, err = mongo.ParseStringQuery(c.state.Projection)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 	}
 
-	documents, count, err := c.Dao.ListDocuments(ctx, c.state, filter, sort, projection)
-	if err != nil {
-		return nil, 0, err
-	}
-	if len(documents) == 0 {
-		return nil, 0, nil
+	countCallback := func(count int64) {
+		c.state.Count = count
+		c.App.QueueUpdateDraw(func() {
+			c.tableHeader.SetText(c.buildHeaderInfo())
+		})
 	}
 
-	c.state.Count = count
+	documents, err := c.Dao.ListDocuments(ctx, c.state, filter, sort, projection, countCallback)
+	if err != nil {
+		return nil, err
+	}
+	if len(documents) == 0 {
+		return nil, nil
+	}
+
 	c.state.PopulateDocs(documents)
 
 	c.loadAutocompleteKeys(documents)
 
-	return documents, count, nil
+	return documents, nil
 }
 
 // loadAutocompleteKeys loads the autocomplete keys for the query and sort bars
@@ -474,41 +480,22 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 // TODO: maybe show error modal here?
 func (c *Content) updateContent(ctx context.Context, useState bool) error {
 	var documents []primitive.M
-	var count int64
 
 	if useState {
 		documents = c.state.GetAllDocs()
-		count = c.state.Count
 	} else {
-		docs, c, err := c.listDocuments(ctx)
+		docs, err := c.listDocuments(ctx)
 		if err != nil {
 			return err
 		}
 		documents = docs
-		count = c
 	}
 
 	c.table.Clear()
-
-	headerInfo := fmt.Sprintf("Documents: %d, Page: %d/%d (%d), Limit: %d",
-		count, c.state.GetCurrentPage(), c.state.GetTotalPages(), c.state.Skip, c.state.Limit)
-
-	if c.state.Filter != "" {
-		headerInfo += fmt.Sprintf(" | Filter: %s", c.state.Filter)
-		c.queryBar.SetText(c.state.Filter)
-	}
-	if c.state.Sort != "" {
-		headerInfo += fmt.Sprintf(" | Sort: %s", c.state.Sort)
-		c.sortBar.SetText(c.state.Sort)
-	}
-	if c.state.Projection != "" {
-		headerInfo += fmt.Sprintf(" | Projection: %s", c.state.Projection)
-	}
-	c.tableHeader.SetText(headerInfo)
-
+	c.tableHeader.SetText(c.buildHeaderInfo())
 	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 
-	if count == 0 {
+	if len(documents) == 0 {
 		c.table.SetCell(0, 0, tview.NewTableCell("No documents found"))
 		return nil
 	}
@@ -576,6 +563,23 @@ func (c *Content) jsonViewDocument(doc string, row *int, _id interface{}) {
 		SetReference(_id))
 
 	*row++
+}
+
+func (c *Content) buildHeaderInfo() string {
+	headerInfo := fmt.Sprintf("Documents: %d, Page: %d/%d (%d), Limit: %d",
+		c.state.Count, c.state.GetCurrentPage(), c.state.GetTotalPages(), c.state.Skip, c.state.Limit)
+
+	if c.state.Filter != "" {
+		headerInfo += fmt.Sprintf(" | Filter: %s", c.state.Filter)
+	}
+	if c.state.Sort != "" {
+		headerInfo += fmt.Sprintf(" | Sort: %s", c.state.Sort)
+	}
+	if c.state.Projection != "" {
+		headerInfo += fmt.Sprintf(" | Projection: %s", c.state.Projection)
+	}
+
+	return headerInfo
 }
 
 func (c *Content) applyQuery(ctx context.Context, query string) error {
