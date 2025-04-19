@@ -147,15 +147,27 @@ func listAvailableConnections(cfg *config.Config) {
 		return
 	}
 
+	maxNameLength := 4
+	for _, conn := range cfg.Connections {
+		if len(conn.Name) > maxNameLength {
+			maxNameLength = len(conn.Name)
+		}
+	}
+
+	maxNameLength += 2
+
 	fmt.Println("Available connections:")
-	fmt.Println("---------------------")
+	fmt.Printf("%-2s %-*s %s\n", "", maxNameLength, "NAME", "URL")
+	fmt.Printf("%-2s %-*s %s\n", "", maxNameLength, "----", "---")
+
 	for _, conn := range cfg.Connections {
 		currentMark := " "
 		if cfg.CurrentConnection == conn.Name {
 			currentMark = "*"
 		}
-		fmt.Printf("%s %s - %s\n", currentMark, conn.Name, conn.GetSafeUri())
+		fmt.Printf("%s %-*s %s\n", currentMark, maxNameLength, conn.Name, conn.GetSafeUri())
 	}
+
 	fmt.Println("\n* Current connection")
 }
 
