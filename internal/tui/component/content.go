@@ -663,6 +663,7 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 
 	c.deleteModal.SetText("Are you sure you want to delete document of id: [blue]" + stringifyId)
 	c.deleteModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		row, col := c.table.GetSelection()
 		defer c.App.Pages.RemovePage(c.deleteModal.GetIdentifier())
 		if buttonLabel == "Cancel" {
 			return
@@ -678,7 +679,6 @@ func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
 
 		c.updateContentBasedOnState(ctx)
 
-		row, col := c.table.GetSelection()
 		if row == c.table.GetRowCount() {
 			c.table.Select(row-1, col)
 		} else {
