@@ -76,28 +76,6 @@ func runApp(cmd *cobra.Command, args []string) {
 
 	debug := false
 
-	if listConnections {
-		listAvailableConnections(cfg)
-		os.Exit(0)
-	}
-
-	if connectionName != "" {
-		found := false
-		for _, conn := range cfg.Connections {
-			if conn.Name == connectionName {
-				found = true
-				cfg.CurrentConnection = connectionName
-				cfg.ShowConnectionPage = false
-				break
-			}
-		}
-		if !found {
-			fmt.Printf("Error: Connection '%s' not found.\n", connectionName)
-			fmt.Println("Use --list or -l to see available connections.")
-			os.Exit(1)
-		}
-	}
-
 	cmd.Flags().Visit(func(f *pflag.Flag) {
 		switch f.Name {
 		case "version":
@@ -108,6 +86,24 @@ func runApp(cmd *cobra.Command, args []string) {
 			cfg.ShowWelcomePage = welcomePage
 		case "connection-page":
 			cfg.ShowConnectionPage = connectionPage
+		case "connection-list":
+			listAvailableConnections(cfg)
+			os.Exit(0)
+		case "connection-name":
+			found := false
+			for _, conn := range cfg.Connections {
+				if conn.Name == connectionName {
+					found = true
+					cfg.CurrentConnection = connectionName
+					cfg.ShowConnectionPage = false
+					break
+				}
+			}
+			if !found {
+				fmt.Printf("Error: Connection '%s' not found.\n", connectionName)
+				fmt.Println("Use --list or -l to see available connections.")
+				os.Exit(1)
+			}
 		}
 	})
 
