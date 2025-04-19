@@ -5,7 +5,7 @@ go 1.22.1
 require (
 	github.com/cosiner/argv v0.1.0
 	github.com/gdamore/tcell/v2 v2.7.1
-	github.com/kopecmaciej/tview v0.1.0
+	github.com/kopecmaciej/tview v0.1.1
 	github.com/rs/zerolog v1.32.0
 	github.com/sashabaranov/go-openai v1.32.2
 	github.com/spf13/pflag v1.0.5
