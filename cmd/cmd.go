@@ -14,12 +14,14 @@ import (
 )
 
 var (
-	cfgFile        string
-	showVersion    bool
-	debug          bool
-	welcomePage    bool
-	connectionPage bool
-	rootCmd        = &cobra.Command{
+	cfgFile         string
+	showVersion     bool
+	debug           bool
+	welcomePage     bool
+	connectionPage  bool
+	connectionName  string
+	listConnections bool
+	rootCmd         = &cobra.Command{
 		Use:   "vi-mongo",
 		Short: "MongoDB TUI client",
 		Long:  `A Terminal User Interface (TUI) client for MongoDB`,
@@ -42,7 +44,9 @@ func init() {
 	rootCmd.Flags().BoolVarP(&showVersion, "version", "v", false, "Show version")
 	rootCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Enable debug mode")
 	rootCmd.Flags().BoolVarP(&welcomePage, "welcome-page", "w", false, "Show welcome page on startup")
-	rootCmd.Flags().BoolVarP(&connectionPage, "connection-page", "n", false, "Show connection page on startup")
+	rootCmd.Flags().BoolVarP(&connectionPage, "connection-page", "p", false, "Show connection page on startup")
+	rootCmd.Flags().StringVarP(&connectionName, "connection-name", "n", "", "Connect to a specific MongoDB connection by name")
+	rootCmd.Flags().BoolVarP(&listConnections, "connection-list", "l", false, "List all available connections")
 }
 
 func runApp(cmd *cobra.Command, args []string) {
@@ -82,6 +86,24 @@ func runApp(cmd *cobra.Command, args []string) {
 			cfg.ShowWelcomePage = welcomePage
 		case "connection-page":
 			cfg.ShowConnectionPage = connectionPage
+		case "connection-list":
+			listAvailableConnections(cfg)
+			os.Exit(0)
+		case "connection-name":
+			found := false
+			for _, conn := range cfg.Connections {
+				if conn.Name == connectionName {
+					found = true
+					cfg.CurrentConnection = connectionName
+					cfg.ShowConnectionPage = false
+					break
+				}
+			}
+			if !found {
+				fmt.Printf("Error: Connection '%s' not found.\n", connectionName)
+				fmt.Println("Use --list or -l to see available connections.")
+				os.Exit(1)
+			}
 		}
 	})
 
@@ -117,6 +139,36 @@ func runApp(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error running app")
 	}
+}
+
+func listAvailableConnections(cfg *config.Config) {
+	if len(cfg.Connections) == 0 {
+		fmt.Println("No connections available. Use the app to add connections.")
+		return
+	}
+
+	maxNameLength := 4
+	for _, conn := range cfg.Connections {
+		if len(conn.Name) > maxNameLength {
+			maxNameLength = len(conn.Name)
+		}
+	}
+
+	maxNameLength += 2
+
+	fmt.Println("Available connections:")
+	fmt.Printf("%-2s %-*s %s\n", "", maxNameLength, "NAME", "URL")
+	fmt.Printf("%-2s %-*s %s\n", "", maxNameLength, "----", "---")
+
+	for _, conn := range cfg.Connections {
+		currentMark := " "
+		if cfg.CurrentConnection == conn.Name {
+			currentMark = "*"
+		}
+		fmt.Printf("%s %-*s %s\n", currentMark, maxNameLength, conn.Name, conn.GetSafeUri())
+	}
+
+	fmt.Println("\n* Current connection")
 }
 
 func logging(path string, logLevel zerolog.Level, pretty bool) *os.File {
