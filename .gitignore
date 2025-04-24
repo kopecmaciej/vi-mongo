@@ -25,6 +25,7 @@ history.txt
 config.yaml
 keybindings.json
 event.json
+commands.md
 
 .vscode
 dist/

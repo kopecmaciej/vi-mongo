@@ -116,6 +116,33 @@ func (d *DocModifier) Duplicate(ctx context.Context, db, coll string, rawDocumen
 	return id, nil
 }
 
+// DuplicateNoEditor duplicates a document without opening an editor
+func (d *DocModifier) DuplicateNoEditor(ctx context.Context, db, coll string, rawDocument string) (primitive.ObjectID, error) {
+	replacedDoc, err := removeField(rawDocument, "_id")
+	if err != nil {
+		return primitive.NilObjectID, fmt.Errorf("error removing _id field: %v", err)
+	}
+
+	parsedDoc, err := mongo.ParseJsonToBson(replacedDoc)
+	if err != nil {
+		return primitive.NilObjectID, fmt.Errorf("error parsing JSON: %v", err)
+	}
+
+	delete(parsedDoc, "_id") // Extra safety to ensure _id is removed
+
+	rawID, err := d.Dao.InsetDocument(ctx, db, coll, parsedDoc)
+	if err != nil {
+		return primitive.NilObjectID, fmt.Errorf("error inserting document: %v", err)
+	}
+
+	id, ok := rawID.(primitive.ObjectID)
+	if !ok {
+		return primitive.NilObjectID, fmt.Errorf("error converting _id to primitive.ObjectID")
+	}
+
+	return id, nil
+}
+
 // updateDocument saves the document to the database
 func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, _id interface{}, originalDoc, rawDocument string) error {
 	if rawDocument == "" {

@@ -210,8 +210,12 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return c.handleEditDocument(ctx, row, coll)
 		case k.Contains(k.Content.DuplicateDocument, event.Name()):
 			return c.handleDuplicateDocument(ctx, row, coll)
+		case k.Contains(k.Content.DuplicateDocumentNoConfirm, event.Name()):
+			return c.handleDuplicateDocumentNoConfirm(ctx, row, coll)
 		case k.Contains(k.Content.DeleteDocument, event.Name()):
 			return c.handleDeleteDocument(ctx, row, coll)
+		case k.Contains(k.Content.DeleteDocumentNoConfirm, event.Name()):
+			return c.handleDeleteDocumentNoConfirm(ctx, row, coll)
 		case k.Contains(k.Content.ToggleQueryBar, event.Name()):
 			return c.handleToggleQuery()
 		case k.Contains(k.Content.ToggleSortBar, event.Name()):
@@ -811,6 +815,27 @@ func (c *Content) handleDuplicateDocument(ctx context.Context, row, coll int) *t
 	return nil
 }
 
+func (c *Content) handleDuplicateDocumentNoConfirm(ctx context.Context, row, coll int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row, coll)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error duplicating document", err)
+		return nil
+	}
+	id, err := c.docModifier.DuplicateNoEditor(ctx, c.state.Db, c.state.Coll, doc)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error duplicating document", err)
+		return nil
+	}
+	duplicatedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, id)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error getting inserted document", err)
+		return nil
+	}
+	c.state.AppendDoc(duplicatedDoc)
+	c.updateContentBasedOnState(ctx)
+	return nil
+}
+
 func (c *Content) handleToggleQuery() *tcell.EventKey {
 	if c.state.Filter != "" {
 		c.queryBar.Toggle(c.state.Filter)
@@ -849,6 +874,30 @@ func (c *Content) handleDeleteDocument(ctx context.Context, row, coll int) *tcel
 		modal.ShowError(c.App.Pages, "Error deleting document", err)
 		return nil
 	}
+	return nil
+}
+
+func (c *Content) handleDeleteDocumentNoConfirm(ctx context.Context, row, coll int) *tcell.EventKey {
+	_id := c.getDocumentId(row, coll)
+	if _id == nil {
+		return nil
+	}
+
+	err := c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, _id)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error deleting document", err)
+		return nil
+	}
+
+	c.state.DeleteDoc(_id)
+	c.updateContentBasedOnState(ctx)
+
+	if row == c.table.GetRowCount() {
+		c.table.Select(row-1, coll)
+	} else {
+		c.table.Select(row, coll)
+	}
+
 	return nil
 }
 
