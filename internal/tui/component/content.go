@@ -47,7 +47,7 @@ type Content struct {
 	queryBar          *InputBar
 	sortBar           *InputBar
 	peeker            *Peeker
-	deleteModal       *modal.Delete
+	confirmModal      *modal.Confirm
 	queryOptionsModal *modal.QueryOptionsModal
 	docModifier       *DocModifier
 	state             *mongo.CollectionState
@@ -66,7 +66,7 @@ func NewContent() *Content {
 		queryBar:          NewInputBar(QueryBarId, "Query"),
 		sortBar:           NewInputBar(SortBarId, "Sort"),
 		peeker:            NewPeeker(),
-		deleteModal:       modal.NewDeleteModal(ContentDeleteModalId),
+		confirmModal:      modal.NewConfirm(ContentDeleteModalId),
 		queryOptionsModal: modal.NewQueryOptionsModal(),
 		docModifier:       NewDocModifier(),
 		state:             &mongo.CollectionState{},
@@ -96,7 +96,7 @@ func (c *Content) init() error {
 	if err := c.docModifier.Init(c.App); err != nil {
 		return err
 	}
-	if err := c.deleteModal.Init(c.App); err != nil {
+	if err := c.confirmModal.Init(c.App); err != nil {
 		return err
 	}
 	if err := c.queryOptionsModal.Init(c.App); err != nil {
@@ -195,35 +195,35 @@ func (c *Content) setKeybindings(ctx context.Context) {
 	k := c.App.GetKeys()
 
 	c.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		row, coll := c.table.GetSelection()
+		row, col := c.table.GetSelection()
 		c.handleScrolling(row)
 		switch {
 		case k.Contains(k.Content.ChangeView, event.Name()):
 			return c.handleSwitchView(ctx)
 		case k.Contains(k.Content.PeekDocument, event.Name()):
-			return c.handlePeekDocument(ctx, row, coll)
+			return c.handlePeekDocument(ctx, row, col)
 		case k.Contains(k.Content.FullPagePeek, event.Name()):
-			return c.handleFullPagePeek(ctx, row, coll)
+			return c.handleFullPagePeek(ctx, row, col)
 		case k.Contains(k.Content.AddDocument, event.Name()):
 			return c.handleAddDocument(ctx)
 		case k.Contains(k.Content.EditDocument, event.Name()):
-			return c.handleEditDocument(ctx, row, coll)
+			return c.handleEditDocument(ctx, row, col)
 		case k.Contains(k.Content.DuplicateDocument, event.Name()):
-			return c.handleDuplicateDocument(ctx, row, coll)
+			return c.handleDuplicateDocument(ctx, row, col)
 		case k.Contains(k.Content.DuplicateDocumentNoConfirm, event.Name()):
-			return c.handleDuplicateDocumentNoConfirm(ctx, row, coll)
+			return c.handleDuplicateDocumentNoConfirm(ctx, row, col)
 		case k.Contains(k.Content.DeleteDocument, event.Name()):
-			return c.handleDeleteDocument(ctx, row, coll)
+			return c.handleDeleteDocument(ctx, row, col)
 		case k.Contains(k.Content.DeleteDocumentNoConfirm, event.Name()):
-			return c.handleDeleteDocumentNoConfirm(ctx, row, coll)
+			return c.handleDeleteDocumentNoConfirm(ctx, row, col)
 		case k.Contains(k.Content.ToggleQueryBar, event.Name()):
 			return c.handleToggleQuery()
 		case k.Contains(k.Content.ToggleSortBar, event.Name()):
 			return c.handleToggleSort()
 		case k.Contains(k.Content.SortByColumn, event.Name()):
-			return c.handleSortByColumn(ctx, coll)
+			return c.handleSortByColumn(ctx, col)
 		case k.Contains(k.Content.HideColumn, event.Name()):
-			return c.handleHideColumn(ctx, coll)
+			return c.handleHideColumn(ctx, col)
 		case k.Contains(k.Content.ResetHiddenColumns, event.Name()):
 			return c.handleResetHiddenColumns(ctx)
 		case k.Contains(k.Content.Refresh, event.Name()):
@@ -231,9 +231,9 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		case k.Contains(k.Content.NextPage, event.Name()):
 			return c.handleNextPage(ctx)
 		case k.Contains(k.Content.NextDocument, event.Name()):
-			return c.handleNextDocument(row, coll)
+			return c.handleNextDocument(row, col)
 		case k.Contains(k.Content.PreviousDocument, event.Name()):
-			return c.handlePreviousDocument(row, coll)
+			return c.handlePreviousDocument(row, col)
 		case k.Contains(k.Content.PreviousPage, event.Name()):
 			return c.handlePreviousPage(ctx)
 		case k.Contains(k.Content.ToggleQueryOptions, event.Name()):
@@ -245,9 +245,9 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		// case k.Contains(k.Content.ClearSelection, event.Name()):
 		// 	return c.handleClearSelection()
 		case k.Contains(k.Content.CopyHighlight, event.Name()):
-			return c.handleCopyLine(row, coll)
+			return c.handleCopyLine(row, col)
 		case k.Contains(k.Content.CopyDocument, event.Name()):
-			return c.handleCopyDocument(row, coll)
+			return c.handleCopyDocument(row, col)
 		}
 
 		return event
@@ -657,54 +657,16 @@ func (c *Content) refreshDocument(ctx context.Context, doc string) {
 	c.updateContentBasedOnState(ctx)
 }
 
-func (c *Content) deleteDocument(ctx context.Context, jsonString string) error {
-	objectId, err := mongo.GetIDFromJSON(jsonString)
-	if err != nil {
-		return err
-	}
-
-	stringifyId := mongo.StringifyId(objectId)
-
-	c.deleteModal.SetText("Are you sure you want to delete document of id: [blue]" + stringifyId)
-	c.deleteModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-		row, col := c.table.GetSelection()
-		defer c.App.Pages.RemovePage(c.deleteModal.GetIdentifier())
-		if buttonLabel == "Cancel" {
-			return
-		}
-		if buttonLabel == "Delete" {
-			err = c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectId)
-			if err != nil {
-				modal.ShowError(c.App.Pages, "Error deleting document", err)
-				return
-			}
-			c.state.DeleteDoc(objectId)
-		}
-
-		c.updateContentBasedOnState(ctx)
-
-		if row == c.table.GetRowCount() {
-			c.table.Select(row-1, col)
-		} else {
-			c.table.Select(row, col)
-		}
-	})
-
-	c.App.Pages.AddPage(c.deleteModal.GetIdentifier(), c.deleteModal, true, true)
-
-	return nil
-}
-
-func (c *Content) getDocumentBasedOnView(row, coll int) (string, error) {
-	_id := c.getDocumentId(row, coll)
+func (c *Content) getDocumentBasedOnView(row, col int) (string, error) {
+	_id := c.getDocumentId(row, col)
 	return c.state.GetJsonDocById(_id)
 }
 
 // get document id based on view
-func (c *Content) getDocumentId(row, coll int) interface{} {
+func (c *Content) getDocumentId(row, col int) interface{} {
 	switch c.currentView {
 	case JsonView:
-		forWithReference := c.table.GetCellAboveThatMatch(row, coll, func(cell *tview.TableCell) bool {
+		forWithReference := c.table.GetCellAboveThatMatch(row, col, func(cell *tview.TableCell) bool {
 			return strings.HasPrefix(cell.Text, `{`)
 		})
 		return forWithReference.GetReference()
@@ -739,8 +701,8 @@ func (c *Content) handleSwitchView(ctx context.Context) *tcell.EventKey {
 	return nil
 }
 
-func (c *Content) handlePeekDocument(ctx context.Context, row, coll int) *tcell.EventKey {
-	_id := c.getDocumentId(row, coll)
+func (c *Content) handlePeekDocument(ctx context.Context, row, col int) *tcell.EventKey {
+	_id := c.getDocumentId(row, col)
 	if _id == nil {
 		return nil
 	}
@@ -749,8 +711,8 @@ func (c *Content) handlePeekDocument(ctx context.Context, row, coll int) *tcell.
 	return nil
 }
 
-func (c *Content) handleFullPagePeek(ctx context.Context, row, coll int) *tcell.EventKey {
-	_id := c.getDocumentId(row, coll)
+func (c *Content) handleFullPagePeek(ctx context.Context, row, col int) *tcell.EventKey {
+	_id := c.getDocumentId(row, col)
 	if _id == nil {
 		return nil
 	}
@@ -775,8 +737,8 @@ func (c *Content) handleAddDocument(ctx context.Context) *tcell.EventKey {
 	return nil
 }
 
-func (c *Content) handleEditDocument(ctx context.Context, row, coll int) *tcell.EventKey {
-	_id := c.getDocumentId(row, coll)
+func (c *Content) handleEditDocument(ctx context.Context, row, col int) *tcell.EventKey {
+	_id := c.getDocumentId(row, col)
 	doc, err := c.state.GetJsonDocById(_id)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error getting document", err)
@@ -794,29 +756,56 @@ func (c *Content) handleEditDocument(ctx context.Context, row, coll int) *tcell.
 	return nil
 }
 
-func (c *Content) handleDuplicateDocument(ctx context.Context, row, coll int) *tcell.EventKey {
-	doc, err := c.getDocumentBasedOnView(row, coll)
+func (c *Content) handleDuplicateDocument(ctx context.Context, row, col int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row, col)
 	if err != nil {
-		modal.ShowError(c.App.Pages, "Error duplicating document", err)
+		modal.ShowError(c.App.Pages, "Error getting document", err)
 		return nil
 	}
-	id, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, doc)
+
+	objectId, err := mongo.GetIDFromJSON(doc)
 	if err != nil {
-		modal.ShowError(c.App.Pages, "Error duplicating document", err)
+		modal.ShowError(c.App.Pages, "Error extracting document ID", err)
 		return nil
 	}
-	duplicatedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, id)
-	if err != nil {
-		modal.ShowError(c.App.Pages, "Error getting inserted document", err)
-		return nil
-	}
-	c.state.AppendDoc(duplicatedDoc)
-	c.updateContentBasedOnState(ctx)
+
+	stringifyId := mongo.StringifyId(objectId)
+
+	c.confirmModal.SetText("Are you sure you want to duplicate document with ID: [blue]" + stringifyId)
+	c.confirmModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		defer c.App.Pages.RemovePage(c.confirmModal.GetIdentifier())
+		if buttonLabel == "Cancel" {
+			return
+		}
+		if buttonLabel == "Confirm" {
+			id, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, doc)
+			if err != nil {
+				modal.ShowError(c.App.Pages, "Error duplicating document", err)
+				return
+			}
+			duplicatedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, id)
+			if err != nil {
+				modal.ShowError(c.App.Pages, "Error getting inserted document", err)
+				return
+			}
+			c.state.AppendDoc(duplicatedDoc)
+			c.updateContentBasedOnState(ctx)
+
+			if row == c.table.GetRowCount() {
+				c.table.Select(row-1, col)
+			} else {
+				c.table.Select(row, col)
+			}
+		}
+	})
+
+	c.App.Pages.AddPage(c.confirmModal.GetIdentifier(), c.confirmModal, true, true)
+
 	return nil
 }
 
-func (c *Content) handleDuplicateDocumentNoConfirm(ctx context.Context, row, coll int) *tcell.EventKey {
-	doc, err := c.getDocumentBasedOnView(row, coll)
+func (c *Content) handleDuplicateDocumentNoConfirm(ctx context.Context, row, col int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row, col)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error duplicating document", err)
 		return nil
@@ -833,6 +822,78 @@ func (c *Content) handleDuplicateDocumentNoConfirm(ctx context.Context, row, col
 	}
 	c.state.AppendDoc(duplicatedDoc)
 	c.updateContentBasedOnState(ctx)
+
+	if row == c.table.GetRowCount() {
+		c.table.Select(row-1, col)
+	} else {
+		c.table.Select(row, col)
+	}
+	return nil
+}
+
+func (c *Content) handleDeleteDocument(ctx context.Context, row, col int) *tcell.EventKey {
+	doc, err := c.getDocumentBasedOnView(row, col)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error deleting document", err)
+		return nil
+	}
+	objectId, err := mongo.GetIDFromJSON(doc)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error deleting document", err)
+	}
+
+	stringifyId := mongo.StringifyId(objectId)
+
+	c.confirmModal.SetText("Are you sure you want to delete document of id: [blue]" + stringifyId)
+	c.confirmModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+		defer c.App.Pages.RemovePage(c.confirmModal.GetIdentifier())
+		if buttonLabel == "Cancel" {
+			return
+		}
+		if buttonLabel == "Confirm" {
+			err = c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectId)
+			if err != nil {
+				modal.ShowError(c.App.Pages, "Error deleting document", err)
+				return
+			}
+			c.state.DeleteDoc(objectId)
+		}
+
+		c.updateContentBasedOnState(ctx)
+
+		if row == c.table.GetRowCount() {
+			c.table.Select(row-1, col)
+		} else {
+			c.table.Select(row, col)
+		}
+	})
+
+	c.App.Pages.AddPage(c.confirmModal.GetIdentifier(), c.confirmModal, true, true)
+
+	return nil
+}
+
+func (c *Content) handleDeleteDocumentNoConfirm(ctx context.Context, row, col int) *tcell.EventKey {
+	_id := c.getDocumentId(row, col)
+	if _id == nil {
+		return nil
+	}
+
+	err := c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, _id)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error deleting document", err)
+		return nil
+	}
+
+	c.state.DeleteDoc(_id)
+	c.updateContentBasedOnState(ctx)
+
+	if row == c.table.GetRowCount() {
+		c.table.Select(row-1, col)
+	} else {
+		c.table.Select(row, col)
+	}
+
 	return nil
 }
 
@@ -860,44 +921,6 @@ func (c *Content) handleShowQueryOptions(ctx context.Context) *tcell.EventKey {
 	_, _, _, height := c.table.GetInnerRect()
 	defaultLimit := int64(height - 1)
 	c.queryOptionsModal.Render(ctx, c.state, defaultLimit)
-	return nil
-}
-
-func (c *Content) handleDeleteDocument(ctx context.Context, row, coll int) *tcell.EventKey {
-	doc, err := c.getDocumentBasedOnView(row, coll)
-	if err != nil {
-		modal.ShowError(c.App.Pages, "Error deleting document", err)
-		return nil
-	}
-	err = c.deleteDocument(ctx, doc)
-	if err != nil {
-		modal.ShowError(c.App.Pages, "Error deleting document", err)
-		return nil
-	}
-	return nil
-}
-
-func (c *Content) handleDeleteDocumentNoConfirm(ctx context.Context, row, coll int) *tcell.EventKey {
-	_id := c.getDocumentId(row, coll)
-	if _id == nil {
-		return nil
-	}
-
-	err := c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, _id)
-	if err != nil {
-		modal.ShowError(c.App.Pages, "Error deleting document", err)
-		return nil
-	}
-
-	c.state.DeleteDoc(_id)
-	c.updateContentBasedOnState(ctx)
-
-	if row == c.table.GetRowCount() {
-		c.table.Select(row-1, coll)
-	} else {
-		c.table.Select(row, coll)
-	}
-
 	return nil
 }
 

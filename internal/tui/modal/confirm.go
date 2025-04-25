@@ -8,17 +8,19 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 )
 
-type Delete struct {
+type Confirm struct {
 	*core.BaseElement
 	*core.Modal
 
-	style *config.OthersStyle
+	confirmLabel string
+	style        *config.OthersStyle
 }
 
-func NewDeleteModal(id tview.Identifier) *Delete {
-	dm := &Delete{
-		BaseElement: core.NewBaseElement(),
-		Modal:       core.NewModal(),
+func NewConfirm(id tview.Identifier) *Confirm {
+	dm := &Confirm{
+		BaseElement:  core.NewBaseElement(),
+		Modal:        core.NewModal(),
+		confirmLabel: "Confirm",
 	}
 
 	dm.SetIdentifier(id)
@@ -27,7 +29,7 @@ func NewDeleteModal(id tview.Identifier) *Delete {
 	return dm
 }
 
-func (d *Delete) init() error {
+func (d *Confirm) init() error {
 	d.setLayout()
 	d.setStyle()
 	d.setKeybindings()
@@ -37,14 +39,14 @@ func (d *Delete) init() error {
 	return nil
 }
 
-func (d *Delete) setLayout() {
-	d.AddButtons([]string{"Delete", "Cancel"})
+func (d *Confirm) setLayout() {
+	d.AddButtons([]string{d.confirmLabel, "Cancel"})
 	d.SetBorder(true)
-	d.SetTitle(" Delete ")
+	d.SetTitle(" " + d.confirmLabel + " ")
 	d.SetBorderPadding(0, 0, 1, 1)
 }
 
-func (d *Delete) setStyle() {
+func (d *Confirm) setStyle() {
 	d.SetStyle(d.App.GetStyles())
 	d.style = &d.App.GetStyles().Others
 
@@ -52,7 +54,7 @@ func (d *Delete) setStyle() {
 		Background(d.style.DeleteButtonSelectedBackgroundColor.Color()))
 }
 
-func (d *Delete) setKeybindings() {
+func (d *Confirm) setKeybindings() {
 	d.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case 'h':
@@ -64,11 +66,17 @@ func (d *Delete) setKeybindings() {
 	})
 }
 
-func (d *Delete) handleEvents() {
+func (d *Confirm) handleEvents() {
 	go d.HandleEvents(d.GetIdentifier(), func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			d.setStyle()
 		}
 	})
+}
+
+func (d *Confirm) SetConfirmButtonLabel(label string) {
+	d.confirmLabel = label
+	d.ClearButtons()
+	d.AddButtons([]string{label, "Cancel"})
 }
