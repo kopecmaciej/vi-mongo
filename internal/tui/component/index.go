@@ -32,7 +32,7 @@ type Index struct {
 	table            *core.Table
 	addForm          *core.Form
 	indexes          []int_mongo.IndexInfo
-	deleteModal      *modal.Delete
+	deleteModal      *modal.Confirm
 	currentDB        string
 	currentColl      string
 	docKeys          []string
@@ -45,7 +45,7 @@ func NewIndex() *Index {
 		Flex:             core.NewFlex(),
 		table:            core.NewTable(),
 		addForm:          core.NewForm(),
-		deleteModal:      modal.NewDeleteModal(IndexDeleteModalId),
+		deleteModal:      modal.NewConfirm(IndexDeleteModalId),
 		isAddFormVisible: false,
 	}
 

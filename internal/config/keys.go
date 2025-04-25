@@ -71,26 +71,28 @@ type (
 	}
 
 	ContentKeys struct {
-		ChangeView         Key `json:"switchView"`
-		PeekDocument       Key `json:"peekDocument"`
-		FullPagePeek       Key `json:"fullPagePeek"`
-		AddDocument        Key `json:"addDocument"`
-		EditDocument       Key `json:"editDocument"`
-		DuplicateDocument  Key `json:"duplicateDocument"`
-		DeleteDocument     Key `json:"deleteDocument"`
-		CopyHighlight      Key `json:"copyValue"`
-		CopyDocument       Key `json:"copyDocument"`
-		Refresh            Key `json:"refresh"`
-		ToggleQueryBar     Key `json:"toggleQueryBar"`
-		NextDocument       Key `json:"nextDocument"`
-		PreviousDocument   Key `json:"previousDocument"`
-		NextPage           Key `json:"nextPage"`
-		PreviousPage       Key `json:"previousPage"`
-		ToggleSortBar      Key `json:"toggleSortBar"`
-		SortByColumn       Key `json:"sortByColumn"`
-		HideColumn         Key `json:"hideColumn"`
-		ResetHiddenColumns Key `json:"resetHiddenColumns"`
-		ToggleQueryOptions Key `json:"toggleQueryOptions"`
+		ChangeView                 Key `json:"switchView"`
+		PeekDocument               Key `json:"peekDocument"`
+		FullPagePeek               Key `json:"fullPagePeek"`
+		AddDocument                Key `json:"addDocument"`
+		EditDocument               Key `json:"editDocument"`
+		DuplicateDocument          Key `json:"duplicateDocument"`
+		DuplicateDocumentNoConfirm Key `json:"duplicateDocumentNoConfirm"`
+		DeleteDocument             Key `json:"deleteDocument"`
+		DeleteDocumentNoConfirm    Key `json:"deleteDocumentNoConfirm"`
+		CopyHighlight              Key `json:"copyValue"`
+		CopyDocument               Key `json:"copyDocument"`
+		Refresh                    Key `json:"refresh"`
+		ToggleQueryBar             Key `json:"toggleQueryBar"`
+		NextDocument               Key `json:"nextDocument"`
+		PreviousDocument           Key `json:"previousDocument"`
+		NextPage                   Key `json:"nextPage"`
+		PreviousPage               Key `json:"previousPage"`
+		ToggleSortBar              Key `json:"toggleSortBar"`
+		SortByColumn               Key `json:"sortByColumn"`
+		HideColumn                 Key `json:"hideColumn"`
+		ResetHiddenColumns         Key `json:"resetHiddenColumns"`
+		ToggleQueryOptions         Key `json:"toggleQueryOptions"`
 
 		// MultipleSelect    Key      `json:"multipleSelect"`
 		// ClearSelection   Key      `json:"clearSelection"`
@@ -257,9 +259,17 @@ func (k *KeyBindings) loadDefaults() {
 			Runes:       []string{"D"},
 			Description: "Duplicate",
 		},
+		DuplicateDocumentNoConfirm: Key{
+			Keys:        []string{"Alt+D"},
+			Description: "Duplicate without confirmation",
+		},
 		DeleteDocument: Key{
 			Runes:       []string{"d"},
 			Description: "Delete",
+		},
+		DeleteDocumentNoConfirm: Key{
+			Keys:        []string{"Alt+d"},
+			Description: "Delete without confirmation",
 		},
 		// MultipleSelect: Key{
 		// 	Runes:       []string{"v"},

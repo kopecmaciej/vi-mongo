@@ -28,7 +28,7 @@ type DatabaseTree struct {
 	*core.TreeView
 
 	inputModal  *primitives.InputModal
-	deleteModal *modal.Delete
+	deleteModal *modal.Confirm
 	style       *config.DatabasesStyle
 
 	nodeSelectFunc func(ctx context.Context, db string, coll string) error
@@ -39,7 +39,7 @@ func NewDatabaseTree() *DatabaseTree {
 		BaseElement: core.NewBaseElement(),
 		TreeView:    core.NewTreeView(),
 		inputModal:  primitives.NewInputModal(),
-		deleteModal: modal.NewDeleteModal(DatabaseDeleteModalId),
+		deleteModal: modal.NewConfirm(DatabaseDeleteModalId),
 	}
 
 	d.SetIdentifier(DatabaseTreeId)
