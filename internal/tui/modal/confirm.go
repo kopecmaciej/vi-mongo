@@ -29,33 +29,33 @@ func NewConfirm(id tview.Identifier) *Confirm {
 	return dm
 }
 
-func (d *Confirm) init() error {
-	d.setLayout()
-	d.setStyle()
-	d.setKeybindings()
+func (c *Confirm) init() error {
+	c.setLayout()
+	c.setStyle()
+	c.setKeybindings()
 
-	d.handleEvents()
+	c.handleEvents()
 
 	return nil
 }
 
-func (d *Confirm) setLayout() {
-	d.AddButtons([]string{d.confirmLabel, "Cancel"})
-	d.SetBorder(true)
-	d.SetTitle(" " + d.confirmLabel + " ")
-	d.SetBorderPadding(0, 0, 1, 1)
+func (c *Confirm) setLayout() {
+	c.AddButtons([]string{c.confirmLabel, "Cancel"})
+	c.SetBorder(true)
+	c.SetTitle(" " + c.confirmLabel + " ")
+	c.SetBorderPadding(0, 0, 1, 1)
 }
 
-func (d *Confirm) setStyle() {
-	d.SetStyle(d.App.GetStyles())
-	d.style = &d.App.GetStyles().Others
+func (c *Confirm) setStyle() {
+	c.SetStyle(c.App.GetStyles())
+	c.style = &c.App.GetStyles().Others
 
-	d.SetButtonActivatedStyle(tcell.StyleDefault.
-		Background(d.style.DeleteButtonSelectedBackgroundColor.Color()))
+	c.SetButtonActivatedStyle(tcell.StyleDefault.
+		Background(c.style.DeleteButtonSelectedBackgroundColor.Color()))
 }
 
-func (d *Confirm) setKeybindings() {
-	d.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+func (c *Confirm) setKeybindings() {
+	c.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Rune() {
 		case 'h':
 			return tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone)
@@ -66,17 +66,17 @@ func (d *Confirm) setKeybindings() {
 	})
 }
 
-func (d *Confirm) handleEvents() {
-	go d.HandleEvents(d.GetIdentifier(), func(event manager.EventMsg) {
+func (c *Confirm) handleEvents() {
+	go c.HandleEvents(c.GetIdentifier(), func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
-			d.setStyle()
+			c.setStyle()
 		}
 	})
 }
 
-func (d *Confirm) SetConfirmButtonLabel(label string) {
-	d.confirmLabel = label
-	d.ClearButtons()
-	d.AddButtons([]string{label, "Cancel"})
+func (c *Confirm) SetConfirmButtonLabel(label string) {
+	c.confirmLabel = label
+	c.ClearButtons()
+	c.AddButtons([]string{label, "Cancel"})
 }
