@@ -4,7 +4,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
@@ -12,6 +11,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -48,21 +48,7 @@ func (i *InputBar) init() error {
 	i.setKeybindings()
 	i.setLayout()
 
-	cpFunc := func(text string) {
-		err := clipboard.WriteAll(text)
-		if err != nil {
-			log.Error().Err(err).Msg("Error writing to clipboard")
-		}
-	}
-	pasteFunc := func() string {
-		text, err := clipboard.ReadAll()
-		if err != nil {
-			log.Error().Err(err).Msg("Error reading from clipboard")
-			return ""
-		}
-		return strings.TrimSpace(text)
-	}
-	i.SetClipboard(cpFunc, pasteFunc)
+	i.SetClipboard(util.GetClipboard())
 
 	i.handleEvents()
 

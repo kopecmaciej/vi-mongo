@@ -10,6 +10,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 )
 
 const (
@@ -167,9 +168,12 @@ func (c *Connection) renderForm() *core.Form {
 	c.form.Clear(false)
 
 	c.form.AddInputField("Name", "", 40, nil, nil)
+
 	c.form.AddInputField("Url", "mongodb://", 40, nil, nil)
+
 	c.form.AddTextView("Example", "mongodb://username:password@host:port/db", 40, 1, true, false)
-	c.form.AddTextView("Info", "Provide Url or fill the form below", 41, 1, true, false)
+	paste := fmt.Sprintf("Type Url (paste - %s) or fill below", c.App.GetKeys().QueryBar.Paste.String())
+	c.form.AddTextView("Info", paste, 40, 1, true, false)
 	c.form.AddTextView(" ", "-- ----------------------------------------", 40, 1, true, false)
 	c.form.AddInputField("Host", "", 40, nil, nil)
 	c.form.AddInputField("Port", "", 10, nil, nil)
@@ -177,8 +181,15 @@ func (c *Connection) renderForm() *core.Form {
 	c.form.AddPasswordField("Password", "", 40, '*', nil)
 	c.form.AddInputField("Database", "", 40, nil, nil)
 	c.form.AddInputField("Timeout", "5", 10, nil, nil)
-	key := fmt.Sprintf("%s or:", c.App.GetKeys().Connection.ConnectionForm.SaveConnection.String())
+	key := fmt.Sprintf("%s or click", c.App.GetKeys().Connection.ConnectionForm.SaveConnection.String())
 	c.form.AddTextView("Save with:", key, 30, 1, true, false)
+
+	c.form.GetFormItemByLabel("Url").(*tview.InputField).SetClipboard(util.GetClipboard())
+	c.form.GetFormItemByLabel("Host").(*tview.InputField).SetClipboard(util.GetClipboard())
+	c.form.GetFormItemByLabel("Port").(*tview.InputField).SetClipboard(util.GetClipboard())
+	c.form.GetFormItemByLabel("Username").(*tview.InputField).SetClipboard(util.GetClipboard())
+	c.form.GetFormItemByLabel("Password").(*tview.InputField).SetClipboard(util.GetClipboard())
+	c.form.GetFormItemByLabel("Database").(*tview.InputField).SetClipboard(util.GetClipboard())
 
 	c.AddItem(c.form, 60, 0, true)
 
