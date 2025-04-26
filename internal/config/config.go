@@ -17,6 +17,7 @@ const (
 )
 
 type MongoOptions struct {
+	AlwaysConfirmActions  *bool  `yaml:"alwaysConfirmActions,omitempty"`
 	AuthorizedDatabases   *bool  `yaml:"authorizedDatabases,omitempty"`
 	AuthorizedCollections *bool  `yaml:"authorizedCollections,omitempty"`
 	Limit                 *int64 `yaml:"limit,omitempty"`

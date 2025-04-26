@@ -193,6 +193,7 @@ func (c *Content) setLayout() {
 
 func (c *Content) setKeybindings(ctx context.Context) {
 	k := c.App.GetKeys()
+	noConfirm := c.Dao.Config.Options.AlwaysConfirmActions != nil && !*c.Dao.Config.Options.AlwaysConfirmActions
 
 	c.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		row, col := c.table.GetSelection()
@@ -210,11 +211,11 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return c.handleEditDocument(ctx, row, col)
 		case k.Contains(k.Content.DuplicateDocument, event.Name()):
 			return c.handleDuplicateDocument(ctx, row, col)
-		case k.Contains(k.Content.DuplicateDocumentNoConfirm, event.Name()):
+		case k.Contains(k.Content.DuplicateDocumentNoConfirm, event.Name()) && noConfirm:
 			return c.handleDuplicateDocumentNoConfirm(ctx, row, col)
 		case k.Contains(k.Content.DeleteDocument, event.Name()):
 			return c.handleDeleteDocument(ctx, row, col)
-		case k.Contains(k.Content.DeleteDocumentNoConfirm, event.Name()):
+		case k.Contains(k.Content.DeleteDocumentNoConfirm, event.Name()) && noConfirm:
 			return c.handleDeleteDocumentNoConfirm(ctx, row, col)
 		case k.Contains(k.Content.ToggleQueryBar, event.Name()):
 			return c.handleToggleQuery()
@@ -805,6 +806,9 @@ func (c *Content) handleDuplicateDocument(ctx context.Context, row, col int) *tc
 }
 
 func (c *Content) handleDuplicateDocumentNoConfirm(ctx context.Context, row, col int) *tcell.EventKey {
+	if *c.Dao.Config.Options.AlwaysConfirmActions {
+		return nil
+	}
 	doc, err := c.getDocumentBasedOnView(row, col)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error duplicating document", err)
