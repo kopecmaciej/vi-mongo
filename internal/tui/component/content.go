@@ -193,7 +193,7 @@ func (c *Content) setLayout() {
 
 func (c *Content) setKeybindings(ctx context.Context) {
 	k := c.App.GetKeys()
-	noConfirm := c.Dao.Config.Options.AlwaysConfirmActions != nil && !*c.Dao.Config.Options.AlwaysConfirmActions
+	noConfirm := c.Dao.Config.Options.AlwaysConfirmActions == nil || !*c.Dao.Config.Options.AlwaysConfirmActions
 
 	c.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		row, col := c.table.GetSelection()
@@ -806,9 +806,6 @@ func (c *Content) handleDuplicateDocument(ctx context.Context, row, col int) *tc
 }
 
 func (c *Content) handleDuplicateDocumentNoConfirm(ctx context.Context, row, col int) *tcell.EventKey {
-	if *c.Dao.Config.Options.AlwaysConfirmActions {
-		return nil
-	}
 	doc, err := c.getDocumentBasedOnView(row, col)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error duplicating document", err)
