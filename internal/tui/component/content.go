@@ -772,13 +772,14 @@ func (c *Content) handleDuplicateDocument(ctx context.Context, row, col int) *tc
 
 	stringifyId := mongo.StringifyId(objectId)
 
+	c.confirmModal.SetConfirmButtonLabel("Duplicate")
 	c.confirmModal.SetText("Are you sure you want to duplicate document with ID: [blue]" + stringifyId)
 	c.confirmModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		defer c.App.Pages.RemovePage(c.confirmModal.GetIdentifier())
 		if buttonLabel == "Cancel" {
 			return
 		}
-		if buttonLabel == "Confirm" {
+		if buttonLabel == "Duplicate" {
 			id, err := c.docModifier.Duplicate(ctx, c.state.Db, c.state.Coll, doc)
 			if err != nil {
 				modal.ShowError(c.App.Pages, "Error duplicating document", err)
@@ -845,13 +846,14 @@ func (c *Content) handleDeleteDocument(ctx context.Context, row, col int) *tcell
 
 	stringifyId := mongo.StringifyId(objectId)
 
+	c.confirmModal.SetConfirmButtonLabel("Delete")
 	c.confirmModal.SetText("Are you sure you want to delete document of id: [blue]" + stringifyId)
 	c.confirmModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		defer c.App.Pages.RemovePage(c.confirmModal.GetIdentifier())
 		if buttonLabel == "Cancel" {
 			return
 		}
-		if buttonLabel == "Confirm" {
+		if buttonLabel == "Delete" {
 			err = c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectId)
 			if err != nil {
 				modal.ShowError(c.App.Pages, "Error deleting document", err)
