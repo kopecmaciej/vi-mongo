@@ -193,7 +193,7 @@ func (c *Content) setLayout() {
 
 func (c *Content) setKeybindings(ctx context.Context) {
 	k := c.App.GetKeys()
-	noConfirm := c.Dao.Config.Options.AlwaysConfirmActions == nil || !*c.Dao.Config.Options.AlwaysConfirmActions
+	confirm := *c.Dao.Config.GetOptions().AlwaysConfirmActions
 
 	c.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		row, col := c.table.GetSelection()
@@ -211,11 +211,11 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return c.handleEditDocument(ctx, row, col)
 		case k.Contains(k.Content.DuplicateDocument, event.Name()):
 			return c.handleDuplicateDocument(ctx, row, col)
-		case k.Contains(k.Content.DuplicateDocumentNoConfirm, event.Name()) && noConfirm:
+		case k.Contains(k.Content.DuplicateDocumentNoConfirm, event.Name()) && !confirm:
 			return c.handleDuplicateDocumentNoConfirm(ctx, row, col)
 		case k.Contains(k.Content.DeleteDocument, event.Name()):
 			return c.handleDeleteDocument(ctx, row, col)
-		case k.Contains(k.Content.DeleteDocumentNoConfirm, event.Name()) && noConfirm:
+		case k.Contains(k.Content.DeleteDocumentNoConfirm, event.Name()) && !confirm:
 			return c.handleDeleteDocumentNoConfirm(ctx, row, col)
 		case k.Contains(k.Content.ToggleQueryBar, event.Name()):
 			return c.handleToggleQuery()

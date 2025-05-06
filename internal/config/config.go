@@ -271,12 +271,16 @@ func (c *MongoConfig) GetOptions() MongoOptions {
 	defaults := MongoOptions{
 		AuthorizedDatabases:   &boolPtr,
 		AuthorizedCollections: &boolPtr,
+		AlwaysConfirmActions:  &boolPtr,
 	}
 	if c.Options.AuthorizedDatabases == nil {
 		c.Options.AuthorizedDatabases = defaults.AuthorizedDatabases
 	}
 	if c.Options.AuthorizedCollections == nil {
 		c.Options.AuthorizedCollections = defaults.AuthorizedCollections
+	}
+	if c.Options.AlwaysConfirmActions == nil {
+		c.Options.AlwaysConfirmActions = defaults.AlwaysConfirmActions
 	}
 	return c.Options
 }
