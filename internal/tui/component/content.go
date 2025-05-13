@@ -16,7 +16,6 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
-	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -485,6 +484,7 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 
 // TODO: maybe show error modal here?
 func (c *Content) updateContent(ctx context.Context, useState bool) error {
+	c.table.ClearSelection()
 	var documents []primitive.M
 
 	if useState {
@@ -794,11 +794,7 @@ func (c *Content) handleDuplicateDocument(ctx context.Context, row, col int) *tc
 			c.state.AppendDoc(duplicatedDoc)
 			c.updateContentBasedOnState(ctx)
 
-			if row == c.table.GetRowCount() {
-				c.table.Select(row-1, col)
-			} else {
-				c.table.Select(row, col)
-			}
+			c.table.Select(row, col)
 		}
 	})
 
@@ -826,47 +822,67 @@ func (c *Content) handleDuplicateDocumentNoConfirm(ctx context.Context, row, col
 	c.state.AppendDoc(duplicatedDoc)
 	c.updateContentBasedOnState(ctx)
 
-	if row == c.table.GetRowCount() {
-		c.table.Select(row-1, col)
-	} else {
-		c.table.Select(row, col)
-	}
+	c.table.Select(row, col)
+
 	return nil
 }
 
 func (c *Content) handleDeleteDocument(ctx context.Context, row, col int) *tcell.EventKey {
-	doc, err := c.getDocumentBasedOnView(row, col)
-	if err != nil {
-		modal.ShowError(c.App.Pages, "Error deleting document", err)
-		return nil
-	}
-	objectId, err := mongo.GetIDFromJSON(doc)
-	if err != nil {
-		modal.ShowError(c.App.Pages, "Error deleting document", err)
-	}
+	var idsToDelete []any
+	sRows := c.table.GetSelectedRows()
+	msg := "Are you sure you want to delete [blue]"
+	if len(sRows) > 0 {
+		for _, sRow := range sRows {
+			doc, err := c.getDocumentBasedOnView(sRow, col)
+			if err != nil {
+				modal.ShowError(c.App.Pages, "Error getting document by row and col", err)
+				return nil
+			}
+			objectId, err := mongo.GetIDFromJSON(doc)
+			if err != nil {
+				modal.ShowError(c.App.Pages, "Error parsing document", err)
+			}
+			idsToDelete = append(idsToDelete, objectId)
+			c.confirmModal.SetText(fmt.Sprintf("%s%d[-] documents?", msg, len(idsToDelete)))
+		}
 
-	stringifyId := mongo.StringifyId(objectId)
+	} else {
+		doc, err := c.getDocumentBasedOnView(row, col)
+		if err != nil {
+			modal.ShowError(c.App.Pages, "Error getting document by row and col", err)
+			return nil
+		}
+		objectId, err := mongo.GetIDFromJSON(doc)
+		if err != nil {
+			modal.ShowError(c.App.Pages, "Error parsing document", err)
+			return nil
+		}
+		idsToDelete = append(idsToDelete, objectId)
+		c.confirmModal.SetText(fmt.Sprintf("%s1[-] document?", msg))
+	}
 
 	c.confirmModal.SetConfirmButtonLabel("Delete")
-	c.confirmModal.SetText("Are you sure you want to delete document of id: [blue]" + stringifyId)
 	c.confirmModal.SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 		defer c.App.Pages.RemovePage(c.confirmModal.GetIdentifier())
 		if buttonLabel == "Cancel" {
 			return
 		}
 		if buttonLabel == "Delete" {
-			err = c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, objectId)
-			if err != nil {
-				modal.ShowError(c.App.Pages, "Error deleting document", err)
-				return
+			for _, toDelete := range idsToDelete {
+				err := c.Dao.DeleteDocument(ctx, c.state.Db, c.state.Coll, toDelete)
+				if err != nil {
+					modal.ShowError(c.App.Pages, "Error deleting document", err)
+					return
+				}
+				c.state.DeleteDoc(toDelete)
 			}
-			c.state.DeleteDoc(objectId)
 		}
 
+		c.table.ClearSelection()
 		c.updateContentBasedOnState(ctx)
 
-		if row == c.table.GetRowCount() {
-			c.table.Select(row-1, col)
+		if row >= c.table.GetRowCount() {
+			c.table.Select(row-len(idsToDelete), col)
 		} else {
 			c.table.Select(row, col)
 		}
