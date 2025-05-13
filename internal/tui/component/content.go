@@ -16,6 +16,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -241,10 +242,10 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return c.handleShowQueryOptions(ctx)
 
 		// TODO: use this in multiple delete, think of other usage
-		// case k.Contains(k.Content.MultipleSelect, event.Name()):
-		// 	return c.handleMultipleSelect(row)
-		// case k.Contains(k.Content.ClearSelection, event.Name()):
-		// 	return c.handleClearSelection()
+		case k.Contains(k.Content.MultipleSelect, event.Name()):
+			return c.handleMultipleSelect(row)
+		case k.Contains(k.Content.ClearSelection, event.Name()):
+			return c.handleClearSelection()
 		case k.Contains(k.Content.CopyHighlight, event.Name()):
 			return c.handleCopyLine(row, col)
 		case k.Contains(k.Content.CopyDocument, event.Name()):
@@ -977,10 +978,10 @@ func (c *Content) handlePreviousPage(ctx context.Context) *tcell.EventKey {
 	return nil
 }
 
-// func (c *Content) handleMultipleSelect(row int) *tcell.EventKey {
-// 	c.table.ToggleRowSelection(row)
-// 	return nil
-// }
+func (c *Content) handleMultipleSelect(row int) *tcell.EventKey {
+	c.table.ToggleRowSelection(row)
+	return nil
+}
 
 func (c *Content) handleClearSelection() *tcell.EventKey {
 	c.table.ClearSelection()
