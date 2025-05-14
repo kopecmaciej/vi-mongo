@@ -93,9 +93,8 @@ type (
 		HideColumn                 Key `json:"hideColumn"`
 		ResetHiddenColumns         Key `json:"resetHiddenColumns"`
 		ToggleQueryOptions         Key `json:"toggleQueryOptions"`
-
-		// MultipleSelect    Key      `json:"multipleSelect"`
-		// ClearSelection   Key      `json:"clearSelection"`
+		MultipleSelect             Key `json:"multipleSelect"`
+		ClearSelection             Key `json:"clearSelection"`
 	}
 
 	QueryBar struct {
@@ -271,14 +270,14 @@ func (k *KeyBindings) loadDefaults() {
 			Keys:        []string{"Alt+d"},
 			Description: "Delete without confirmation",
 		},
-		// MultipleSelect: Key{
-		// 	Runes:       []string{"v"},
-		// 	Description: "Multiple select",
-		// },
-		// ClearSelection: Key{
-		// 	Runes:       []string{"C"},
-		// 	Description: "Clear selection",
-		// },
+		MultipleSelect: Key{
+			Runes:       []string{"V"},
+			Description: "Multiple select",
+		},
+		ClearSelection: Key{
+			Keys:        []string{"Esc"},
+			Description: "Clear selection",
+		},
 		CopyHighlight: Key{
 			Runes:       []string{"c"},
 			Description: "Copy highlighted",
