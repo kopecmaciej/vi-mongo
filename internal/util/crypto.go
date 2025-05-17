@@ -34,22 +34,17 @@ func GenerateEncryptionKey() (string, error) {
 func PrintEncryptionKeyInstructions() {
 	key, err := GenerateEncryptionKey()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error generating encryption key: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Failed to generate encryption key: %v\n", err)
 		return
 	}
 
-	fmt.Println("Generated encryption key for vi-mongo:")
+	fmt.Println("Encryption key successfully generated for vi-mongo:")
 	fmt.Println(key)
-	fmt.Println("\nPlease set this key as a permanent environment variable:")
+	fmt.Println("\nPlease store this key securely using one of the following methods:")
 
-	fmt.Println("\n# Bash (add to ~/.bashrc):")
-	fmt.Printf("echo 'export VI_MONGO_KEY=%s' >> ~/.bashrc && source ~/.bashrc\n", key)
-
-	fmt.Println("\n# Zsh (add to ~/.zshrc):")
-	fmt.Printf("echo 'export VI_MONGO_KEY=%s' >> ~/.zshrc && source ~/.zshrc\n", key)
-
-	fmt.Println("\n# Fish (add to ~/.config/fish/config.fish):")
-	fmt.Printf("echo 'set -x VI_MONGO_KEY %s' >> ~/.config/fish/config.fish && source ~/.config/fish/config.fish\n", key)
+	fmt.Println("- Set it as an environment variable: VI_MONGO_SECRET_KEY")
+	fmt.Println("- Save it to a file and reference the path in the config file")
+	fmt.Println("  or use the CLI option: vi-mongo --secret-key=/path/to/key")
 }
 
 func GetEncryptionKey() string {

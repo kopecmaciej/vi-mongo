@@ -61,6 +61,7 @@ type Config struct {
 	CurrentConnection  string        `yaml:"currentConnection"`
 	Connections        []MongoConfig `yaml:"connections"`
 	Styles             StylesConfig  `yaml:"styles"`
+	SecretKeyPath      *string       `yaml:"secretKeyPath,omitempty"`
 }
 
 // LoadConfig loads the config file

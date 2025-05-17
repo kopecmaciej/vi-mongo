@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"strings"
 
 	"fmt"
 
@@ -21,6 +22,7 @@ var (
 	connectionPage  bool
 	connectionName  string
 	listConnections bool
+	secretKeyPath   string
 	rootCmd         = &cobra.Command{
 		Use:   "vi-mongo",
 		Short: "MongoDB TUI client",
@@ -47,6 +49,7 @@ func init() {
 	rootCmd.Flags().BoolVarP(&connectionPage, "connection-page", "p", false, "Show connection page on startup")
 	rootCmd.Flags().StringVarP(&connectionName, "connection-name", "n", "", "Connect to a specific MongoDB connection by name")
 	rootCmd.Flags().BoolVarP(&listConnections, "connection-list", "l", false, "List all available connections")
+	rootCmd.Flags().StringVar(&secretKeyPath, "secret-key-path", "", "Path to the encryption key file")
 }
 
 func runApp(cmd *cobra.Command, args []string) {
@@ -103,6 +106,17 @@ func runApp(cmd *cobra.Command, args []string) {
 				fmt.Printf("Error: Connection '%s' not found.\n", connectionName)
 				fmt.Println("Use --list or -l to see available connections.")
 				os.Exit(1)
+			}
+		case "secret-key-path":
+			if secretKeyPath != "" {
+				keyBytes, err := os.ReadFile(secretKeyPath)
+				if err != nil {
+					log.Fatal().Err(err).Msgf("Failed to read encryption key from %s", secretKeyPath)
+					os.Exit(1)
+				}
+				key := strings.TrimSpace(string(keyBytes))
+				cfg.SecretKeyPath = &key
+				log.Info().Msg("Encryption key loaded from file")
 			}
 		}
 	})
