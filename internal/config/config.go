@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -226,7 +227,7 @@ func (c *Config) DeleteConnection(name string) error {
 	for i, connection := range c.Connections {
 		if connection.Name == name {
 			connection = MongoConfig{}
-			c.Connections = append(c.Connections[:i], c.Connections[i+1:]...)
+			c.Connections = slices.Delete(c.Connections, i, i+1)
 		}
 	}
 
