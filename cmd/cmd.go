@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"os"
-	"strings"
 
 	"fmt"
 
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/tui"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -15,15 +15,15 @@ import (
 )
 
 var (
-	cfgFile         string
-	showVersion     bool
-	debug           bool
-	welcomePage     bool
-	connectionPage  bool
-	connectionName  string
-	listConnections bool
-	secretKeyPath   string
-	rootCmd         = &cobra.Command{
+	cfgFile           string
+	showVersion       bool
+	debug             bool
+	welcomePage       bool
+	connectionPage    bool
+	connectionName    string
+	listConnections   bool
+	encryptionKeyPath string
+	rootCmd           = &cobra.Command{
 		Use:   "vi-mongo",
 		Short: "MongoDB TUI client",
 		Long:  `A Terminal User Interface (TUI) client for MongoDB`,
@@ -49,7 +49,8 @@ func init() {
 	rootCmd.Flags().BoolVarP(&connectionPage, "connection-page", "p", false, "Show connection page on startup")
 	rootCmd.Flags().StringVarP(&connectionName, "connection-name", "n", "", "Connect to a specific MongoDB connection by name")
 	rootCmd.Flags().BoolVarP(&listConnections, "connection-list", "l", false, "List all available connections")
-	rootCmd.Flags().StringVar(&secretKeyPath, "secret-key-path", "", "Path to the encryption key file")
+	rootCmd.Flags().StringVar(&encryptionKeyPath, "key-path", "", "Path to the encryption key file")
+	rootCmd.Flags().Bool("gen-key", false, "Generate valid encryption key")
 }
 
 func runApp(cmd *cobra.Command, args []string) {
@@ -107,17 +108,25 @@ func runApp(cmd *cobra.Command, args []string) {
 				fmt.Println("Use --list or -l to see available connections.")
 				os.Exit(1)
 			}
-		case "secret-key-path":
-			if secretKeyPath != "" {
-				keyBytes, err := os.ReadFile(secretKeyPath)
+		case "gen-key":
+			util.PrintEncryptionKeyInstructions()
+			os.Exit(0)
+		case "key-path":
+			if encryptionKeyPath != "" {
+				_, err := os.ReadFile(encryptionKeyPath)
 				if err != nil {
-					log.Fatal().Err(err).Msgf("Failed to read encryption key from %s", secretKeyPath)
+					fmt.Printf("\nFailed to read encryption key from %s", encryptionKeyPath)
 					os.Exit(1)
 				}
-				key := strings.TrimSpace(string(keyBytes))
-				cfg.SecretKeyPath = &key
-				log.Info().Msg("Encryption key loaded from file")
+				cfg.EncryptionKeyPath = &encryptionKeyPath
+				err = cfg.UpdateConfig()
+				if err != nil {
+					fmt.Println("\nFailed to save path to config file")
+					os.Exit(1)
+				}
+				fmt.Println("Encryption key file path properly saved")
 			}
+			os.Exit(0)
 		}
 	})
 

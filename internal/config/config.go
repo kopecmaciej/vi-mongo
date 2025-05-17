@@ -61,7 +61,8 @@ type Config struct {
 	CurrentConnection  string        `yaml:"currentConnection"`
 	Connections        []MongoConfig `yaml:"connections"`
 	Styles             StylesConfig  `yaml:"styles"`
-	SecretKeyPath      *string       `yaml:"secretKeyPath,omitempty"`
+	EncryptionKeyPath  *string       `yaml:"encryptionKeyPath,omitempty"`
+	EncryptionKey      *string       `yaml:"-"`
 }
 
 // LoadConfig loads the config file
@@ -243,6 +244,24 @@ func (c *Config) DeleteConnection(name string) error {
 	}
 
 	return os.WriteFile(configPath, updatedConfig, 0644)
+}
+
+func (c *Config) LoadEncryptionKey() error {
+	if c.EncryptionKeyPath != nil {
+		key, err := os.ReadFile(*c.EncryptionKeyPath)
+		if err != nil {
+			return fmt.Errorf("failed to load encryption key: %s", err)
+		}
+		stringKey := string(key)
+		c.EncryptionKey = &stringKey
+	} else {
+		key, err := util.GetEncryptionKey()
+		if err != nil {
+			return err
+		}
+		c.EncryptionKey = &key
+	}
+	return nil
 }
 
 // GetUri returns the URI or builds it from the config

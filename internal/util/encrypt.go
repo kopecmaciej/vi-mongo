@@ -5,11 +5,10 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"os"
-
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -47,21 +46,19 @@ func PrintEncryptionKeyInstructions() {
 	fmt.Println("  or use the CLI option: vi-mongo --secret-key=/path/to/key")
 }
 
-func GetEncryptionKey() string {
+func GetEncryptionKey() (string, error) {
 	key := os.Getenv(EncryptionKeyEnv)
 	if key == "" {
-		log.Warn().Msg("No encryption key found in environment variables, using default key")
-		return DefaultEncryptionKey
+		return "", errors.New("No encryption key found in environment variables")
 	}
-	return key
+	return key, nil
 }
 
-func EncryptPassword(password string) (string, error) {
+func EncryptPassword(password string, key string) (string, error) {
 	if password == "" {
 		return "", nil
 	}
 
-	key := GetEncryptionKey()
 	block, err := aes.NewCipher(createKey(key))
 	if err != nil {
 		return "", fmt.Errorf("failed to create cipher: %w", err)
@@ -81,12 +78,11 @@ func EncryptPassword(password string) (string, error) {
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-func DecryptPassword(encryptedPassword string) (string, error) {
+func DecryptPassword(encryptedPassword string, key string) (string, error) {
 	if encryptedPassword == "" {
 		return "", nil
 	}
 
-	key := GetEncryptionKey()
 	ciphertext, err := base64.StdEncoding.DecodeString(encryptedPassword)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode encrypted password: %w", err)
