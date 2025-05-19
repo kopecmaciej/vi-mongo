@@ -14,7 +14,7 @@ import (
 )
 
 // ParseBsonDocument converts a map to a JSON string
-func ParseBsonDocument(document map[string]interface{}) (string, error) {
+func ParseBsonDocument(document map[string]any) (string, error) {
 	// convert id to oid
 	converted, err := ParseBsonDocuments([]primitive.M{document})
 	if err != nil {
@@ -62,20 +62,20 @@ func sortDocumentKeys(doc primitive.M) primitive.D {
     return sortedDoc
 }
 
-func sortValue(value interface{}) interface{} {
+func sortValue(value any) any {
     switch v := value.(type) {
     case primitive.M:
         return sortDocumentKeys(v)
-    case []interface{}:
+    case []any:
         return sortArray(v)
     case primitive.A:
-        return sortArray([]interface{}(v))
+        return sortArray([]any(v))
     default:
         return value
     }
 }
 
-func sortArray(arr []interface{}) primitive.A {
+func sortArray(arr []any) primitive.A {
     sorted := make(primitive.A, len(arr))
     for i, v := range arr {
         sorted[i] = sortValue(v)
@@ -87,9 +87,9 @@ func sortArray(arr []interface{}) primitive.A {
 
 // ParseStringQuery transforms a query string with ObjectID into a filter map compatible with MongoDB's BSON.
 // If keys are not quoted, this function will quote them.
-func ParseStringQuery(query string) (map[string]interface{}, error) {
+func ParseStringQuery(query string) (map[string]any, error) {
 	if query == "" {
-		return map[string]interface{}{}, nil
+		return map[string]any{}, nil
 	}
 
 	query = util.QuoteUnquotedKeys(query)

@@ -52,7 +52,7 @@ func GetSortedKeysWithTypes(documents []primitive.M, typeColor string) []string 
 }
 
 // StringifyMongoValueByType converts a value to a string
-func StringifyMongoValueByType(v interface{}) string {
+func StringifyMongoValueByType(v any) string {
 	switch t := v.(type) {
 	case string:
 		return t
@@ -66,7 +66,7 @@ func StringifyMongoValueByType(v interface{}) string {
 		return t.Hex()
 	case primitive.DateTime:
 		return t.Time().UTC().Format(time.RFC3339)
-	case primitive.A, primitive.D, primitive.M, map[string]interface{}, []interface{}:
+	case primitive.A, primitive.D, primitive.M, map[string]any, []any:
 		b, _ := json.Marshal(t)
 		return string(b)
 	case primitive.E:
@@ -87,7 +87,7 @@ func StringifyMongoValueByType(v interface{}) string {
 }
 
 // Helper function to determine MongoDB type
-func GetMongoType(v interface{}) string {
+func GetMongoType(v any) string {
 	switch v.(type) {
 	case string:
 		return TypeString

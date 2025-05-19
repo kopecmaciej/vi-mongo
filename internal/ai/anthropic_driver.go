@@ -28,7 +28,7 @@ func (d *AnthropicDriver) SetSystemMessage(message string) {
 }
 
 func (d *AnthropicDriver) GetResponse(prompt string, model string) (string, error) {
-	requestBody, err := json.Marshal(map[string]interface{}{
+	requestBody, err := json.Marshal(map[string]any{
 		"model":      model,
 		"max_tokens": 1024,
 		"system":     d.systemMessage,

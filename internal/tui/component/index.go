@@ -246,7 +246,7 @@ func (i *Index) handleAddIndex() {
 		field := i.addForm.GetFormItem(formIdx).(*tview.InputField).GetText()
 		fieldType, _ := i.addForm.GetFormItem(formIdx + 1).(*tview.DropDown).GetCurrentOption()
 
-		var fieldValue interface{}
+		var fieldValue any
 		switch fieldType {
 		case 0:
 			fieldValue = 1

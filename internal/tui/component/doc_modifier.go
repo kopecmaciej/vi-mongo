@@ -61,7 +61,7 @@ func (d *DocModifier) Insert(ctx context.Context, db, coll string) (primitive.Ob
 }
 
 // Edit opens the editor with the document and saves it if it was changed
-func (d *DocModifier) Edit(ctx context.Context, db, coll string, _id interface{}, jsonDoc string) (string, error) {
+func (d *DocModifier) Edit(ctx context.Context, db, coll string, _id any, jsonDoc string) (string, error) {
 	updatedDocument, err := d.openEditor(jsonDoc)
 	if err != nil {
 		return "", err
@@ -144,7 +144,7 @@ func (d *DocModifier) DuplicateNoEditor(ctx context.Context, db, coll string, ra
 }
 
 // updateDocument saves the document to the database
-func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, _id interface{}, originalDoc, rawDocument string) error {
+func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, _id any, originalDoc, rawDocument string) error {
 	if rawDocument == "" {
 		return fmt.Errorf("document cannot be empty")
 	}
@@ -267,7 +267,7 @@ func (d *DocModifier) writeToTempFile(bufferJson bytes.Buffer) (*os.File, error)
 // removeField removes the specified field from a JSON string.
 func removeField(jsonStr, fieldToRemove string) (string, error) {
 	// Unmarshal the JSON into a map
-	var data map[string]interface{}
+	var data map[string]any
 	err := json.Unmarshal([]byte(jsonStr), &data)
 	if err != nil {
 		log.Error().Err(err).Msg("Error while unmarshalling JSON")

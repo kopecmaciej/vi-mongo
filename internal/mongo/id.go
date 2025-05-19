@@ -9,8 +9,8 @@ import (
 )
 
 // GetIDFromJSON returns the _id field of a JSON string as a primitive.ObjectID.
-func GetIDFromJSON(jsonString string) (interface{}, error) {
-	var doc map[string]interface{}
+func GetIDFromJSON(jsonString string) (any, error) {
+	var doc map[string]any
 	err := json.Unmarshal([]byte(jsonString), &doc)
 	if err != nil {
 		log.Error().Err(err).Msg("Error unmarshaling JSON")
@@ -27,18 +27,18 @@ func GetIDFromJSON(jsonString string) (interface{}, error) {
 }
 
 // getIdFromDocument returns the _id field of a document as a primitive.ObjectID
-func getIdFromDocument(document map[string]interface{}) (interface{}, error) {
+func getIdFromDocument(document map[string]any) (any, error) {
 	rawId, ok := document["_id"]
 	if !ok {
 		return nil, fmt.Errorf("document has no _id")
 	}
-	var id interface{}
+	var id any
 	switch typedId := rawId.(type) {
 	case primitive.ObjectID:
 		return typedId, nil
 	case string:
 		id = typedId
-	case map[string]interface{}:
+	case map[string]any:
 		oidString, ok := typedId["$oid"].(string)
 		if !ok {
 			return nil, fmt.Errorf("invalid $oid field in _id")
@@ -56,7 +56,7 @@ func getIdFromDocument(document map[string]interface{}) (interface{}, error) {
 }
 
 // StringifyId converts the _id field of a document to a string
-func StringifyId(id interface{}) string {
+func StringifyId(id any) string {
 	switch v := id.(type) {
 	case primitive.ObjectID:
 		return v.Hex()

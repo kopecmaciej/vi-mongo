@@ -19,7 +19,7 @@ type (
 	// Messages is a list of messages that can be sent to the manager
 	Message struct {
 		Type MessageType
-		Data interface{}
+		Data any
 	}
 
 	// EventMsg is a wrapper for tcell.EventKey that also contains

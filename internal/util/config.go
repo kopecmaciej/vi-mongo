@@ -17,7 +17,7 @@ const (
 )
 
 // MergeConfigs merges the loaded config with the default config
-func MergeConfigs(loaded, defaultConfig interface{}) {
+func MergeConfigs(loaded, defaultConfig any) {
 	loadedVal := reflect.ValueOf(loaded).Elem()
 	defaultVal := reflect.ValueOf(defaultConfig).Elem()
 	mergeConfigsRecursive(loadedVal, defaultVal)

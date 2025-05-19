@@ -35,7 +35,7 @@ func TestGetValueByType(t *testing.T) {
 
 	testCases := []struct {
 		name     string
-		input    interface{}
+		input    any
 		expected string
 	}{
 		{"String", "test", "test"},
@@ -61,7 +61,7 @@ func TestGetValueByType(t *testing.T) {
 func TestGetMongoType(t *testing.T) {
 	testCases := []struct {
 		name     string
-		input    interface{}
+		input    any
 		expected string
 	}{
 		{"String", "test", TypeString},

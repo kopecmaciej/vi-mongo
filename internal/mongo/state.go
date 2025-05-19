@@ -31,7 +31,7 @@ func (c *CollectionState) GetAllDocs() []primitive.M {
 	return docsCopy
 }
 
-func (c *CollectionState) GetDocById(id interface{}) primitive.M {
+func (c *CollectionState) GetDocById(id any) primitive.M {
 	for _, doc := range c.docs {
 		if reflect.TypeOf(doc["_id"]) == reflect.TypeOf(id) {
 			if doc["_id"] == id {
@@ -42,7 +42,7 @@ func (c *CollectionState) GetDocById(id interface{}) primitive.M {
 	return nil
 }
 
-func (c *CollectionState) GetJsonDocById(id interface{}) (string, error) {
+func (c *CollectionState) GetJsonDocById(id any) (string, error) {
 	doc := c.GetDocById(id)
 	jsoned, err := ParseBsonDocument(doc)
 	if err != nil {
@@ -145,7 +145,7 @@ func (c *CollectionState) AppendDoc(doc primitive.M) {
 	c.Count++
 }
 
-func (c *CollectionState) DeleteDoc(id interface{}) {
+func (c *CollectionState) DeleteDoc(id any) {
 	for i, doc := range c.docs {
 		if doc["_id"] == id {
 			c.docs = append(c.docs[:i], c.docs[i+1:]...)

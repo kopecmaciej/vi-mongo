@@ -439,10 +439,10 @@ func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, error) {
 func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 	uniqueKeys := make(map[string]bool)
 
-	var addKeys func(string, interface{})
-	addKeys = func(prefix string, value interface{}) {
+	var addKeys func(string, any)
+	addKeys = func(prefix string, value any) {
 		switch v := value.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			for key, val := range v {
 				fullKey := key
 				if prefix != "" {
@@ -523,7 +523,7 @@ func (c *Content) renderView(documents []primitive.M) {
 	}
 }
 
-func (c *Content) jsonViewDocument(doc string, row *int, _id interface{}) {
+func (c *Content) jsonViewDocument(doc string, row *int, _id any) {
 	indentedJson, err := mongo.IndentJson(doc)
 	if err != nil {
 		return
@@ -665,7 +665,7 @@ func (c *Content) getDocumentBasedOnView(row, col int) (string, error) {
 }
 
 // get document id based on view
-func (c *Content) getDocumentId(row, col int) interface{} {
+func (c *Content) getDocumentId(row, col int) any {
 	switch c.currentView {
 	case JsonView:
 		forWithReference := c.table.GetCellAboveThatMatch(row, col, func(cell *tview.TableCell) bool {

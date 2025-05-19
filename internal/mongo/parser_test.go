@@ -18,31 +18,31 @@ func TestParseStringQuery(t *testing.T) {
 	cases := []struct {
 		name     string
 		input    string
-		expected map[string]interface{}
+		expected map[string]any
 		hasError bool
 	}{
 		{
 			name:     "Empty input",
 			input:    "",
-			expected: map[string]interface{}{},
+			expected: map[string]any{},
 			hasError: false,
 		},
 		{
 			name:     "Valid input with ObjectID",
 			input:    `{_id: ObjectID("507f1f77bcf86cd799439011")}`,
-			expected: map[string]interface{}{"_id": objectID},
+			expected: map[string]any{"_id": objectID},
 			hasError: false,
 		},
 		{
 			name:     "Multiple fields with nested document",
 			input:    `{ _id: ObjectID("507f1f77bcf86cd799439011"), user: { name: "John", age: 30 } }`,
-			expected: map[string]interface{}{"_id": objectID, "user": primitive.M{"name": "John", "age": int32(30)}},
+			expected: map[string]any{"_id": objectID, "user": primitive.M{"name": "John", "age": int32(30)}},
 			hasError: false,
 		},
 		{
 			name:     "Array and date",
 			input:    `{ tags: ["mongodb", "database"], createdAt: { $date: "2023-04-15T12:00:00Z" } }`,
-			expected: map[string]interface{}{"tags": primitive.A{"mongodb", "database"}, "createdAt": primitive.NewDateTimeFromTime(time.Date(2023, 4, 15, 12, 0, 0, 0, time.UTC))},
+			expected: map[string]any{"tags": primitive.A{"mongodb", "database"}, "createdAt": primitive.NewDateTimeFromTime(time.Date(2023, 4, 15, 12, 0, 0, 0, time.UTC))},
 			hasError: false,
 		},
 		{
@@ -113,7 +113,7 @@ func TestParseBsonDocument(t *testing.T) {
 	objectID, err := primitive.ObjectIDFromHex("507f1f77bcf86cd799439011")
 	assert.NoError(t, err, "Failed to create ObjectID for testing")
 
-	input := map[string]interface{}{
+	input := map[string]any{
 		"_id":  objectID,
 		"name": "Mark Twain",
 		"age":  60,
