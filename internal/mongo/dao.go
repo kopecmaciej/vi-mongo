@@ -119,7 +119,11 @@ func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter 
 		log.Error().Err(err).Str("db", state.Db).Str("collection", state.Coll).Msg("Failed to find documents")
 		return nil, fmt.Errorf("failed to find documents: %w", err)
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			log.Error().Err(err).Msg("Failed to close cursor")
+		}
+	}()
 
 	var documents []primitive.M
 	err = cursor.All(ctx, &documents)
@@ -156,7 +160,7 @@ func (d *Dao) GetDocument(ctx context.Context, db string, coll string, id primit
 	return document, nil
 }
 
-func (d *Dao) InsetDocument(ctx context.Context, db string, coll string, document primitive.M) (interface{}, error) {
+func (d *Dao) InsetDocument(ctx context.Context, db string, coll string, document primitive.M) (any, error) {
 	res, err := d.client.Database(db).Collection(coll).InsertOne(ctx, document)
 	if err != nil {
 		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Failed to insert document")
@@ -168,7 +172,7 @@ func (d *Dao) InsetDocument(ctx context.Context, db string, coll string, documen
 	return res.InsertedID, nil
 }
 
-func (d *Dao) UpdateDocument(ctx context.Context, db string, coll string, id interface{}, originalDoc, document primitive.M) error {
+func (d *Dao) UpdateDocument(ctx context.Context, db string, coll string, id any, originalDoc, document primitive.M) error {
 	setOps := bson.M{}
 	unsetOps := bson.M{}
 
@@ -212,7 +216,7 @@ func (d *Dao) UpdateDocument(ctx context.Context, db string, coll string, id int
 	return nil
 }
 
-func (d *Dao) DeleteDocument(ctx context.Context, db string, coll string, id interface{}) error {
+func (d *Dao) DeleteDocument(ctx context.Context, db string, coll string, id any) error {
 	deleted, err := d.client.Database(db).Collection(coll).DeleteOne(ctx, primitive.M{"_id": id})
 	if err != nil {
 		log.Error().Err(err).Str("db", db).Str("collection", coll).Interface("id", id).Msg("Failed to delete document")
@@ -280,7 +284,7 @@ func (d *Dao) ForceClose(ctx context.Context) error {
 	return nil
 }
 
-func (d *Dao) runAdminCommand(ctx context.Context, key string, value interface{}) (primitive.M, error) {
+func (d *Dao) runAdminCommand(ctx context.Context, key string, value any) (primitive.M, error) {
 	results := primitive.M{}
 	command := primitive.D{{Key: key, Value: value}}
 
@@ -301,7 +305,11 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, coll string) ([]IndexIn
 		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error fetching indexes")
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			log.Error().Err(err).Msg("Failed to close cursor")
+		}
+	}()
 
 	var indexes []IndexInfo
 	for cursor.Next(ctx) {
@@ -370,7 +378,11 @@ func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (
 		log.Error().Err(err).Str("db", db).Str("collection", collection).Msg("Error getting indexes")
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			log.Error().Err(err).Msg("Failed to close cursor")
+		}
+	}()
 
 	var collStats bson.M
 	err = d.client.Database(db).RunCommand(ctx, bson.D{{Key: "collStats", Value: collection}}).Decode(&collStats)
