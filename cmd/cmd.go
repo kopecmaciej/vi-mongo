@@ -77,6 +77,11 @@ func runApp(cmd *cobra.Command, args []string) {
 		log.Fatal().Err(err).Msg("Error loading config")
 		os.Exit(1)
 	}
+	err = cfg.LoadEncryptionKey()
+	if err != nil {
+		log.Fatal().Err(err).Msg("Error loading encryption key")
+		os.Exit(1)
+	}
 
 	debug := false
 

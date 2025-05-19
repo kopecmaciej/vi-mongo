@@ -255,11 +255,10 @@ func (c *Config) LoadEncryptionKey() error {
 		stringKey := string(key)
 		c.EncryptionKey = &stringKey
 	} else {
-		key, err := util.GetEncryptionKey()
-		if err != nil {
-			return err
+		key := util.GetEncryptionKey()
+		if key != "" {
+			c.EncryptionKey = &key
 		}
-		c.EncryptionKey = &key
 	}
 	return nil
 }

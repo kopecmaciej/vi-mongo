@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -46,12 +45,8 @@ func PrintEncryptionKeyInstructions() {
 	fmt.Println("  or use the CLI option: vi-mongo --secret-key=/path/to/key")
 }
 
-func GetEncryptionKey() (string, error) {
-	key := os.Getenv(EncryptionKeyEnv)
-	if key == "" {
-		return "", errors.New("No encryption key found in environment variables")
-	}
-	return key, nil
+func GetEncryptionKey() string {
+	return os.Getenv(EncryptionKeyEnv)
 }
 
 func EncryptPassword(password string, key string) (string, error) {
