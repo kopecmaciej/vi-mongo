@@ -4,7 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
@@ -25,7 +25,7 @@ func GenerateEncryptionKey() (string, error) {
 		return "", fmt.Errorf("failed to generate random key: %w", err)
 	}
 
-	encodedKey := base64.StdEncoding.EncodeToString(key)
+	encodedKey := hex.EncodeToString(key)
 	return encodedKey, nil
 }
 
@@ -49,12 +49,18 @@ func GetEncryptionKey() string {
 	return os.Getenv(EncryptionKeyEnv)
 }
 
-func EncryptPassword(password string, key string) (string, error) {
+// EncryptPassword encrypts the given password using the provided hex-encoded key.
+func EncryptPassword(password string, hexKey string) (string, error) {
 	if password == "" {
 		return "", nil
 	}
 
-	block, err := aes.NewCipher(createKey(key))
+	keyBytes, err := hex.DecodeString(hexKey)
+	if err != nil {
+		return "", fmt.Errorf("invalid hex key: %w", err)
+	}
+
+	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
 		return "", fmt.Errorf("failed to create cipher: %w", err)
 	}
@@ -70,20 +76,26 @@ func EncryptPassword(password string, key string) (string, error) {
 	}
 
 	ciphertext := gcm.Seal(nonce, nonce, []byte(password), nil)
-	return base64.StdEncoding.EncodeToString(ciphertext), nil
+	return hex.EncodeToString(ciphertext), nil
 }
 
-func DecryptPassword(encryptedPassword string, key string) (string, error) {
-	if encryptedPassword == "" {
+// DecryptPassword decrypts the hex-encoded encrypted password using the provided hex-encoded key.
+func DecryptPassword(encryptedHex string, hexKey string) (string, error) {
+	if encryptedHex == "" {
 		return "", nil
 	}
 
-	ciphertext, err := base64.StdEncoding.DecodeString(encryptedPassword)
+	ciphertext, err := hex.DecodeString(encryptedHex)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode encrypted password: %w", err)
 	}
 
-	block, err := aes.NewCipher(createKey(key))
+	keyBytes, err := hex.DecodeString(hexKey)
+	if err != nil {
+		return "", fmt.Errorf("invalid hex key: %w", err)
+	}
+
+	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
 		return "", fmt.Errorf("failed to create cipher: %w", err)
 	}
@@ -104,10 +116,4 @@ func DecryptPassword(encryptedPassword string, key string) (string, error) {
 	}
 
 	return string(plaintext), nil
-}
-
-func createKey(key string) []byte {
-	k := make([]byte, 32)
-	copy(k, []byte(key))
-	return k
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	"github.com/adrg/xdg"
 	"github.com/rs/zerolog/log"
@@ -159,4 +160,54 @@ func GetConfigDir() (string, error) {
 		return "", err
 	}
 	return configPath, nil
+}
+
+type MongoConfig struct {
+	Host     string
+	Port     string
+	DB       string
+	Password string
+}
+
+func ParseMongoUri(uri string) (config MongoConfig, err error) {
+	if !strings.HasPrefix(uri, "mongodb://") && !strings.HasPrefix(uri, "mongodb+srv://") {
+		return MongoConfig{}, fmt.Errorf("invalid MongoDB URI prefix")
+	}
+
+	trimURI := strings.TrimPrefix(uri, "mongodb://")
+	trimURI = strings.TrimPrefix(trimURI, "mongodb+srv://")
+
+	splitURI := strings.Split(trimURI, "@")
+	if len(splitURI) > 1 {
+		// Extract credentials part
+		credentials := strings.Split(splitURI[0], ":")
+		if len(credentials) > 1 {
+			config.Password = credentials[1]
+		}
+		trimURI = splitURI[1]
+	} else {
+		trimURI = splitURI[0]
+	}
+
+	if strings.Contains(trimURI, "?") {
+		trimURI = strings.Split(trimURI, "?")[0]
+	}
+
+	splitDB := strings.Split(trimURI, "/")
+	if len(splitDB) > 1 {
+		config.DB = splitDB[1]
+		trimURI = splitDB[0]
+	}
+
+	hosts := strings.Split(trimURI, ",")
+	hostPort := strings.Split(hosts[0], ":")
+
+	config.Host = hostPort[0]
+	if len(hostPort) > 1 {
+		config.Port = hostPort[1]
+	} else {
+		config.Port = "27017"
+	}
+
+	return config, nil
 }

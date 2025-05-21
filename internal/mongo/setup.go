@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kopecmaciej/vi-mongo/internal/config"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -26,6 +27,14 @@ func (m *Client) Connect() error {
 	defer cancel()
 
 	uri := m.Config.GetUri()
+	if m.Config.Password != "" && config.EncryptionKey != "" {
+		password, err := util.DecryptPassword(m.Config.Password, config.EncryptionKey)
+		if err != nil {
+			return err
+		}
+		uri = util.RestorePasswordInUri(uri, password)
+
+	}
 	opts := options.Client().ApplyURI(uri)
 	client, err := mongo.Connect(ctx, opts)
 	if err != nil {

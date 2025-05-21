@@ -3,6 +3,7 @@ package page
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
@@ -256,7 +257,7 @@ func (c *Connection) saveButtonFunc() {
 		modal.ShowError(c.App.Pages, "Timeout must be a number", err)
 		return
 	}
-	if url != "mongodb://" {
+	if url != "mongodb://" && strings.Trim(url, " ") != "" {
 		if name == "" {
 			name = url
 		}
