@@ -233,7 +233,7 @@ func (c *Config) AddConnectionFromUri(mongoConfig *MongoConfig) error {
 	}
 	mongoConfig.Port = intPort
 	mongoConfig.Database = parsedConf.DB
-	if parsedConf.Password != "" {
+	if parsedConf.Password != "" && EncryptionKey != "" {
 		mongoConfig.Password = parsedConf.Password
 		mongoConfig.Uri = mongoConfig.GetSafeUri()
 	}

@@ -10,6 +10,19 @@ import (
 	"os"
 )
 
+type EncryptionError struct {
+	Operation string
+	Err       error
+}
+
+func (e *EncryptionError) Error() string {
+	return fmt.Sprintf("encryption error during %s: %v", e.Operation, e.Err)
+}
+
+func (e *EncryptionError) Unwrap() error {
+	return e.Err
+}
+
 const (
 	EncryptionKeyEnv = "VI_MONGO_SECRET_KEY"
 
@@ -22,7 +35,7 @@ func GenerateEncryptionKey() (string, error) {
 	key := make([]byte, KeyLength)
 	_, err := rand.Read(key)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate random key: %w", err)
+		return "", &EncryptionError{Operation: "key generation", Err: err}
 	}
 
 	encodedKey := hex.EncodeToString(key)
@@ -57,22 +70,22 @@ func EncryptPassword(password string, hexKey string) (string, error) {
 
 	keyBytes, err := hex.DecodeString(hexKey)
 	if err != nil {
-		return "", fmt.Errorf("invalid hex key: %w", err)
+		return "", &EncryptionError{Operation: "key decoding", Err: err}
 	}
 
 	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
-		return "", fmt.Errorf("failed to create cipher: %w", err)
+		return "", &EncryptionError{Operation: "cipher creation", Err: err}
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return "", fmt.Errorf("failed to create GCM: %w", err)
+		return "", &EncryptionError{Operation: "GCM creation", Err: err}
 	}
 
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return "", fmt.Errorf("failed to generate nonce: %w", err)
+		return "", &EncryptionError{Operation: "nonce generation", Err: err}
 	}
 
 	ciphertext := gcm.Seal(nonce, nonce, []byte(password), nil)
@@ -87,32 +100,32 @@ func DecryptPassword(encryptedHex string, hexKey string) (string, error) {
 
 	ciphertext, err := hex.DecodeString(encryptedHex)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode encrypted password: %w", err)
+		return "", &EncryptionError{Operation: "decode encrypted password", Err: err}
 	}
 
 	keyBytes, err := hex.DecodeString(hexKey)
 	if err != nil {
-		return "", fmt.Errorf("invalid hex key: %w", err)
+		return "", &EncryptionError{Operation: "key decoding", Err: err}
 	}
 
 	block, err := aes.NewCipher(keyBytes)
 	if err != nil {
-		return "", fmt.Errorf("failed to create cipher: %w", err)
+		return "", &EncryptionError{Operation: "cipher creation", Err: err}
 	}
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return "", fmt.Errorf("failed to create GCM: %w", err)
+		return "", &EncryptionError{Operation: "GCM creation", Err: err}
 	}
 
 	if len(ciphertext) < gcm.NonceSize() {
-		return "", fmt.Errorf("ciphertext too short")
+		return "", &EncryptionError{Operation: "ciphertext validation", Err: fmt.Errorf("ciphertext too short")}
 	}
 
 	nonce, ciphertext := ciphertext[:gcm.NonceSize()], ciphertext[gcm.NonceSize():]
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return "", fmt.Errorf("failed to decrypt password: %w", err)
+		return "", &EncryptionError{Operation: "password decryption", Err: err}
 	}
 
 	return string(plaintext), nil

@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"os"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -10,6 +11,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/page"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
 )
 
@@ -132,28 +134,27 @@ func (a *App) connectToMongo() error {
 func (a *App) Render() {
 	switch {
 	case a.App.GetConfig().ShowWelcomePage:
-		if err := a.renderWelcome(); err != nil {
-			modal.ShowError(a.Pages, "Error while rendering welcome page", err)
-		}
+		a.renderWelcome()
 	case a.App.GetConfig().GetCurrentConnection() == nil, a.App.GetConfig().ShowConnectionPage:
-		if err := a.renderConnection(); err != nil {
-			modal.ShowError(a.Pages, "Error while rendering connection", err)
-		}
+		a.renderConnection()
 	default:
 		// we need to init main view after connection is established
 		// as it depends on the dao
-		if err := a.initAndRenderMain(); err != nil {
-			modal.ShowError(a.Pages, "Error while initializing main view", err)
-			return
-		}
+		a.initAndRenderMain()
 	}
 }
 
 // initAndRenderMain initializes and renders the main page
 // methods are combined as we need to establish connection first
-func (a *App) initAndRenderMain() error {
+func (a *App) initAndRenderMain() {
 	if err := a.connectToMongo(); err != nil {
-		return err
+		a.renderConnection()
+		if _, ok := err.(*util.EncryptionError); ok {
+			modal.ShowError(a.Pages, "Encryption error occurred", err)
+		} else {
+			modal.ShowError(a.Pages, "Error while connecting to mongodb", err)
+		}
+		return
 	}
 
 	// if main view is already initialized, we just update dao
@@ -161,50 +162,42 @@ func (a *App) initAndRenderMain() error {
 		a.main.UpdateDao(a.GetDao())
 	} else {
 		if err := a.main.Init(a.App); err != nil {
-			return err
+			log.Fatal().Err(err).Msg("Error while initializing main view")
+			os.Exit(1)
 		}
 	}
 
 	a.main.Render()
 	a.Pages.AddPage(a.main.GetIdentifier(), a.main, true, true)
-	return nil
 }
 
 // renderConnection renders the connection page
-func (a *App) renderConnection() error {
+func (a *App) renderConnection() {
 	a.connection.SetOnSubmitFunc(func() {
 		a.Pages.RemovePage(a.connection.GetIdentifier())
-		err := a.initAndRenderMain()
-		if err != nil {
-			a.Pages.AddPage(a.connection.GetIdentifier(), a.connection, true, true)
-			modal.ShowError(a.App.Pages, "Error while connecting to the database", err)
-		}
+		a.initAndRenderMain()
 	})
 
 	a.Pages.AddPage(a.connection.GetIdentifier(), a.connection, true, true)
 	a.connection.Render()
-	return nil
 }
 
 // renderWelcome renders the welcome page
 // it's initialized inside render function
 // as it's probalby won't be used very often
-func (a *App) renderWelcome() error {
+func (a *App) renderWelcome() {
 	welcome := page.NewWelcome()
 	if err := welcome.Init(a.App); err != nil {
-		return err
+		a.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
+		modal.ShowError(a.Pages, "Error while rendering welcome page", err)
+		return
 	}
 	welcome.SetOnSubmitFunc(func() {
 		a.Pages.RemovePage(welcome.GetIdentifier())
-		err := a.renderConnection()
-		if err != nil {
-			a.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
-			modal.ShowError(a.Pages, "Error while rendering connection page", err)
-		}
+		a.renderConnection()
 	})
 	a.Pages.AddPage(welcome.GetIdentifier(), welcome, true, true)
 	welcome.Render()
-	return nil
 }
 
 func (a *App) ShowStyleChangeModal() {
