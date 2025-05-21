@@ -26,8 +26,6 @@ func (e *EncryptionError) Unwrap() error {
 const (
 	EncryptionKeyEnv = "VI_MONGO_SECRET_KEY"
 
-	DefaultEncryptionKey = "vi-mongo-default-encryption-key-please-change"
-
 	KeyLength = 32 // AES-256
 )
 
