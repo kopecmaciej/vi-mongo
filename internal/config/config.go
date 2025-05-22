@@ -5,6 +5,7 @@ import (
 	"os"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
@@ -270,7 +271,7 @@ func (c *Config) LoadEncryptionKey() error {
 			return fmt.Errorf("failed to load encryption key: %s", err)
 		}
 		stringKey := string(key)
-		EncryptionKey = stringKey
+		EncryptionKey = strings.TrimSpace(stringKey)
 	} else {
 		key := util.GetEncryptionKey()
 		if key != "" {

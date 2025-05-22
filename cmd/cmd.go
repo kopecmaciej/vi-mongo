@@ -71,16 +71,9 @@ func runApp(cmd *cobra.Command, args []string) {
 		fmt.Printf("Version %s%s\n", version, resetColor)
 		os.Exit(0)
 	}
-
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Error loading config")
-		os.Exit(1)
-	}
-	err = cfg.LoadEncryptionKey()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Error loading encryption key")
-		os.Exit(1)
+		fatalf("loading config: %v", err)
 	}
 
 	debug := false
@@ -109,31 +102,29 @@ func runApp(cmd *cobra.Command, args []string) {
 				}
 			}
 			if !found {
-				fmt.Printf("Error: Connection '%s' not found.\n", connectionName)
-				fmt.Println("Use --list or -l to see available connections.")
-				os.Exit(1)
+				fatalf("Connection '%s' not found. Use --list or -l to see available connections.", connectionName)
 			}
 		case "gen-key":
 			util.PrintEncryptionKeyInstructions()
 			os.Exit(0)
 		case "key-path":
 			if encryptionKeyPath != "" {
-				_, err := os.ReadFile(encryptionKeyPath)
-				if err != nil {
-					fmt.Printf("\nFailed to read encryption key from %s", encryptionKeyPath)
-					os.Exit(1)
+				if _, err := os.ReadFile(encryptionKeyPath); err != nil {
+					fatalf("reading encryption key from %s: %v", encryptionKeyPath, err)
 				}
 				cfg.EncryptionKeyPath = &encryptionKeyPath
-				err = cfg.UpdateConfig()
-				if err != nil {
-					fmt.Println("\nFailed to save path to config file")
-					os.Exit(1)
+				if err := cfg.UpdateConfig(); err != nil {
+					fatalf("saving path to config file: %v", err)
 				}
-				fmt.Println("Encryption key file path properly saved")
+				fmt.Println("Encryption key file path saved successfully")
 			}
 			os.Exit(0)
 		}
 	})
+
+	if err := cfg.LoadEncryptionKey(); err != nil {
+		fatalf("loading encryption key: %v", err)
+	}
 
 	logLevel := zerolog.InfoLevel
 	if debug {
@@ -144,7 +135,7 @@ func runApp(cmd *cobra.Command, args []string) {
 	defer func() {
 		err := logFile.Close()
 		if err != nil {
-			log.Fatal().Err(err).Msg("Error closing log file")
+			fmt.Printf("\nError closing log file %s, error: %s", cfg.Log.Path, err)
 		}
 	}()
 
@@ -222,4 +213,9 @@ func logging(path string, logLevel zerolog.Level, pretty bool) *os.File {
 	log.Logger = log.With().Caller().Logger()
 
 	return logFile
+}
+
+func fatalf(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, "ERROR: "+format+"\n", args...)
+	os.Exit(1)
 }
