@@ -289,7 +289,6 @@ func (m *MongoConfig) GetUri() string {
 
 	uri := fmt.Sprintf("mongodb://%s:%d/%s", m.Host, m.Port, m.Database)
 	if m.Username != "" && m.Password != "" {
-		// Use encrypted password directly in raw URI
 		uri = fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", m.Username, m.Password, m.Host, m.Port, m.Database)
 	}
 
