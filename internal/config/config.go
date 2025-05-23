@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -14,6 +15,10 @@ import (
 const (
 	ConfigFile = "config.yaml"
 	LogPath    = "/tmp/vi-mongo.log"
+)
+
+var (
+	EncryptionKey = ""
 )
 
 type MongoOptions struct {
@@ -60,6 +65,7 @@ type Config struct {
 	CurrentConnection  string        `yaml:"currentConnection"`
 	Connections        []MongoConfig `yaml:"connections"`
 	Styles             StylesConfig  `yaml:"styles"`
+	EncryptionKeyPath  *string       `yaml:"encryptionKeyPath,omitempty"`
 }
 
 // LoadConfig loads the config file
@@ -187,6 +193,16 @@ func (c *Config) AddConnection(mongoConfig *MongoConfig) error {
 			return fmt.Errorf("connection with name %s already exists", mongoConfig.Name)
 		}
 	}
+
+	if EncryptionKey != "" && mongoConfig.Password != "" {
+		log.Info().Msgf("Encrypting connection: %s", mongoConfig.Name)
+		encryptedPass, err := util.EncryptPassword(mongoConfig.Password, EncryptionKey)
+		if err != nil {
+			return fmt.Errorf("failed to encrypt password: %w", err)
+		}
+		mongoConfig.Password = encryptedPass
+	}
+
 	c.Connections = append(c.Connections, *mongoConfig)
 
 	updatedConfig, err := yaml.Marshal(c)
@@ -206,17 +222,22 @@ func (c *Config) AddConnection(mongoConfig *MongoConfig) error {
 // using a URI
 func (c *Config) AddConnectionFromUri(mongoConfig *MongoConfig) error {
 	log.Info().Msgf("Adding connection from URI: %s", mongoConfig.GetSafeUri())
-	host, port, db, err := ParseMongoDBURI(mongoConfig.Uri)
+
+	parsedConf, err := util.ParseMongoUri(mongoConfig.Uri)
 	if err != nil {
 		return err
 	}
-	mongoConfig.Host = host
-	intPort, err := strconv.Atoi(port)
+	mongoConfig.Host = parsedConf.Host
+	intPort, err := strconv.Atoi(parsedConf.Port)
 	if err != nil {
 		return err
 	}
 	mongoConfig.Port = intPort
-	mongoConfig.Database = db
+	mongoConfig.Database = parsedConf.DB
+	if parsedConf.Password != "" && EncryptionKey != "" {
+		mongoConfig.Password = parsedConf.Password
+		mongoConfig.Uri = mongoConfig.GetSafeUri()
+	}
 	return c.AddConnection(mongoConfig)
 }
 
@@ -226,7 +247,7 @@ func (c *Config) DeleteConnection(name string) error {
 	for i, connection := range c.Connections {
 		if connection.Name == name {
 			connection = MongoConfig{}
-			c.Connections = append(c.Connections[:i], c.Connections[i+1:]...)
+			c.Connections = slices.Delete(c.Connections, i, i+1)
 		}
 	}
 
@@ -243,19 +264,51 @@ func (c *Config) DeleteConnection(name string) error {
 	return os.WriteFile(configPath, updatedConfig, 0644)
 }
 
-// GetUri returns the URI or builds it from the config
-func (m *MongoConfig) GetUri() string {
-	var uri string
-	if m.Uri != "" {
-		uri = m.Uri
-	} else {
-		uri = fmt.Sprintf("mongodb://%s:%d/%s", m.Host, m.Port, m.Database)
-		if m.Username != "" && m.Password != "" {
-			uri = fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", m.Username, m.Password, m.Host, m.Port, m.Database)
+func (c *Config) LoadEncryptionKey() error {
+	if c.EncryptionKeyPath != nil {
+		key, err := os.ReadFile(*c.EncryptionKeyPath)
+		if err != nil {
+			return fmt.Errorf("failed to load encryption key: %s", err)
 		}
+		stringKey := string(key)
+		EncryptionKey = strings.TrimSpace(stringKey)
+	} else {
+		key := util.GetEncryptionKey()
+		if key != "" {
+			EncryptionKey = key
+		}
+	}
+	return nil
+}
+
+// GetUri returns the raw URI from config without any decryption
+func (m *MongoConfig) GetUri() string {
+	if m.Uri != "" {
+		return m.Uri
+	}
+
+	uri := fmt.Sprintf("mongodb://%s:%d/%s", m.Host, m.Port, m.Database)
+	if m.Username != "" && m.Password != "" {
+		uri = fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", m.Username, m.Password, m.Host, m.Port, m.Database)
 	}
 
 	return uri
+}
+
+// GetDecryptedUri returns the URI with decrypted password if encryption is enabled
+func (m *MongoConfig) GetDecryptedUri() string {
+	uri := m.GetUri()
+	if m.Uri != "" || m.Username == "" || m.Password == "" || EncryptionKey == "" {
+		return uri
+	}
+
+	decryptedPass, err := util.DecryptPassword(m.Password, EncryptionKey)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to decrypt password")
+		return uri
+	}
+
+	return fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", m.Username, decryptedPass, m.Host, m.Port, m.Database)
 }
 
 // GetSafeUri returns the URI with the password replaced by asterisks
@@ -283,44 +336,4 @@ func (c *MongoConfig) GetOptions() MongoOptions {
 		c.Options.AlwaysConfirmActions = defaults.AlwaysConfirmActions
 	}
 	return c.Options
-}
-
-func ParseMongoDBURI(uri string) (host, port, db string, err error) {
-	if !strings.HasPrefix(uri, "mongodb://") && !strings.HasPrefix(uri, "mongodb+srv://") {
-		return "", "", "", fmt.Errorf("invalid MongoDB URI prefix")
-	}
-
-	trimURI := strings.TrimPrefix(uri, "mongodb://")
-	trimURI = strings.TrimPrefix(trimURI, "mongodb+srv://")
-
-	splitURI := strings.Split(trimURI, "@")
-	if len(splitURI) > 1 {
-		trimURI = splitURI[1]
-	} else {
-		trimURI = splitURI[0]
-	}
-
-	if strings.Contains(trimURI, "?") {
-		trimURI = strings.Split(trimURI, "?")[0]
-	}
-
-	splitDB := strings.Split(trimURI, "/")
-	if len(splitDB) > 1 {
-		db = splitDB[1]
-		trimURI = splitDB[0]
-	} else {
-		db = ""
-	}
-
-	hosts := strings.Split(trimURI, ",")
-	hostPort := strings.Split(hosts[0], ":")
-
-	host = hostPort[0]
-	if len(hostPort) > 1 {
-		port = hostPort[1]
-	} else {
-		port = "27017"
-	}
-
-	return host, port, db, nil
 }

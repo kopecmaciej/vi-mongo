@@ -7,6 +7,7 @@ import (
 
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/tui"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -14,14 +15,15 @@ import (
 )
 
 var (
-	cfgFile         string
-	showVersion     bool
-	debug           bool
-	welcomePage     bool
-	connectionPage  bool
-	connectionName  string
-	listConnections bool
-	rootCmd         = &cobra.Command{
+	cfgFile           string
+	showVersion       bool
+	debug             bool
+	welcomePage       bool
+	connectionPage    bool
+	connectionName    string
+	listConnections   bool
+	encryptionKeyPath string
+	rootCmd           = &cobra.Command{
 		Use:   "vi-mongo",
 		Short: "MongoDB TUI client",
 		Long:  `A Terminal User Interface (TUI) client for MongoDB`,
@@ -47,6 +49,8 @@ func init() {
 	rootCmd.Flags().BoolVarP(&connectionPage, "connection-page", "p", false, "Show connection page on startup")
 	rootCmd.Flags().StringVarP(&connectionName, "connection-name", "n", "", "Connect to a specific MongoDB connection by name")
 	rootCmd.Flags().BoolVarP(&listConnections, "connection-list", "l", false, "List all available connections")
+	rootCmd.Flags().StringVar(&encryptionKeyPath, "key-path", "", "Path to the encryption key file")
+	rootCmd.Flags().Bool("gen-key", false, "Generate valid encryption key")
 }
 
 func runApp(cmd *cobra.Command, args []string) {
@@ -67,11 +71,9 @@ func runApp(cmd *cobra.Command, args []string) {
 		fmt.Printf("Version %s%s\n", version, resetColor)
 		os.Exit(0)
 	}
-
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Error loading config")
-		os.Exit(1)
+		fatalf("loading config: %v", err)
 	}
 
 	debug := false
@@ -100,12 +102,29 @@ func runApp(cmd *cobra.Command, args []string) {
 				}
 			}
 			if !found {
-				fmt.Printf("Error: Connection '%s' not found.\n", connectionName)
-				fmt.Println("Use --list or -l to see available connections.")
-				os.Exit(1)
+				fatalf("Connection '%s' not found. Use --list or -l to see available connections.", connectionName)
 			}
+		case "gen-key":
+			util.PrintEncryptionKeyInstructions()
+			os.Exit(0)
+		case "key-path":
+			if encryptionKeyPath != "" {
+				if _, err := os.ReadFile(encryptionKeyPath); err != nil {
+					fatalf("reading encryption key from %s: %v", encryptionKeyPath, err)
+				}
+				cfg.EncryptionKeyPath = &encryptionKeyPath
+				if err := cfg.UpdateConfig(); err != nil {
+					fatalf("saving path to config file: %v", err)
+				}
+				fmt.Println("Encryption key file path saved successfully")
+			}
+			os.Exit(0)
 		}
 	})
+
+	if err := cfg.LoadEncryptionKey(); err != nil {
+		fatalf("loading encryption key: %v", err)
+	}
 
 	logLevel := zerolog.InfoLevel
 	if debug {
@@ -116,7 +135,7 @@ func runApp(cmd *cobra.Command, args []string) {
 	defer func() {
 		err := logFile.Close()
 		if err != nil {
-			log.Fatal().Err(err).Msg("Error closing log file")
+			fmt.Printf("\nError closing log file %s, error: %s", cfg.Log.Path, err)
 		}
 	}()
 
@@ -194,4 +213,9 @@ func logging(path string, logLevel zerolog.Level, pretty bool) *os.File {
 	log.Logger = log.With().Caller().Logger()
 
 	return logFile
+}
+
+func fatalf(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, "ERROR: "+format+"\n", args...)
+	os.Exit(1)
 }

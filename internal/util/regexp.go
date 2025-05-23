@@ -38,6 +38,15 @@ func HidePasswordInUri(s string) string {
 	return uriPasswordRegex.ReplaceAllString(s, "://$1:********$3")
 }
 
+// RestorePasswordInUri replaces the masked password in a safe URI with the actual password
+func RestorePasswordInUri(safeURI string, password string) string {
+	// Define a regex to match the masked password pattern
+	maskedPasswordRegex := regexp.MustCompile(`://([^:]+):(\*+)(@.*)`)
+
+	// Replace the masked password with the actual password
+	return maskedPasswordRegex.ReplaceAllString(safeURI, fmt.Sprintf("://$1:%s$3", password))
+}
+
 // ParseDateToBson parses a date in a JSON string into a BSON date
 func ParseDateToBson(s string) (string, error) {
 	var parseError error
