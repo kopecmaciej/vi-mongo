@@ -6,7 +6,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
-	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/component"
@@ -23,7 +22,6 @@ type Main struct {
 	*core.Flex
 
 	innerFlex *core.Flex
-	style     *config.GlobalStyles
 	header    *component.Header
 	tabBar    *component.TabBar
 	databases *component.Database
@@ -131,7 +129,7 @@ func (m *Main) UpdateDao(dao *mongo.Dao) {
 	m.index.UpdateDao(dao)
 }
 
-func (m *Main) render() error {
+func (m *Main) render() {
 	m.Clear()
 	m.innerFlex.Clear()
 
@@ -143,8 +141,6 @@ func (m *Main) render() error {
 
 	m.App.Pages.AddPage(m.GetIdentifier(), m, true, true)
 	m.App.SetFocus(m)
-
-	return nil
 }
 
 func (m *Main) setKeybindings() {

@@ -57,7 +57,12 @@ func (d *AnthropicDriver) GetResponse(prompt string, model string) (string, erro
 		log.Error().Err(err).Msg("Error sending request")
 		return "", fmt.Errorf("error sending request: %w", err)
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Error().Err(err).Msg("Error closing request body")
+		}
+	}()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

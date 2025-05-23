@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kopecmaciej/vi-mongo/internal/config"
@@ -357,7 +358,12 @@ func (d *Dao) GetIndexes(ctx context.Context, db string, coll string) ([]IndexIn
 	// Fetch index sizes and usage statistics
 	stats, err := d.getIndexStats(ctx, db, coll)
 	if err != nil {
-		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error fetching index statistics")
+		if strings.Contains(err.Error(), "Unauthorized") || strings.Contains(err.Error(), "not authorized") {
+			// Auth error is very common so let's just add warn for curious users
+			log.Warn().Str("db", db).Str("collection", coll).Msg("Insufficient privileges for collection index statistics")
+		} else {
+			log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error fetching index statistics")
+		}
 	} else {
 		for i, idx := range indexes {
 			if stat, ok := stats[idx.Name]; ok {
@@ -375,7 +381,6 @@ func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (
 		bson.D{{Key: "$indexStats", Value: bson.D{}}},
 	})
 	if err != nil {
-		log.Error().Err(err).Str("db", db).Str("collection", collection).Msg("Error getting indexes")
 		return nil, err
 	}
 	defer func() {
@@ -387,7 +392,6 @@ func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (
 	var collStats bson.M
 	err = d.client.Database(db).RunCommand(ctx, bson.D{{Key: "collStats", Value: collection}}).Decode(&collStats)
 	if err != nil {
-		log.Error().Err(err).Str("db", db).Str("collection", collection).Msg("Error while running command collStats")
 		return nil, err
 	}
 
@@ -395,7 +399,6 @@ func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (
 
 	var stats []bson.M
 	if err := cursor.All(ctx, &stats); err != nil {
-		log.Error().Err(err).Str("db", db).Str("collection", collection).Msg("Error decoding stats")
 		return nil, err
 	}
 
@@ -414,6 +417,7 @@ func (d *Dao) getIndexStats(ctx context.Context, db string, collection string) (
 
 	return statsMap, nil
 }
+
 func formatIndexUsage(ops int64, since time.Time) string {
 	return fmt.Sprintf("%d (since %s)", ops, since.Format("2006-01-02 15:04:05"))
 }
