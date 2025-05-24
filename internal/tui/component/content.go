@@ -239,8 +239,6 @@ func (c *Content) setKeybindings(ctx context.Context) {
 			return c.handlePreviousPage(ctx)
 		case k.Contains(k.Content.ToggleQueryOptions, event.Name()):
 			return c.handleShowQueryOptions(ctx)
-
-		// TODO: use this in multiple delete, think of other usage
 		case k.Contains(k.Content.MultipleSelect, event.Name()):
 			return c.handleMultipleSelect(row)
 		case k.Contains(k.Content.ClearSelection, event.Name()):
@@ -995,11 +993,17 @@ func (c *Content) handlePreviousPage(ctx context.Context) *tcell.EventKey {
 }
 
 func (c *Content) handleMultipleSelect(row int) *tcell.EventKey {
+	if c.currentView == JsonView {
+		return nil
+	}
 	c.table.ToggleRowSelection(row)
 	return nil
 }
 
 func (c *Content) handleClearSelection() *tcell.EventKey {
+	if c.currentView == JsonView {
+		return nil
+	}
 	c.table.ClearSelection()
 	return nil
 }

@@ -170,10 +170,10 @@ func (c *Connection) renderForm() *core.Form {
 
 	c.form.AddInputField("Name", "", 40, nil, nil)
 
-	c.form.AddInputField("Url", "mongodb://", 40, nil, nil)
+	c.form.AddInputField("Uri", "mongodb://", 40, nil, nil)
 
 	c.form.AddTextView("Example", "mongodb://username:password@host:port/db", 40, 1, true, false)
-	paste := fmt.Sprintf("Type Url (paste - %s) or fill below", c.App.GetKeys().QueryBar.Paste.String())
+	paste := fmt.Sprintf("Type Uri (paste - %s) or fill below", c.App.GetKeys().QueryBar.Paste.String())
 	c.form.AddTextView("Info", paste, 40, 1, true, false)
 	c.form.AddTextView(" ", "-- ----------------------------------------", 40, 1, true, false)
 	c.form.AddInputField("Host", "", 40, nil, nil)
@@ -185,7 +185,7 @@ func (c *Connection) renderForm() *core.Form {
 	key := fmt.Sprintf("%s or click", c.App.GetKeys().Connection.ConnectionForm.SaveConnection.String())
 	c.form.AddTextView("Save with:", key, 30, 1, true, false)
 
-	c.form.GetFormItemByLabel("Url").(*tview.InputField).SetClipboard(util.GetClipboard())
+	c.form.GetFormItemByLabel("Uri").(*tview.InputField).SetClipboard(util.GetClipboard())
 	c.form.GetFormItemByLabel("Host").(*tview.InputField).SetClipboard(util.GetClipboard())
 	c.form.GetFormItemByLabel("Port").(*tview.InputField).SetClipboard(util.GetClipboard())
 	c.form.GetFormItemByLabel("Username").(*tview.InputField).SetClipboard(util.GetClipboard())
@@ -250,20 +250,20 @@ func (c *Connection) deleteCurrConnection() error {
 // saveButtonFunc is a function for saving new connection
 func (c *Connection) saveButtonFunc() {
 	name := c.form.GetFormItemByLabel("Name").(*tview.InputField).GetText()
-	url := c.form.GetFormItemByLabel("Url").(*tview.InputField).GetText()
+	uri := c.form.GetFormItemByLabel("Uri").(*tview.InputField).GetText()
 	timeout := c.form.GetFormItemByLabel("Timeout").(*tview.InputField).GetText()
 	intTimeout, err := strconv.Atoi(timeout)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Timeout must be a number", err)
 		return
 	}
-	if url != "mongodb://" && strings.Trim(url, " ") != "" {
+	if uri != "mongodb://" && strings.Trim(uri, " ") != "" {
 		if name == "" {
-			name = url
+			name = uri
 		}
 		err := c.App.GetConfig().AddConnectionFromUri(&config.MongoConfig{
 			Name:    name,
-			Uri:     url,
+			Uri:     uri,
 			Timeout: intTimeout,
 		})
 		if err != nil {
