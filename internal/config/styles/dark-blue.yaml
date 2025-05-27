@@ -45,6 +45,7 @@ content:
   cellTextColor: "#E0E0E0"
   activeRowColor: "#61AFEF"
   selectedRowColor: "#61AFEF"
+  multiSelectedRowColor: "#4D5B7D"
 docPeeker:
   keyColor: "#FF9580"
   valueColor: "#E0E0E0"
