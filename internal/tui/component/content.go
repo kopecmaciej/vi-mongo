@@ -120,7 +120,9 @@ func (c *Content) init() error {
 	c.sortBarHandler(ctx)
 
 	c.peeker.SetDoneFunc(func() {
-		c.updateContent(ctx, true)
+		if err := c.updateContent(ctx, true); err != nil {
+			modal.ShowError(c.App.Pages, "Error updating content", err)
+		}
 	})
 
 	c.queryOptionsModal.SetApplyCallback(func() {
@@ -177,6 +179,11 @@ func (c *Content) setStyle() {
 
 	c.table.SetBordersColor(styles.Others.SeparatorColor.Color())
 	c.table.SetSeparator(styles.Others.SeparatorSymbol.Rune())
+
+	multiSelectedStyle := tcell.StyleDefault.
+		Background(c.style.MultiSelectedRowColor.Color()).
+		Foreground(tcell.ColorWhite)
+	c.table.SetMultiSelectedStyle(multiSelectedStyle)
 }
 
 func (c *Content) setLayout() {

@@ -44,6 +44,7 @@ content:
   columnTypeColor: "#387D44"
   cellTextColor: "#387D44"
   selectedRowColor: "#4ADE80"
+  multiSelectedRowColor: "#2E6B4A"
 docPeeker:
   keyColor: "#387D44"
   valueColor: "#E2E8F0"

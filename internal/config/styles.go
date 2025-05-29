@@ -102,6 +102,7 @@ type (
 		ColumnTypeColor          Style `yaml:"columnTypeColor"`
 		CellTextColor            Style `yaml:"cellTextColor"`
 		SelectedRowColor         Style `yaml:"selectedRowColor"`
+		MultiSelectedRowColor    Style `yaml:"multiSelectedRowColor"`
 	}
 
 	// DocPeekerStyle is a struct that contains all the styles for the json peeker
@@ -225,6 +226,7 @@ func (s *Styles) loadDefaults() {
 		ColumnTypeColor:          "#387D44",
 		CellTextColor:            "#387D44",
 		SelectedRowColor:         "#4ADE80",
+		MultiSelectedRowColor:    "#2E6B4A",
 	}
 
 	s.DocPeeker = DocPeekerStyle{
