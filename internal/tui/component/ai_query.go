@@ -128,9 +128,6 @@ func (a *AIQuery) onSubmit() {
 			return
 		}
 		apiUrl := os.Getenv("OPENAI_API_BASE")
-		if apiUrl == "" {
-			apiUrl = "https://api.openai.com/v1"
-		}
 		driver = ai.NewOpenAIDriver(apiKey, apiUrl)
 	case slices.Contains(anthropicModels, model):
 		apiKey := os.Getenv("ANTHROPIC_API_KEY")
