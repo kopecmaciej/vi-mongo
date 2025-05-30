@@ -13,9 +13,14 @@ type OpenAIDriver struct {
 	systemMessage string
 }
 
-func NewOpenAIDriver(apiKey string) *OpenAIDriver {
+func NewOpenAIDriver(apiKey string, apiUrl string) *OpenAIDriver {
+	openAiClientCfg := openai.DefaultConfig(apiKey)
+	if apiUrl != "" {
+		openAiClientCfg.BaseURL = apiUrl
+	}
+	openAiClient := openai.NewClientWithConfig(openAiClientCfg)
 	return &OpenAIDriver{
-		client: openai.NewClient(apiKey),
+		client: openAiClient,
 	}
 }
 
