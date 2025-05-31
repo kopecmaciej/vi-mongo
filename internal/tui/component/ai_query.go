@@ -127,7 +127,8 @@ func (a *AIQuery) onSubmit() {
 			a.showError("OPENAI_API_KEY not found in environment variables")
 			return
 		}
-		driver = ai.NewOpenAIDriver(apiKey)
+		apiUrl := os.Getenv("OPENAI_API_BASE")
+		driver = ai.NewOpenAIDriver(apiKey, apiUrl)
 	case slices.Contains(anthropicModels, model):
 		apiKey := os.Getenv("ANTHROPIC_API_KEY")
 		if apiKey == "" {
