@@ -130,6 +130,8 @@ func runApp(cmd *cobra.Command, args []string) {
 				cfg.JumpInto = jumpInto
 				cfg.ShowConnectionPage = false
 				cfg.ShowWelcomePage = false
+			} else {
+				fatalf("jump value cannot be empty")
 			}
 		}
 	})

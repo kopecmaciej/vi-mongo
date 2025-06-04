@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -220,16 +219,9 @@ func (a *App) ShowStyleChangeModal() {
 
 func (a *App) jumpToCollection(jumpTo string) error {
 	parts := strings.Split(jumpTo, "/")
-	if len(parts) != 2 {
-		return fmt.Errorf("invalid format: expected db-name/collection-name, got %s", jumpTo)
-	}
 
 	dbName := strings.TrimSpace(parts[0])
 	collName := strings.TrimSpace(parts[1])
-
-	if dbName == "" || collName == "" {
-		return fmt.Errorf("database name and collection name cannot be empty")
-	}
 
 	return a.main.JumpToCollection(dbName, collName)
 }
