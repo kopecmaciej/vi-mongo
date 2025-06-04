@@ -172,8 +172,8 @@ func (a *App) initAndRenderMain() {
 	a.Pages.AddPage(a.main.GetIdentifier(), a.main, true, true)
 
 	if jumpInto := a.GetConfig().JumpInto; jumpInto != "" {
-		if err := a.handleDirectNavigation(jumpInto); err != nil {
-			modal.ShowError(a.Pages, "Direct navigation failed", err)
+		if err := a.jumpToCollection(jumpInto); err != nil {
+			modal.ShowError(a.Pages, "Unable to jump into the db/collection", err)
 		}
 	}
 }
@@ -218,10 +218,10 @@ func (a *App) ShowStyleChangeModal() {
 	})
 }
 
-func (a *App) handleDirectNavigation(directNav string) error {
-	parts := strings.Split(directNav, "/")
+func (a *App) jumpToCollection(jumpTo string) error {
+	parts := strings.Split(jumpTo, "/")
 	if len(parts) != 2 {
-		return fmt.Errorf("invalid format: expected db-name/collection-name, got %s", directNav)
+		return fmt.Errorf("invalid format: expected db-name/collection-name, got %s", jumpTo)
 	}
 
 	dbName := strings.TrimSpace(parts[0])
@@ -231,5 +231,5 @@ func (a *App) handleDirectNavigation(directNav string) error {
 		return fmt.Errorf("database name and collection name cannot be empty")
 	}
 
-	return a.main.NavigateToDbCollection(dbName, collName)
+	return a.main.JumpToCollection(dbName, collName)
 }

@@ -452,7 +452,7 @@ func (t *DatabaseTree) renameCollectionNode(newName string) {
 	currentNode.SetText(newText)
 }
 
-func (t *DatabaseTree) NavigateToDbCollection(ctx context.Context, targetDb, targetColl string) error {
+func (t *DatabaseTree) JumpToCollection(ctx context.Context, targetDb, targetColl string) error {
 	if t.GetRoot() == nil {
 		return fmt.Errorf("tree not initialized")
 	}
@@ -468,11 +468,9 @@ func (t *DatabaseTree) NavigateToDbCollection(ctx context.Context, targetDb, tar
 		if cleanDbName == targetDb {
 			foundDbNode = dbNode
 
-			if !dbNode.IsExpanded() {
-				dbNode.SetExpanded(true)
-				openNodeSymbol := config.SymbolWithColor(t.style.OpenNodeSymbol, t.style.NodeSymbolColor)
-				dbNode.SetText(fmt.Sprintf("%s %s", openNodeSymbol, cleanDbName))
-			}
+			dbNode.SetExpanded(true)
+			openNodeSymbol := config.SymbolWithColor(t.style.OpenNodeSymbol, t.style.NodeSymbolColor)
+			dbNode.SetText(fmt.Sprintf("%s %s", openNodeSymbol, cleanDbName))
 
 			collChildren := dbNode.GetChildren()
 			for _, collNode := range collChildren {
@@ -488,12 +486,8 @@ func (t *DatabaseTree) NavigateToDbCollection(ctx context.Context, targetDb, tar
 		}
 	}
 
-	if foundDbNode == nil {
-		return fmt.Errorf("database '%s' not found", targetDb)
-	}
-
-	if foundCollNode == nil {
-		return fmt.Errorf("collection '%s' not found in database '%s'", targetColl, targetDb)
+	if foundDbNode == nil || foundCollNode == nil {
+		return fmt.Errorf("database/collection '%s/%s' not found", targetDb, targetColl)
 	}
 
 	t.SetCurrentNode(foundCollNode)

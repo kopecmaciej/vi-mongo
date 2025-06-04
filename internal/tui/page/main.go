@@ -12,7 +12,6 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/component"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -131,11 +130,11 @@ func (m *Main) UpdateDao(dao *mongo.Dao) {
 	m.index.UpdateDao(dao)
 }
 
-func (m *Main) NavigateToDbCollection(dbName, collectionName string) error {
+func (m *Main) JumpToCollection(dbName, collectionName string) error {
 	ctx := context.Background()
 
-	if err := m.databases.NavigateToDbCollection(ctx, dbName, collectionName); err != nil {
-		log.Error().Err(err).Msgf("Failed to navigate database tree to %s/%s, but continuing with content load", dbName, collectionName)
+	if err := m.databases.JumpToCollection(ctx, dbName, collectionName); err != nil {
+		return err
 	}
 
 	err := m.content.HandleDatabaseSelection(ctx, dbName, collectionName)
