@@ -2,6 +2,7 @@ package page
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -11,6 +12,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/component"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -127,6 +129,25 @@ func (m *Main) UpdateDao(dao *mongo.Dao) {
 	m.header.UpdateDao(dao)
 	m.content.UpdateDao(dao)
 	m.index.UpdateDao(dao)
+}
+
+func (m *Main) NavigateToDbCollection(dbName, collectionName string) error {
+	ctx := context.Background()
+
+	if err := m.databases.NavigateToDbCollection(ctx, dbName, collectionName); err != nil {
+		log.Error().Err(err).Msgf("Failed to navigate database tree to %s/%s, but continuing with content load", dbName, collectionName)
+	}
+
+	err := m.content.HandleDatabaseSelection(ctx, dbName, collectionName)
+	if err != nil {
+		return fmt.Errorf("failed to load content for %s/%s: %w", dbName, collectionName, err)
+	}
+
+	m.index.HandleDatabaseSelection(ctx, dbName, collectionName)
+
+	m.App.SetFocus(m.tabBar.GetActiveComponent())
+
+	return nil
 }
 
 func (m *Main) render() {

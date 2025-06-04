@@ -66,6 +66,7 @@ type Config struct {
 	Connections        []MongoConfig `yaml:"connections"`
 	Styles             StylesConfig  `yaml:"styles"`
 	EncryptionKeyPath  *string       `yaml:"encryptionKeyPath,omitempty"`
+	JumpInto           string        `yaml:"-"`
 }
 
 // LoadConfig loads the config file

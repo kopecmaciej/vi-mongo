@@ -2,6 +2,7 @@ package component
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"sync"
 
@@ -183,4 +184,14 @@ func (d *Database) listDbsAndCollections(ctx context.Context) error {
 
 func (d *Database) SetSelectFunc(f func(ctx context.Context, db string, coll string) error) {
 	d.DbTree.SetSelectFunc(f)
+}
+
+func (d *Database) NavigateToDbCollection(ctx context.Context, dbName, collectionName string) error {
+	if err := d.listDbsAndCollections(ctx); err != nil {
+		return fmt.Errorf("failed to load databases and collections: %w", err)
+	}
+
+	d.DbTree.Render(ctx, d.dbsWithColls, false)
+
+	return d.DbTree.NavigateToDbCollection(ctx, dbName, collectionName)
 }

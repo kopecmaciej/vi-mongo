@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -169,6 +170,12 @@ func (a *App) initAndRenderMain() {
 
 	a.main.Render()
 	a.Pages.AddPage(a.main.GetIdentifier(), a.main, true, true)
+
+	if jumpInto := a.GetConfig().JumpInto; jumpInto != "" {
+		if err := a.handleDirectNavigation(jumpInto); err != nil {
+			modal.ShowError(a.Pages, "Direct navigation failed", err)
+		}
+	}
 }
 
 // renderConnection renders the connection page
@@ -209,4 +216,20 @@ func (a *App) ShowStyleChangeModal() {
 	styleChangeModal.SetApplyStyle(func(styleName string) error {
 		return a.SetStyle(styleName)
 	})
+}
+
+func (a *App) handleDirectNavigation(directNav string) error {
+	parts := strings.Split(directNav, "/")
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid format: expected db-name/collection-name, got %s", directNav)
+	}
+
+	dbName := strings.TrimSpace(parts[0])
+	collName := strings.TrimSpace(parts[1])
+
+	if dbName == "" || collName == "" {
+		return fmt.Errorf("database name and collection name cannot be empty")
+	}
+
+	return a.main.NavigateToDbCollection(dbName, collName)
 }
