@@ -2,6 +2,7 @@ package page
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -127,6 +128,25 @@ func (m *Main) UpdateDao(dao *mongo.Dao) {
 	m.header.UpdateDao(dao)
 	m.content.UpdateDao(dao)
 	m.index.UpdateDao(dao)
+}
+
+func (m *Main) JumpToCollection(dbName, collectionName string) error {
+	ctx := context.Background()
+
+	if err := m.databases.JumpToCollection(ctx, dbName, collectionName); err != nil {
+		return err
+	}
+
+	err := m.content.HandleDatabaseSelection(ctx, dbName, collectionName)
+	if err != nil {
+		return fmt.Errorf("failed to load content for %s/%s: %w", dbName, collectionName, err)
+	}
+
+	m.index.HandleDatabaseSelection(ctx, dbName, collectionName)
+
+	m.App.SetFocus(m.tabBar.GetActiveComponent())
+
+	return nil
 }
 
 func (m *Main) render() {

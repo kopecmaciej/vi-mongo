@@ -169,6 +169,12 @@ func (a *App) initAndRenderMain() {
 
 	a.main.Render()
 	a.Pages.AddPage(a.main.GetIdentifier(), a.main, true, true)
+
+	if jumpInto := a.GetConfig().JumpInto; jumpInto != "" {
+		if err := a.jumpToCollection(jumpInto); err != nil {
+			modal.ShowError(a.Pages, "Unable to jump into the db/collection", err)
+		}
+	}
 }
 
 // renderConnection renders the connection page
@@ -209,4 +215,13 @@ func (a *App) ShowStyleChangeModal() {
 	styleChangeModal.SetApplyStyle(func(styleName string) error {
 		return a.SetStyle(styleName)
 	})
+}
+
+func (a *App) jumpToCollection(jumpTo string) error {
+	parts := strings.Split(jumpTo, "/")
+
+	dbName := strings.TrimSpace(parts[0])
+	collName := strings.TrimSpace(parts[1])
+
+	return a.main.JumpToCollection(dbName, collName)
 }

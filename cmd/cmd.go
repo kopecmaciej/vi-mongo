@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"strings"
 
 	"fmt"
 
@@ -23,6 +24,7 @@ var (
 	connectionName    string
 	listConnections   bool
 	encryptionKeyPath string
+	jumpInto          string
 	rootCmd           = &cobra.Command{
 		Use:   "vi-mongo",
 		Short: "MongoDB TUI client",
@@ -51,6 +53,7 @@ func init() {
 	rootCmd.Flags().BoolVarP(&listConnections, "connection-list", "l", false, "List all available connections")
 	rootCmd.Flags().StringVar(&encryptionKeyPath, "key-path", "", "Path to the encryption key file")
 	rootCmd.Flags().Bool("gen-key", false, "Generate valid encryption key")
+	rootCmd.Flags().StringVarP(&jumpInto, "jump", "j", "", "Jump directly to database/collection (format: db-name/collection-name)")
 }
 
 func runApp(cmd *cobra.Command, args []string) {
@@ -119,6 +122,17 @@ func runApp(cmd *cobra.Command, args []string) {
 				fmt.Println("Encryption key file path saved successfully")
 			}
 			os.Exit(0)
+		case "jump":
+			if jumpInto != "" {
+				if err := validateDirectNavigateFormat(jumpInto); err != nil {
+					fatalf("invalid jump format: %v", err)
+				}
+				cfg.JumpInto = jumpInto
+				cfg.ShowConnectionPage = false
+				cfg.ShowWelcomePage = false
+			} else {
+				fatalf("jump value cannot be empty")
+			}
 		}
 	})
 
@@ -218,4 +232,15 @@ func logging(path string, logLevel zerolog.Level, pretty bool) *os.File {
 func fatalf(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, "ERROR: "+format+"\n", args...)
 	os.Exit(1)
+}
+
+func validateDirectNavigateFormat(format string) error {
+	parts := strings.Split(format, "/")
+	if len(parts) != 2 {
+		return fmt.Errorf("format should be db-name/collection-name")
+	}
+	if len(parts[0]) == 0 || len(parts[1]) == 0 {
+		return fmt.Errorf("both db-name and collection-name are required")
+	}
+	return nil
 }

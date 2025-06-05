@@ -406,6 +406,7 @@ func (t *DatabaseTree) updateLeafSymbol(node *tview.TreeNode) {
 	}
 	node.SetText(fmt.Sprintf("%s %s", leafSymbol, currText[1]))
 }
+
 func (t *DatabaseTree) showRenameCollectionModal(ctx context.Context) error {
 	if t.GetCurrentNode().GetLevel() < 2 {
 		return fmt.Errorf("cannot rename database")
@@ -449,4 +450,54 @@ func (t *DatabaseTree) renameCollectionNode(newName string) {
 	leafSymbol := config.SymbolWithColor(t.style.LeafSymbol, t.style.LeafSymbolColor)
 	newText := fmt.Sprintf("%s %s", leafSymbol, newName)
 	currentNode.SetText(newText)
+}
+
+func (t *DatabaseTree) JumpToCollection(ctx context.Context, targetDb, targetColl string) error {
+	if t.GetRoot() == nil {
+		return fmt.Errorf("tree not initialized")
+	}
+
+	var foundDbNode *tview.TreeNode
+	var foundCollNode *tview.TreeNode
+
+	children := t.GetRoot().GetChildren()
+	for _, dbNode := range children {
+		dbText := dbNode.GetText()
+		cleanDbName, _ := t.removeSymbols(dbText, "")
+
+		if cleanDbName == targetDb {
+			foundDbNode = dbNode
+
+			dbNode.SetExpanded(true)
+			openNodeSymbol := config.SymbolWithColor(t.style.OpenNodeSymbol, t.style.NodeSymbolColor)
+			dbNode.SetText(fmt.Sprintf("%s %s", openNodeSymbol, cleanDbName))
+
+			collChildren := dbNode.GetChildren()
+			for _, collNode := range collChildren {
+				collText := collNode.GetText()
+				_, cleanCollName := t.removeSymbols("", collText)
+
+				if cleanCollName == targetColl {
+					foundCollNode = collNode
+					break
+				}
+			}
+			break
+		}
+	}
+
+	if foundDbNode == nil || foundCollNode == nil {
+		return fmt.Errorf("database/collection '%s/%s' not found", targetDb, targetColl)
+	}
+
+	t.SetCurrentNode(foundCollNode)
+
+	if t.nodeSelectFunc != nil {
+		err := t.nodeSelectFunc(ctx, targetDb, targetColl)
+		if err != nil {
+			return fmt.Errorf("failed to select collection: %w", err)
+		}
+	}
+
+	return nil
 }

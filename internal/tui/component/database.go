@@ -2,7 +2,9 @@ package component
 
 import (
 	"context"
+	"fmt"
 	"regexp"
+	"slices"
 	"sync"
 
 	"github.com/gdamore/tcell/v2"
@@ -183,4 +185,34 @@ func (d *Database) listDbsAndCollections(ctx context.Context) error {
 
 func (d *Database) SetSelectFunc(f func(ctx context.Context, db string, coll string) error) {
 	d.DbTree.SetSelectFunc(f)
+}
+
+func (d *Database) JumpToCollection(ctx context.Context, dbName, collectionName string) error {
+	if err := d.listDbsAndCollections(ctx); err != nil {
+		return err
+	}
+
+	dbExists, collectionExists := d.checkIfDbAndCollectionExist(dbName, collectionName)
+	if !dbExists || !collectionExists {
+		return fmt.Errorf("collection %s not found in database %s", collectionName, dbName)
+	}
+
+	d.DbTree.Render(ctx, d.dbsWithColls, false)
+
+	return d.DbTree.JumpToCollection(ctx, dbName, collectionName)
+}
+
+func (d *Database) checkIfDbAndCollectionExist(dbName, collectionName string) (bool, bool) {
+	dbExists := false
+	collectionExists := false
+
+	for _, db := range d.dbsWithColls {
+		if db.DB == dbName {
+			dbExists = true
+			collectionExists = slices.Contains(db.Collections, collectionName)
+			break
+		}
+	}
+
+	return dbExists, collectionExists
 }
