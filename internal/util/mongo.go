@@ -123,3 +123,11 @@ func GetMongoType(v any) string {
 		return TypeNull
 	}
 }
+
+func DeepCopy(v primitive.M) primitive.M {
+	copy := make(primitive.M)
+	for k, v := range v {
+		copy[k] = v
+	}
+	return copy
+}

@@ -26,7 +26,7 @@ type CollectionState struct {
 func (c *CollectionState) GetAllDocs() []primitive.M {
 	docsCopy := make([]primitive.M, len(c.docs))
 	for i, doc := range c.docs {
-		docsCopy[i] = deepCopy(doc)
+		docsCopy[i] = util.DeepCopy(doc)
 	}
 	return docsCopy
 }
@@ -35,7 +35,7 @@ func (c *CollectionState) GetDocById(id any) primitive.M {
 	for _, doc := range c.docs {
 		if reflect.TypeOf(doc["_id"]) == reflect.TypeOf(id) {
 			if doc["_id"] == id {
-				return deepCopy(doc)
+				return util.DeepCopy(doc)
 			}
 		}
 	}
@@ -121,7 +121,7 @@ func (c *CollectionState) SetProjection(projection string) {
 func (c *CollectionState) PopulateDocs(docs []primitive.M) {
 	c.docs = make([]primitive.M, len(docs))
 	for i, doc := range docs {
-		c.docs[i] = deepCopy(doc)
+		c.docs[i] = util.DeepCopy(doc)
 	}
 }
 
@@ -153,13 +153,6 @@ func (c *CollectionState) DeleteDoc(id any) {
 			return
 		}
 	}
-}
-func deepCopy(doc primitive.M) primitive.M {
-	docCopy := make(primitive.M)
-	for key, value := range doc {
-		docCopy[key] = value
-	}
-	return docCopy
 }
 
 // StateMap persevere states when hopping between diffrent mongodb servers

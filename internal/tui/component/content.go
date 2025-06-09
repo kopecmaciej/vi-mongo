@@ -1159,8 +1159,8 @@ func (c *Content) updateCellValue(ctx context.Context, _id any, fieldName, newVa
 		return fmt.Errorf("document not found in state")
 	}
 
-	originalDoc := c.deepCopyDoc(doc)
-	updatedDoc := c.deepCopyDoc(doc)
+	originalDoc := util.DeepCopy(doc)
+	updatedDoc := util.DeepCopy(doc)
 
 	if err := c.setNestedField(updatedDoc, fieldName, newValue); err != nil {
 		return fmt.Errorf("error setting field value: %w", err)
@@ -1218,14 +1218,6 @@ func (c *Content) getFieldValue(doc primitive.M, fieldPath string) interface{} {
 	}
 
 	return nil
-}
-
-func (c *Content) deepCopyDoc(doc primitive.M) primitive.M {
-	copy := make(primitive.M)
-	for key, value := range doc {
-		copy[key] = value
-	}
-	return copy
 }
 
 func (c *Content) setNestedField(docMap primitive.M, fieldPath, newValue string) error {
