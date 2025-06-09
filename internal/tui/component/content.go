@@ -49,6 +49,7 @@ type Content struct {
 	peeker            *Peeker
 	confirmModal      *modal.Confirm
 	queryOptionsModal *modal.QueryOptionsModal
+	inlineEditModal   *modal.InlineEditModal
 	docModifier       *DocModifier
 	state             *mongo.CollectionState
 	stateMap          *mongo.StateMap
@@ -68,6 +69,7 @@ func NewContent() *Content {
 		peeker:            NewPeeker(),
 		confirmModal:      modal.NewConfirm(ContentDeleteModalId),
 		queryOptionsModal: modal.NewQueryOptionsModal(),
+		inlineEditModal:   modal.NewInlineEditModal(),
 		docModifier:       NewDocModifier(),
 		state:             &mongo.CollectionState{},
 		stateMap:          mongo.NewStateMap(),
@@ -100,6 +102,9 @@ func (c *Content) init() error {
 		return err
 	}
 	if err := c.queryOptionsModal.Init(c.App); err != nil {
+		return err
+	}
+	if err := c.inlineEditModal.Init(c.App); err != nil {
 		return err
 	}
 	if err := c.queryBar.Init(c.App); err != nil {
@@ -208,6 +213,8 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		switch {
 		case k.Contains(k.Content.ChangeView, event.Name()):
 			return c.handleSwitchView(ctx)
+		case k.Contains(k.Content.InlineEdit, event.Name()):
+			return c.handleInlineEdit(ctx, row, col)
 		case k.Contains(k.Content.PeekDocument, event.Name()):
 			return c.handlePeekDocument(ctx, row, col)
 		case k.Contains(k.Content.FullPagePeek, event.Name()):
@@ -1099,4 +1106,151 @@ func (c *Content) handleResetHiddenColumns(ctx context.Context) *tcell.EventKey 
 func (c *Content) updateContentBasedOnState(ctx context.Context) error {
 	useState := c.state.Filter == "" && c.state.Sort == ""
 	return c.updateContent(ctx, useState)
+}
+
+func (c *Content) handleInlineEdit(ctx context.Context, row, col int) *tcell.EventKey {
+	if c.currentView != TableView {
+		return nil
+	}
+
+	headerCell := c.table.GetCell(0, col)
+	if headerCell == nil {
+		return nil
+	}
+
+	fieldName := strings.Split(headerCell.Text, " ")[0]
+
+	_id := c.getDocumentId(row, col)
+	if _id == nil {
+		return nil
+	}
+
+	doc := c.state.GetDocById(_id)
+	if doc == nil {
+		modal.ShowError(c.App.Pages, "Document not found", nil)
+		return nil
+	}
+
+	currentValue := c.getFieldValue(doc, fieldName)
+	currentValueStr := util.StringifyMongoValueByType(currentValue)
+
+	c.inlineEditModal.SetApplyCallback(func(field, newValue string) error {
+		return c.updateCellValue(ctx, _id, field, newValue, row, col)
+	})
+
+	c.inlineEditModal.SetCancelCallback(func() {
+		c.inlineEditModal.Hide()
+		c.App.SetFocus(c.table)
+		c.table.Select(row, col)
+	})
+
+	err := c.inlineEditModal.Render(ctx, fieldName, currentValueStr)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error showing inline edit", err)
+	}
+
+	return nil
+}
+
+func (c *Content) updateCellValue(ctx context.Context, _id any, fieldName, newValue string, row, col int) error {
+	doc := c.state.GetDocById(_id)
+	if doc == nil {
+		return fmt.Errorf("document not found in state")
+	}
+
+	if doc[fieldName] == newValue {
+		return nil
+	}
+
+	originalDoc := util.DeepCopy(doc)
+	updatedDoc := util.DeepCopy(doc)
+
+	if err := c.setNestedField(updatedDoc, fieldName, newValue); err != nil {
+		return fmt.Errorf("error setting field value: %w", err)
+	}
+
+	delete(originalDoc, "_id")
+	delete(updatedDoc, "_id")
+
+	err := c.Dao.UpdateDocument(ctx, c.state.Db, c.state.Coll, _id, originalDoc, updatedDoc)
+	if err != nil {
+		return fmt.Errorf("error updating document: %w", err)
+	}
+
+	updatedDoc["_id"] = _id
+	updatedDocJson, err := mongo.ParseBsonDocument(updatedDoc)
+	if err != nil {
+		return fmt.Errorf("error converting updated document to JSON: %w", err)
+	}
+
+	err = c.state.UpdateRawDoc(updatedDocJson)
+	if err != nil {
+		return fmt.Errorf("error updating state: %w", err)
+	}
+
+	err = c.updateContent(ctx, true)
+	if err != nil {
+		return fmt.Errorf("error refreshing content: %w", err)
+	}
+
+	c.inlineEditModal.Hide()
+	c.App.SetFocus(c.table)
+	c.table.Select(row, col)
+
+	return nil
+}
+
+func (c *Content) getFieldValue(doc primitive.M, fieldPath string) interface{} {
+	fields := strings.Split(fieldPath, ".")
+	current := doc
+
+	for i, field := range fields {
+		if i == len(fields)-1 {
+			return current[field]
+		}
+
+		if val, exists := current[field]; exists {
+			if nested, ok := val.(primitive.M); ok {
+				current = nested
+			} else {
+				return nil
+			}
+		} else {
+			return nil
+		}
+	}
+
+	return nil
+}
+
+func (c *Content) setNestedField(docMap primitive.M, fieldPath, newValue string) error {
+	fields := strings.Split(fieldPath, ".")
+
+	current := docMap
+	for _, field := range fields[:len(fields)-1] {
+		if val, exists := current[field]; exists {
+			if nested, ok := val.(primitive.M); ok {
+				current = nested
+			} else {
+				newNested := make(primitive.M)
+				current[field] = newNested
+				current = newNested
+			}
+		} else {
+			newNested := make(primitive.M)
+			current[field] = newNested
+			current = newNested
+		}
+	}
+
+	finalField := fields[len(fields)-1]
+
+	parsedValue, err := mongo.ParseValueByType(newValue, current[finalField])
+	if err == nil {
+		current[finalField] = parsedValue
+	} else {
+		current[finalField] = newValue
+	}
+
+	return nil
 }

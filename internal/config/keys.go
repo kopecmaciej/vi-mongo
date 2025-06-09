@@ -76,6 +76,7 @@ type (
 		FullPagePeek               Key `json:"fullPagePeek"`
 		AddDocument                Key `json:"addDocument"`
 		EditDocument               Key `json:"editDocument"`
+		InlineEdit                 Key `json:"inlineEdit"`
 		DuplicateDocument          Key `json:"duplicateDocument"`
 		DuplicateDocumentNoConfirm Key `json:"duplicateDocumentNoConfirm"`
 		DeleteDocument             Key `json:"deleteDocument"`
@@ -253,6 +254,10 @@ func (k *KeyBindings) loadDefaults() {
 		EditDocument: Key{
 			Runes:       []string{"E"},
 			Description: "Edit",
+		},
+		InlineEdit: Key{
+			Runes:       []string{"e"},
+			Description: "Inline edit cell",
 		},
 		DuplicateDocument: Key{
 			Runes:       []string{"D"},
