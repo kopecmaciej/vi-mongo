@@ -1158,6 +1158,10 @@ func (c *Content) updateCellValue(ctx context.Context, _id any, fieldName, newVa
 		return fmt.Errorf("document not found in state")
 	}
 
+	if doc[fieldName] == newValue {
+		return nil
+	}
+
 	originalDoc := util.DeepCopy(doc)
 	updatedDoc := util.DeepCopy(doc)
 

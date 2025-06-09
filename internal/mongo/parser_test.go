@@ -128,35 +128,35 @@ func TestParseBsonDocument(t *testing.T) {
 }
 
 func TestSortDocumentKeys(t *testing.T) {
-    cases := []struct {
-        name     string
-        input    primitive.M
-        expected string
-        hasError bool
-    }{
-        {
-            name: "Nested documents and arrays",
-            input: primitive.M{
-                "name": "John Doe",
-                "contacts": primitive.A{
-                    primitive.M{"phone": "123-456-789", "email": "john@example.com"},
-                    primitive.M{"website": "john.com", "social": "twitter.com/john"},
-                },
-                "address": primitive.M{
-                    "zip": "12345",
-                    "street": "Main St",
-                    "city": "New York",
-                },
-                "metadata": primitive.A{
-                    primitive.M{
-                        "settings": primitive.M{
-                            "theme": "dark",
-                            "active": true,
-                        },
-                    },
-                },
-            },
-            expected: `{
+	cases := []struct {
+		name     string
+		input    primitive.M
+		expected string
+		hasError bool
+	}{
+		{
+			name: "Nested documents and arrays",
+			input: primitive.M{
+				"name": "John Doe",
+				"contacts": primitive.A{
+					primitive.M{"phone": "123-456-789", "email": "john@example.com"},
+					primitive.M{"website": "john.com", "social": "twitter.com/john"},
+				},
+				"address": primitive.M{
+					"zip":    "12345",
+					"street": "Main St",
+					"city":   "New York",
+				},
+				"metadata": primitive.A{
+					primitive.M{
+						"settings": primitive.M{
+							"theme":  "dark",
+							"active": true,
+						},
+					},
+				},
+			},
+			expected: `{
   "address": {
     "city": "New York",
     "street": "Main St",
@@ -182,22 +182,22 @@ func TestSortDocumentKeys(t *testing.T) {
   ],
   "name": "John Doe"
 }`,
-            hasError: false,
-        },
-        {
-            name: "Deep nested arrays with user data",
-            input: primitive.M{
-                "users": primitive.A{
-                    primitive.M{
-                        "permissions": primitive.A{
-                            primitive.M{"role": "admin", "level": 3, "access": true},
-                            primitive.M{"role": "user", "level": 1, "access": true},
-                        },
-                    },
-                },
-                "version": "1.0.0",
-            },
-            expected: `{
+			hasError: false,
+		},
+		{
+			name: "Deep nested arrays with user data",
+			input: primitive.M{
+				"users": primitive.A{
+					primitive.M{
+						"permissions": primitive.A{
+							primitive.M{"role": "admin", "level": 3, "access": true},
+							primitive.M{"role": "user", "level": 1, "access": true},
+						},
+					},
+				},
+				"version": "1.0.0",
+			},
+			expected: `{
   "users": [
     {
       "permissions": [
@@ -216,25 +216,156 @@ func TestSortDocumentKeys(t *testing.T) {
   ],
   "version": "1.0.0"
 }`,
-            hasError: false,
-        },
-    }
+			hasError: false,
+		},
+	}
 
-    for _, tc := range cases {
-        t.Run(tc.name, func(t *testing.T) {
-            result, err := ParseBsonDocument(tc.input)
-            if tc.hasError {
-                assert.Error(t, err)
-            } else {
-                assert.NoError(t, err)
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := ParseBsonDocument(tc.input)
+			if tc.hasError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 
-                var prettyResult bytes.Buffer
-                err = json.Indent(&prettyResult, []byte(result), "", "  ")
-                assert.NoError(t, err)
+				var prettyResult bytes.Buffer
+				err = json.Indent(&prettyResult, []byte(result), "", "  ")
+				assert.NoError(t, err)
 
-                assert.Equal(t, tc.expected, prettyResult.String())
-            }
-        })
-    }
+				assert.Equal(t, tc.expected, prettyResult.String())
+			}
+		})
+	}
 }
 
+func TestParseValueByType(t *testing.T) {
+	cases := []struct {
+		name          string
+		value         string
+		originalValue any
+		expected      any
+		hasError      bool
+	}{
+		// Test cases with originalValue
+		{
+			name:          "Original value as map - valid JSON",
+			value:         `{"key": "value"}`,
+			originalValue: map[string]interface{}{},
+			expected:      primitive.M{"key": "value"},
+			hasError:      false,
+		},
+		{
+			name:          "Original value as primitive.M - valid JSON",
+			value:         `{"key": "value"}`,
+			originalValue: primitive.M{},
+			expected:      primitive.M{"key": "value"},
+			hasError:      false,
+		},
+		{
+			name:          "Original value as array - valid JSON array",
+			value:         `["item1", "item2"]`,
+			originalValue: []any{},
+			expected:      primitive.A{"item1", "item2"},
+			hasError:      false,
+		},
+		{
+			name:          "Original value as primitive.A - valid JSON array",
+			value:         `["item1", "item2"]`,
+			originalValue: primitive.A{},
+			expected:      primitive.A{"item1", "item2"},
+			hasError:      false,
+		},
+		{
+			name:          "Original value as primitive.A - valid array with nested object",
+			value:         `[{"key": "value"}, {"key2": "value2"}]`,
+			originalValue: []any{},
+			expected:      primitive.A{map[string]any{"key": "value"}, map[string]any{"key2": "value2"}},
+			hasError:      false,
+		},
+		{
+			name:          "Original value as int - valid int string",
+			value:         "42",
+			originalValue: int(0),
+			expected:      int64(42),
+			hasError:      false,
+		},
+		{
+			name:          "Original value as int64 - valid int string",
+			value:         "42",
+			originalValue: int64(0),
+			expected:      int64(42),
+			hasError:      false,
+		},
+		{
+			name:          "Original value as float64 - valid float string",
+			value:         "3.14",
+			originalValue: float64(0),
+			expected:      float64(3.14),
+			hasError:      false,
+		},
+		{
+			name:          "Original value as bool - valid bool string",
+			value:         "true",
+			originalValue: bool(false),
+			expected:      true,
+			hasError:      false,
+		},
+
+		// Test cases without originalValue
+		{
+			name:          "JSON object without originalValue",
+			value:         `{"key": "value"}`,
+			originalValue: nil,
+			expected:      primitive.M{"key": "value"},
+			hasError:      false,
+		},
+		{
+			name:          "JSON array without originalValue",
+			value:         `["item1", "item2"]`,
+			originalValue: nil,
+			expected:      primitive.A{"item1", "item2"},
+			hasError:      false,
+		},
+		{
+			name:          "Boolean string without originalValue",
+			value:         "true",
+			originalValue: nil,
+			expected:      true,
+			hasError:      false,
+		},
+		{
+			name:          "Integer string without originalValue",
+			value:         "42",
+			originalValue: nil,
+			expected:      int64(42),
+			hasError:      false,
+		},
+		{
+			name:          "Float string without originalValue",
+			value:         "3.14",
+			originalValue: nil,
+			expected:      float64(3.14),
+			hasError:      false,
+		},
+		{
+			name:          "Plain string value",
+			value:         "hello",
+			originalValue: nil,
+			expected:      "hello",
+			hasError:      false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := ParseValueByType(tc.value, tc.originalValue)
+
+			if tc.hasError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			}
+		})
+	}
+}

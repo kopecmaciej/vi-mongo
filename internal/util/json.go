@@ -1,11 +1,8 @@
 package util
 
 import (
-	"encoding/json"
 	"strings"
 	"unicode"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // IsJsonEmpty checks if a JSON string is empty or only contains whitespace
@@ -51,16 +48,4 @@ func CleanAllWhitespaces(s string) string {
 	s = strings.ReplaceAll(s, "\n", "")
 	s = strings.ReplaceAll(s, "\t", "")
 	return s
-}
-
-func ParseJsonArray(value string) (any, error) {
-	var jsonArray []any
-	if err := json.Unmarshal([]byte(value), &jsonArray); err != nil {
-		return value, nil
-	}
-
-	bsonArray := make(primitive.A, len(jsonArray))
-	copy(bsonArray, jsonArray)
-
-	return bsonArray, nil
 }

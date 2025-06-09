@@ -124,7 +124,7 @@ func ParseJsonToBson(jsonDoc string) (primitive.M, error) {
 	err := bson.UnmarshalExtJSON([]byte(jsonDoc), false, &doc)
 	if err != nil {
 		log.Error().Err(err).Msg("Error unmarshaling JSON")
-		return primitive.M{}, fmt.Errorf("Error unmarshaling JSON: %w", err)
+		return primitive.M{}, fmt.Errorf("error unmarshaling JSON: %w", err)
 	}
 	return doc, nil
 }
@@ -140,7 +140,7 @@ func ParseValueByType(value string, originalValue any) (any, error) {
 			}
 		case primitive.A, []any:
 			if strings.HasPrefix(strings.TrimSpace(value), "[") && strings.HasSuffix(strings.TrimSpace(value), "]") {
-				return util.ParseJsonArray(value)
+				return ParseJsonArray(value)
 			}
 		case int, int32, int64:
 			return stringToInt(value)
@@ -158,7 +158,7 @@ func ParseValueByType(value string, originalValue any) (any, error) {
 	}
 
 	if strings.HasPrefix(strings.TrimSpace(value), "[") && strings.HasSuffix(strings.TrimSpace(value), "]") {
-		return util.ParseJsonArray(value)
+		return ParseJsonArray(value)
 	}
 
 	if value == "true" || value == "false" {
@@ -186,4 +186,16 @@ func stringToFloat(s string) (float64, error) {
 
 func stringToBool(s string) (bool, error) {
 	return strconv.ParseBool(s)
+}
+
+func ParseJsonArray(value string) (any, error) {
+	var jsonArray []any
+	if err := json.Unmarshal([]byte(value), &jsonArray); err != nil {
+		return value, nil
+	}
+
+	bsonArray := make(primitive.A, len(jsonArray))
+	copy(bsonArray, jsonArray)
+
+	return bsonArray, nil
 }
