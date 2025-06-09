@@ -129,10 +129,8 @@ func (iem *InlineEditModal) Render(ctx context.Context, fieldName, currentValue 
 	iem.fieldName = fieldName
 	iem.originalValue = currentValue
 
-	// Clean the current value for display
 	displayValue := util.CleanJsonWhitespaces(currentValue)
 
-	// Use text area for multiline values or very long values
 	if strings.Contains(displayValue, "\n") || len(displayValue) > 100 {
 		textArea := tview.NewTextArea().
 			SetText(displayValue, true).

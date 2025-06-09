@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/atotto/clipboard"
@@ -1242,7 +1241,7 @@ func (c *Content) setNestedField(docMap primitive.M, fieldPath, newValue string)
 
 	finalField := fields[len(fields)-1]
 
-	parsedValue, err := c.parseValueByType(newValue, current[finalField])
+	parsedValue, err := mongo.ParseValueByType(newValue, current[finalField])
 	if err == nil {
 		current[finalField] = parsedValue
 	} else {
@@ -1250,43 +1249,4 @@ func (c *Content) setNestedField(docMap primitive.M, fieldPath, newValue string)
 	}
 
 	return nil
-}
-
-func (c *Content) parseValueByType(value string, originalValue any) (any, error) {
-	if originalValue != nil {
-		switch originalValue.(type) {
-		case int, int32, int64:
-			return c.stringToInt(value)
-		case float32, float64:
-			return c.stringToFloat(value)
-		case bool:
-			return c.stringToBool(value)
-		}
-	}
-
-	if value == "true" || value == "false" {
-		return c.stringToBool(value)
-	}
-
-	if intVal, err := c.stringToInt(value); err == nil {
-		return intVal, nil
-	}
-
-	if floatVal, err := c.stringToFloat(value); err == nil {
-		return floatVal, nil
-	}
-
-	return value, nil
-}
-
-func (c *Content) stringToInt(s string) (int64, error) {
-	return strconv.ParseInt(s, 10, 64)
-}
-
-func (c *Content) stringToFloat(s string) (float64, error) {
-	return strconv.ParseFloat(s, 64)
-}
-
-func (c *Content) stringToBool(s string) (bool, error) {
-	return strconv.ParseBool(s)
 }
