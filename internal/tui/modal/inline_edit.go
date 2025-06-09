@@ -65,13 +65,11 @@ func (iem *InlineEditModal) setKeybindings() {
 	iem.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEsc:
-			iem.Hide()
 			if iem.cancelCallback != nil {
 				iem.cancelCallback()
 			}
 			return nil
 		case tcell.KeyEnter:
-			// Only apply if we're focused on the form item (not buttons)
 			formItemIndex, _ := iem.Form.GetFocusedItemIndex()
 			if formItemIndex == 0 {
 				iem.handleApply()
@@ -124,8 +122,6 @@ func (iem *InlineEditModal) handleApply() {
 			return
 		}
 	}
-
-	iem.Hide()
 }
 
 func (iem *InlineEditModal) Render(ctx context.Context, fieldName, currentValue string) error {
@@ -157,7 +153,6 @@ func (iem *InlineEditModal) Render(ctx context.Context, fieldName, currentValue 
 	})
 
 	iem.Form.AddButton("Cancel", func() {
-		iem.Hide()
 		if iem.cancelCallback != nil {
 			iem.cancelCallback()
 		}

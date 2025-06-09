@@ -1110,48 +1110,41 @@ func (c *Content) updateContentBasedOnState(ctx context.Context) error {
 }
 
 func (c *Content) handleInlineEdit(ctx context.Context, row, col int) *tcell.EventKey {
-	// Only allow inline editing in table view
 	if c.currentView != TableView {
 		return nil
 	}
 
-	// Get the field name from the header
 	headerCell := c.table.GetCell(0, col)
 	if headerCell == nil {
 		return nil
 	}
 
-	// Extract field name (remove type information)
 	fieldName := strings.Split(headerCell.Text, " ")[0]
 
-	// Get document ID to fetch full document from state
 	_id := c.getDocumentId(row, col)
 	if _id == nil {
 		return nil
 	}
 
-	// Get the full document from state to get the untruncated value
 	doc := c.state.GetDocById(_id)
 	if doc == nil {
 		modal.ShowError(c.App.Pages, "Document not found", nil)
 		return nil
 	}
 
-	// Get the current field value from the full document
 	currentValue := c.getFieldValue(doc, fieldName)
 	currentValueStr := util.StringifyMongoValueByType(currentValue)
 
-	// Set up the inline edit modal callbacks
 	c.inlineEditModal.SetApplyCallback(func(field, newValue string) error {
 		return c.updateCellValue(ctx, _id, field, newValue, row, col)
 	})
 
 	c.inlineEditModal.SetCancelCallback(func() {
+		c.inlineEditModal.Hide()
 		c.App.SetFocus(c.table)
 		c.table.Select(row, col)
 	})
 
-	// Show the inline edit modal
 	err := c.inlineEditModal.Render(ctx, fieldName, currentValueStr)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error showing inline edit", err)
@@ -1161,33 +1154,27 @@ func (c *Content) handleInlineEdit(ctx context.Context, row, col int) *tcell.Eve
 }
 
 func (c *Content) updateCellValue(ctx context.Context, _id any, fieldName, newValue string, row, col int) error {
-	// Get the full document from state
 	doc := c.state.GetDocById(_id)
 	if doc == nil {
 		return fmt.Errorf("document not found in state")
 	}
 
-	// Create a copy to modify
 	originalDoc := c.deepCopyDoc(doc)
 	updatedDoc := c.deepCopyDoc(doc)
 
-	// Update the specific field - handle nested fields
 	if err := c.setNestedField(updatedDoc, fieldName, newValue); err != nil {
 		return fmt.Errorf("error setting field value: %w", err)
 	}
 
-	// Remove _id from both documents for the update operation
 	delete(originalDoc, "_id")
 	delete(updatedDoc, "_id")
 
-	// Update the document directly via DAO
 	err := c.Dao.UpdateDocument(ctx, c.state.Db, c.state.Coll, _id, originalDoc, updatedDoc)
 	if err != nil {
 		return fmt.Errorf("error updating document: %w", err)
 	}
 
-	// Update the state with the new document
-	updatedDoc["_id"] = _id // Add _id back for state update
+	updatedDoc["_id"] = _id
 	updatedDocJson, err := mongo.ParseBsonDocument(updatedDoc)
 	if err != nil {
 		return fmt.Errorf("error converting updated document to JSON: %w", err)
@@ -1198,40 +1185,34 @@ func (c *Content) updateCellValue(ctx context.Context, _id any, fieldName, newVa
 		return fmt.Errorf("error updating state: %w", err)
 	}
 
-	// Refresh the view to show the updated data
 	err = c.updateContent(ctx, true)
 	if err != nil {
 		return fmt.Errorf("error refreshing content: %w", err)
 	}
 
-	// Return focus to table and restore cell selection
+	c.inlineEditModal.Hide()
 	c.App.SetFocus(c.table)
 	c.table.Select(row, col)
 
 	return nil
 }
 
-// getFieldValue retrieves a field value from a document, supporting nested fields
 func (c *Content) getFieldValue(doc primitive.M, fieldPath string) interface{} {
 	fields := strings.Split(fieldPath, ".")
 	current := doc
 
 	for i, field := range fields {
 		if i == len(fields)-1 {
-			// This is the final field
 			return current[field]
 		}
 
-		// Navigate to nested field
 		if val, exists := current[field]; exists {
 			if nested, ok := val.(primitive.M); ok {
 				current = nested
 			} else {
-				// Field exists but is not a nested object
 				return nil
 			}
 		} else {
-			// Field doesn't exist
 			return nil
 		}
 	}
@@ -1239,19 +1220,15 @@ func (c *Content) getFieldValue(doc primitive.M, fieldPath string) interface{} {
 	return nil
 }
 
-// deepCopyDoc creates a deep copy of a primitive.M document
 func (c *Content) deepCopyDoc(doc primitive.M) primitive.M {
 	copy := make(primitive.M)
 	for key, value := range doc {
-		// For simplicity, we'll do a shallow copy since we're only modifying top-level fields
-		// In a production environment, you might want a true deep copy for nested objects
 		copy[key] = value
 	}
 	return copy
 }
 
 func (c *Content) setNestedField(docMap primitive.M, fieldPath, newValue string) error {
-	// Handle nested field paths like "user.name" or "address.street"
 	fields := strings.Split(fieldPath, ".")
 
 	current := docMap
@@ -1260,13 +1237,11 @@ func (c *Content) setNestedField(docMap primitive.M, fieldPath, newValue string)
 			if nested, ok := val.(primitive.M); ok {
 				current = nested
 			} else {
-				// Create nested structure if it doesn't exist
 				newNested := make(primitive.M)
 				current[field] = newNested
 				current = newNested
 			}
 		} else {
-			// Create nested structure
 			newNested := make(primitive.M)
 			current[field] = newNested
 			current = newNested
@@ -1275,20 +1250,17 @@ func (c *Content) setNestedField(docMap primitive.M, fieldPath, newValue string)
 
 	finalField := fields[len(fields)-1]
 
-	// Try to parse the new value as appropriate type
 	parsedValue, err := c.parseValueByType(newValue, current[finalField])
 	if err == nil {
 		current[finalField] = parsedValue
 	} else {
-		// If parsing fails, store as string
 		current[finalField] = newValue
 	}
 
 	return nil
 }
 
-func (c *Content) parseValueByType(value string, originalValue interface{}) (interface{}, error) {
-	// If the original value exists, try to maintain its type
+func (c *Content) parseValueByType(value string, originalValue any) (any, error) {
 	if originalValue != nil {
 		switch originalValue.(type) {
 		case int, int32, int64:
@@ -1300,7 +1272,6 @@ func (c *Content) parseValueByType(value string, originalValue interface{}) (int
 		}
 	}
 
-	// Try to infer type from string format
 	if value == "true" || value == "false" {
 		return c.stringToBool(value)
 	}
@@ -1313,11 +1284,9 @@ func (c *Content) parseValueByType(value string, originalValue interface{}) (int
 		return floatVal, nil
 	}
 
-	// Default to string
 	return value, nil
 }
 
-// Helper conversion functions
 func (c *Content) stringToInt(s string) (int64, error) {
 	return strconv.ParseInt(s, 10, 64)
 }
