@@ -370,7 +370,7 @@ func (k *KeyBindings) loadDefaults() {
 
 	k.Connection.ConnectionForm = ConnectionFormKeys{
 		SaveConnection: Key{
-			Keys:        []string{"Ctrl+S", "Enter"},
+			Keys:        []string{"Ctrl+S"},
 			Description: "Save connection",
 		},
 		FocusList: Key{

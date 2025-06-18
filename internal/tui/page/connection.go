@@ -83,9 +83,6 @@ func (c *Connection) setLayout() {
 	c.list.SetBorderPadding(1, 1, 1, 1)
 	c.list.SetItemGap(1)
 
-	c.form.AddButton("Save", c.saveButtonFunc)
-	c.form.AddButton("Cancel", c.cancelButtonFunc)
-
 }
 
 func (c *Connection) setStyle() {
@@ -166,7 +163,10 @@ func (c *Connection) Render() {
 
 // renderForm renders the form for creating new connection
 func (c *Connection) renderForm() *core.Form {
-	c.form.Clear(false)
+	c.form.Clear(true)
+
+	c.form.AddButton("Save", c.saveButtonFunc)
+	c.form.AddButton("Cancel", c.cancelButtonFunc)
 
 	c.form.AddInputField("Name", "", 40, nil, nil)
 
@@ -306,7 +306,15 @@ func (c *Connection) saveButtonFunc() {
 
 // cancelButtonFunc is a function for canceling the form
 func (c *Connection) cancelButtonFunc() {
-	c.renderForm()
+	c.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
+	c.form.GetFormItemByLabel("Uri").(*tview.InputField).SetText("mongodb://")
+	c.form.GetFormItemByLabel("Host").(*tview.InputField).SetText("")
+	c.form.GetFormItemByLabel("Port").(*tview.InputField).SetText("")
+	c.form.GetFormItemByLabel("Username").(*tview.InputField).SetText("")
+	c.form.GetFormItemByLabel("Password").(*tview.InputField).SetText("")
+	c.form.GetFormItemByLabel("Database").(*tview.InputField).SetText("")
+	c.form.GetFormItemByLabel("Timeout").(*tview.InputField).SetText("5")
+	c.App.SetFocus(c.list)
 }
 
 // SetOnSubmitFunc sets callback function
