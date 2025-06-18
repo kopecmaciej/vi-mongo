@@ -22,6 +22,8 @@ type Welcome struct {
 	// Form
 	form *core.Form
 
+	style *config.WelcomeStyle
+
 	// Callbacks
 	onSubmit func()
 }
@@ -55,7 +57,7 @@ func (w *Welcome) setLayout() {
 	w.form.SetTitleAlign(tview.AlignCenter)
 	w.form.SetButtonsAlign(tview.AlignCenter)
 
-	w.form.AddButton(" Save and Connect ", func() {
+	w.form.AddButton("Save and Connect", func() {
 		err := w.saveConfig()
 		if err != nil {
 			modal.ShowError(w.App.Pages, "Error while saving config", err)
@@ -66,19 +68,19 @@ func (w *Welcome) setLayout() {
 		}
 	})
 
-	w.form.AddButton(" Exit ", func() {
+	w.form.AddButton("Exit", func() {
 		w.App.Stop()
 	})
 }
 
 func (w *Welcome) setStyle() {
+	w.style = &w.App.GetStyles().Welcome
 	w.Flex.SetStyle(w.App.GetStyles())
 	w.form.SetStyle(w.App.GetStyles())
-	style := w.App.GetStyles().Welcome
 
-	w.form.SetFieldTextColor(style.FormInputColor.Color())
-	w.form.SetFieldBackgroundColor(style.FormInputBackgroundColor.Color())
-	w.form.SetLabelColor(style.FormLabelColor.Color())
+	w.form.SetFieldTextColor(w.style.FormInputColor.Color())
+	w.form.SetFieldBackgroundColor(w.style.FormInputBackgroundColor.Color())
+	w.form.SetLabelColor(w.style.FormLabelColor.Color())
 }
 
 func (w *Welcome) handleEvents() {

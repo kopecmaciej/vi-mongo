@@ -17,10 +17,8 @@ func NewForm() *Form {
 
 func (f *Form) SetStyle(style *config.Styles) {
 	SetCommonStyle(f.Form, style)
-	if f.GetButtonCount() > 0 {
-		f.SetButtonBackgroundColor(style.Others.ButtonsBackgroundColor.Color())
-		f.SetButtonTextColor(style.Others.ButtonsTextColor.Color())
-	}
+	f.SetButtonBackgroundColor(style.Others.ButtonsBackgroundColor.Color())
+	f.SetButtonTextColor(style.Others.ButtonsTextColor.Color())
 }
 
 // This function will not include buttons, so if there are any
