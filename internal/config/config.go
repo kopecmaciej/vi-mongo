@@ -73,20 +73,36 @@ type Config struct {
 // If the file does not exist, it will be created
 // with the default settings
 func LoadConfig() (*Config, error) {
+	return LoadConfigWithVersion("1.0.0")
+}
+
+func LoadConfigWithVersion(version string) (*Config, error) {
 	defaultConfig := &Config{}
-	defaultConfig.loadDefaults()
+	defaultConfig.loadDefaults(version)
 
 	configPath, err := GetConfigPath()
 	if err != nil {
 		return nil, err
 	}
 
-	return util.LoadConfigFile(defaultConfig, configPath)
+	cfg, err := util.LoadConfigFile(defaultConfig, configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg.Version != version {
+		cfg.Version = version
+		if err := cfg.UpdateConfig(); err != nil {
+			log.Error().Err(err).Msg("Failed to update config with new version")
+		}
+	}
+
+	return cfg, nil
 }
 
 // loadDefaults loads the default config settings
-func (c *Config) loadDefaults() {
-	c.Version = "1.0.0"
+func (c *Config) loadDefaults(version string) {
+	c.Version = version
 	c.Log = LogConfig{
 		Path:        LogPath,
 		Level:       "info",

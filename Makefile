@@ -1,6 +1,7 @@
 BUILD_DIR := .build
 SVC_NAME := vi-mongo
 REPOSITORY := github.com/kopecmaciej/vi-mongo
+VERSION ?= $(shell git describe --tags --always --dirty)
 
 .PHONY: build run
 

@@ -74,7 +74,7 @@ func runApp(cmd *cobra.Command, args []string) {
 		fmt.Printf("Version %s%s\n", version, resetColor)
 		os.Exit(0)
 	}
-	cfg, err := config.LoadConfig()
+	cfg, err := config.LoadConfigWithVersion(version)
 	if err != nil {
 		fatalf("loading config: %v", err)
 	}
