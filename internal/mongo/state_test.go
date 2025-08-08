@@ -117,3 +117,50 @@ func TestCollectionState_GetJsonDocById_DoesNotModifyState(t *testing.T) {
 	assert.Equal(t, primitive.M{"_id": id1, "value": 1}, cs.docs[0])
 	assert.Equal(t, primitive.M{"_id": id2, "value": 2}, cs.docs[1])
 }
+
+func TestCollectionState_GetDocById_WithBinaryId(t *testing.T) {
+	binaryId := primitive.Binary{Data: []byte{1, 2, 3, 4}, Subtype: 0}
+	cs := &CollectionState{
+		docs: []primitive.M{
+			{"_id": binaryId, "value": "binary_doc"},
+		},
+	}
+
+	doc := cs.GetDocById(binaryId)
+	assert.NotNil(t, doc)
+	assert.Equal(t, binaryId, doc["_id"])
+	assert.Equal(t, "binary_doc", doc["value"])
+
+	differentBinaryId := primitive.Binary{Data: []byte{5, 6, 7, 8}, Subtype: 0}
+	doc = cs.GetDocById(differentBinaryId)
+	assert.Nil(t, doc)
+}
+
+func TestCollectionState_DeleteDoc_WithBinaryId(t *testing.T) {
+	binaryId := primitive.Binary{Data: []byte{1, 2, 3, 4}, Subtype: 0}
+	cs := &CollectionState{
+		docs: []primitive.M{
+			{"_id": binaryId, "value": "binary_doc"},
+		},
+		Count: 1,
+	}
+
+	cs.DeleteDoc(binaryId)
+	assert.Len(t, cs.docs, 0)
+	assert.Equal(t, int64(0), cs.Count)
+}
+
+func TestCollectionState_UpdateRawDoc_WithBinaryId(t *testing.T) {
+	binaryId := primitive.Binary{Data: []byte{1, 2, 3, 4}, Subtype: 0}
+	cs := &CollectionState{
+		docs: []primitive.M{
+			{"_id": binaryId, "value": "old_value"},
+		},
+	}
+
+	updatedDoc := `{"_id": {"$binary": {"base64": "AQIDBA==", "subType": "00"}}, "value": "new_value"}`
+	err := cs.UpdateRawDoc(updatedDoc)
+	assert.NoError(t, err)
+	assert.Len(t, cs.docs, 1)
+	assert.Equal(t, "new_value", cs.docs[0]["value"])
+}

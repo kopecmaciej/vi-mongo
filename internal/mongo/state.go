@@ -34,7 +34,7 @@ func (c *CollectionState) GetAllDocs() []primitive.M {
 func (c *CollectionState) GetDocById(id any) primitive.M {
 	for _, doc := range c.docs {
 		if reflect.TypeOf(doc["_id"]) == reflect.TypeOf(id) {
-			if doc["_id"] == id {
+			if reflect.DeepEqual(doc["_id"], id) {
 				return util.DeepCopy(doc)
 			}
 		}
@@ -131,7 +131,7 @@ func (c *CollectionState) UpdateRawDoc(doc string) error {
 		return err
 	}
 	for i, existingDoc := range c.docs {
-		if existingDoc["_id"] == docMap["_id"] {
+		if reflect.DeepEqual(existingDoc["_id"], docMap["_id"]) {
 			c.docs[i] = docMap
 			return nil
 		}
@@ -147,7 +147,7 @@ func (c *CollectionState) AppendDoc(doc primitive.M) {
 
 func (c *CollectionState) DeleteDoc(id any) {
 	for i, doc := range c.docs {
-		if doc["_id"] == id {
+		if reflect.DeepEqual(doc["_id"], id) {
 			c.docs = append(c.docs[:i], c.docs[i+1:]...)
 			c.Count--
 			return
