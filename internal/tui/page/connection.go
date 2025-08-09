@@ -33,6 +33,10 @@ type Connection struct {
 
 	// function that is called when connection is set
 	onSubmit func()
+
+	// edit mode tracking
+	isEditMode      bool
+	editingConnName string
 }
 
 // NewConnection creates a new connection view
@@ -73,7 +77,7 @@ func (c *Connection) handleEvents() {
 }
 
 func (c *Connection) setLayout() {
-	c.form.SetTitle(" New connection ")
+	c.updateFormTitle()
 	c.form.SetBorder(true)
 
 	c.list.SetTitle(" Saved connections ")
@@ -83,6 +87,28 @@ func (c *Connection) setLayout() {
 	c.list.SetBorderPadding(1, 1, 1, 1)
 	c.list.SetItemGap(1)
 
+	c.updateFormButtons()
+}
+
+func (c *Connection) updateFormTitle() {
+	if c.isEditMode {
+		c.form.SetTitle(" Edit connection ")
+	} else {
+		c.form.SetTitle(" Add new connection ")
+	}
+}
+
+func (c *Connection) updateFormButtons() {
+	c.form.ClearButtons()
+	var buttonTxt string
+	if c.isEditMode {
+		buttonTxt = "Update"
+	} else {
+		buttonTxt = "Save"
+	}
+
+	c.form.AddButton(buttonTxt, c.saveButtonFunc)
+	c.form.AddButton("Cancel", c.cancelButtonFunc)
 }
 
 func (c *Connection) setStyle() {
@@ -117,6 +143,12 @@ func (c *Connection) setKeybindings() {
 	c.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Connection.ConnectionForm.SaveConnection, event.Name()):
+			_, buttonIdx := c.form.GetFocusedItemIndex()
+			b := c.form.GetButton(buttonIdx)
+			// Prevent from triggering saveButtonFunc when Cancel button was clicked
+			if b.GetLabel() == "Cancel" {
+				return event
+			}
 			c.saveButtonFunc()
 			return nil
 		case k.Contains(k.Connection.ConnectionForm.FocusList, event.Name()):
@@ -134,6 +166,9 @@ func (c *Connection) setKeybindings() {
 			return nil
 		case k.Contains(k.Connection.ConnectionList.DeleteConnection, event.Name()):
 			c.deleteCurrConnection()
+			return nil
+		case k.Contains(k.Connection.ConnectionList.EditConnection, event.Name()):
+			c.editCurrConnection()
 			return nil
 		}
 		return event
@@ -165,8 +200,7 @@ func (c *Connection) Render() {
 func (c *Connection) renderForm() *core.Form {
 	c.form.Clear(true)
 
-	c.form.AddButton("Save", c.saveButtonFunc)
-	c.form.AddButton("Cancel", c.cancelButtonFunc)
+	c.updateFormButtons()
 
 	c.form.AddInputField("Name", "", 40, nil, nil)
 
@@ -208,7 +242,12 @@ func (c *Connection) renderList() {
 		})
 	}
 
-	c.list.AddItem("Click to add new connection", "or by pressing "+c.App.GetKeys().Connection.ConnectionList.FocusForm.String(), 0, func() {
+	editKey := c.App.GetKeys().Connection.ConnectionList.EditConnection.String()
+	deleteKey := c.App.GetKeys().Connection.ConnectionList.DeleteConnection.String()
+	focusFormKey := c.App.GetKeys().Connection.ConnectionList.FocusForm.String()
+
+	helpText := fmt.Sprintf("Edit (%s) | Delete (%s) | Add new (%s)", editKey, deleteKey, focusFormKey)
+	c.list.AddItem("Click to add new connection", helpText, 0, func() {
 		c.App.SetFocus(c.form)
 	})
 
@@ -247,7 +286,55 @@ func (c *Connection) deleteCurrConnection() error {
 	return nil
 }
 
-// saveButtonFunc is a function for saving new connection
+// editCurrConnection loads the selected connection for editing
+func (c *Connection) editCurrConnection() {
+	currItem := c.list.GetCurrentItem()
+	if currItem == c.list.GetItemCount()-1 {
+		// This is the "add new connection" item, don't edit it
+		return
+	}
+
+	connName, _ := c.list.GetItemText(currItem)
+	conn, err := c.App.GetConfig().GetConnectionByName(connName)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Failed to load connection for editing", err)
+		return
+	}
+
+	// Enter edit mode
+	c.isEditMode = true
+	c.editingConnName = connName
+	c.updateFormTitle()
+	c.updateFormButtons()
+
+	// Populate form with connection data
+	c.populateFormWithConnection(conn)
+
+	c.App.SetFocus(c.form)
+}
+
+// populateFormWithConnection fills the form with connection data
+func (c *Connection) populateFormWithConnection(conn *config.MongoConfig) {
+	c.form.GetFormItemByLabel("Name").(*tview.InputField).SetText(conn.Name)
+
+	if conn.Uri != "" && conn.Uri != "mongodb://" {
+		c.form.GetFormItemByLabel("Uri").(*tview.TextArea).SetText(conn.Uri, true)
+	} else {
+		c.form.GetFormItemByLabel("Host").(*tview.InputField).SetText(conn.Host)
+		if conn.Port > 0 {
+			c.form.GetFormItemByLabel("Port").(*tview.InputField).SetText(fmt.Sprintf("%d", conn.Port))
+		}
+		c.form.GetFormItemByLabel("Username").(*tview.InputField).SetText(conn.Username)
+		c.form.GetFormItemByLabel("Password").(*tview.InputField).SetText(conn.Password)
+		c.form.GetFormItemByLabel("Database").(*tview.InputField).SetText(conn.Database)
+	}
+
+	if conn.Timeout > 0 {
+		c.form.GetFormItemByLabel("Timeout").(*tview.InputField).SetText(fmt.Sprintf("%d", conn.Timeout))
+	}
+}
+
+// saveButtonFunc handles both saving new connections and updating existing ones
 func (c *Connection) saveButtonFunc() {
 	name := c.form.GetFormItemByLabel("Name").(*tview.InputField).GetText()
 	uri := c.form.GetFormItemByLabel("Uri").(*tview.TextArea).GetText()
@@ -257,19 +344,23 @@ func (c *Connection) saveButtonFunc() {
 		modal.ShowError(c.App.Pages, "Timeout must be a number", err)
 		return
 	}
+
+	var saveErr error
+
 	if uri != "mongodb://" && strings.Trim(uri, " ") != "" {
 		if name == "" {
 			name = uri
 		}
-		err := c.App.GetConfig().AddConnectionFromUri(&config.MongoConfig{
+		mongoConfig := &config.MongoConfig{
 			Name:    name,
 			Uri:     uri,
 			Timeout: intTimeout,
-		})
-		if err != nil {
-			modal.ShowError(c.App.Pages, "Failed to save connection", err)
-			c.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
-			return
+		}
+
+		if c.isEditMode {
+			saveErr = c.App.GetConfig().UpdateConnectionFromUri(c.editingConnName, mongoConfig)
+		} else {
+			saveErr = c.App.GetConfig().AddConnectionFromUri(mongoConfig)
 		}
 	} else {
 		host := c.form.GetFormItemByLabel("Host").(*tview.InputField).GetText()
@@ -286,7 +377,7 @@ func (c *Connection) saveButtonFunc() {
 		if name == "" {
 			name = host + ":" + port
 		}
-		err = c.App.GetConfig().AddConnection(&config.MongoConfig{
+		mongoConfig := &config.MongoConfig{
 			Name:     name,
 			Host:     host,
 			Port:     intPort,
@@ -294,26 +385,50 @@ func (c *Connection) saveButtonFunc() {
 			Password: password,
 			Database: database,
 			Timeout:  intTimeout,
-		})
-		if err != nil {
-			modal.ShowError(c.App.Pages, "Failed to save connection", err)
-			return
+		}
+
+		if c.isEditMode {
+			saveErr = c.App.GetConfig().UpdateConnection(c.editingConnName, mongoConfig)
+		} else {
+			saveErr = c.App.GetConfig().AddConnection(mongoConfig)
 		}
 	}
+
+	if saveErr != nil {
+		action := "save"
+		if c.isEditMode {
+			action = "update"
+		}
+		modal.ShowError(c.App.Pages, fmt.Sprintf("Failed to %s connection", action), saveErr)
+		if !c.isEditMode {
+			c.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
+		}
+		return
+	}
+
+	if c.isEditMode {
+		c.isEditMode = false
+		c.editingConnName = ""
+		c.updateFormTitle()
+		c.updateFormButtons()
+	}
+
 	c.Render()
 	c.list.SetCurrentItem(c.list.GetItemCount())
 }
 
 // cancelButtonFunc is a function for canceling the form
 func (c *Connection) cancelButtonFunc() {
-	c.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
-	c.form.GetFormItemByLabel("Uri").(*tview.InputField).SetText("mongodb://")
-	c.form.GetFormItemByLabel("Host").(*tview.InputField).SetText("")
-	c.form.GetFormItemByLabel("Port").(*tview.InputField).SetText("")
-	c.form.GetFormItemByLabel("Username").(*tview.InputField).SetText("")
-	c.form.GetFormItemByLabel("Password").(*tview.InputField).SetText("")
-	c.form.GetFormItemByLabel("Database").(*tview.InputField).SetText("")
-	c.form.GetFormItemByLabel("Timeout").(*tview.InputField).SetText("5")
+	c.form.Clear(true)
+	c.App.SetFocus(c.list)
+	c.Render()
+}
+
+func (c *Connection) cancelEditFunc() {
+	c.isEditMode = false
+	c.editingConnName = ""
+	c.updateFormTitle()
+	c.updateFormButtons()
 	c.App.SetFocus(c.list)
 }
 
