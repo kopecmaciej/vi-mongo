@@ -123,6 +123,7 @@ type (
 	ConnectionListKeys struct {
 		FocusForm        Key `json:"focusForm"`
 		DeleteConnection Key `json:"deleteConnection"`
+		EditConnection   Key `json:"editConnection"`
 		SetConnection    Key `json:"setConnection"`
 	}
 
@@ -387,6 +388,10 @@ func (k *KeyBindings) loadDefaults() {
 		DeleteConnection: Key{
 			Runes:       []string{"D"},
 			Description: "Delete selected connection",
+		},
+		EditConnection: Key{
+			Runes:       []string{"E"},
+			Description: "Edit selected connection",
 		},
 		SetConnection: Key{
 			Keys:        []string{"Enter", "Space"},

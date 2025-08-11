@@ -281,6 +281,86 @@ func (c *Config) DeleteConnection(name string) error {
 	return os.WriteFile(configPath, updatedConfig, 0644)
 }
 
+// UpdateConnection updates an existing MongoDB connection in the config file
+func (c *Config) UpdateConnection(originalName string, mongoConfig *MongoConfig) error {
+	
+	// Find the connection to update
+	found := false
+	for i, connection := range c.Connections {
+		if connection.Name == originalName {
+			if mongoConfig.Password != "" && EncryptionKey != "" {
+				encryptedPass, err := util.EncryptPassword(mongoConfig.Password, EncryptionKey)
+				if err != nil {
+					return fmt.Errorf("failed to encrypt password: %w", err)
+				}
+				mongoConfig.Password = encryptedPass
+			}
+			
+			c.Connections[i] = *mongoConfig
+			found = true
+			break
+		}
+	}
+	
+	if !found {
+		return fmt.Errorf("connection '%s' not found", originalName)
+	}
+	
+	updatedConfig, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+
+	configPath, err := GetConfigPath()
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(configPath, updatedConfig, 0644)
+}
+
+// UpdateConnectionFromUri updates an existing MongoDB connection using a URI
+func (c *Config) UpdateConnectionFromUri(originalName string, mongoConfig *MongoConfig) error {
+	log.Info().Msgf("Updating connection from URI: %s", mongoConfig.GetSafeUri())
+
+	parsedConf, err := util.ParseMongoUri(mongoConfig.Uri)
+	if err != nil {
+		return err
+	}
+	mongoConfig.Host = parsedConf.Host
+	intPort, err := strconv.Atoi(parsedConf.Port)
+	if err != nil {
+		return err
+	}
+	mongoConfig.Port = intPort
+	mongoConfig.Database = parsedConf.DB
+	if parsedConf.Password != "" && EncryptionKey != "" {
+		mongoConfig.Password = parsedConf.Password
+		mongoConfig.Uri = mongoConfig.GetSafeUri()
+	}
+	return c.UpdateConnection(originalName, mongoConfig)
+}
+
+// GetConnectionByName returns a connection by name
+func (c *Config) GetConnectionByName(name string) (*MongoConfig, error) {
+	for _, connection := range c.Connections {
+		if connection.Name == name {
+			// Return a copy with decrypted password if needed
+			conn := connection
+			if conn.Password != "" && EncryptionKey != "" {
+				decryptedPass, err := util.DecryptPassword(conn.Password, EncryptionKey)
+				if err != nil {
+					log.Warn().Err(err).Msg("Failed to decrypt password")
+				} else {
+					conn.Password = decryptedPass
+				}
+			}
+			return &conn, nil
+		}
+	}
+	return nil, fmt.Errorf("connection '%s' not found", name)
+}
+
 func (c *Config) LoadEncryptionKey() error {
 	if c.EncryptionKeyPath != nil {
 		key, err := os.ReadFile(*c.EncryptionKeyPath)
