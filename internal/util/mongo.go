@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/kopecmaciej/tview"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -68,7 +69,8 @@ func StringifyMongoValueByType(v any) string {
 		return t.Time().UTC().Format(time.RFC3339)
 	case primitive.A, primitive.D, primitive.M, map[string]any, []any:
 		b, _ := json.Marshal(t)
-		return string(b)
+		// Use tview's Escape function to prevent brackets from being interpreted as color tags
+		return tview.Escape(string(b))
 	case primitive.E:
 		return fmt.Sprintf("%v", t)
 	case primitive.Binary:
