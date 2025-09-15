@@ -45,7 +45,9 @@ func TestGetValueByType(t *testing.T) {
 		{"Bool", true, "true"},
 		{"ObjectID", objId, objId.Hex()},
 		{"DateTime", date, dateUtc},
-		{"Array", primitive.A{"a", "b"}, `["a","b"]`},
+		// Arrays use tview.Escape() so closing brackets become [] to prevent color tag interpretation
+		{"Array", primitive.A{"a", "b"}, `["a","b"[]`},
+		{"Single item array", primitive.A{"single"}, `["single"[]`},
 		{"Object", primitive.M{"key": "value"}, `{"key":"value"}`},
 		{"Null", nil, "null"},
 	}
