@@ -634,7 +634,20 @@ func (k *Key) String() string {
 }
 
 func getKeybindingsPath() (string, error) {
-	configDir, err := util.GetConfigDir()
+	var configDir string
+	var err error
+
+	if CustomConfigDir != "" {
+		configDir = CustomConfigDir
+		// Check if keybindings file exists in custom directory
+		customKeybindingsPath := configDir + "/keybindings.json"
+		if _, err := os.Stat(customKeybindingsPath); err == nil {
+			return customKeybindingsPath, nil
+		}
+		// If not found in custom directory, fall back to default
+	}
+
+	configDir, err = util.GetConfigDir()
 	if err != nil {
 		return "", err
 	}

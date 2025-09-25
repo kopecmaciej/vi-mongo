@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -18,7 +19,8 @@ const (
 )
 
 var (
-	EncryptionKey = ""
+	EncryptionKey   = ""
+	CustomConfigDir = "" // Custom config directory for --config flag
 )
 
 type MongoOptions struct {
@@ -95,6 +97,25 @@ func LoadConfigWithVersion(version string) (*Config, error) {
 		if err := cfg.UpdateConfig(); err != nil {
 			log.Error().Err(err).Msg("Failed to update config with new version")
 		}
+	}
+
+	return cfg, nil
+}
+
+func LoadConfigWithCustomPath(version string, customConfigPath string) (*Config, error) {
+	defaultConfig := &Config{}
+	defaultConfig.loadDefaults(version)
+
+	// Set custom config directory for styles and keybindings
+	CustomConfigDir = filepath.Dir(customConfigPath)
+
+	cfg, err := util.LoadConfigFile(defaultConfig, customConfigPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if cfg.Version != version {
+		cfg.Version = version
 	}
 
 	return cfg, nil

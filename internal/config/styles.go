@@ -372,7 +372,20 @@ func isHexColor(s string) bool {
 }
 
 func getStylePath(styleName string) (string, error) {
-	configPath, err := util.GetConfigDir()
+	var configPath string
+	var err error
+
+	if CustomConfigDir != "" {
+		configPath = CustomConfigDir
+		// Check if style file exists in custom directory
+		customStylePath := fmt.Sprintf("%s/styles/%s", configPath, styleName)
+		if _, err := os.Stat(customStylePath); err == nil {
+			return customStylePath, nil
+		}
+		// If not found in custom directory, fall back to default
+	}
+
+	configPath, err = util.GetConfigDir()
 	if err != nil {
 		return "", err
 	}
