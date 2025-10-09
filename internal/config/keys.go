@@ -202,7 +202,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Show server info",
 		},
 		ShowAIQuery: Key{
-			Keys:        []string{"Ctrl+A"},
+			Keys:        []string{"Alt+a"},
 			Description: "Show AI prompt",
 		},
 	}
