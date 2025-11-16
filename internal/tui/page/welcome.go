@@ -95,13 +95,13 @@ func (w *Welcome) handleEvents() {
 	})
 }
 func (w *Welcome) Render() {
-	w.Flex.Clear()
+	w.Clear()
 
 	// easy way to center the form
 	w.AddItem(tview.NewBox(), 0, 1, false)
 
 	w.renderForm()
-	w.Flex.AddItem(w.form, 0, 3, true)
+	w.AddItem(w.form, 0, 3, true)
 
 	w.AddItem(tview.NewBox(), 0, 1, false)
 
@@ -117,13 +117,13 @@ func (w *Welcome) SetOnSubmitFunc(onSubmit func()) {
 func (w *Welcome) renderForm() {
 	w.form.Clear(false)
 
-	configFile, err := config.GetConfigPath()
+	cfg := w.App.GetConfig()
+
+	configFile, err := cfg.GetCurrentConfigPath()
 	if err != nil {
 		modal.ShowError(w.App.Pages, "Error while getting config path", err)
 		return
 	}
-
-	cfg := w.App.GetConfig()
 
 	welcomeText := "All configuration can be set in " + configFile + " file. You can also set it here."
 	w.form.AddTextView("Welcome info", welcomeText, 0, 2, true, false)

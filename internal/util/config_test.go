@@ -1,7 +1,9 @@
 package util
 
 import (
+	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -287,6 +289,70 @@ func TestParseMongoDBURI(t *testing.T) {
 			}
 			if config.Password != tt.wantPassword {
 				t.Errorf("ParseMongoDBURI()  = %v, want %v", config.DB, tt.wantDb)
+			}
+		})
+	}
+}
+
+func TestValidateConfigPath(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	tmpFile := tmpDir + "/test-config.yaml"
+	if err := os.WriteFile(tmpFile, []byte("test"), 0644); err != nil {
+		t.Fatalf("Failed to create temp file: %v", err)
+	}
+
+	tests := []struct {
+		name    string
+		path    string
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "Empty path is valid",
+			path:    "",
+			wantErr: false,
+		},
+		{
+			name:    "Existing file is valid",
+			path:    tmpFile,
+			wantErr: false,
+		},
+		{
+			name:    "Non-existent file in existing directory is valid",
+			path:    tmpDir + "/new-config.yaml",
+			wantErr: false,
+		},
+		{
+			name:    "Non-existent file in non-existent directory is invalid",
+			path:    tmpDir + "/nonexistent/config.yaml",
+			wantErr: true,
+			errMsg:  "config directory does not exist",
+		},
+		{
+			name:    "Path pointing to directory is invalid",
+			path:    tmpDir,
+			wantErr: true,
+			errMsg:  "config path is a directory",
+		},
+		{
+			name:    "File in current directory is valid",
+			path:    "config.yaml",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateConfigPath(tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateConfigPath() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && err != nil && tt.errMsg != "" {
+				if !strings.Contains(err.Error(), tt.errMsg) {
+					t.Errorf("ValidateConfigPath() error = %v, should contain %v", err.Error(), tt.errMsg)
+				}
 			}
 		})
 	}

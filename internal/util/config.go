@@ -162,6 +162,34 @@ func GetConfigDir() (string, error) {
 	return configPath, nil
 }
 
+// ValidateConfigPath validates that a config file path is valid
+// so if parent directory exists, and if path is not 'ended' as directory
+func ValidateConfigPath(configPath string) error {
+	if configPath == "" {
+		return nil
+	}
+
+	fileInfo, err := os.Stat(configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			dir := filepath.Dir(configPath)
+			if dir != "" && dir != "." {
+				if _, dirErr := os.Stat(dir); dirErr != nil && os.IsNotExist(dirErr) {
+					return fmt.Errorf("config directory does not exist: %s", dir)
+				}
+			}
+			return nil
+		}
+		return fmt.Errorf("cannot access config file '%s': %w", configPath, err)
+	}
+
+	if fileInfo.IsDir() {
+		return fmt.Errorf("config path is a directory, not a file: %s", configPath)
+	}
+
+	return nil
+}
+
 type MongoConfig struct {
 	Host     string
 	Port     string

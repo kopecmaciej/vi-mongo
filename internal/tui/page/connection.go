@@ -144,11 +144,14 @@ func (c *Connection) setKeybindings() {
 		switch {
 		case k.Contains(k.Connection.ConnectionForm.SaveConnection, event.Name()):
 			_, buttonIdx := c.form.GetFocusedItemIndex()
-			b := c.form.GetButton(buttonIdx)
-			// Prevent from triggering saveButtonFunc when Cancel button was clicked
-			if b.GetLabel() == "Cancel" {
-				return event
+
+			if buttonIdx >= 0 && buttonIdx < c.form.GetButtonCount() {
+				b := c.form.GetButton(buttonIdx)
+				if b.GetLabel() == "Cancel" {
+					return event
+				}
 			}
+
 			c.saveButtonFunc()
 			return nil
 		case k.Contains(k.Connection.ConnectionForm.FocusList, event.Name()):
