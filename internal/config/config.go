@@ -67,28 +67,40 @@ type Config struct {
 	Styles             StylesConfig  `yaml:"styles"`
 	EncryptionKeyPath  *string       `yaml:"encryptionKeyPath,omitempty"`
 	JumpInto           string        `yaml:"-"`
+	ConfigPath         string        `yaml:"-"`
 }
 
 // LoadConfig loads the config file
 // If the file does not exist, it will be created
 // with the default settings
 func LoadConfig() (*Config, error) {
-	return LoadConfigWithVersion("1.0.0")
+	return LoadConfigWithVersion("1.0.0", "")
 }
 
-func LoadConfigWithVersion(version string) (*Config, error) {
+func LoadConfigWithVersion(version string, customPath string) (*Config, error) {
 	defaultConfig := &Config{}
 	defaultConfig.loadDefaults(version)
 
-	configPath, err := GetConfigPath()
-	if err != nil {
-		return nil, err
+	var configPath string
+	var err error
+
+	if customPath != "" {
+		configPath = customPath
+	} else {
+		configPath, err = GetConfigPath()
+		if err != nil {
+			return nil, err
+		}
 	}
+
+	defaultConfig.ConfigPath = configPath
 
 	cfg, err := util.LoadConfigFile(defaultConfig, configPath)
 	if err != nil {
 		return nil, err
 	}
+
+	cfg.ConfigPath = configPath
 
 	if cfg.Version != version {
 		cfg.Version = version
@@ -130,6 +142,14 @@ func GetConfigPath() (string, error) {
 	return fmt.Sprintf("%s/%s", configPath, ConfigFile), nil
 }
 
+// GetCurrentConfigPath returns the config path changed or if not set - default
+func (c *Config) GetCurrentConfigPath() (string, error) {
+	if c.ConfigPath != "" {
+		return c.ConfigPath, nil
+	}
+	return GetConfigPath()
+}
+
 // UpdateConfig updates the config file with the new settings
 func (c *Config) UpdateConfig() error {
 	updatedConfig, err := yaml.Marshal(c)
@@ -138,7 +158,7 @@ func (c *Config) UpdateConfig() error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	configPath, err := GetConfigPath()
+	configPath, err := c.GetCurrentConfigPath()
 	if err != nil {
 		return err
 	}
@@ -175,7 +195,7 @@ func (c *Config) SetCurrentConnection(name string) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	configPath, err := GetConfigPath()
+	configPath, err := c.GetCurrentConfigPath()
 	if err != nil {
 		return err
 	}
@@ -227,7 +247,7 @@ func (c *Config) AddConnection(mongoConfig *MongoConfig) error {
 		return err
 	}
 
-	configPath, err := GetConfigPath()
+	configPath, err := c.GetCurrentConfigPath()
 	if err != nil {
 		return err
 	}
@@ -273,7 +293,7 @@ func (c *Config) DeleteConnection(name string) error {
 		return err
 	}
 
-	configPath, err := GetConfigPath()
+	configPath, err := c.GetCurrentConfigPath()
 	if err != nil {
 		return err
 	}
@@ -283,7 +303,7 @@ func (c *Config) DeleteConnection(name string) error {
 
 // UpdateConnection updates an existing MongoDB connection in the config file
 func (c *Config) UpdateConnection(originalName string, mongoConfig *MongoConfig) error {
-	
+
 	// Find the connection to update
 	found := false
 	for i, connection := range c.Connections {
@@ -295,23 +315,23 @@ func (c *Config) UpdateConnection(originalName string, mongoConfig *MongoConfig)
 				}
 				mongoConfig.Password = encryptedPass
 			}
-			
+
 			c.Connections[i] = *mongoConfig
 			found = true
 			break
 		}
 	}
-	
+
 	if !found {
 		return fmt.Errorf("connection '%s' not found", originalName)
 	}
-	
+
 	updatedConfig, err := yaml.Marshal(c)
 	if err != nil {
 		return err
 	}
 
-	configPath, err := GetConfigPath()
+	configPath, err := c.GetCurrentConfigPath()
 	if err != nil {
 		return err
 	}
