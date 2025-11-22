@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -15,6 +16,16 @@ var (
 	uriPasswordRegex    = regexp.MustCompile(`://([^:]+):([^@]+)(@.*)`)
 	hexColorRegex       = regexp.MustCompile(`^#(?:[0-9a-fA-F]{3}){1,2}$`)
 	dateRegex           = regexp.MustCompile(`\{\s*\"\$date\"\s*:\s*\"(.*?)\"\s*\}`)
+	// Matches regex literals in format: /pattern/flags
+	// Group 1: everything before the regex
+	// Group 2: the regex pattern (with escaped slashes handled)
+	// Group 3: the flags (optional)
+	regexLiteralPattern = regexp.MustCompile(`(:\s*)/(?:\\.|[^/\\])+/([gimsx]*)`)
+	// Mongosh helper function patterns
+	isoDatePattern      = regexp.MustCompile(`ISODate\s*\(\s*"([^"]*)"\s*\)`)
+	numberIntPattern    = regexp.MustCompile(`NumberInt\s*\(\s*(\d+)\s*\)`)
+	numberLongPattern   = regexp.MustCompile(`NumberLong\s*\(\s*(\d+)\s*\)`)
+	numberDecimalPattern = regexp.MustCompile(`NumberDecimal\s*\(\s*"([^"]*)"\s*\)`)
 )
 
 // IsHexColor checks if a string is a valid hex color
@@ -64,4 +75,85 @@ func ParseDateToBson(s string) (string, error) {
 		return s, parseError
 	}
 	return query, nil
+}
+
+// TransformRegexShorthand converts JavaScript-style regex literals to MongoDB $regex syntax
+// Example: { email: /example\.com$/ } -> { email: { "$regex": "example\\.com$" } }
+// Example: { name: /^john/i } -> { name: { "$regex": "^john", "$options": "i" } }
+func TransformRegexShorthand(s string) string {
+	return regexLiteralPattern.ReplaceAllStringFunc(s, func(match string) string {
+		// Extract the full match details
+		submatches := regexLiteralPattern.FindStringSubmatch(match)
+		if len(submatches) < 3 {
+			return match
+		}
+
+		prefix := submatches[1]  // The part before the regex (e.g., ": ")
+		flags := submatches[2]   // The flags (e.g., "i", "gim")
+
+		// Extract the pattern from the match
+		// Find the start of the regex pattern (after prefix and first /)
+		patternStart := len(prefix) + 1
+		// Find the end (before the last / and flags)
+		patternEnd := len(match) - len(flags) - 1
+
+		if patternStart >= patternEnd {
+			return match
+		}
+
+		pattern := match[patternStart:patternEnd]
+
+		// Escape backslashes first (for JSON), then escape double quotes
+		pattern = strings.ReplaceAll(pattern, `\`, `\\`)
+		pattern = strings.ReplaceAll(pattern, `"`, `\"`)
+
+		// Build the replacement string
+		if flags == "" {
+			return fmt.Sprintf(`%s{ "$regex": "%s" }`, prefix, pattern)
+		}
+		return fmt.Sprintf(`%s{ "$regex": "%s", "$options": "%s" }`, prefix, pattern, flags)
+	})
+}
+
+// TransformISODate converts mongosh ISODate() calls to BSON Extended JSON date format
+// Example: ISODate("2024-01-01T00:00:00Z") -> {"$date":{"$numberLong":"1704067200000"}}
+func TransformISODate(s string) string {
+	return isoDatePattern.ReplaceAllStringFunc(s, func(match string) string {
+		dateStr := isoDatePattern.FindStringSubmatch(match)[1]
+		t, err := time.Parse(time.RFC3339, dateStr)
+		if err != nil {
+			// If parsing fails, return original match
+			return match
+		}
+		millis := primitive.NewDateTimeFromTime(t).Time().UnixMilli()
+		return fmt.Sprintf(`{"$date":{"$numberLong":"%d"}}`, millis)
+	})
+}
+
+// TransformNumberInt converts mongosh NumberInt() calls to BSON Extended JSON int32 format
+// Example: NumberInt(42) -> {"$numberInt": "42"}
+func TransformNumberInt(s string) string {
+	return numberIntPattern.ReplaceAllString(s, `{"$$numberInt": "$1"}`)
+}
+
+// TransformNumberLong converts mongosh NumberLong() calls to BSON Extended JSON int64 format
+// Example: NumberLong(42) -> {"$numberLong": "42"}
+func TransformNumberLong(s string) string {
+	return numberLongPattern.ReplaceAllString(s, `{"$$numberLong": "$1"}`)
+}
+
+// TransformNumberDecimal converts mongosh NumberDecimal() calls to BSON Extended JSON decimal128 format
+// Example: NumberDecimal("123.45") -> {"$numberDecimal": "123.45"}
+func TransformNumberDecimal(s string) string {
+	return numberDecimalPattern.ReplaceAllString(s, `{"$$numberDecimal": "$1"}`)
+}
+
+// TransformMongoshSyntax applies all mongosh syntax transformations
+func TransformMongoshSyntax(s string) string {
+	s = TransformRegexShorthand(s)
+	s = TransformISODate(s)
+	s = TransformNumberInt(s)
+	s = TransformNumberLong(s)
+	s = TransformNumberDecimal(s)
+	return s
 }

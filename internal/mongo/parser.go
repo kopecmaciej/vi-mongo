@@ -93,7 +93,12 @@ func ParseStringQuery(query string) (map[string]any, error) {
 
 	query = util.QuoteUnquotedKeys(query)
 
+	// Transform mongosh syntax (regex, ISODate, NumberInt, NumberLong, NumberDecimal)
+	query = util.TransformMongoshSyntax(query)
+
+	// Transform ObjectID syntax (both ObjectID and ObjectId variants)
 	query = strings.ReplaceAll(query, "ObjectID(\"", "{\"$oid\": \"")
+	query = strings.ReplaceAll(query, "ObjectId(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "\")", "\"}")
 
 	var filter primitive.M
