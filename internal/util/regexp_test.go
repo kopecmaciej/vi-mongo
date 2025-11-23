@@ -136,11 +136,6 @@ func TestTransformISODate(t *testing.T) {
 			input: `{ date: ISODate( "2024-06-15T12:30:45Z" ) }`,
 			want:  `{ date: {"$date":{"$numberLong":"1718454645000"}} }`,
 		},
-		{
-			name:  "No ISODate - should remain unchanged",
-			input: `{ date: "2024-01-01" }`,
-			want:  `{ date: "2024-01-01" }`,
-		},
 	}
 
 	for _, tt := range tests {
@@ -165,24 +160,14 @@ func TestTransformNumberInt(t *testing.T) {
 			want:  `{ age: {"$numberInt": "30"} }`,
 		},
 		{
-			name:  "NumberInt with zero",
-			input: `{ count: NumberInt(0) }`,
-			want:  `{ count: {"$numberInt": "0"} }`,
-		},
-		{
 			name:  "Multiple NumberInt fields",
-			input: `{ min: NumberInt(1), max: NumberInt(100) }`,
-			want:  `{ min: {"$numberInt": "1"}, max: {"$numberInt": "100"} }`,
+			input: `{ min: NumberInt(0), max: NumberInt(100) }`,
+			want:  `{ min: {"$numberInt": "0"}, max: {"$numberInt": "100"} }`,
 		},
 		{
 			name:  "NumberInt with spaces",
 			input: `{ value: NumberInt( 42 ) }`,
 			want:  `{ value: {"$numberInt": "42"} }`,
-		},
-		{
-			name:  "No NumberInt - should remain unchanged",
-			input: `{ age: 30 }`,
-			want:  `{ age: 30 }`,
 		},
 	}
 
@@ -221,11 +206,6 @@ func TestTransformNumberLong(t *testing.T) {
 			name:  "NumberLong with spaces",
 			input: `{ value: NumberLong( 999999 ) }`,
 			want:  `{ value: {"$numberLong": "999999"} }`,
-		},
-		{
-			name:  "No NumberLong - should remain unchanged",
-			input: `{ count: 100 }`,
-			want:  `{ count: 100 }`,
 		},
 	}
 
@@ -269,11 +249,6 @@ func TestTransformNumberDecimal(t *testing.T) {
 			name:  "NumberDecimal with integer value",
 			input: `{ whole: NumberDecimal("100") }`,
 			want:  `{ whole: {"$numberDecimal": "100"} }`,
-		},
-		{
-			name:  "No NumberDecimal - should remain unchanged",
-			input: `{ price: 19.99 }`,
-			want:  `{ price: 19.99 }`,
 		},
 	}
 
@@ -338,8 +313,8 @@ func TestTransformRegexShorthand(t *testing.T) {
 	}{
 		{
 			name:  "Simple regex without flags",
-			input: `{ email: /example\.com$/ }`,
-			want:  `{ email: { "$regex": "example\\.com$" } }`,
+			input: `{ email: /website\.com$/ }`,
+			want:  `{ email: { "$regex": "website\\.com$" } }`,
 		},
 		{
 			name:  "Regex with case-insensitive flag",

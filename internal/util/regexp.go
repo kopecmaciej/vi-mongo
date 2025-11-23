@@ -22,9 +22,9 @@ var (
 	// Supports regex after: field values, array starts, and array commas
 	regexLiteralPattern = regexp.MustCompile(`([:\[,]\s*)/(?:\\.|[^/\\])+/([gimsx]*)`)
 	// Mongosh helper function patterns
-	isoDatePattern      = regexp.MustCompile(`ISODate\s*\(\s*"([^"]*)"\s*\)`)
-	numberIntPattern    = regexp.MustCompile(`NumberInt\s*\(\s*(\d+)\s*\)`)
-	numberLongPattern   = regexp.MustCompile(`NumberLong\s*\(\s*(\d+)\s*\)`)
+	isoDatePattern       = regexp.MustCompile(`ISODate\s*\(\s*"([^"]*)"\s*\)`)
+	numberIntPattern     = regexp.MustCompile(`NumberInt\s*\(\s*(\d+)\s*\)`)
+	numberLongPattern    = regexp.MustCompile(`NumberLong\s*\(\s*(\d+)\s*\)`)
 	numberDecimalPattern = regexp.MustCompile(`NumberDecimal\s*\(\s*"([^"]*)"\s*\)`)
 )
 
@@ -88,8 +88,8 @@ func TransformRegexShorthand(s string) string {
 			return match
 		}
 
-		prefix := submatches[1]  // The part before the regex (e.g., ": ")
-		flags := submatches[2]   // The flags (e.g., "i", "gim")
+		prefix := submatches[1] // The part before the regex (e.g., ": ")
+		flags := submatches[2]  // The flags (e.g., "i", "gim")
 
 		// Extract the pattern from the match
 		// Find the start of the regex pattern (after prefix and first /)
@@ -115,8 +115,6 @@ func TransformRegexShorthand(s string) string {
 	})
 }
 
-// TransformISODate converts mongosh ISODate() calls to BSON Extended JSON date format
-// Example: ISODate("2024-01-01T00:00:00Z") -> {"$date":{"$numberLong":"1704067200000"}}
 func TransformISODate(s string) string {
 	return isoDatePattern.ReplaceAllStringFunc(s, func(match string) string {
 		dateStr := isoDatePattern.FindStringSubmatch(match)[1]
@@ -130,25 +128,18 @@ func TransformISODate(s string) string {
 	})
 }
 
-// TransformNumberInt converts mongosh NumberInt() calls to BSON Extended JSON int32 format
-// Example: NumberInt(42) -> {"$numberInt": "42"}
 func TransformNumberInt(s string) string {
 	return numberIntPattern.ReplaceAllString(s, `{"$$numberInt": "$1"}`)
 }
 
-// TransformNumberLong converts mongosh NumberLong() calls to BSON Extended JSON int64 format
-// Example: NumberLong(42) -> {"$numberLong": "42"}
 func TransformNumberLong(s string) string {
 	return numberLongPattern.ReplaceAllString(s, `{"$$numberLong": "$1"}`)
 }
 
-// TransformNumberDecimal converts mongosh NumberDecimal() calls to BSON Extended JSON decimal128 format
-// Example: NumberDecimal("123.45") -> {"$numberDecimal": "123.45"}
 func TransformNumberDecimal(s string) string {
 	return numberDecimalPattern.ReplaceAllString(s, `{"$$numberDecimal": "$1"}`)
 }
 
-// TransformMongoshSyntax applies all mongosh syntax transformations
 func TransformMongoshSyntax(s string) string {
 	s = TransformRegexShorthand(s)
 	s = TransformISODate(s)

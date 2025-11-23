@@ -159,7 +159,7 @@ func TestParseStringQuery(t *testing.T) {
 		{
 			name:     "Regex with $in operator",
 			input:    `{ email: { $in: [/gmail\.com/i, /yahoo\.com/] } }`,
-			expected: map[string]any{"email": primitive.M{"$in": primitive.A{primitive.M{"$regex": "gmail\\.com", "$options": "i"}, primitive.M{"$regex": "yahoo\\.com"}}}},
+			expected: map[string]any{"email": primitive.M{"$in": primitive.A{primitive.Regex{Pattern: "gmail\\.com", Options: "i"}, primitive.Regex{Pattern: "yahoo\\.com", Options: ""}}}},
 			hasError: false,
 		},
 		{
@@ -379,7 +379,7 @@ func TestParseValueByType(t *testing.T) {
 		{
 			name:          "Original value as map - valid JSON",
 			value:         `{"key": "value"}`,
-			originalValue: map[string]interface{}{},
+			originalValue: map[string]any{},
 			expected:      primitive.M{"key": "value"},
 			hasError:      false,
 		},

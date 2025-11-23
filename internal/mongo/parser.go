@@ -108,7 +108,100 @@ func ParseStringQuery(query string) (map[string]any, error) {
 		return nil, fmt.Errorf("error parsing query %s: %w", query, err)
 	}
 
+	// Convert $regex objects to primitive.Regex when inside $in arrays
+	filter = convertRegexInArrays(filter)
+
 	return filter, nil
+}
+
+// convertRegexInArrays recursively traverses a document and converts $regex objects
+// to primitive.Regex when they appear inside $in arrays. This is necessary because
+// MongoDB doesn't support the extended JSON format for regex inside $in operators.
+func convertRegexInArrays(doc primitive.M) primitive.M {
+	result := make(primitive.M, len(doc))
+	for key, value := range doc {
+		result[key] = convertRegexInValue(value)
+	}
+	return result
+}
+
+// convertRegexInValue processes a single value, handling nested documents and arrays
+func convertRegexInValue(value any) any {
+	switch v := value.(type) {
+	case primitive.M:
+		// Check if this is a $in operator
+		if inArray, ok := v["$in"]; ok {
+			// Convert the $in array
+			v["$in"] = convertArrayRegexToNative(inArray)
+			return v
+		}
+		// Recursively process nested documents
+		return convertRegexInArrays(v)
+	case primitive.A:
+		// Process array elements
+		result := make(primitive.A, len(v))
+		for i, elem := range v {
+			result[i] = convertRegexInValue(elem)
+		}
+		return result
+	case []any:
+		// Process array elements
+		result := make(primitive.A, len(v))
+		for i, elem := range v {
+			result[i] = convertRegexInValue(elem)
+		}
+		return result
+	default:
+		return value
+	}
+}
+
+// convertArrayRegexToNative converts $regex objects in an array to primitive.Regex
+func convertArrayRegexToNative(value any) any {
+	switch arr := value.(type) {
+	case primitive.A:
+		result := make(primitive.A, len(arr))
+		for i, elem := range arr {
+			result[i] = convertRegexObject(elem)
+		}
+		return result
+	case []any:
+		result := make(primitive.A, len(arr))
+		for i, elem := range arr {
+			result[i] = convertRegexObject(elem)
+		}
+		return result
+	default:
+		return value
+	}
+}
+
+// convertRegexObject converts a $regex object to primitive.Regex
+func convertRegexObject(value any) any {
+	if m, ok := value.(primitive.M); ok {
+		// Check if this is a $regex object
+		if pattern, hasRegex := m["$regex"]; hasRegex {
+			patternStr, ok := pattern.(string)
+			if !ok {
+				return value
+			}
+
+			// Get options if present
+			options := ""
+			if opts, hasOptions := m["$options"]; hasOptions {
+				if optsStr, ok := opts.(string); ok {
+					options = optsStr
+				}
+			}
+
+			// Return primitive.Regex instead of the $regex object
+			return primitive.Regex{
+				Pattern: patternStr,
+				Options: options,
+			}
+		}
+	}
+	return value
 }
 
 // IndentJson indents a JSON string and returns a a buffer
