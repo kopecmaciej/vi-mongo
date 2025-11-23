@@ -17,10 +17,10 @@ var (
 	hexColorRegex       = regexp.MustCompile(`^#(?:[0-9a-fA-F]{3}){1,2}$`)
 	dateRegex           = regexp.MustCompile(`\{\s*\"\$date\"\s*:\s*\"(.*?)\"\s*\}`)
 	// Matches regex literals in format: /pattern/flags
-	// Group 1: everything before the regex
-	// Group 2: the regex pattern (with escaped slashes handled)
-	// Group 3: the flags (optional)
-	regexLiteralPattern = regexp.MustCompile(`(:\s*)/(?:\\.|[^/\\])+/([gimsx]*)`)
+	// Group 1: everything before the regex (: or [ or ,)
+	// Group 2: the flags (optional)
+	// Supports regex after: field values, array starts, and array commas
+	regexLiteralPattern = regexp.MustCompile(`([:\[,]\s*)/(?:\\.|[^/\\])+/([gimsx]*)`)
 	// Mongosh helper function patterns
 	isoDatePattern      = regexp.MustCompile(`ISODate\s*\(\s*"([^"]*)"\s*\)`)
 	numberIntPattern    = regexp.MustCompile(`NumberInt\s*\(\s*(\d+)\s*\)`)

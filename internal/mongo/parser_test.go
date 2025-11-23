@@ -144,6 +144,42 @@ func TestParseStringQuery(t *testing.T) {
 			expected: map[string]any{"_id": objectID},
 			hasError: false,
 		},
+		{
+			name:     "Regex in array - single element",
+			input:    `{ tags: [/mongodb/] }`,
+			expected: map[string]any{"tags": primitive.A{primitive.M{"$regex": "mongodb"}}},
+			hasError: false,
+		},
+		{
+			name:     "Regex in array - multiple elements",
+			input:    `{ tags: [/mongodb/i, /database/] }`,
+			expected: map[string]any{"tags": primitive.A{primitive.M{"$regex": "mongodb", "$options": "i"}, primitive.M{"$regex": "database"}}},
+			hasError: false,
+		},
+		{
+			name:     "Regex with $in operator",
+			input:    `{ email: { $in: [/gmail\.com/i, /yahoo\.com/] } }`,
+			expected: map[string]any{"email": primitive.M{"$in": primitive.A{primitive.M{"$regex": "gmail\\.com", "$options": "i"}, primitive.M{"$regex": "yahoo\\.com"}}}},
+			hasError: false,
+		},
+		{
+			name:     "Array with mixed types including regex",
+			input:    `{ status: ["active", /pending/i, "inactive"] }`,
+			expected: map[string]any{"status": primitive.A{"active", primitive.M{"$regex": "pending", "$options": "i"}, "inactive"}},
+			hasError: false,
+		},
+		{
+			name:     "Nested array with regex and other mongosh syntax",
+			input:    `{ filters: [{ name: /john/i, age: NumberInt(30) }] }`,
+			expected: map[string]any{"filters": primitive.A{primitive.M{"name": primitive.M{"$regex": "john", "$options": "i"}, "age": int32(30)}}},
+			hasError: false,
+		},
+		{
+			name:     "Complex query with $or and array regex",
+			input:    `{ $or: [{ email: /gmail/i }, { tags: [/mongo/i, /db/] }] }`,
+			expected: map[string]any{"$or": primitive.A{primitive.M{"email": primitive.M{"$regex": "gmail", "$options": "i"}}, primitive.M{"tags": primitive.A{primitive.M{"$regex": "mongo", "$options": "i"}, primitive.M{"$regex": "db"}}}}},
+			hasError: false,
+		},
 	}
 
 	for _, tc := range cases {

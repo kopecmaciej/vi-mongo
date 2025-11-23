@@ -411,6 +411,56 @@ func TestTransformRegexShorthand(t *testing.T) {
 			input: `{ url: /(http|https):\/\/[^\s]+/ }`,
 			want:  `{ url: { "$regex": "(http|https):\\/\\/[^\\s]+" } }`,
 		},
+		{
+			name:  "Regex in array - single element",
+			input: `{ tags: [/tag1/] }`,
+			want:  `{ tags: [{ "$regex": "tag1" }] }`,
+		},
+		{
+			name:  "Regex in array - multiple elements without flags",
+			input: `{ tags: [/tag1/, /tag2/] }`,
+			want:  `{ tags: [{ "$regex": "tag1" }, { "$regex": "tag2" }] }`,
+		},
+		{
+			name:  "Regex in array - multiple elements with flags",
+			input: `{ tags: [/tag1/i, /tag2/gi] }`,
+			want:  `{ tags: [{ "$regex": "tag1", "$options": "i" }, { "$regex": "tag2", "$options": "gi" }] }`,
+		},
+		{
+			name:  "Regex in array with mixed flags",
+			input: `{ patterns: [/^start/, /end$/i, /middle/gim] }`,
+			want:  `{ patterns: [{ "$regex": "^start" }, { "$regex": "end$", "$options": "i" }, { "$regex": "middle", "$options": "gim" }] }`,
+		},
+		{
+			name:  "Regex with $in operator",
+			input: `{ email: { $in: [/gmail\.com/, /yahoo\.com/i] } }`,
+			want:  `{ email: { $in: [{ "$regex": "gmail\\.com" }, { "$regex": "yahoo\\.com", "$options": "i" }] } }`,
+		},
+		{
+			name:  "Regex in nested array",
+			input: `{ filters: [{ name: /john/i }, { email: /gmail/ }] }`,
+			want:  `{ filters: [{ name: { "$regex": "john", "$options": "i" } }, { email: { "$regex": "gmail" } }] }`,
+		},
+		{
+			name:  "Array with regex and other values mixed",
+			input: `{ tags: [/pattern/i, "literal", /another/] }`,
+			want:  `{ tags: [{ "$regex": "pattern", "$options": "i" }, "literal", { "$regex": "another" }] }`,
+		},
+		{
+			name:  "Regex in array with escaped characters",
+			input: `{ paths: [/\/api\/v1\//i, /\/api\/v2\//] }`,
+			want:  `{ paths: [{ "$regex": "\\/api\\/v1\\/", "$options": "i" }, { "$regex": "\\/api\\/v2\\/" }] }`,
+		},
+		{
+			name:  "Regex in array with complex patterns",
+			input: `{ emails: [/^[a-z0-9]+@gmail\.com$/i, /^[a-z0-9]+@yahoo\.com$/i] }`,
+			want:  `{ emails: [{ "$regex": "^[a-z0-9]+@gmail\\.com$", "$options": "i" }, { "$regex": "^[a-z0-9]+@yahoo\\.com$", "$options": "i" }] }`,
+		},
+		{
+			name:  "Array with spaces around regex",
+			input: `{ tags: [ /tag1/i , /tag2/ ] }`,
+			want:  `{ tags: [ { "$regex": "tag1", "$options": "i" } , { "$regex": "tag2" } ] }`,
+		},
 	}
 
 	for _, tt := range tests {
