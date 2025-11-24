@@ -36,6 +36,9 @@ If you are using [Neovim](https://neovim.io/) you can install the plugin from [n
   collection names, database names, and MongoDB commands as you type.
 - **Query History**: Vi Mongo keeps track of your query history, allowing you to
   easily access and reuse previous queries.
+- **Mongosh Syntax Support**: Vi Mongo supports standard MongoDB Shell
+  (mongosh) syntax, including regex literals (`/pattern/flags`), `ISODate()`,
+  `NumberInt()`, `NumberLong()`, and `NumberDecimal()` helper functions.
 - **Multiple Styles**: Vi Mongo supports multiple color schemes, they can be
   selected in config file or add/modify easily.
 

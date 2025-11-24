@@ -17,9 +17,7 @@ var (
 	hexColorRegex       = regexp.MustCompile(`^#(?:[0-9a-fA-F]{3}){1,2}$`)
 	dateRegex           = regexp.MustCompile(`\{\s*\"\$date\"\s*:\s*\"(.*?)\"\s*\}`)
 	// Matches regex literals in format: /pattern/flags
-	// Group 1: everything before the regex (: or [ or ,)
-	// Group 2: the flags (optional)
-	// Supports regex after: field values, array starts, and array commas
+	// Group 1: before pattern : or [ or , Group 2: the flags (optional)
 	regexLiteralPattern = regexp.MustCompile(`([:\[,]\s*)/(?:\\.|[^/\\])+/([gimsx]*)`)
 	// Mongosh helper function patterns
 	isoDatePattern       = regexp.MustCompile(`ISODate\s*\(\s*"([^"]*)"\s*\)`)
@@ -78,36 +76,28 @@ func ParseDateToBson(s string) (string, error) {
 }
 
 // TransformRegexShorthand converts JavaScript-style regex literals to MongoDB $regex syntax
-// Example: { email: /example\.com$/ } -> { email: { "$regex": "example\\.com$" } }
-// Example: { name: /^john/i } -> { name: { "$regex": "^john", "$options": "i" } }
+// to make end results: { key: { "$regex": "value"} } with flags as options
 func TransformRegexShorthand(s string) string {
 	return regexLiteralPattern.ReplaceAllStringFunc(s, func(match string) string {
-		// Extract the full match details
 		submatches := regexLiteralPattern.FindStringSubmatch(match)
 		if len(submatches) < 3 {
 			return match
 		}
 
-		prefix := submatches[1] // The part before the regex (e.g., ": ")
-		flags := submatches[2]  // The flags (e.g., "i", "gim")
+		prefix := submatches[1]
+		flags := submatches[2]
 
-		// Extract the pattern from the match
-		// Find the start of the regex pattern (after prefix and first /)
-		patternStart := len(prefix) + 1
-		// Find the end (before the last / and flags)
-		patternEnd := len(match) - len(flags) - 1
-
+		patternStart := len(prefix) + 1           // add first `/`
+		patternEnd := len(match) - len(flags) - 1 // before the last / and flags
 		if patternStart >= patternEnd {
 			return match
 		}
 
 		pattern := match[patternStart:patternEnd]
 
-		// Escape backslashes first (for JSON), then escape double quotes
 		pattern = strings.ReplaceAll(pattern, `\`, `\\`)
 		pattern = strings.ReplaceAll(pattern, `"`, `\"`)
 
-		// Build the replacement string
 		if flags == "" {
 			return fmt.Sprintf(`%s{ "$regex": "%s" }`, prefix, pattern)
 		}
@@ -120,7 +110,6 @@ func TransformISODate(s string) string {
 		dateStr := isoDatePattern.FindStringSubmatch(match)[1]
 		t, err := time.Parse(time.RFC3339, dateStr)
 		if err != nil {
-			// If parsing fails, return original match
 			return match
 		}
 		millis := primitive.NewDateTimeFromTime(t).Time().UnixMilli()
@@ -147,4 +136,107 @@ func TransformMongoshSyntax(s string) string {
 	s = TransformNumberLong(s)
 	s = TransformNumberDecimal(s)
 	return s
+}
+
+// ConvertRegexInArrays recursively traverses a document and converts $regex objects
+// to primitive.Regex when they appear inside $in arrays.
+// Reason: https://www.mongodb.com/docs/manual/reference/operator/query/regex/#behavior
+func ConvertRegexInArrays(doc primitive.M) primitive.M {
+	result := make(primitive.M, len(doc))
+	for key, value := range doc {
+		result[key] = convertRegexInValue(value)
+	}
+	return result
+}
+
+// convertRegexInValue processes a single value, handling nested documents and arrays
+func convertRegexInValue(value any) any {
+	switch v := value.(type) {
+	case primitive.M:
+		if inArray, ok := v["$in"]; ok {
+			v["$in"] = convertArrayRegexToNative(inArray)
+			return v
+		}
+		return ConvertRegexInArrays(v)
+	case primitive.A, []any:
+		return convertArray(v)
+	default:
+		return value
+	}
+}
+
+// convertArray converts an array, processing each element
+func convertArray(arr any) primitive.A {
+	var length int
+	switch v := arr.(type) {
+	case primitive.A:
+		length = len(v)
+	case []any:
+		length = len(v)
+	default:
+		return nil
+	}
+
+	result := make(primitive.A, length)
+	for i := 0; i < length; i++ {
+		var elem any
+		switch v := arr.(type) {
+		case primitive.A:
+			elem = v[i]
+		case []any:
+			elem = v[i]
+		}
+		result[i] = convertRegexInValue(elem)
+	}
+	return result
+}
+
+// convertArrayRegexToNative converts $regex objects in an array to primitive.Regex
+func convertArrayRegexToNative(value any) any {
+	switch arr := value.(type) {
+	case primitive.A:
+		result := make(primitive.A, len(arr))
+		for i, elem := range arr {
+			result[i] = convertRegexObject(elem)
+		}
+		return result
+	case []any:
+		result := make(primitive.A, len(arr))
+		for i, elem := range arr {
+			result[i] = convertRegexObject(elem)
+		}
+		return result
+	default:
+		return value
+	}
+}
+
+// convertRegexObject converts a $regex object to primitive.Regex
+func convertRegexObject(value any) any {
+	m, ok := value.(primitive.M)
+	if !ok {
+		return value
+	}
+
+	pattern, hasRegex := m["$regex"]
+	if !hasRegex {
+		return value
+	}
+
+	patternStr, ok := pattern.(string)
+	if !ok {
+		return value
+	}
+
+	options := ""
+	if opts, hasOptions := m["$options"]; hasOptions {
+		if optsStr, ok := opts.(string); ok {
+			options = optsStr
+		}
+	}
+
+	return primitive.Regex{
+		Pattern: patternStr,
+		Options: options,
+	}
 }

@@ -180,6 +180,24 @@ func TestParseStringQuery(t *testing.T) {
 			expected: map[string]any{"$or": primitive.A{primitive.M{"email": primitive.M{"$regex": "gmail", "$options": "i"}}, primitive.M{"tags": primitive.A{primitive.M{"$regex": "mongo", "$options": "i"}, primitive.M{"$regex": "db"}}}}},
 			hasError: false,
 		},
+		{
+			name:     "MongoDB docs example: $in with multiple regex patterns",
+			input:    `{ name: { $in: [ /^acme/i, /^ack/ ] } }`,
+			expected: map[string]any{"name": primitive.M{"$in": primitive.A{primitive.Regex{Pattern: "^acme", Options: "i"}, primitive.Regex{Pattern: "^ack", Options: ""}}}},
+			hasError: false,
+		},
+		{
+			name:     "$in with regex and literal strings mixed",
+			input:    `{ status: { $in: [ "active", /pend.*ing/i, "closed" ] } }`,
+			expected: map[string]any{"status": primitive.M{"$in": primitive.A{"active", primitive.Regex{Pattern: "pend.*ing", Options: "i"}, "closed"}}},
+			hasError: false,
+		},
+		{
+			name:     "$and with $in containing regex patterns",
+			input:    `{ $and: [ { name: { $in: [ /acme.*corp/i ] } }, { status: "active" } ] }`,
+			expected: map[string]any{"$and": primitive.A{primitive.M{"name": primitive.M{"$in": primitive.A{primitive.Regex{Pattern: "acme.*corp", Options: "i"}}}}, primitive.M{"status": "active"}}},
+			hasError: false,
+		},
 	}
 
 	for _, tc := range cases {
