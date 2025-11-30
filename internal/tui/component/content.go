@@ -412,7 +412,7 @@ func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, error) {
 	if err != nil {
 		return nil, err
 	}
-	sort, err := mongo.ParseStringQuery(c.state.Sort)
+	sort, err := mongo.ParseSortOptions(c.state.Sort)
 	if err != nil {
 		return nil, err
 	}
@@ -669,6 +669,7 @@ func (c *Content) sortBarHandler(ctx context.Context) {
 func (c *Content) refreshDocument(ctx context.Context, doc string) {
 	c.state.UpdateRawDoc(doc)
 	c.updateContentBasedOnState(ctx)
+
 }
 
 func (c *Content) getDocumentBasedOnView(row, col int) (string, error) {

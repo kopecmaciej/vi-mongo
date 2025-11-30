@@ -84,16 +84,18 @@ func sortArray(arr []any) primitive.A {
 	return sorted
 }
 
-// ParseStringQuery transforms a query string with ObjectID into a filter map compatible with MongoDB's BSON.
-// If keys are not quoted, this function will quote them.
+// ParseStringQuery transforms a query string into a filter map compatible with MongoDB's BSON.
+// It transforms special Mongodb JS syntax into proper BSON
 func ParseStringQuery(query string) (map[string]any, error) {
 	if query == "" {
 		return map[string]any{}, nil
 	}
 
 	query = util.QuoteUnquotedKeys(query)
+	query = util.TransformMongoshSyntax(query)
 
 	query = strings.ReplaceAll(query, "ObjectID(\"", "{\"$oid\": \"")
+	query = strings.ReplaceAll(query, "ObjectId(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "\")", "\"}")
 
 	var filter primitive.M
@@ -103,7 +105,27 @@ func ParseStringQuery(query string) (map[string]any, error) {
 		return nil, fmt.Errorf("error parsing query %s: %w", query, err)
 	}
 
+	filter = util.ConvertRegexInArrays(filter)
+
 	return filter, nil
+}
+
+// ParseSortOptions parses a sort options string into a BSON-compatible map.
+func ParseSortOptions(sortOptions string) (map[string]any, error) {
+	if sortOptions == "" {
+		return map[string]any{}, nil
+	}
+
+	sortOptions = util.QuoteUnquotedKeys(sortOptions)
+
+	var sort primitive.M
+	err := bson.UnmarshalExtJSON([]byte(sortOptions), false, &sort)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error parsing sort options %s", sortOptions)
+		return nil, fmt.Errorf("error parsing sort options %s: %w", sortOptions, err)
+	}
+
+	return sort, nil
 }
 
 // IndentJson indents a JSON string and returns a a buffer

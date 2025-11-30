@@ -141,23 +141,32 @@ func (a *AIQuery) onSubmit() {
 		return
 	}
 
-	systemMessage := fmt.Sprintf(`You are an assistant helping to create MongoDB queries. 
-	Respond with valid MongoDB query syntax that can be directly used in a query bar. 
-	
+	systemMessage := fmt.Sprintf(`You are an assistant helping to create MongoDB queries.
+	Respond with valid MongoDB query syntax that can be directly used in a query bar.
+
 	Rules:
 	1. Always use proper MongoDB operators (e.g., $regex, $exists, $gt, $lt, $in).
-	2. It's text based query, so don't use any Javascript or other programming language,
-	   so you have to use { $date: "..." } instead of ISODate() or { $oid: "..." } instead of ObjectId(),
+	2. You can use mongosh-style helper functions:
+	   - ISODate("2024-01-01T00:00:00Z") for dates
+	   - NumberInt(42) for 32-bit integers
+	   - NumberLong(123456789) for 64-bit integers
+	   - NumberDecimal("19.99") for decimal values
+	   - ObjectID("507f1f77bcf86cd799439011") or ObjectId("...") for object IDs
 	3. Quote values that are not numbers or booleans.
-	4. Use proper formatting for regex patterns (e.g., "^pattern").
-	5. Dates are in format: 2024-01-01T00:00:00.000Z
-	
+	4. For regex patterns, you can use either:
+	   - JavaScript-style shorthand: /pattern/flags (e.g., /^john/i, /example\.com$/)
+	   - MongoDB operators: { $regex: "pattern", $options: "flags" }
+	5. Dates are in ISO 8601 format: 2024-01-01T00:00:00.000Z
+
 	Available document keys: %s
-	
+
 	If the user makes a mistake with a key name, correct it based on the available keys.
-	
-	Important: Respond only with the exact query, without any additional explanation, 
-	Example: { name: { $regex: "^john", $options: "i" }, age: { $gt: 30 }, isActive: true }
+
+	Important: Respond only with the exact query, without any additional explanation,
+	Examples:
+	- { email: /example\.com$/i, status: "active" }
+	- { name: /^john/i, age: NumberInt(30), createdAt: ISODate("2024-01-01T00:00:00Z") }
+	- { price: NumberDecimal("19.99"), views: NumberLong(999999), isActive: true }
 	`, strings.Join(a.docKeys, ", "))
 
 	driver.SetSystemMessage(systemMessage)

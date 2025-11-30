@@ -11,6 +11,15 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// mustParseDecimal is a helper function for tests that need decimal128 values
+func mustParseDecimal(s string) primitive.Decimal128 {
+	d, err := primitive.ParseDecimal128(s)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse decimal: %v", err))
+	}
+	return d
+}
+
 func TestParseStringQuery(t *testing.T) {
 	objectID, err := primitive.ObjectIDFromHex("507f1f77bcf86cd799439011")
 	assert.NoError(t, err, "Failed to create ObjectID for testing")
@@ -50,6 +59,144 @@ func TestParseStringQuery(t *testing.T) {
 			input:    `{"_id": ObjectID("invalid")}`,
 			expected: nil,
 			hasError: true,
+		},
+		{
+			name:     "Regex shorthand without flags",
+			input:    `{ email: /example\.com$/ }`,
+			expected: map[string]any{"email": primitive.M{"$regex": "example\\.com$"}},
+			hasError: false,
+		},
+		{
+			name:     "Regex shorthand with case-insensitive flag",
+			input:    `{ name: /^john/i }`,
+			expected: map[string]any{"name": primitive.M{"$regex": "^john", "$options": "i"}},
+			hasError: false,
+		},
+		{
+			name:     "Regex shorthand with multiple flags",
+			input:    `{ text: /pattern/gim }`,
+			expected: map[string]any{"text": primitive.M{"$regex": "pattern", "$options": "gim"}},
+			hasError: false,
+		},
+		{
+			name:     "Multiple regex patterns in one query",
+			input:    `{ name: /john/, email: /gmail\.com/i }`,
+			expected: map[string]any{"name": primitive.M{"$regex": "john"}, "email": primitive.M{"$regex": "gmail\\.com", "$options": "i"}},
+			hasError: false,
+		},
+		{
+			name:     "Regex with ObjectID in same query",
+			input:    `{ _id: ObjectID("507f1f77bcf86cd799439011"), email: /test@example\.com/ }`,
+			expected: map[string]any{"_id": objectID, "email": primitive.M{"$regex": "test@example\\.com"}},
+			hasError: false,
+		},
+		{
+			name:     "Nested object with regex",
+			input:    `{ user: { email: /admin@/i } }`,
+			expected: map[string]any{"user": primitive.M{"email": primitive.M{"$regex": "admin@", "$options": "i"}}},
+			hasError: false,
+		},
+		{
+			name:     "Complex regex pattern",
+			input:    `{ email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i }`,
+			expected: map[string]any{"email": primitive.M{"$regex": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "$options": "i"}},
+			hasError: false,
+		},
+		{
+			name:     "ISODate syntax",
+			input:    `{ createdAt: ISODate("2024-01-01T00:00:00Z") }`,
+			expected: map[string]any{"createdAt": primitive.NewDateTimeFromTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))},
+			hasError: false,
+		},
+		{
+			name:     "NumberInt syntax",
+			input:    `{ age: NumberInt(30) }`,
+			expected: map[string]any{"age": int32(30)},
+			hasError: false,
+		},
+		{
+			name:     "NumberLong syntax",
+			input:    `{ userId: NumberLong(123456789) }`,
+			expected: map[string]any{"userId": int64(123456789)},
+			hasError: false,
+		},
+		{
+			name:     "NumberDecimal syntax",
+			input:    `{ price: NumberDecimal("19.99") }`,
+			expected: map[string]any{"price": mustParseDecimal("19.99")},
+			hasError: false,
+		},
+		{
+			name:     "Combined mongosh syntax",
+			input:    `{ name: /^john/i, age: NumberInt(25), createdAt: ISODate("2024-01-01T00:00:00Z") }`,
+			expected: map[string]any{"name": primitive.M{"$regex": "^john", "$options": "i"}, "age": int32(25), "createdAt": primitive.NewDateTimeFromTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))},
+			hasError: false,
+		},
+		{
+			name:     "Multiple ISODate fields",
+			input:    `{ start: ISODate("2024-01-01T00:00:00Z"), end: ISODate("2024-12-31T23:59:59Z") }`,
+			expected: map[string]any{"start": primitive.NewDateTimeFromTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)), "end": primitive.NewDateTimeFromTime(time.Date(2024, 12, 31, 23, 59, 59, 0, time.UTC))},
+			hasError: false,
+		},
+		{
+			name:     "ObjectId lowercase variant",
+			input:    `{ _id: ObjectId("507f1f77bcf86cd799439011") }`,
+			expected: map[string]any{"_id": objectID},
+			hasError: false,
+		},
+		{
+			name:     "Regex in array - single element",
+			input:    `{ tags: [/mongodb/] }`,
+			expected: map[string]any{"tags": primitive.A{primitive.M{"$regex": "mongodb"}}},
+			hasError: false,
+		},
+		{
+			name:     "Regex in array - multiple elements",
+			input:    `{ tags: [/mongodb/i, /database/] }`,
+			expected: map[string]any{"tags": primitive.A{primitive.M{"$regex": "mongodb", "$options": "i"}, primitive.M{"$regex": "database"}}},
+			hasError: false,
+		},
+		{
+			name:     "Regex with $in operator",
+			input:    `{ email: { $in: [/gmail\.com/i, /yahoo\.com/] } }`,
+			expected: map[string]any{"email": primitive.M{"$in": primitive.A{primitive.Regex{Pattern: "gmail\\.com", Options: "i"}, primitive.Regex{Pattern: "yahoo\\.com", Options: ""}}}},
+			hasError: false,
+		},
+		{
+			name:     "Array with mixed types including regex",
+			input:    `{ status: ["active", /pending/i, "inactive"] }`,
+			expected: map[string]any{"status": primitive.A{"active", primitive.M{"$regex": "pending", "$options": "i"}, "inactive"}},
+			hasError: false,
+		},
+		{
+			name:     "Nested array with regex and other mongosh syntax",
+			input:    `{ filters: [{ name: /john/i, age: NumberInt(30) }] }`,
+			expected: map[string]any{"filters": primitive.A{primitive.M{"name": primitive.M{"$regex": "john", "$options": "i"}, "age": int32(30)}}},
+			hasError: false,
+		},
+		{
+			name:     "Complex query with $or and array regex",
+			input:    `{ $or: [{ email: /gmail/i }, { tags: [/mongo/i, /db/] }] }`,
+			expected: map[string]any{"$or": primitive.A{primitive.M{"email": primitive.M{"$regex": "gmail", "$options": "i"}}, primitive.M{"tags": primitive.A{primitive.M{"$regex": "mongo", "$options": "i"}, primitive.M{"$regex": "db"}}}}},
+			hasError: false,
+		},
+		{
+			name:     "MongoDB docs example: $in with multiple regex patterns",
+			input:    `{ name: { $in: [ /^acme/i, /^ack/ ] } }`,
+			expected: map[string]any{"name": primitive.M{"$in": primitive.A{primitive.Regex{Pattern: "^acme", Options: "i"}, primitive.Regex{Pattern: "^ack", Options: ""}}}},
+			hasError: false,
+		},
+		{
+			name:     "$in with regex and literal strings mixed",
+			input:    `{ status: { $in: [ "active", /pend.*ing/i, "closed" ] } }`,
+			expected: map[string]any{"status": primitive.M{"$in": primitive.A{"active", primitive.Regex{Pattern: "pend.*ing", Options: "i"}, "closed"}}},
+			hasError: false,
+		},
+		{
+			name:     "$and with $in containing regex patterns",
+			input:    `{ $and: [ { name: { $in: [ /acme.*corp/i ] } }, { status: "active" } ] }`,
+			expected: map[string]any{"$and": primitive.A{primitive.M{"name": primitive.M{"$in": primitive.A{primitive.Regex{Pattern: "acme.*corp", Options: "i"}}}}, primitive.M{"status": "active"}}},
+			hasError: false,
 		},
 	}
 
@@ -250,7 +397,7 @@ func TestParseValueByType(t *testing.T) {
 		{
 			name:          "Original value as map - valid JSON",
 			value:         `{"key": "value"}`,
-			originalValue: map[string]interface{}{},
+			originalValue: map[string]any{},
 			expected:      primitive.M{"key": "value"},
 			hasError:      false,
 		},
