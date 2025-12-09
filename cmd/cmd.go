@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	runtimeDebug "runtime/debug"
 	"strings"
 
 	"fmt"
@@ -151,6 +152,18 @@ func runApp(cmd *cobra.Command, args []string) {
 	}
 
 	logFile := logging(cfg.Log.Path, logLevel, cfg.Log.PrettyPrint)
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error().
+				Interface("panic", r).
+				Str("stack", string(runtimeDebug.Stack())).
+				Msg("Application panicked")
+
+			fmt.Fprintf(os.Stderr, "\nERROR: Application crashed unexpectedly\n")
+			fmt.Fprintf(os.Stderr, "Details have been logged to: %s\n", cfg.Log.Path)
+			os.Exit(1)
+		}
+	}()
 	defer func() {
 		err := logFile.Close()
 		if err != nil {
