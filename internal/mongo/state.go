@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/kopecmaciej/vi-mongo/internal/util"
@@ -53,6 +54,40 @@ func (c *CollectionState) GetJsonDocById(id any) (string, error) {
 		return "", err
 	}
 	return indentedJson.String(), nil
+}
+
+// GetValueByIdAndColumn returns a stringified value from the document identified by id at the given column.
+func (c *CollectionState) GetValueByIdAndColumn(id any, column string) (string, error) {
+	doc := c.GetDocById(id)
+	if doc == nil {
+		return "", nil
+	}
+
+	value := c.getFieldValue(doc, column)
+	return util.StringifyMongoValueByType(value), nil
+}
+
+func (c *CollectionState) getFieldValue(doc primitive.M, field string) any {
+	fields := strings.Split(field, ".")
+	current := doc
+
+	for i, field := range fields {
+		if i == len(fields)-1 {
+			return current[field]
+		}
+
+		if val, exists := current[field]; exists {
+			if nested, ok := val.(primitive.M); ok {
+				current = nested
+			} else {
+				return nil
+			}
+		} else {
+			return nil
+		}
+	}
+
+	return nil
 }
 
 func (c *CollectionState) SetSkip(skip int64) {

@@ -1024,8 +1024,31 @@ func (c *Content) handleClearSelection() *tcell.EventKey {
 }
 
 func (c *Content) handleCopyLine(row, col int) *tcell.EventKey {
-	selectedDoc := util.CleanJsonWhitespaces(c.table.GetCell(row, col).Text)
-	err := clipboard.WriteAll(selectedDoc)
+	var textToCopy string
+
+	if c.currentView == TableView {
+		headerCell := c.table.GetCell(0, col)
+		if headerCell == nil {
+			return nil
+		}
+
+		column := strings.Split(headerCell.Text, " ")[0]
+		id := c.getDocumentId(row, col)
+		if id == nil {
+			return nil
+		}
+
+		value, err := c.state.GetValueByIdAndColumn(id, column)
+		if err != nil {
+			modal.ShowError(c.App.Pages, "Error getting field value", err)
+			return nil
+		}
+		textToCopy = value
+	} else {
+		textToCopy = util.CleanJsonWhitespaces(c.table.GetCell(row, col).Text)
+	}
+
+	err := clipboard.WriteAll(textToCopy)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error copying document", err)
 	}
@@ -1119,24 +1142,21 @@ func (c *Content) handleInlineEdit(ctx context.Context, row, col int) *tcell.Eve
 		return nil
 	}
 
-	fieldName := strings.Split(headerCell.Text, " ")[0]
+	column := strings.Split(headerCell.Text, " ")[0]
 
-	_id := c.getDocumentId(row, col)
-	if _id == nil {
+	id := c.getDocumentId(row, col)
+	if id == nil {
 		return nil
 	}
 
-	doc := c.state.GetDocById(_id)
-	if doc == nil {
-		modal.ShowError(c.App.Pages, "Document not found", nil)
+	currentValueStr, err := c.state.GetValueByIdAndColumn(id, column)
+	if err != nil {
+		modal.ShowError(c.App.Pages, "Error getting field value", err)
 		return nil
 	}
-
-	currentValue := c.getFieldValue(doc, fieldName)
-	currentValueStr := util.StringifyMongoValueByType(currentValue)
 
 	c.inlineEditModal.SetApplyCallback(func(field, newValue string) error {
-		return c.updateCellValue(ctx, _id, field, newValue, row, col)
+		return c.updateCellValue(ctx, id, field, newValue, row, col)
 	})
 
 	c.inlineEditModal.SetCancelCallback(func() {
@@ -1145,7 +1165,7 @@ func (c *Content) handleInlineEdit(ctx context.Context, row, col int) *tcell.Eve
 		c.table.Select(row, col)
 	})
 
-	err := c.inlineEditModal.Render(ctx, fieldName, currentValueStr)
+	err = c.inlineEditModal.Render(ctx, column, currentValueStr)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error showing inline edit", err)
 	}
@@ -1197,29 +1217,6 @@ func (c *Content) updateCellValue(ctx context.Context, _id any, fieldName, newVa
 	c.inlineEditModal.Hide()
 	c.App.SetFocus(c.table)
 	c.table.Select(row, col)
-
-	return nil
-}
-
-func (c *Content) getFieldValue(doc primitive.M, fieldPath string) interface{} {
-	fields := strings.Split(fieldPath, ".")
-	current := doc
-
-	for i, field := range fields {
-		if i == len(fields)-1 {
-			return current[field]
-		}
-
-		if val, exists := current[field]; exists {
-			if nested, ok := val.(primitive.M); ok {
-				current = nested
-			} else {
-				return nil
-			}
-		} else {
-			return nil
-		}
-	}
 
 	return nil
 }

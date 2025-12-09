@@ -164,3 +164,133 @@ func TestCollectionState_UpdateRawDoc_WithBinaryId(t *testing.T) {
 	assert.Len(t, cs.docs, 1)
 	assert.Equal(t, "new_value", cs.docs[0]["value"])
 }
+
+func TestCollectionState_GetValueByColumn(t *testing.T) {
+	cs := &CollectionState{
+		docs: []primitive.M{
+			{
+				"_id":    "1",
+				"name":   "John Doe",
+				"age":    int32(30),
+				"active": true,
+				"address": primitive.M{
+					"city":    "New York",
+					"country": "USA",
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name     string
+		id       any
+		column   string
+		expected string
+	}{
+		{
+			name:     "simple string field",
+			id:       "1",
+			column:   "name",
+			expected: "John Doe",
+		},
+		{
+			name:     "simple int field",
+			id:       "1",
+			column:   "age",
+			expected: "30",
+		},
+		{
+			name:     "simple bool field",
+			id:       "1",
+			column:   "active",
+			expected: "true",
+		},
+		{
+			name:     "nested field column",
+			id:       "1",
+			column:   "address.city",
+			expected: "New York",
+		},
+		{
+			name:     "nested field column deep",
+			id:       "1",
+			column:   "address.country",
+			expected: "USA",
+		},
+		{
+			name:     "non-existent column",
+			id:       "1",
+			column:   "nonexistent",
+			expected: "null",
+		},
+		{
+			name:     "non-existent id",
+			id:       "999",
+			column:   "name",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := cs.GetValueByIdAndColumn(tt.id, tt.column)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestCollectionState_getFieldValue(t *testing.T) {
+	doc := primitive.M{
+		"name": "Jane Smith",
+		"age":  int64(25),
+		"contact": primitive.M{
+			"email": "jane@example.com",
+			"phone": primitive.M{
+				"mobile": "555-1234",
+				"home":   "555-5678",
+			},
+		},
+	}
+
+	cs := &CollectionState{}
+
+	tests := []struct {
+		name      string
+		fieldPath string
+		expected  interface{}
+	}{
+		{
+			name:      "top level field",
+			fieldPath: "name",
+			expected:  "Jane Smith",
+		},
+		{
+			name:      "nested field level 1",
+			fieldPath: "contact.email",
+			expected:  "jane@example.com",
+		},
+		{
+			name:      "nested field level 2",
+			fieldPath: "contact.phone.mobile",
+			expected:  "555-1234",
+		},
+		{
+			name:      "non-existent field",
+			fieldPath: "address",
+			expected:  nil,
+		},
+		{
+			name:      "non-existent nested field",
+			fieldPath: "contact.address.city",
+			expected:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := cs.getFieldValue(doc, tt.fieldPath)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
