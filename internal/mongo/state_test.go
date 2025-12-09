@@ -165,7 +165,7 @@ func TestCollectionState_UpdateRawDoc_WithBinaryId(t *testing.T) {
 	assert.Equal(t, "new_value", cs.docs[0]["value"])
 }
 
-func TestCollectionState_GetValueByColumn(t *testing.T) {
+func TestCollectionState_GetValueByIdAndColumn(t *testing.T) {
 	cs := &CollectionState{
 		docs: []primitive.M{
 			{
@@ -258,7 +258,7 @@ func TestCollectionState_getFieldValue(t *testing.T) {
 	tests := []struct {
 		name      string
 		fieldPath string
-		expected  interface{}
+		expected  any
 	}{
 		{
 			name:      "top level field",
