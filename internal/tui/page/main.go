@@ -153,7 +153,11 @@ func (m *Main) render() {
 	m.Clear()
 	m.innerFlex.Clear()
 
-	m.AddItem(m.databases, 30, 0, true)
+	dbPanelSize := 30
+	if m.App.GetStyles().Databases.Expanded {
+		dbPanelSize = 50
+	}
+	m.AddItem(m.databases, dbPanelSize, 0, true)
 	m.AddItem(m.innerFlex, 0, 7, false)
 	m.innerFlex.AddItem(m.header, 4, 0, false)
 	m.innerFlex.AddItem(m.tabBar, 1, 0, false)

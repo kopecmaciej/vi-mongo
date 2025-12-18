@@ -92,6 +92,7 @@ type (
 		OpenNodeSymbol   Style `yaml:"openNodeSymbol"`
 		ClosedNodeSymbol Style `yaml:"closedNodeSymbol"`
 		LeafSymbol       Style `yaml:"leafSymbol"`
+		Expanded         bool  `yaml:"expanded"`
 	}
 
 	// ContentStyle is a struct that contains all the styles for the content
@@ -217,6 +218,7 @@ func (s *Styles) loadDefaults() {
 		OpenNodeSymbol:   "▼",
 		ClosedNodeSymbol: "▶",
 		LeafSymbol:       "◆",
+		Expanded:         true,
 	}
 
 	s.Content = ContentStyle{

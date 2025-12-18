@@ -97,6 +97,7 @@ func ParseStringQuery(query string) (map[string]any, error) {
 	query = strings.ReplaceAll(query, "ObjectID(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "ObjectId(\"", "{\"$oid\": \"")
 	query = strings.ReplaceAll(query, "\")", "\"}")
+	query = strings.ReplaceAll(query, "'", "\"")
 
 	var filter primitive.M
 	err := bson.UnmarshalExtJSON([]byte(query), false, &filter)
