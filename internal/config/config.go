@@ -47,8 +47,9 @@ type LogConfig struct {
 }
 
 type EditorConfig struct {
-	Command string `yaml:"command"`
-	Env     string `yaml:"env"`
+	Command            string `yaml:"command"`
+	Env                string `yaml:"env"`
+	DatabasePanelWidth int    `yaml:"databasePanelWidth,omitempty"`
 }
 
 type StylesConfig struct {
@@ -121,8 +122,9 @@ func (c *Config) loadDefaults(version string) {
 		PrettyPrint: true,
 	}
 	c.Editor = EditorConfig{
-		Command: "",
-		Env:     "EDITOR",
+		Command:            "",
+		Env:                "EDITOR",
+		DatabasePanelWidth: 30,
 	}
 	c.Styles = StylesConfig{
 		BetterSymbols: true,
