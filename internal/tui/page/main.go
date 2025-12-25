@@ -153,7 +153,7 @@ func (m *Main) render() {
 	m.Clear()
 	m.innerFlex.Clear()
 
-	dbPanelSize := m.App.GetConfig().Editor.DatabasePanelWidth
+	dbPanelSize := m.App.GetConfig().UI.DatabasePanelWidth
 
 	m.AddItem(m.databases, dbPanelSize, 0, true)
 	m.AddItem(m.innerFlex, 0, 7, false)
