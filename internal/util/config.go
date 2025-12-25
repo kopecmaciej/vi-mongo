@@ -55,6 +55,10 @@ func mergeConfigsRecursive(loaded, defaultValue reflect.Value) {
 			}
 		case reflect.Struct:
 			mergeConfigsRecursive(field, defaultField)
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if field.Int() == 0 {
+				field.Set(defaultField)
+			}
 		}
 	}
 }

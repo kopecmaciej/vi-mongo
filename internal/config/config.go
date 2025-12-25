@@ -56,10 +56,15 @@ type StylesConfig struct {
 	CurrentStyle  string `yaml:"currentStyle"`
 }
 
+type UIConfig struct {
+	DatabasePanelWidth int `yaml:"databasePanelWidth,omitempty"`
+}
+
 type Config struct {
 	Version            string        `yaml:"version"`
 	Log                LogConfig     `yaml:"log"`
 	Editor             EditorConfig  `yaml:"editor"`
+	UI                 UIConfig      `yaml:"ui"`
 	ShowConnectionPage bool          `yaml:"showConnectionPage"`
 	ShowWelcomePage    bool          `yaml:"showWelcomePage"`
 	CurrentConnection  string        `yaml:"currentConnection"`
@@ -123,6 +128,9 @@ func (c *Config) loadDefaults(version string) {
 	c.Editor = EditorConfig{
 		Command: "",
 		Env:     "EDITOR",
+	}
+	c.UI = UIConfig{
+		DatabasePanelWidth: 30,
 	}
 	c.Styles = StylesConfig{
 		BetterSymbols: true,
