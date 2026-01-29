@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
@@ -171,6 +172,19 @@ func ParseValueByType(value string, originalValue any) (any, error) {
 			return stringToFloat(value)
 		case bool:
 			return stringToBool(value)
+		case primitive.DateTime:
+			if parsed, err := time.Parse(time.RFC3339, value); err == nil {
+				return primitive.NewDateTimeFromTime(parsed), nil
+			}
+			if parsed, err := time.Parse("2006-01-02T15:04:05.000Z", value); err == nil {
+				return primitive.NewDateTimeFromTime(parsed), nil
+			}
+			if parsed, err := time.Parse("2006-01-02T15:04:05Z07:00", value); err == nil {
+				return primitive.NewDateTimeFromTime(parsed), nil
+			}
+			if parsed, err := time.Parse("2006-01-02 15:04:05", value); err == nil {
+				return primitive.NewDateTimeFromTime(parsed), nil
+			}
 		}
 	}
 
