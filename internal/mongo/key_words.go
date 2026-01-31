@@ -6,6 +6,53 @@ var (
 		InsertText:  "ObjectID(\"<$0>\")",
 		Description: "ObjectID is a 12-byte BSON type",
 	}
+	bsonTypes = []MongoKeyword{
+		{
+			Display:     "ISODate(\"\")",
+			InsertText:  "ISODate(\"<$0>\")",
+			Description: "ISODate represents a date in ISO 8601 format",
+		},
+		{
+			Display:     "NumberDecimal(\"\")",
+			InsertText:  "NumberDecimal(\"<$0>\")",
+			Description: "NumberDecimal is a 128-bit decimal-based floating-point (Decimal128)",
+		},
+		{
+			Display:     "NumberLong(\"\")",
+			InsertText:  "NumberLong(\"<$0>\")",
+			Description: "NumberLong is a 64-bit integer",
+		},
+		{
+			Display:     "NumberInt(\"\")",
+			InsertText:  "NumberInt(\"<$0>\")",
+			Description: "NumberInt is a 32-bit integer",
+		},
+		{
+			Display:     "Timestamp()",
+			InsertText:  "Timestamp(<$0>)",
+			Description: "Timestamp is a BSON timestamp type",
+		},
+		{
+			Display:     "BinData()",
+			InsertText:  "BinData(<$0>)",
+			Description: "BinData is a BSON binary data type",
+		},
+		{
+			Display:     "MinKey",
+			InsertText:  "MinKey",
+			Description: "MinKey compares lower than all other BSON types",
+		},
+		{
+			Display:     "MaxKey",
+			InsertText:  "MaxKey",
+			Description: "MaxKey compares higher than all other BSON types",
+		},
+		{
+			Display:     "RegExp(\"\")",
+			InsertText:  "RegExp(\"<$0>\")",
+			Description: "RegExp represents a regular expression",
+		},
+	}
 	comparisonOperators = []MongoKeyword{
 		{
 			Display:     "$eq",
@@ -519,6 +566,7 @@ func getMongoOperators() []MongoKeyword {
 	operators := []MongoKeyword{}
 
 	operators = append(operators, objectID)
+	operators = append(operators, bsonTypes...)
 	operators = append(operators, comparisonOperators...)
 	operators = append(operators, elementOperators...)
 	operators = append(operators, evaluationOperators...)

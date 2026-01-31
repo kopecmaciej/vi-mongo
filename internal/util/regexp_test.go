@@ -110,12 +110,29 @@ func TestParseDateToBson(t *testing.T) {
 	}
 }
 
-func TestTransformISODate(t *testing.T) {
+func TestTransformMongoshSyntax(t *testing.T) {
 	tests := []struct {
 		name  string
 		input string
 		want  string
 	}{
+		// ObjectId
+		{
+			name:  "ObjectID uppercase",
+			input: `{ _id: ObjectID("507f1f77bcf86cd799439011") }`,
+			want:  `{ _id: {"$oid": "507f1f77bcf86cd799439011"} }`,
+		},
+		{
+			name:  "ObjectId lowercase d",
+			input: `{ _id: ObjectId("507f1f77bcf86cd799439011") }`,
+			want:  `{ _id: {"$oid": "507f1f77bcf86cd799439011"} }`,
+		},
+		{
+			name:  "ObjectId with spaces",
+			input: `{ _id: ObjectId( "507f1f77bcf86cd799439011" ) }`,
+			want:  `{ _id: {"$oid": "507f1f77bcf86cd799439011"} }`,
+		},
+		// ISODate
 		{
 			name:  "Simple ISODate",
 			input: `{ createdAt: ISODate("2024-01-01T00:00:00Z") }`,
@@ -136,24 +153,17 @@ func TestTransformISODate(t *testing.T) {
 			input: `{ date: ISODate( "2024-06-15T12:30:45Z" ) }`,
 			want:  `{ date: {"$date":{"$numberLong":"1718454645000"}} }`,
 		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := TransformISODate(tt.input)
-			if got != tt.want {
-				t.Errorf("TransformISODate() = %q, want %q", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestTransformNumberInt(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
-		want  string
-	}{
+		{
+			name:  "ISODate date only",
+			input: `{ createdAt: ISODate("2025-11-16") }`,
+			want:  `{ createdAt: {"$date":{"$numberLong":"1763251200000"}} }`,
+		},
+		{
+			name:  "ISODate without timezone",
+			input: `{ createdAt: ISODate("2024-07-04T05:50:15") }`,
+			want:  `{ createdAt: {"$date":{"$numberLong":"1720072215000"}} }`,
+		},
+		// NumberInt
 		{
 			name:  "Simple NumberInt",
 			input: `{ age: NumberInt(30) }`,
@@ -169,24 +179,7 @@ func TestTransformNumberInt(t *testing.T) {
 			input: `{ value: NumberInt( 42 ) }`,
 			want:  `{ value: {"$numberInt": "42"} }`,
 		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := TransformNumberInt(tt.input)
-			if got != tt.want {
-				t.Errorf("TransformNumberInt() = %q, want %q", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestTransformNumberLong(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
-		want  string
-	}{
+		// NumberLong
 		{
 			name:  "Simple NumberLong",
 			input: `{ bigNumber: NumberLong(9223372036854775807) }`,
@@ -207,24 +200,7 @@ func TestTransformNumberLong(t *testing.T) {
 			input: `{ value: NumberLong( 999999 ) }`,
 			want:  `{ value: {"$numberLong": "999999"} }`,
 		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := TransformNumberLong(tt.input)
-			if got != tt.want {
-				t.Errorf("TransformNumberLong() = %q, want %q", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestTransformNumberDecimal(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
-		want  string
-	}{
+		// NumberDecimal
 		{
 			name:  "Simple NumberDecimal",
 			input: `{ price: NumberDecimal("19.99") }`,
@@ -250,24 +226,7 @@ func TestTransformNumberDecimal(t *testing.T) {
 			input: `{ whole: NumberDecimal("100") }`,
 			want:  `{ whole: {"$numberDecimal": "100"} }`,
 		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := TransformNumberDecimal(tt.input)
-			if got != tt.want {
-				t.Errorf("TransformNumberDecimal() = %q, want %q", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestTransformMongoshSyntax(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
-		want  string
-	}{
+		// Combined
 		{
 			name:  "Combined: regex and ISODate",
 			input: `{ email: /test@example\.com/i, createdAt: ISODate("2024-01-01T00:00:00Z") }`,
@@ -280,8 +239,8 @@ func TestTransformMongoshSyntax(t *testing.T) {
 		},
 		{
 			name:  "Combined: all transformations",
-			input: `{ name: /^john/i, age: NumberInt(25), balance: NumberDecimal("1000.50"), createdAt: ISODate("2024-01-01T00:00:00Z"), views: NumberLong(999999) }`,
-			want:  `{ name: { "$regex": "^john", "$options": "i" }, age: {"$numberInt": "25"}, balance: {"$numberDecimal": "1000.50"}, createdAt: {"$date":{"$numberLong":"1704067200000"}}, views: {"$numberLong": "999999"} }`,
+			input: `{ _id: ObjectId("507f1f77bcf86cd799439011"), name: /^john/i, age: NumberInt(25), balance: NumberDecimal("1000.50"), createdAt: ISODate("2024-01-01T00:00:00Z"), views: NumberLong(999999) }`,
+			want:  `{ _id: {"$oid": "507f1f77bcf86cd799439011"}, name: { "$regex": "^john", "$options": "i" }, age: {"$numberInt": "25"}, balance: {"$numberDecimal": "1000.50"}, createdAt: {"$date":{"$numberLong":"1704067200000"}}, views: {"$numberLong": "999999"} }`,
 		},
 		{
 			name:  "No transformations needed",
@@ -297,12 +256,22 @@ func TestTransformMongoshSyntax(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := TransformMongoshSyntax(tt.input)
+			got, err := TransformMongoshSyntax(tt.input)
+			if err != nil {
+				t.Fatalf("TransformMongoshSyntax() unexpected error: %v", err)
+			}
 			if got != tt.want {
 				t.Errorf("TransformMongoshSyntax() = %q, want %q", got, tt.want)
 			}
 		})
 	}
+
+	t.Run("Invalid ISODate returns error", func(t *testing.T) {
+		_, err := TransformMongoshSyntax(`{ created_at: ISODate("not-a-date") }`)
+		if err == nil {
+			t.Error("TransformMongoshSyntax() expected error for invalid ISODate, got nil")
+		}
+	})
 }
 
 func TestTransformRegexShorthand(t *testing.T) {
