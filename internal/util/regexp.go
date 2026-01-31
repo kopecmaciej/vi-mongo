@@ -24,6 +24,7 @@ var (
 	numberIntPattern     = regexp.MustCompile(`NumberInt\s*\(\s*(\d+)\s*\)`)
 	numberLongPattern    = regexp.MustCompile(`NumberLong\s*\(\s*(\d+)\s*\)`)
 	numberDecimalPattern = regexp.MustCompile(`NumberDecimal\s*\(\s*"([^"]*)"\s*\)`)
+	objectIdPattern      = regexp.MustCompile(`ObjectI[dD]\s*\(\s*"([^"]*)"\s*\)`)
 )
 
 // IsHexColor checks if a string is a valid hex color
@@ -105,37 +106,46 @@ func TransformRegexShorthand(s string) string {
 	})
 }
 
-func TransformISODate(s string) string {
-	return isoDatePattern.ReplaceAllStringFunc(s, func(match string) string {
+// MongoDateFormats contains the date formats supported by MongoDB's ISODate().
+// See: https://www.mongodb.com/docs/manual/reference/method/date/
+var MongoDateFormats = []string{
+	time.RFC3339Nano,          // 2006-01-02T15:04:05.999999999Z07:00
+	time.RFC3339,              // 2006-01-02T15:04:05Z07:00
+	"2006-01-02T15:04:05",    // datetime without timezone (treated as UTC)
+	"2006-01-02T15:04:05.000", // datetime with millis, no timezone
+	"2006-01-02",              // date only
+}
+
+func TransformISODate(s string) (string, error) {
+	var parseErr error
+	result := isoDatePattern.ReplaceAllStringFunc(s, func(match string) string {
 		dateStr := isoDatePattern.FindStringSubmatch(match)[1]
-		t, err := time.Parse(time.RFC3339, dateStr)
-		if err != nil {
-			return match
+		for _, format := range MongoDateFormats {
+			if t, err := time.Parse(format, dateStr); err == nil {
+				millis := primitive.NewDateTimeFromTime(t).Time().UnixMilli()
+				return fmt.Sprintf(`{"$date":{"$numberLong":"%d"}}`, millis)
+			}
 		}
-		millis := primitive.NewDateTimeFromTime(t).Time().UnixMilli()
-		return fmt.Sprintf(`{"$date":{"$numberLong":"%d"}}`, millis)
+		parseErr = fmt.Errorf("unable to parse ISODate value: %q, supported formats: 2006-01-02T15:04:05Z, 2006-01-02T15:04:05, 2006-01-02", dateStr)
+		return match
 	})
+	return result, parseErr
 }
 
-func TransformNumberInt(s string) string {
-	return numberIntPattern.ReplaceAllString(s, `{"$$numberInt": "$1"}`)
-}
-
-func TransformNumberLong(s string) string {
-	return numberLongPattern.ReplaceAllString(s, `{"$$numberLong": "$1"}`)
-}
-
-func TransformNumberDecimal(s string) string {
-	return numberDecimalPattern.ReplaceAllString(s, `{"$$numberDecimal": "$1"}`)
-}
-
-func TransformMongoshSyntax(s string) string {
+// TransformMongoshSyntax converts mongosh helper functions (ObjectId, ISODate, NumberInt, etc.)
+// into their Extended JSON equivalents that the MongoDB driver can parse.
+func TransformMongoshSyntax(s string) (string, error) {
 	s = TransformRegexShorthand(s)
-	s = TransformISODate(s)
-	s = TransformNumberInt(s)
-	s = TransformNumberLong(s)
-	s = TransformNumberDecimal(s)
-	return s
+	s = objectIdPattern.ReplaceAllString(s, `{"$$oid": "$1"}`)
+	var err error
+	s, err = TransformISODate(s)
+	if err != nil {
+		return s, err
+	}
+	s = numberIntPattern.ReplaceAllString(s, `{"$$numberInt": "$1"}`)
+	s = numberLongPattern.ReplaceAllString(s, `{"$$numberLong": "$1"}`)
+	s = numberDecimalPattern.ReplaceAllString(s, `{"$$numberDecimal": "$1"}`)
+	return s, nil
 }
 
 // ConvertRegexInArrays recursively traverses a document and converts $regex objects
