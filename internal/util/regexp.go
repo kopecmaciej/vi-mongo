@@ -109,11 +109,12 @@ func TransformRegexShorthand(s string) string {
 // MongoDateFormats contains the date formats supported by MongoDB's ISODate().
 // See: https://www.mongodb.com/docs/manual/reference/method/date/
 var MongoDateFormats = []string{
-	time.RFC3339Nano,          // 2006-01-02T15:04:05.999999999Z07:00
-	time.RFC3339,              // 2006-01-02T15:04:05Z07:00
-	"2006-01-02T15:04:05",    // datetime without timezone (treated as UTC)
-	"2006-01-02T15:04:05.000", // datetime with millis, no timezone
-	"2006-01-02",              // date only
+	time.RFC3339Nano,
+	time.RFC3339,
+	"2006-01-02T15:04:05",
+	"2006-01-02T15:04:05.000",
+	"2006-01-02 15:04:05",
+	"2006-01-02",
 }
 
 func TransformISODate(s string) (string, error) {

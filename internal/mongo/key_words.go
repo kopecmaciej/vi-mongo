@@ -13,18 +13,18 @@ var (
 			Description: "ISODate represents a date in ISO 8601 format",
 		},
 		{
-			Display:     "NumberDecimal(\"\")",
-			InsertText:  "NumberDecimal(\"<$0>\")",
+			Display:     "NumberDecimal()",
+			InsertText:  "NumberDecimal(<$0>)",
 			Description: "NumberDecimal is a 128-bit decimal-based floating-point (Decimal128)",
 		},
 		{
-			Display:     "NumberLong(\"\")",
-			InsertText:  "NumberLong(\"<$0>\")",
+			Display:     "NumberLong()",
+			InsertText:  "NumberLong(<$0>)",
 			Description: "NumberLong is a 64-bit integer",
 		},
 		{
-			Display:     "NumberInt(\"\")",
-			InsertText:  "NumberInt(\"<$0>\")",
+			Display:     "NumberInt()",
+			InsertText:  "NumberInt(<$0>)",
 			Description: "NumberInt is a 32-bit integer",
 		},
 		{
