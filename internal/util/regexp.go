@@ -108,6 +108,7 @@ func TransformRegexShorthand(s string) string {
 
 // MongoDateFormats contains the date formats supported by MongoDB's ISODate().
 // See: https://www.mongodb.com/docs/manual/reference/method/date/
+// For convenient also spaced date was added: 2006-01-02 15:04:05
 var MongoDateFormats = []string{
 	time.RFC3339Nano,
 	time.RFC3339,
@@ -127,7 +128,7 @@ func TransformISODate(s string) (string, error) {
 				return fmt.Sprintf(`{"$date":{"$numberLong":"%d"}}`, millis)
 			}
 		}
-		parseErr = fmt.Errorf("unable to parse ISODate value: %q, supported formats: 2006-01-02T15:04:05Z, 2006-01-02T15:04:05, 2006-01-02", dateStr)
+		parseErr = fmt.Errorf("unable to parse ISODate value: %q, supported formats: %s", dateStr, strings.Join(MongoDateFormats, ", "))
 		return match
 	})
 	return result, parseErr
