@@ -198,6 +198,18 @@ func TestParseStringQuery(t *testing.T) {
 			expected: map[string]any{"$and": primitive.A{primitive.M{"name": primitive.M{"$in": primitive.A{primitive.Regex{Pattern: "acme.*corp", Options: "i"}}}}, primitive.M{"status": "active"}}},
 			hasError: false,
 		},
+		{
+			name:     "ISODate date only format",
+			input:    `{ created_at: { $gt: ISODate("2025-11-16") } }`,
+			expected: map[string]any{"created_at": primitive.M{"$gt": primitive.NewDateTimeFromTime(time.Date(2025, 11, 16, 0, 0, 0, 0, time.UTC))}},
+			hasError: false,
+		},
+		{
+			name:     "Invalid ISODate format",
+			input:    `{ created_at: ISODate("not-a-date") }`,
+			expected: nil,
+			hasError: true,
+		},
 	}
 
 	for _, tc := range cases {
@@ -500,6 +512,34 @@ func TestParseValueByType(t *testing.T) {
 			originalValue: nil,
 			expected:      "hello",
 			hasError:      false,
+		},
+		{
+			name:          "DateTime - RFC3339 format",
+			value:         "2024-07-04T05:50:15Z",
+			originalValue: primitive.NewDateTimeFromTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+			expected:      primitive.NewDateTimeFromTime(time.Date(2024, 7, 4, 5, 50, 15, 0, time.UTC)),
+			hasError:      false,
+		},
+		{
+			name:          "DateTime - date only format",
+			value:         "2024-07-04",
+			originalValue: primitive.NewDateTimeFromTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+			expected:      primitive.NewDateTimeFromTime(time.Date(2024, 7, 4, 0, 0, 0, 0, time.UTC)),
+			hasError:      false,
+		},
+		{
+			name:          "DateTime - without timezone",
+			value:         "2024-07-04T05:50:15",
+			originalValue: primitive.NewDateTimeFromTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+			expected:      primitive.NewDateTimeFromTime(time.Date(2024, 7, 4, 5, 50, 15, 0, time.UTC)),
+			hasError:      false,
+		},
+		{
+			name:          "DateTime - invalid value should error",
+			value:         "204r-07-04 05:50:15",
+			originalValue: primitive.NewDateTimeFromTime(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)),
+			expected:      nil,
+			hasError:      true,
 		},
 	}
 

@@ -93,15 +93,16 @@ func ParseStringQuery(query string) (map[string]any, error) {
 	}
 
 	query = util.QuoteUnquotedKeys(query)
-	query = util.TransformMongoshSyntax(query)
+	var err error
+	query, err = util.TransformMongoshSyntax(query)
+	if err != nil {
+		return nil, err
+	}
 
-	query = strings.ReplaceAll(query, "ObjectID(\"", "{\"$oid\": \"")
-	query = strings.ReplaceAll(query, "ObjectId(\"", "{\"$oid\": \"")
-	query = strings.ReplaceAll(query, "\")", "\"}")
 	query = strings.ReplaceAll(query, "'", "\"")
 
 	var filter primitive.M
-	err := bson.UnmarshalExtJSON([]byte(query), false, &filter)
+	err = bson.UnmarshalExtJSON([]byte(query), false, &filter)
 	if err != nil {
 		log.Error().Err(err).Msgf("Error parsing query %s", query)
 		return nil, fmt.Errorf("error parsing query %s: %w", query, err)
@@ -173,18 +174,12 @@ func ParseValueByType(value string, originalValue any) (any, error) {
 		case bool:
 			return stringToBool(value)
 		case primitive.DateTime:
-			if parsed, err := time.Parse(time.RFC3339, value); err == nil {
-				return primitive.NewDateTimeFromTime(parsed), nil
+			for _, format := range util.MongoDateFormats {
+				if parsed, err := time.Parse(format, value); err == nil {
+					return primitive.NewDateTimeFromTime(parsed), nil
+				}
 			}
-			if parsed, err := time.Parse("2006-01-02T15:04:05.000Z", value); err == nil {
-				return primitive.NewDateTimeFromTime(parsed), nil
-			}
-			if parsed, err := time.Parse("2006-01-02T15:04:05Z07:00", value); err == nil {
-				return primitive.NewDateTimeFromTime(parsed), nil
-			}
-			if parsed, err := time.Parse("2006-01-02 15:04:05", value); err == nil {
-				return primitive.NewDateTimeFromTime(parsed), nil
-			}
+			return nil, fmt.Errorf("unable to parse datetime value: %s", value)
 		}
 	}
 

@@ -29,7 +29,7 @@ func TestGetSortedKeysWithTypes(t *testing.T) {
 
 func TestGetValueByType(t *testing.T) {
 	objId := primitive.NewObjectID()
-	dateUtc := "2023-10-05T14:34:24Z"
+	dateUtc := "2023-10-05T14:34:24.000+00:00"
 	fixedDate := time.Date(2023, 10, 5, 14, 34, 24, 0, time.UTC)
 	date := primitive.NewDateTimeFromTime(fixedDate)
 
