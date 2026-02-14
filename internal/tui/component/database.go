@@ -145,6 +145,7 @@ func (d *Database) filterBarHandler(ctx context.Context) {
 
 func (d *Database) clearFilter() {
 	ctx := context.Background()
+	d.filterBar.SetText("")
 	d.DbTree.Render(ctx, d.dbsWithColls, false)
 	d.renderLayout()
 }
