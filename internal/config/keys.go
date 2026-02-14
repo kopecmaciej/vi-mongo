@@ -25,6 +25,7 @@ type (
 		Connection ConnectionKeys `json:"connection"`
 		Main       MainKeys       `json:"main"`
 		Database   DatabaseKeys   `json:"databases"`
+		FilterBar  FilterBarKeys  `json:"filterBar"`
 		Content    ContentKeys    `json:"content"`
 		Peeker     PeekerKeys     `json:"peeker"`
 		QueryBar   QueryBar       `json:"queryBar"`
@@ -63,11 +64,17 @@ type (
 
 	DatabaseKeys struct {
 		FilterBar        Key `json:"filterBar"`
+		ClearFilter      Key `json:"clearFilter"`
 		ExpandAll        Key `json:"expandAll"`
 		CollapseAll      Key `json:"collapseAll"`
 		AddCollection    Key `json:"addCollection"`
 		DeleteCollection Key `json:"deleteCollection"`
 		RenameCollection Key `json:"renameCollection"`
+	}
+
+	FilterBarKeys struct {
+		CloseFilter Key `json:"closeFilter"`
+		ClearFilter Key `json:"clearFilter"`
 	}
 
 	ContentKeys struct {
@@ -212,6 +219,10 @@ func (k *KeyBindings) loadDefaults() {
 			Runes:       []string{"/"},
 			Description: "Focus filter bar",
 		},
+		ClearFilter: Key{
+			Keys:        []string{"Ctrl+U"},
+			Description: "Clear filter",
+		},
 		ExpandAll: Key{
 			Runes:       []string{"E"},
 			Description: "Expand all",
@@ -231,6 +242,17 @@ func (k *KeyBindings) loadDefaults() {
 		RenameCollection: Key{
 			Runes:       []string{"R"},
 			Description: "Rename collection",
+		},
+	}
+
+	k.FilterBar = FilterBarKeys{
+		CloseFilter: Key{
+			Keys:        []string{"Escape"},
+			Description: "Close filter bar",
+		},
+		ClearFilter: Key{
+			Keys:        []string{"Ctrl+U"},
+			Description: "Clear filter",
 		},
 	}
 

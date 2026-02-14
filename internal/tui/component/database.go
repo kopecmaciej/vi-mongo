@@ -78,7 +78,10 @@ func (d *Database) setKeybindings() {
 		switch {
 		case keys.Contains(keys.Database.FilterBar, event.Name()):
 			d.filterBar.Enable()
-			d.Render()
+			d.renderLayout()
+			return nil
+		case keys.Contains(keys.Database.ClearFilter, event.Name()):
+			d.clearFilter()
 			return nil
 		}
 		return event
@@ -97,6 +100,20 @@ func (d *Database) handleEvents() {
 
 func (d *Database) Render() {
 	ctx := context.Background()
+
+	if err := d.listDbsAndCollections(ctx); err != nil {
+		// TODO: refactor how rendering is handled as this error will not be shown
+		modal.ShowError(d.App.Pages, "Failed to list databases and collections", nil)
+		d.dbsWithColls = []mongo.DBsWithCollections{}
+	}
+
+	d.DbTree.Render(ctx, d.dbsWithColls, false)
+
+	d.renderLayout()
+}
+
+// renderLayout rebuilds the flex layout without re-fetching data.
+func (d *Database) renderLayout() {
 	d.Flex.Clear()
 
 	var primitive tview.Primitive
@@ -107,14 +124,6 @@ func (d *Database) Render() {
 		primitive = d.filterBar
 	}
 	defer d.App.SetFocus(primitive)
-
-	if err := d.listDbsAndCollections(ctx); err != nil {
-		// TODO: refactor how rendering is handled as this error will not be shown
-		modal.ShowError(d.App.Pages, "Failed to list databases and collections", nil)
-		d.dbsWithColls = []mongo.DBsWithCollections{}
-	}
-
-	d.DbTree.Render(ctx, d.dbsWithColls, false)
 
 	d.Flex.AddItem(d.DbTree, 0, 1, true)
 }
@@ -129,9 +138,16 @@ func (d *Database) filterBarHandler(ctx context.Context) {
 		d.filter(ctx, text)
 	}
 	rejectFunc := func() {
-		d.Render()
+		d.renderLayout()
 	}
 	d.filterBar.DoneFuncHandler(accceptFunc, rejectFunc)
+}
+
+func (d *Database) clearFilter() {
+	ctx := context.Background()
+	d.filterBar.SetText("")
+	d.DbTree.Render(ctx, d.dbsWithColls, false)
+	d.renderLayout()
 }
 
 func (d *Database) filter(ctx context.Context, text string) {
@@ -168,9 +184,7 @@ func (d *Database) filter(ctx context.Context, text string) {
 	}
 	d.DbTree.Render(ctx, filtered, expand)
 
-	d.Flex.RemoveItem(d.filterBar)
-
-	d.App.SetFocus(d.DbTree)
+	d.renderLayout()
 }
 
 func (d *Database) listDbsAndCollections(ctx context.Context) error {
