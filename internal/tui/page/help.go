@@ -164,6 +164,10 @@ func (h *Help) AddKeySection(name string, keys []config.Key, row *int, col int) 
 func (h *Help) setStyle() {
 	h.style = &h.App.GetStyles().Help
 	h.SetStyle(h.App.GetStyles())
+	h.Table.SetScrollBarStyle(
+		tcell.StyleDefault.Foreground(h.style.ScrollBarThumbColor.Color()),
+		tcell.StyleDefault.Foreground(h.style.ScrollBarTrackColor.Color()),
+	)
 }
 
 func (h *Help) setLayout() {
@@ -173,6 +177,7 @@ func (h *Help) setLayout() {
 	h.Table.SetSelectable(false, false)
 	h.Table.SetTitleAlign(tview.AlignLeft)
 	h.Table.SetEvaluateAllRows(true)
+	h.Table.SetScrollBarEnabled(true)
 }
 
 func (h *Help) setKeybindings() {

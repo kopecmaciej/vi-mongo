@@ -135,9 +135,11 @@ type (
 	}
 
 	HelpStyle struct {
-		HeaderColor      Style `yaml:"headerColor"`
-		KeyColor         Style `yaml:"keyColor"`
-		DescriptionColor Style `yaml:"descriptionColor"`
+		HeaderColor         Style `yaml:"headerColor"`
+		KeyColor            Style `yaml:"keyColor"`
+		DescriptionColor    Style `yaml:"descriptionColor"`
+		ScrollBarThumbColor Style `yaml:"scrollBarThumbColor"`
+		ScrollBarTrackColor Style `yaml:"scrollBarTrackColor"`
 	}
 
 	// OthersStyle is a struct that contains all the styles shared across components
@@ -255,9 +257,11 @@ func (s *Styles) loadDefaults() {
 	}
 
 	s.Help = HelpStyle{
-		HeaderColor:      "#387D44",
-		KeyColor:         "#FDE68A",
-		DescriptionColor: "#E2E8F0",
+		HeaderColor:         "#387D44",
+		KeyColor:            "#FDE68A",
+		DescriptionColor:    "#E2E8F0",
+		ScrollBarThumbColor: "#FDE68A",
+		ScrollBarTrackColor: "#4A5568",
 	}
 
 	s.Others = OthersStyle{

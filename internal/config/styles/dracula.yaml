@@ -68,6 +68,8 @@ help:
   headerColor: "#FF79C6"
   keyColor: "#FFB86C"
   descriptionColor: "#F8F8F2"
+  scrollBarThumbColor: "#BD93F9"
+  scrollBarTrackColor: "#44475A"
 others:
   buttonsTextColor: "#FFFFFF"
   buttonsBackgroundColor: "#BD93F9"
