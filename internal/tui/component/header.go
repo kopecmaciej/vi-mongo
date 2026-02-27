@@ -38,8 +38,6 @@ type (
 	}
 )
 
-
-
 // NewHeader creates a new header view
 func NewHeader() *Header {
 	h := Header{
@@ -77,8 +75,8 @@ func (h *Header) setStyle() {
 // SetBaseInfo sets the basic information about the database connection
 func (h *Header) SetBaseInfo() BaseInfo {
 	h.baseInfo = BaseInfo{
-		0: {"Status", h.style.ActiveSymbol.String()},
-		1: {"Host", h.Dao.Config.Host},
+		0: {h.style.ActiveSymbol.String(), h.Dao.Config.Host},
+		1: {"port", fmt.Sprintf("%d", h.Dao.Config.Port)},
 	}
 	return h.baseInfo
 }
@@ -174,7 +172,7 @@ func (h *Header) renderExpanded() {
 		h.Table.SetCell(row, col, h.keyCell(p.label))
 		h.Table.SetCell(row, col+1, h.valueCell(p.value))
 		if group < numGroups-1 {
-			h.Table.SetCell(row, col+2, tview.NewTableCell(" "))
+			h.Table.SetCell(row, col+2, tview.NewTableCell(""))
 		}
 	}
 }
@@ -203,8 +201,8 @@ func (h *Header) Render() {
 		currRow++
 	}
 
-	h.Table.SetCell(0, 2, tview.NewTableCell(" "))
-	h.Table.SetCell(1, 2, tview.NewTableCell(" "))
+	h.Table.SetCell(0, 2, tview.NewTableCell(""))
+	h.Table.SetCell(1, 2, tview.NewTableCell(""))
 	currCol++
 
 	k, err := h.UpdateKeys()
@@ -245,7 +243,7 @@ func (h *Header) Render() {
 
 func (h *Header) setInactiveBaseInfo(err error) {
 	h.baseInfo = make(BaseInfo)
-	h.baseInfo[0] = info{"Status", h.style.InactiveSymbol.String()}
+	h.baseInfo[0] = info{h.style.InactiveSymbol.String(), h.Dao.Config.Host}
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
 			h.baseInfo[1] = info{"Error", "Unauthorized, please check your credentials or your privileges"}
@@ -277,7 +275,7 @@ func (h *Header) handleEvents() {
 }
 
 func (h *Header) keyCell(text string) *tview.TableCell {
-	cell := tview.NewTableCell(text + " ")
+	cell := tview.NewTableCell(text)
 	cell.SetTextColor(h.style.KeyColor.Color())
 
 	return cell
