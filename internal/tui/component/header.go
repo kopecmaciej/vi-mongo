@@ -29,13 +29,16 @@ type (
 		*core.BaseElement
 		*core.Table
 
-		style        *config.HeaderStyle
-		baseInfo     BaseInfo
-		keys         []config.Key
-		currentFocus tview.Identifier
-		expanded     bool
+		style          *config.HeaderStyle
+		baseInfo       BaseInfo
+		keys           []config.Key
+		currentFocus   tview.Identifier
+		expanded       bool
+		onHeightChange func()
 	}
 )
+
+
 
 // NewHeader creates a new header view
 func NewHeader() *Header {
@@ -78,6 +81,12 @@ func (h *Header) SetBaseInfo() BaseInfo {
 		1: {"Host", h.Dao.Config.Host},
 	}
 	return h.baseInfo
+}
+
+// SetOnHeightChange sets a callback invoked when the header height needs to
+// change due to a focus switch while expanded.
+func (h *Header) SetOnHeightChange(f func()) {
+	h.onHeightChange = f
 }
 
 // Toggle flips the expanded state and returns the new required height for the
@@ -124,11 +133,10 @@ func (h *Header) collectPairs() []info {
 
 // expandedLayout computes the number of column groups and rows for the expanded
 // view given the available inner width. Each group is estimated at 40 chars.
-func (h *Header) expandedLayout(width int) (numGroups, numRows int) {
+func (h *Header) expandedLayout(width int, pairs []info) (numGroups, numRows int) {
 	if width <= 0 {
 		width = 80
 	}
-	pairs := h.collectPairs()
 	if len(pairs) == 0 {
 		return 1, 0
 	}
@@ -144,7 +152,7 @@ func (h *Header) expandedLayout(width int) (numGroups, numRows int) {
 // taking the current inner width into account to compute the column layout.
 func (h *Header) ExpandedHeight() int {
 	_, _, width, _ := h.Table.GetInnerRect()
-	_, numRows := h.expandedLayout(width)
+	_, numRows := h.expandedLayout(width, h.collectPairs())
 	return numRows + 2 // +2 for top/bottom borders
 }
 
@@ -157,7 +165,7 @@ func (h *Header) renderExpanded() {
 	}
 
 	_, _, width, _ := h.Table.GetInnerRect()
-	numGroups, numRows := h.expandedLayout(width)
+	numGroups, numRows := h.expandedLayout(width, pairs)
 
 	for i, p := range pairs {
 		row := i % numRows
@@ -254,6 +262,9 @@ func (h *Header) handleEvents() {
 		case manager.FocusChanged:
 			h.currentFocus = tview.Identifier(event.Message.Data.(tview.Identifier))
 			go h.App.QueueUpdateDraw(func() {
+				if h.expanded && h.onHeightChange != nil {
+					h.onHeightChange()
+				}
 				h.Render()
 			})
 		case manager.StyleChanged:

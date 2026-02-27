@@ -79,6 +79,14 @@ func (m *Main) initComponents() error {
 	if err := m.header.Init(m.App); err != nil {
 		return err
 	}
+	m.header.SetOnHeightChange(func() {
+		newHeight := m.header.ExpandedHeight()
+		if newHeight == m.headerHeight {
+			return
+		}
+		m.headerHeight = newHeight
+		m.rebuildInnerFlex()
+	})
 
 	if err := m.tabBar.Init(m.App); err != nil {
 		return err
@@ -152,7 +160,6 @@ func (m *Main) JumpToCollection(dbName, collectionName string) error {
 
 func (m *Main) render() {
 	m.Clear()
-	m.innerFlex.Clear()
 
 	dbPanelSize := m.App.GetConfig().UI.DatabasePanelWidth
 
@@ -161,20 +168,22 @@ func (m *Main) render() {
 	if m.headerHeight == 0 {
 		m.headerHeight = 4
 	}
-	m.innerFlex.AddItem(m.header, m.headerHeight, 0, false)
-	m.innerFlex.AddItem(m.tabBar, 1, 0, false)
-	m.innerFlex.AddItem(m.tabBar.GetActiveComponentAndRender(), 0, 7, true)
+	m.rebuildInnerFlex()
 
 	m.App.Pages.AddPage(m.GetIdentifier(), m, true, true)
 	m.App.SetFocus(m)
 }
 
-func (m *Main) ToggleHeader() {
-	m.headerHeight = m.header.Toggle()
+func (m *Main) rebuildInnerFlex() {
 	m.innerFlex.Clear()
 	m.innerFlex.AddItem(m.header, m.headerHeight, 0, false)
 	m.innerFlex.AddItem(m.tabBar, 1, 0, false)
 	m.innerFlex.AddItem(m.tabBar.GetActiveComponentAndRender(), 0, 7, true)
+}
+
+func (m *Main) ToggleHeader() {
+	m.headerHeight = m.header.Toggle()
+	m.rebuildInnerFlex()
 	m.header.Render()
 }
 
