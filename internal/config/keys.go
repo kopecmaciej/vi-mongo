@@ -52,6 +52,7 @@ type (
 		ToggleFullScreenHelp Key `json:"toggleFullScreenHelp"`
 		OpenConnection       Key `json:"openConnection"`
 		ShowStyleModal       Key `json:"showStyleModal"`
+		ToggleHeader         Key `json:"toggleHeader"`
 	}
 
 	MainKeys struct {
@@ -188,6 +189,10 @@ func (k *KeyBindings) loadDefaults() {
 		ShowStyleModal: Key{
 			Keys:        []string{"Ctrl+T"},
 			Description: "Toggle style change modal",
+		},
+		ToggleHeader: Key{
+			Keys:        []string{"Ctrl+K"},
+			Description: "Expand/collapse header",
 		},
 	}
 

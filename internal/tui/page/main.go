@@ -22,13 +22,14 @@ type Main struct {
 	*core.BaseElement
 	*core.Flex
 
-	innerFlex *core.Flex
-	header    *component.Header
-	tabBar    *component.TabBar
-	databases *component.Database
-	content   *component.Content
-	index     *component.Index
-	aiPrompt  *component.AIQuery
+	innerFlex    *core.Flex
+	header       *component.Header
+	tabBar       *component.TabBar
+	databases    *component.Database
+	content      *component.Content
+	index        *component.Index
+	aiPrompt     *component.AIQuery
+	headerHeight int
 }
 
 func NewMain() *Main {
@@ -157,12 +158,24 @@ func (m *Main) render() {
 
 	m.AddItem(m.databases, dbPanelSize, 0, true)
 	m.AddItem(m.innerFlex, 0, 7, false)
-	m.innerFlex.AddItem(m.header, 4, 0, false)
+	if m.headerHeight == 0 {
+		m.headerHeight = 4
+	}
+	m.innerFlex.AddItem(m.header, m.headerHeight, 0, false)
 	m.innerFlex.AddItem(m.tabBar, 1, 0, false)
 	m.innerFlex.AddItem(m.tabBar.GetActiveComponentAndRender(), 0, 7, true)
 
 	m.App.Pages.AddPage(m.GetIdentifier(), m, true, true)
 	m.App.SetFocus(m)
+}
+
+func (m *Main) ToggleHeader() {
+	m.headerHeight = m.header.Toggle()
+	m.innerFlex.Clear()
+	m.innerFlex.AddItem(m.header, m.headerHeight, 0, false)
+	m.innerFlex.AddItem(m.tabBar, 1, 0, false)
+	m.innerFlex.AddItem(m.tabBar.GetActiveComponentAndRender(), 0, 7, true)
+	m.header.Render()
 }
 
 func (m *Main) setKeybindings() {

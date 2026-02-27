@@ -61,6 +61,7 @@ func (a *App) Run() error {
 
 func (a *App) setKeybindings() {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		log.Info().Msgf("EVENT: %s, %v", event.Name(), event.Key())
 		if a.shouldHandleRune(event) {
 			return event
 		}
@@ -74,6 +75,11 @@ func (a *App) setKeybindings() {
 			return nil
 		case a.GetKeys().Contains(a.GetKeys().Global.ShowStyleModal, event.Name()):
 			a.ShowStyleChangeModal()
+			return nil
+		case a.GetKeys().Contains(a.GetKeys().Global.ToggleHeader, event.Name()):
+			if a.main.App != nil {
+				a.main.ToggleHeader()
+			}
 			return nil
 		case a.GetKeys().Contains(a.GetKeys().Global.ToggleFullScreenHelp, event.Name()):
 			if a.Pages.HasPage(page.HelpPageId) {

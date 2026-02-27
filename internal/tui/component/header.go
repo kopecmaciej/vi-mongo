@@ -33,6 +33,7 @@ type (
 		baseInfo     BaseInfo
 		keys         []config.Key
 		currentFocus tview.Identifier
+		expanded     bool
 	}
 )
 
@@ -79,8 +80,103 @@ func (h *Header) SetBaseInfo() BaseInfo {
 	return h.baseInfo
 }
 
+// Toggle flips the expanded state and returns the new required height for the
+// header so the caller can resize the layout accordingly.
+func (h *Header) Toggle() int {
+	h.expanded = !h.expanded
+	if h.expanded {
+		return h.ExpandedHeight()
+	}
+	return 4
+}
+
+// collectPairs returns all label-value pairs: base info followed by the keys
+// of the currently focused element.
+func (h *Header) collectPairs() []info {
+	base := h.SetBaseInfo()
+	pairs := make([]info, 0, len(base)+16)
+	for i := 0; i < len(base); i++ {
+		b := base[order(i)]
+		pairs = append(pairs, info{b.label, b.value})
+	}
+
+	keys, _ := h.UpdateKeys()
+	for _, key := range keys {
+		var keyString string
+		var iter []string
+		if len(key.Keys) > 0 {
+			iter = append(iter, key.Keys...)
+		}
+		if len(key.Runes) > 0 {
+			iter = append(iter, key.Runes...)
+		}
+		for i, k := range iter {
+			if i == 0 {
+				keyString = k
+			} else {
+				keyString = fmt.Sprintf("%s, %s", keyString, k)
+			}
+		}
+		pairs = append(pairs, info{keyString, key.Description})
+	}
+	return pairs
+}
+
+// expandedLayout computes the number of column groups and rows for the expanded
+// view given the available inner width. Each group is estimated at 40 chars.
+func (h *Header) expandedLayout(width int) (numGroups, numRows int) {
+	if width <= 0 {
+		width = 80
+	}
+	pairs := h.collectPairs()
+	if len(pairs) == 0 {
+		return 1, 0
+	}
+	numGroups = width / 40
+	if numGroups < 1 {
+		numGroups = 1
+	}
+	numRows = (len(pairs) + numGroups - 1) / numGroups
+	return numGroups, numRows
+}
+
+// ExpandedHeight returns the number of rows the header needs when expanded,
+// taking the current inner width into account to compute the column layout.
+func (h *Header) ExpandedHeight() int {
+	_, _, width, _ := h.Table.GetInnerRect()
+	_, numRows := h.expandedLayout(width)
+	return numRows + 2 // +2 for top/bottom borders
+}
+
+// renderExpanded draws all pairs in a column-major multi-column grid.
+func (h *Header) renderExpanded() {
+	h.Table.Clear()
+	pairs := h.collectPairs()
+	if len(pairs) == 0 {
+		return
+	}
+
+	_, _, width, _ := h.Table.GetInnerRect()
+	numGroups, numRows := h.expandedLayout(width)
+
+	for i, p := range pairs {
+		row := i % numRows
+		group := i / numRows
+		col := group * 2
+		h.Table.SetCell(row, col, h.keyCell(p.label))
+		h.Table.SetCell(row, col+1, h.valueCell(p.value))
+		if group < numGroups-1 {
+			h.Table.SetCell(row, col+2, tview.NewTableCell(" "))
+		}
+	}
+}
+
 // Render renders the header view
 func (h *Header) Render() {
+	if h.expanded {
+		h.renderExpanded()
+		return
+	}
 	h.Table.Clear()
 	base := h.SetBaseInfo()
 
