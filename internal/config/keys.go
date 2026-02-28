@@ -64,6 +64,8 @@ type (
 	}
 
 	DatabaseKeys struct {
+		MoveUp           Key `json:"moveUp"`
+		MoveDown         Key `json:"moveDown"`
 		FilterBar        Key `json:"filterBar"`
 		ClearFilter      Key `json:"clearFilter"`
 		ExpandAll        Key `json:"expandAll"`
@@ -79,6 +81,10 @@ type (
 	}
 
 	ContentKeys struct {
+		MoveUp                     Key `json:"moveUp"`
+		MoveDown                   Key `json:"moveDown"`
+		MoveLeft                   Key `json:"moveLeft"`
+		MoveRight                  Key `json:"moveRight"`
 		ChangeView                 Key `json:"switchView"`
 		PeekDocument               Key `json:"peekDocument"`
 		FullPagePeek               Key `json:"fullPagePeek"`
@@ -145,6 +151,8 @@ type (
 	}
 
 	PeekerKeys struct {
+		MoveUp           Key `json:"moveUp"`
+		MoveDown         Key `json:"moveDown"`
 		MoveToTop        Key `json:"moveToTop"`
 		MoveToBottom     Key `json:"moveToBottom"`
 		CopyHighlight    Key `json:"copyHighlight"`
@@ -220,6 +228,16 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Database = DatabaseKeys{
+		MoveUp: Key{
+			Keys:        []string{"Up"},
+			Runes:       []string{"k"},
+			Description: "Move up",
+		},
+		MoveDown: Key{
+			Keys:        []string{"Down"},
+			Runes:       []string{"j"},
+			Description: "Move down",
+		},
 		FilterBar: Key{
 			Runes:       []string{"/"},
 			Description: "Focus filter bar",
@@ -262,6 +280,26 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Content = ContentKeys{
+		MoveUp: Key{
+			Keys:        []string{"Up"},
+			Runes:       []string{"k"},
+			Description: "Move up",
+		},
+		MoveDown: Key{
+			Keys:        []string{"Down"},
+			Runes:       []string{"j"},
+			Description: "Move down",
+		},
+		MoveLeft: Key{
+			Keys:        []string{"Left"},
+			Runes:       []string{"h"},
+			Description: "Move left",
+		},
+		MoveRight: Key{
+			Keys:        []string{"Right"},
+			Runes:       []string{"l"},
+			Description: "Move right",
+		},
 		ChangeView: Key{
 			Runes:       []string{"f"},
 			Description: "Change view",
@@ -445,6 +483,16 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Peeker = PeekerKeys{
+		MoveUp: Key{
+			Keys:        []string{"Up"},
+			Runes:       []string{"k"},
+			Description: "Move up",
+		},
+		MoveDown: Key{
+			Keys:        []string{"Down"},
+			Runes:       []string{"j"},
+			Description: "Move down",
+		},
 		MoveToTop: Key{
 			Runes:       []string{"g"},
 			Description: "Move to top",
