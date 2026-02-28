@@ -164,6 +164,10 @@ func (c *Connection) setKeybindings() {
 
 	c.list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
+		case k.Contains(k.Connection.ConnectionList.MoveUp, event.Name()):
+			return tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
+		case k.Contains(k.Connection.ConnectionList.MoveDown, event.Name()):
+			return tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
 		case k.Contains(k.Connection.ConnectionList.FocusForm, event.Name()):
 			c.App.SetFocus(c.form)
 			return nil

@@ -94,6 +94,10 @@ func (t *DatabaseTree) setKeybindings(ctx context.Context) {
 	k := t.App.GetKeys()
 	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
+		case k.Contains(k.Database.MoveUp, event.Name()):
+			return tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
+		case k.Contains(k.Database.MoveDown, event.Name()):
+			return tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
 		case k.Contains(k.Database.ExpandAll, event.Name()):
 			t.expandAllNodes(closedNodeSymbol, openNodeSymbol)
 			return nil

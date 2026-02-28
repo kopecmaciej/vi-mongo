@@ -88,6 +88,21 @@ func (p *Peeker) setStyle() {
 
 func (p *Peeker) setKeybindings() {
 	k := p.App.GetKeys()
+
+	// Set the ViewModal's key handler for navigation (MoveUp/MoveDown)
+	// so these work through the keybindings config system
+	p.ViewModal.SetKeyHandler(func(event *tcell.EventKey) *tcell.EventKey {
+		switch {
+		case k.Contains(k.Peeker.MoveUp, event.Name()):
+			p.ViewModal.MoveUp()
+			return nil
+		case k.Contains(k.Peeker.MoveDown, event.Name()):
+			p.ViewModal.MoveDown()
+			return nil
+		}
+		return event
+	})
+
 	p.ViewModal.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Peeker.MoveToTop, event.Name()):

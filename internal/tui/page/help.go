@@ -185,6 +185,10 @@ func (h *Help) setKeybindings() {
 
 	h.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
+		case k.Contains(k.Help.MoveUp, event.Name()):
+			return tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
+		case k.Contains(k.Help.MoveDown, event.Name()):
+			return tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
 		case k.Contains(k.Help.Close, event.Name()):
 			h.App.Pages.RemovePage(HelpPageId)
 			return nil
