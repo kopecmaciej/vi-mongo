@@ -135,6 +135,8 @@ type (
 	}
 
 	ConnectionListKeys struct {
+		MoveUp           Key `json:"moveUp"`
+		MoveDown         Key `json:"moveDown"`
 		FocusForm        Key `json:"focusForm"`
 		DeleteConnection Key `json:"deleteConnection"`
 		EditConnection   Key `json:"editConnection"`
@@ -147,6 +149,8 @@ type (
 	}
 
 	HelpKeys struct {
+		MoveUp Key `json:"moveUp"`
+		MoveDown Key `json:"moveDown"`
 		Close Key `json:"close"`
 	}
 
@@ -168,6 +172,8 @@ type (
 	}
 
 	IndexKeys struct {
+		MoveUp       Key `json:"moveUp"`
+		MoveDown     Key `json:"moveDown"`
 		ExitAddIndex Key `json:"exitModal"`
 		AddIndex     Key `json:"addIndex"`
 		DeleteIndex  Key `json:"deleteIndex"`
@@ -446,6 +452,16 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Connection.ConnectionList = ConnectionListKeys{
+		MoveUp: Key{
+			Keys:        []string{"Up"},
+			Runes:       []string{"k"},
+			Description: "Move up",
+		},
+		MoveDown: Key{
+			Keys:        []string{"Down"},
+			Runes:       []string{"j"},
+			Description: "Move down",
+		},
 		FocusForm: Key{
 			Keys:        []string{"Ctrl+L", "Ctrl+Right"},
 			Description: "Move focus to form",
@@ -476,6 +492,16 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Help = HelpKeys{
+		MoveUp: Key{
+			Keys:        []string{"Up"},
+			Runes:       []string{"k"},
+			Description: "Move up",
+		},
+		MoveDown: Key{
+			Keys:        []string{"Down"},
+			Runes:       []string{"j"},
+			Description: "Move down",
+		},
 		Close: Key{
 			Keys:        []string{"Esc"},
 			Description: "Close help",
@@ -535,6 +561,16 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Index = IndexKeys{
+		MoveUp: Key{
+			Keys:        []string{"Up"},
+			Runes:       []string{"k"},
+			Description: "Move up",
+		},
+		MoveDown: Key{
+			Keys:        []string{"Down"},
+			Runes:       []string{"j"},
+			Description: "Move down",
+		},
 		ExitAddIndex: Key{
 			Keys:        []string{"Esc"},
 			Description: "Exit modal",
