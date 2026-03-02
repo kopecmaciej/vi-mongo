@@ -75,7 +75,7 @@ func (h *Header) setStyle() {
 // SetBaseInfo sets the basic information about the database connection
 func (h *Header) SetBaseInfo() BaseInfo {
 	h.baseInfo = BaseInfo{
-		0: {h.style.ActiveSymbol.String(), h.Dao.Config.Host},
+		0: {"host", h.Dao.Config.Host},
 		1: {"port", fmt.Sprintf("%d", h.Dao.Config.Port)},
 	}
 	return h.baseInfo
@@ -243,7 +243,7 @@ func (h *Header) Render() {
 
 func (h *Header) setInactiveBaseInfo(err error) {
 	h.baseInfo = make(BaseInfo)
-	h.baseInfo[0] = info{h.style.InactiveSymbol.String(), h.Dao.Config.Host}
+	h.baseInfo[0] = info{"host", h.Dao.Config.Host}
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
 			h.baseInfo[1] = info{"Error", "Unauthorized, please check your credentials or your privileges"}
