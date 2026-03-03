@@ -334,6 +334,10 @@ func (c *Config) UpdateConnection(originalName string, mongoConfig *MongoConfig)
 		return fmt.Errorf("connection '%s' not found", originalName)
 	}
 
+	if c.CurrentConnection == originalName {
+		c.CurrentConnection = mongoConfig.Name
+	}
+
 	updatedConfig, err := yaml.Marshal(c)
 	if err != nil {
 		return err

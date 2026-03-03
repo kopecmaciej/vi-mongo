@@ -142,6 +142,9 @@ func (c *Connection) setKeybindings() {
 	k := c.App.GetKeys()
 	c.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
+		case event.Key() == tcell.KeyEscape:
+			c.cancelButtonFunc()
+			return nil
 		case k.Contains(k.Connection.ConnectionForm.SaveConnection, event.Name()):
 			_, buttonIdx := c.form.GetFocusedItemIndex()
 
@@ -203,6 +206,7 @@ func (c *Connection) Render() {
 func (c *Connection) renderForm() *core.Form {
 	c.form.Clear(true)
 
+	c.updateFormTitle()
 	c.updateFormButtons()
 
 	c.form.AddInputField("Name", "", 40, nil, nil)
@@ -422,17 +426,11 @@ func (c *Connection) saveButtonFunc() {
 
 // cancelButtonFunc is a function for canceling the form
 func (c *Connection) cancelButtonFunc() {
+	c.isEditMode = false
+	c.editingConnName = ""
 	c.form.Clear(true)
 	c.App.SetFocus(c.list)
 	c.Render()
-}
-
-func (c *Connection) cancelEditFunc() {
-	c.isEditMode = false
-	c.editingConnName = ""
-	c.updateFormTitle()
-	c.updateFormButtons()
-	c.App.SetFocus(c.list)
 }
 
 // SetOnSubmitFunc sets callback function
