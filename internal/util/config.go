@@ -15,6 +15,7 @@ import (
 
 const (
 	ConfigDir = "vi-mongo"
+	FileMode  = 0600
 )
 
 // MergeConfigs merges the loaded config with the default config
@@ -97,7 +98,7 @@ func LoadConfigFile[T any](defaultConfig *T, configPath string) (*T, error) {
 				log.Error().Err(err).Str("path", configPath).Msg("Failed to marshal default config")
 				return nil, fmt.Errorf("failed to marshal default config: %w", err)
 			}
-			err = os.WriteFile(configPath, bytes, 0644)
+			err = os.WriteFile(configPath, bytes, FileMode)
 			if err != nil {
 				log.Error().Err(err).Str("path", configPath).Msg("Failed to write default config file")
 				return nil, fmt.Errorf("failed to write default config file: %w", err)

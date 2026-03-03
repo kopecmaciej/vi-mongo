@@ -67,7 +67,7 @@ func TestLoadConfigWithVersion_CustomPath_ExistingFile(t *testing.T) {
 		t.Fatalf("Failed to marshal config: %v", err)
 	}
 
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
+	if err := os.WriteFile(configPath, data, 0600); err != nil {
 		t.Fatalf("Failed to write config file: %v", err)
 	}
 

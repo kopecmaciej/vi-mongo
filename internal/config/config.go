@@ -15,6 +15,7 @@ import (
 const (
 	ConfigFile = "config.yaml"
 	LogPath    = "/tmp/vi-mongo.log"
+	FileMode   = 0600
 )
 
 var (
@@ -171,7 +172,7 @@ func (c *Config) UpdateConfig() error {
 		return err
 	}
 
-	if err := os.WriteFile(configPath, updatedConfig, 0644); err != nil {
+	if err := os.WriteFile(configPath, updatedConfig, FileMode); err != nil {
 		log.Error().Err(err).Msg("Failed to write config file")
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
@@ -208,7 +209,7 @@ func (c *Config) SetCurrentConnection(name string) error {
 		return err
 	}
 
-	if err := os.WriteFile(configPath, updatedConfig, 0644); err != nil {
+	if err := os.WriteFile(configPath, updatedConfig, FileMode); err != nil {
 		log.Error().Err(err).Msg("Failed to write config file")
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
@@ -260,7 +261,7 @@ func (c *Config) AddConnection(mongoConfig *MongoConfig) error {
 		return err
 	}
 
-	return os.WriteFile(configPath, updatedConfig, 0644)
+	return os.WriteFile(configPath, updatedConfig, FileMode)
 }
 
 // AddConnectionFromUri adds a MongoDB connection to the config file
@@ -306,7 +307,7 @@ func (c *Config) DeleteConnection(name string) error {
 		return err
 	}
 
-	return os.WriteFile(configPath, updatedConfig, 0644)
+	return os.WriteFile(configPath, updatedConfig, FileMode)
 }
 
 // UpdateConnection updates an existing MongoDB connection in the config file
@@ -348,7 +349,7 @@ func (c *Config) UpdateConnection(originalName string, mongoConfig *MongoConfig)
 		return err
 	}
 
-	return os.WriteFile(configPath, updatedConfig, 0644)
+	return os.WriteFile(configPath, updatedConfig, FileMode)
 }
 
 // UpdateConnectionFromUri updates an existing MongoDB connection using a URI
