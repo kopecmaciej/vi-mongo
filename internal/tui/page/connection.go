@@ -209,12 +209,11 @@ func (c *Connection) renderForm() *core.Form {
 	c.updateFormTitle()
 	c.updateFormButtons()
 
+	keys := c.App.GetKeys()
 	c.form.AddInputField("Name", "", 40, nil, nil)
-
 	c.form.AddTextArea("Uri", "mongodb://", 40, 3, 0, nil)
-
 	c.form.AddTextView("Example", "mongodb://username:password@host:port/db", 40, 1, true, false)
-	paste := fmt.Sprintf("Type Uri (paste - %s) or fill below", c.App.GetKeys().QueryBar.Paste.String())
+	paste := fmt.Sprintf("Type Uri (paste - %s) or fill below", keys.QueryBar.Paste.String())
 	c.form.AddTextView("Info", paste, 40, 1, true, false)
 	c.form.AddTextView(" ", "-- ----------------------------------------", 40, 1, true, false)
 	c.form.AddInputField("Host", "", 40, nil, nil)
@@ -223,8 +222,8 @@ func (c *Connection) renderForm() *core.Form {
 	c.form.AddPasswordField("Password", "", 40, '*', nil)
 	c.form.AddInputField("Database", "", 40, nil, nil)
 	c.form.AddInputField("Timeout", "5", 10, nil, nil)
-	key := fmt.Sprintf("%s or click", c.App.GetKeys().Connection.ConnectionForm.SaveConnection.String())
-	c.form.AddTextView("Save with:", key, 30, 1, true, false)
+	key := fmt.Sprintf("%s to save, Esc to exit", keys.Connection.ConnectionForm.SaveConnection.String())
+	c.form.AddTextView("Keys: ", key, 30, 1, true, false)
 
 	c.form.GetFormItemByLabel("Uri").(*tview.TextArea).SetClipboard(util.GetClipboard())
 	c.form.GetFormItemByLabel("Host").(*tview.InputField).SetClipboard(util.GetClipboard())
