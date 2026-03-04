@@ -194,7 +194,6 @@ func (c *Content) setStyle() {
 	c.table.SetMultiSelectedStyle(multiSelectedStyle)
 
 	c.tableColumns = view.NewTableColumns(c.style)
-	c.tableJson.SeparatorColor = styles.Others.SeparatorColor.Color()
 }
 
 func (c *Content) setLayout() {
@@ -553,7 +552,7 @@ func (c *Content) getDocumentId(row, col int) any {
 	switch c.currentView {
 	case JsonView:
 		forWithReference := c.table.GetCellAboveThatMatch(row, col, func(cell *tview.TableCell) bool {
-			return strings.HasPrefix(cell.Text, view.DocSeparator)
+			return cell.GetReference() != nil
 		})
 		return forWithReference.GetReference()
 	case TableView:

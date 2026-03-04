@@ -12,32 +12,36 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// DocSeparator is the prefix used for document separator rows.
-// Used externally to identify separator cells (e.g. for _id lookup).
-const DocSeparator = "────────────────────────────────────────"
-
-// TableJson renders MongoDB documents as indented, multi-line JSON rows in a table,
-// separated by a horizontal line between documents.
+// TableJson renders MongoDB documents as indented, multi-line JSON rows in a table.
+// Documents are wrapped with { } braces; between documents } { is used as a separator.
+// Brace rows are non-selectable and store the document's _id as a cell reference,
+// which is the mechanism used to identify document boundaries during lookup.
 type TableJson struct {
-	SeparatorColor tcell.Color
+	BraceColor tcell.Color
 }
 
 func NewTableJson() *TableJson {
 	return &TableJson{
-		SeparatorColor: tcell.ColorGray,
+		BraceColor: tcell.ColorGreen,
 	}
 }
 
 func (t *TableJson) Render(table *core.Table, startRow int, documents []primitive.M) error {
 	table.SetFixed(0, 0)
 	row := startRow
-	for _, doc := range documents {
+	for i, doc := range documents {
 		_id := doc["_id"]
 		jsoned, err := mongo.ParseBsonDocument(doc)
 		if err != nil {
 			return err
 		}
-		t.renderDocument(table, jsoned, &row, _id)
+		t.renderDocument(table, jsoned, &row, _id, i == 0)
+	}
+	if len(documents) > 0 {
+		table.SetCell(row, 0, tview.NewTableCell("}").
+			SetAlign(tview.AlignLeft).
+			SetTextColor(t.BraceColor).
+			SetSelectable(false))
 	}
 	table.ScrollToBeginning()
 	if table.GetRowCount() > 1 {
@@ -46,11 +50,15 @@ func (t *TableJson) Render(table *core.Table, startRow int, documents []primitiv
 	return nil
 }
 
-func (t *TableJson) renderDocument(table *core.Table, doc string, row *int, _id any) {
-	// Separator row acts as the document boundary and stores the _id reference.
-	table.SetCell(*row, 0, tview.NewTableCell(DocSeparator).
+func (t *TableJson) renderDocument(table *core.Table, doc string, row *int, _id any, isFirst bool) {
+	// Opening brace row stores the _id reference — used externally to identify document boundaries.
+	openBrace := "{"
+	if !isFirst {
+		openBrace = "} {"
+	}
+	table.SetCell(*row, 0, tview.NewTableCell(openBrace).
 		SetAlign(tview.AlignLeft).
-		SetTextColor(t.SeparatorColor).
+		SetTextColor(t.BraceColor).
 		SetSelectable(false).
 		SetReference(_id))
 	*row++
@@ -60,11 +68,11 @@ func (t *TableJson) renderDocument(table *core.Table, doc string, row *int, _id 
 		return
 	}
 	keyRegexWithIndent := regexp.MustCompile(`(?m)^\s{2}"([^"]+)":`)
-	// strip the outer { } lines — only render the fields
 	lines := strings.Split(indentedJson.String(), "\n")
 	if len(lines) < 2 {
 		return
 	}
+	// strip outer { } — only render the fields
 	lines = lines[1 : len(lines)-1]
 
 	currLine := ""

@@ -275,7 +275,6 @@ func (a *Aggregation) renderResultsView() {
 	resultsHeaderFlex.SetTitleAlign(tview.AlignLeft)
 
 	tableJson := view.NewTableJson()
-	tableJson.SeparatorColor = a.App.GetStyles().Others.SeparatorColor.Color()
 	if err := tableJson.Render(a.resultsTable, 0, docs); err != nil {
 		modal.ShowError(a.App.Pages, "Error rendering results", err)
 	}
