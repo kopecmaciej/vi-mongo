@@ -172,15 +172,15 @@ type (
 	}
 
 	AggregationKeys struct {
-		AddStage      Key `json:"addStage"`
-		EditStage     Key `json:"editStage"`
-		DeleteStage   Key `json:"deleteStage"`
-		RunPipeline   Key `json:"runPipeline"`
-		ClearPipeline Key `json:"clearPipeline"`
-		MoveStageDown Key `json:"moveStageDown"`
-		MoveStageUp   Key `json:"moveStageUp"`
-		FocusResults  Key `json:"focusResults"`
-		ToggleHistory Key `json:"toggleHistory"`
+		ToggleStageBar Key `json:"toggleStageBar"`
+		EditStage      Key `json:"editStage"`
+		DeleteStage    Key `json:"deleteStage"`
+		RunPipeline    Key `json:"runPipeline"`
+		ClearPipeline  Key `json:"clearPipeline"`
+		MoveStageDown  Key `json:"moveStageDown"`
+		MoveStageUp    Key `json:"moveStageUp"`
+		FocusResults   Key `json:"focusResults"`
+		ToggleHistory  Key `json:"toggleHistory"`
 	}
 )
 
@@ -204,7 +204,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Toggle style change modal",
 		},
 		ToggleHeader: Key{
-			Keys:        []string{"t"},
+			Runes:       []string{"t"},
 			Description: "Expand/collapse header",
 		},
 	}
@@ -238,7 +238,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Focus filter bar",
 		},
 		ClearFilter: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+U"},
 			Description: "Clear filter",
 		},
 		ExpandAll: Key{
@@ -269,24 +269,24 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Close filter bar",
 		},
 		ClearFilter: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+U"},
 			Description: "Clear filter",
 		},
 	}
 
 	k.Content = ContentKeys{
 		ChangeView: Key{
-			Runes:       []string{"f"},
+			Runes:       []string{"v"},
 			Description: "Change view",
 		},
 		PeekDocument: Key{
 			Runes:       []string{"p"},
 			Keys:        []string{"Enter"},
-			Description: "Quick peek",
+			Description: "Peek",
 		},
 		FullPagePeek: Key{
 			Runes:       []string{"P"},
-			Description: "Full page peek",
+			Description: "Full peek",
 		},
 		AddDocument: Key{
 			Runes:       []string{"A"},
@@ -298,7 +298,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 		InlineEdit: Key{
 			Runes:       []string{"e"},
-			Description: "Inline edit cell",
+			Description: "Inline edit",
 		},
 		DuplicateDocument: Key{
 			Runes:       []string{"D"},
@@ -325,11 +325,11 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Clear selection",
 		},
 		CopyHighlight: Key{
-			Runes:       []string{"c"},
+			Runes:       []string{"y"},
 			Description: "Copy highlighted",
 		},
 		CopyDocument: Key{
-			Runes:       []string{"C"},
+			Runes:       []string{"Y"},
 			Description: "Copy document",
 		},
 		Refresh: Key{
@@ -338,19 +338,19 @@ func (k *KeyBindings) loadDefaults() {
 		},
 		ToggleQueryBar: Key{
 			Runes:       []string{"/"},
-			Description: "Toggle query bar",
+			Description: "Query bar",
 		},
 		ToggleSortBar: Key{
 			Runes:       []string{"s"},
-			Description: "Toggle sort bar",
+			Description: "Sort bar",
 		},
 		SortByColumn: Key{
 			Runes:       []string{"S"},
-			Description: "Sort by current column",
+			Description: "Sort by column",
 		},
 		HideColumn: Key{
 			Runes:       []string{"H"},
-			Description: "Hide current column",
+			Description: "Hide column",
 		},
 		ResetHiddenColumns: Key{
 			Keys:        []string{"Ctrl+R"},
@@ -384,7 +384,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Show history",
 		},
 		ClearInput: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+U"},
 			Description: "Clear input",
 		},
 		Paste: Key{
@@ -395,7 +395,7 @@ func (k *KeyBindings) loadDefaults() {
 
 	k.SortBar = SortBar{
 		ClearInput: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+U"},
 			Description: "Clear input",
 		},
 		Paste: Key{
@@ -467,11 +467,11 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Move to bottom",
 		},
 		CopyHighlight: Key{
-			Runes:       []string{"c"},
+			Runes:       []string{"y"},
 			Description: "Copy highlighted",
 		},
 		CopyValue: Key{
-			Runes:       []string{"C"},
+			Runes:       []string{"Y"},
 			Description: "Copy only value",
 		},
 		ToggleFullScreen: Key{
@@ -526,8 +526,8 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Aggregation = AggregationKeys{
-		AddStage: Key{
-			Runes:       []string{"a"},
+		ToggleStageBar: Key{
+			Runes:       []string{"/"},
 			Description: "Add new stage",
 		},
 		EditStage: Key{

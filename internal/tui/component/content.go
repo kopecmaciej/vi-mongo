@@ -51,8 +51,8 @@ type Content struct {
 	docModifier       *DocModifier
 	state             *mongo.CollectionState
 	stateMap          *mongo.StateMap
-	currentView       ViewType
 
+	currentView  ViewType
 	tableColumns *view.TableColumns
 	tableJson    *view.TableJson
 }
@@ -796,21 +796,13 @@ func (c *Content) handleDeleteDocumentNoConfirm(ctx context.Context, row, col in
 }
 
 func (c *Content) handleToggleQuery() *tcell.EventKey {
-	if c.state.Filter != "" {
-		c.queryBar.Toggle(c.state.Filter)
-	} else {
-		c.queryBar.Toggle("")
-	}
+	c.queryBar.Toggle(c.state.Filter)
 	c.Render()
 	return nil
 }
 
 func (c *Content) handleToggleSort() *tcell.EventKey {
-	if c.state.Sort != "" {
-		c.sortBar.Toggle(c.state.Sort)
-	} else {
-		c.sortBar.Toggle("")
-	}
+	c.sortBar.Toggle(c.state.Sort)
 	c.Render()
 	return nil
 }

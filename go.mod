@@ -5,7 +5,7 @@ go 1.22.1
 require (
 	github.com/cosiner/argv v0.1.0
 	github.com/gdamore/tcell/v2 v2.7.1
-	github.com/kopecmaciej/tview v0.1.5
+	github.com/kopecmaciej/tview v0.1.6
 	github.com/rs/zerolog v1.32.0
 	github.com/sashabaranov/go-openai v1.32.2
 	github.com/spf13/pflag v1.0.5
@@ -41,5 +41,3 @@ require (
 	golang.org/x/term v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 )
-
-replace github.com/kopecmaciej/tview => /home/cieju/projects/vi-dbs/tview

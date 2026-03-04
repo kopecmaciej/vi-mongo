@@ -139,10 +139,10 @@ func (i *InputBar) DoneFuncHandler(accept func(string), reject func()) {
 	i.SetDoneFunc(func(key tcell.Key) {
 		switch key {
 		case tcell.KeyEsc:
-			i.Toggle("")
+			i.Close()
 			reject()
 		case tcell.KeyEnter:
-			i.Toggle("")
+			i.Close()
 			text := i.GetText()
 			accept(text)
 		}
@@ -309,16 +309,39 @@ func (i *InputBar) LoadAutocomleteKeys(keys []string) {
 	i.docKeys = keys
 }
 
-// Draws default text if input is empty
-func (i *InputBar) Toggle(text string) {
-	i.BaseElement.Toggle()
-	if text == "" {
-		text = i.GetText()
-	}
-	if text == "" {
+// SetTextPreserveCursor sets the text of the bar while keeping the cursor
+// at its current position. If the cursor is beyond the new text length,
+// it ends up at the end naturally via moveCursor clamping.
+func (i *InputBar) SetTextPreserveCursor(text string) {
+	col := i.GetCursorPosition()
+	i.SetText(text)
+	i.SetCursorPosition(col)
+}
+
+// Open enables the bar and populates it with text.
+// If text is empty, it shows the default placeholder instead.
+func (i *InputBar) Open(text string) {
+	i.Enable()
+	if text != "" {
+		i.SetTextPreserveCursor(text)
+	} else if i.GetText() == "" {
 		go i.App.QueueUpdateDraw(func() {
 			i.SetWordAtCursor(i.defaultText)
 		})
+	}
+}
+
+// Close disables the bar. Safe to call when already closed.
+func (i *InputBar) Close() {
+	i.Disable()
+}
+
+// Toggle opens the bar with text if closed, or closes it if open.
+func (i *InputBar) Toggle(text string) {
+	if i.IsEnabled() {
+		i.Close()
+	} else {
+		i.Open(text)
 	}
 }
 

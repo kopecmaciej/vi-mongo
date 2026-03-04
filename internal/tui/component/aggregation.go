@@ -8,7 +8,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
-	int_mongo "github.com/kopecmaciej/vi-mongo/internal/mongo"
+	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/view"
@@ -32,30 +32,28 @@ type Aggregation struct {
 	resultsTable  *core.Table
 	deleteModal   *modal.Confirm
 
-	state       *int_mongo.CollectionState
-	stateMap    *int_mongo.StateMap
+	state       *mongo.CollectionState
+	stateMap    *mongo.StateMap
 	currentDB   string
 	currentColl string
 
-	isStageBarVisible bool
-	editingIdx        int // -1 = adding new, >=0 = editing existing
-	focusOnResults    bool
+	editingIdx     int // -1 = adding new, >=0 = editing existing
+	focusOnResults bool
 }
 
 func NewAggregation() *Aggregation {
 	a := &Aggregation{
-		BaseElement:       core.NewBaseElement(),
-		Flex:              core.NewFlex(),
-		stagesTable:       core.NewTable(),
-		stageBar:          NewInputBar(AggregationStageBarId, "Stage"),
-		resultsView:       core.NewFlex(),
-		resultsHeader:     core.NewTextView(),
-		resultsTable:      core.NewTable(),
-		deleteModal:       modal.NewConfirm(AggregationDeleteModalId),
-		state:             &int_mongo.CollectionState{},
-		stateMap:          int_mongo.NewStateMap(),
-		isStageBarVisible: false,
-		editingIdx:        -1,
+		BaseElement:   core.NewBaseElement(),
+		Flex:          core.NewFlex(),
+		stagesTable:   core.NewTable(),
+		stageBar:      NewInputBar(AggregationStageBarId, "Stage"),
+		resultsView:   core.NewFlex(),
+		resultsHeader: core.NewTextView(),
+		resultsTable:  core.NewTable(),
+		deleteModal:   modal.NewConfirm(AggregationDeleteModalId),
+		state:         &mongo.CollectionState{},
+		stateMap:      mongo.NewStateMap(),
+		editingIdx:    -1,
 	}
 
 	a.SetIdentifier(AggregationId)
@@ -136,13 +134,13 @@ func (a *Aggregation) setKeybindings() {
 
 	a.stagesTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Aggregation.AddStage, event.Name()):
-			a.openStageBar(-1)
+		case k.Contains(k.Aggregation.ToggleStageBar, event.Name()):
+			a.handleToggleStage(-1)
 			return nil
 		case k.Contains(k.Aggregation.EditStage, event.Name()):
 			row, _ := a.stagesTable.GetSelection()
 			if row >= 1 {
-				a.openStageBar(row - 1)
+				a.handleToggleStage(row - 1)
 			}
 			return nil
 		case k.Contains(k.Aggregation.DeleteStage, event.Name()):
@@ -189,7 +187,7 @@ func (a *Aggregation) HandleDatabaseSelection(ctx context.Context, db, coll stri
 	if ok {
 		a.state = state
 	} else {
-		a.state = int_mongo.NewCollectionState(db, coll)
+		a.state = mongo.NewCollectionState(db, coll)
 		a.stateMap.Set(stateKey, a.state)
 	}
 
@@ -211,14 +209,14 @@ func (a *Aggregation) Render() {
 
 	a.Flex.AddItem(stagesFlex, 0, 1, true)
 
-	if a.isStageBarVisible {
+	if a.stageBar.IsEnabled() {
 		a.Flex.AddItem(a.stageBar, 3, 0, false)
 	}
 
 	a.renderResultsView()
 	a.Flex.AddItem(a.resultsView, 0, 2, false)
 
-	if a.isStageBarVisible {
+	if a.stageBar.IsEnabled() {
 		a.App.SetFocus(a.stageBar)
 	} else if a.focusOnResults {
 		a.App.SetFocus(a.resultsTable)
@@ -244,7 +242,7 @@ func (a *Aggregation) renderStagesTable() {
 
 	stages := a.state.GetPipelineStages()
 	for row, stage := range stages {
-		operator := int_mongo.ExtractStageOperator(stage)
+		operator := mongo.ExtractStageOperator(stage)
 		preview := stage
 
 		a.stagesTable.SetCell(row+1, 0, tview.NewTableCell(fmt.Sprintf(" [%d] ", row)).
@@ -283,24 +281,21 @@ func (a *Aggregation) renderResultsView() {
 	a.resultsView.AddItem(resultsHeaderFlex, 0, 1, false)
 }
 
-func (a *Aggregation) openStageBar(idx int) {
+func (a *Aggregation) handleToggleStage(idx int) {
 	a.editingIdx = idx
-	a.isStageBarVisible = true
-
 	if idx >= 0 {
 		stages := a.state.GetPipelineStages()
 		if idx < len(stages) {
-			a.stageBar.SetText(stages[idx])
+			a.stageBar.Open(stages[idx])
 		}
 	} else {
 		a.stageBar.Toggle("")
 	}
-
 	a.Render()
 }
 
 func (a *Aggregation) closeStageBar() {
-	a.isStageBarVisible = false
+	a.stageBar.Close()
 	a.editingIdx = -1
 	a.Render()
 }
@@ -317,6 +312,7 @@ func (a *Aggregation) stageBarHandler() {
 }
 
 func (a *Aggregation) applyStage(text string) {
+	a.stageBar.SetText("")
 	text = strings.TrimSpace(text)
 	if text == "" || text == "{ <$0> }" {
 		a.closeStageBar()
@@ -324,14 +320,14 @@ func (a *Aggregation) applyStage(text string) {
 	}
 
 	// Validate it parses
-	_, err := int_mongo.ParsePipeline([]string{text})
+	_, err := mongo.ParsePipeline([]string{text})
 	if err != nil {
 		modal.ShowError(a.App.Pages, "Invalid stage", err)
 		return
 	}
 
 	// Validate that the top-level operator starts with '$'
-	operator := int_mongo.ExtractStageOperator(text)
+	operator := mongo.ExtractStageOperator(text)
 	if !strings.HasPrefix(operator, "$") {
 		modal.ShowError(a.App.Pages, "Invalid stage", fmt.Errorf("stage operator %q must start with '$' (e.g. $match, $group)", operator))
 		return
@@ -359,7 +355,7 @@ func (a *Aggregation) showDeleteStageModal() {
 		return
 	}
 
-	operator := int_mongo.ExtractStageOperator(stages[idx])
+	operator := mongo.ExtractStageOperator(stages[idx])
 	a.deleteModal.SetText(fmt.Sprintf("Delete stage [%d] %s?", idx, operator))
 	a.deleteModal.SetDoneFunc(func(buttonIndex int, _ string) {
 		defer a.App.Pages.RemovePage(AggregationDeleteModalId)
@@ -405,7 +401,7 @@ func (a *Aggregation) moveStage(direction int) {
 }
 
 func (a *Aggregation) IsStageBarVisible() bool {
-	return a.isStageBarVisible
+	return a.stageBar.IsEnabled()
 }
 
 func (a *Aggregation) runPipeline(ctx context.Context) {
@@ -415,7 +411,7 @@ func (a *Aggregation) runPipeline(ctx context.Context) {
 		return
 	}
 
-	pipeline, err := int_mongo.ParsePipeline(stages)
+	pipeline, err := mongo.ParsePipeline(stages)
 	if err != nil {
 		modal.ShowError(a.App.Pages, "Pipeline parse error", err)
 		return
