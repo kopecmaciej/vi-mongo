@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // ParseBsonDocument converts a map to a JSON string
@@ -218,6 +219,36 @@ func stringToFloat(s string) (float64, error) {
 
 func stringToBool(s string) (bool, error) {
 	return strconv.ParseBool(s)
+}
+
+// ParsePipeline parses a slice of stage JSON strings into a mongo.Pipeline.
+// Each stage should be a full stage document like {$match: {status: "active"}}.
+func ParsePipeline(stages []string) (mongo.Pipeline, error) {
+	pipeline := make(mongo.Pipeline, 0, len(stages))
+	for idx, stage := range stages {
+		parsed, err := ParseStringQuery(stage)
+		if err != nil {
+			return nil, fmt.Errorf("stage %d: %w", idx, err)
+		}
+		bsonStage := bson.D{}
+		for k, v := range parsed {
+			bsonStage = append(bsonStage, bson.E{Key: k, Value: v})
+		}
+		pipeline = append(pipeline, bsonStage)
+	}
+	return pipeline, nil
+}
+
+// ExtractStageOperator returns the top-level key from a stage JSON string (e.g. "$match").
+func ExtractStageOperator(stage string) string {
+	parsed, err := ParseStringQuery(stage)
+	if err != nil || len(parsed) == 0 {
+		return stage
+	}
+	for k := range parsed {
+		return k
+	}
+	return stage
 }
 
 func ParseJsonArray(value string) (any, error) {

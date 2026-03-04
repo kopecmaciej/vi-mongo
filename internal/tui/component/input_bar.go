@@ -57,6 +57,7 @@ func (i *InputBar) init() error {
 
 func (i *InputBar) setLayout() {
 	i.SetBorder(true)
+	i.SetAutocompleteMaxHeight(12)
 }
 
 func (i *InputBar) setStyle() {
@@ -211,6 +212,93 @@ func (i *InputBar) EnableAutocomplete() {
 
 		i.SetWordAtCursor(text)
 
+		return true
+	})
+}
+
+// braceDepth counts the number of unclosed '{' braces in s.
+func braceDepth(s string) int {
+	depth := 0
+	for _, c := range s {
+		if c == '{' {
+			depth++
+		} else if c == '}' {
+			depth--
+		}
+	}
+	return depth
+}
+
+// EnableAggregationAutocomplete enables context-aware autocomplete for aggregation stages.
+// At the outer level (depth 1) it suggests pipeline stage operators ($match, $group, …).
+// Inside the stage value (depth > 1) it suggests general MongoDB operators.
+func (i *InputBar) EnableAggregationAutocomplete() {
+	stageOperators := mongo.GetAggregationPipelineOperators()
+	ma := mongo.NewMongoAutocomplete()
+
+	i.SetAutocompleteFunc(func(currentText string) (entries []tview.AutocompleteItem) {
+		currentText = strings.TrimPrefix(currentText, "\"")
+		if len(strings.Fields(currentText)) == 0 {
+			return nil
+		}
+
+		currentWord := i.GetWordAtCursor()
+		if strings.HasPrefix(currentWord, "{") || strings.HasPrefix(currentWord, "[") {
+			currentWord = currentWord[1:]
+		}
+		if currentWord == "" {
+			return nil
+		}
+
+		textBefore := i.GetTextBeforeCursor()
+		depth := braceDepth(textBefore)
+
+		escaped := regexp.QuoteMeta(currentWord)
+
+		if depth <= 1 {
+			// Outer level: suggest stage operators only
+			for _, keyword := range stageOperators {
+				if matched, _ := regexp.MatchString("(?i)^"+escaped, keyword.Display); matched {
+					entries = append(entries, tview.AutocompleteItem{Main: keyword.Display, Secondary: keyword.Description})
+				}
+			}
+		} else {
+			// Inside value: suggest general mongo operators
+			for _, keyword := range ma.Operators {
+				if matched, _ := regexp.MatchString("(?i)^"+escaped, keyword.Display); matched {
+					entries = append(entries, tview.AutocompleteItem{Main: keyword.Display, Secondary: keyword.Description})
+				}
+			}
+			// Also include doc keys if available
+			for _, keyword := range i.docKeys {
+				if matched, _ := regexp.MatchString("(?i)^"+currentWord, keyword); matched {
+					entries = append(entries, tview.AutocompleteItem{Main: keyword})
+				}
+			}
+		}
+
+		return entries
+	})
+
+	i.SetAutocompletedFunc(func(text string, index, source int) bool {
+		if source == 0 {
+			return false
+		}
+		// Look up in stage operators first, then general operators
+		var key *mongo.MongoKeyword
+		for idx := range stageOperators {
+			if stageOperators[idx].Display == text {
+				key = &stageOperators[idx]
+				break
+			}
+		}
+		if key == nil {
+			key = ma.GetOperatorByDisplay(text)
+		}
+		if key != nil {
+			text = key.InsertText
+		}
+		i.SetWordAtCursor(text)
 		return true
 	})
 }

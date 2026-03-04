@@ -19,20 +19,21 @@ type (
 	// There are views that have only keybindings and some have
 	// nested keybindings of their children views
 	KeyBindings struct {
-		Global     GlobalKeys     `json:"global"`
-		Help       HelpKeys       `json:"help"`
-		Welcome    WelcomeKeys    `json:"welcome"`
-		Connection ConnectionKeys `json:"connection"`
-		Main       MainKeys       `json:"main"`
-		Database   DatabaseKeys   `json:"databases"`
-		FilterBar  FilterBarKeys  `json:"filterBar"`
-		Content    ContentKeys    `json:"content"`
-		Peeker     PeekerKeys     `json:"peeker"`
-		QueryBar   QueryBar       `json:"queryBar"`
-		SortBar    SortBar        `json:"sortBar"`
-		Index      IndexKeys      `json:"index"`
-		AIQuery    AIQuery        `json:"aiPrompt"`
-		History    HistoryKeys    `json:"history"`
+		Global      GlobalKeys      `json:"global"`
+		Help        HelpKeys        `json:"help"`
+		Welcome     WelcomeKeys     `json:"welcome"`
+		Connection  ConnectionKeys  `json:"connection"`
+		Main        MainKeys        `json:"main"`
+		Database    DatabaseKeys    `json:"databases"`
+		FilterBar   FilterBarKeys   `json:"filterBar"`
+		Content     ContentKeys     `json:"content"`
+		Peeker      PeekerKeys      `json:"peeker"`
+		QueryBar    QueryBar        `json:"queryBar"`
+		SortBar     SortBar         `json:"sortBar"`
+		Index       IndexKeys       `json:"index"`
+		AIQuery     AIQuery         `json:"aiPrompt"`
+		History     HistoryKeys     `json:"history"`
+		Aggregation AggregationKeys `json:"aggregation"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -168,6 +169,18 @@ type (
 	AIQuery struct {
 		ExitAIQuery Key `json:"exitAIQuery"`
 		ClearPrompt Key `json:"clearPrompt"`
+	}
+
+	AggregationKeys struct {
+		AddStage      Key `json:"addStage"`
+		EditStage     Key `json:"editStage"`
+		DeleteStage   Key `json:"deleteStage"`
+		RunPipeline   Key `json:"runPipeline"`
+		ClearPipeline Key `json:"clearPipeline"`
+		MoveStageDown Key `json:"moveStageDown"`
+		MoveStageUp   Key `json:"moveStageUp"`
+		FocusResults  Key `json:"focusResults"`
+		ToggleHistory Key `json:"toggleHistory"`
 	}
 )
 
@@ -509,6 +522,45 @@ func (k *KeyBindings) loadDefaults() {
 		ClearPrompt: Key{
 			Keys:        []string{"Ctrl+D"},
 			Description: "Clear prompt",
+		},
+	}
+
+	k.Aggregation = AggregationKeys{
+		AddStage: Key{
+			Runes:       []string{"a"},
+			Description: "Add new stage",
+		},
+		EditStage: Key{
+			Runes:       []string{"e"},
+			Description: "Edit selected stage",
+		},
+		DeleteStage: Key{
+			Runes:       []string{"d"},
+			Description: "Delete selected stage",
+		},
+		RunPipeline: Key{
+			Runes:       []string{"r"},
+			Description: "Run pipeline",
+		},
+		ClearPipeline: Key{
+			Runes:       []string{"C"},
+			Description: "Clear all stages",
+		},
+		MoveStageDown: Key{
+			Runes:       []string{"J"},
+			Description: "Move stage down",
+		},
+		MoveStageUp: Key{
+			Runes:       []string{"K"},
+			Description: "Move stage up",
+		},
+		FocusResults: Key{
+			Keys:        []string{"Ctrl+J"},
+			Description: "Focus results",
+		},
+		ToggleHistory: Key{
+			Keys:        []string{"Ctrl+Y"},
+			Description: "Toggle pipeline history",
 		},
 	}
 }

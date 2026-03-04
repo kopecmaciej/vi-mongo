@@ -310,6 +310,10 @@ func (h *Header) UpdateKeys() ([]config.Key, error) {
 	if h.currentFocus == "DatabaseTree" {
 		h.currentFocus = "Database"
 	}
+	// AggregationStageBar shares the same keybindings as QueryBar
+	if h.currentFocus == "AggregationStageBar" {
+		h.currentFocus = "QueryBar"
+	}
 
 	orderedKeys, err := h.App.GetKeys().GetKeysForElement(string(h.currentFocus))
 	if err != nil {

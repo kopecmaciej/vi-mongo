@@ -12,16 +12,18 @@ import (
 // CollectionState is used to store the state of a collection and use it
 // while rendering doesn't require fetching from the database
 type CollectionState struct {
-	Db         string
-	Coll       string
-	Skip       int64
-	Limit      int64
-	Count      int64
-	Sort       string
-	Filter     string
-	Projection string
+	Db             string
+	Coll           string
+	Skip           int64
+	Limit          int64
+	Count          int64
+	Sort           string
+	Filter         string
+	Projection     string
+	PipelineStages []string
 	// docs are only one private as they cannot be changed in uncontrolled way
-	docs []primitive.M
+	docs    []primitive.M
+	aggDocs []primitive.M
 }
 
 func (c *CollectionState) GetAllDocs() []primitive.M {
@@ -188,6 +190,27 @@ func (c *CollectionState) DeleteDoc(id any) {
 			return
 		}
 	}
+}
+
+func (c *CollectionState) SetPipelineStages(stages []string) {
+	c.PipelineStages = stages
+}
+
+func (c *CollectionState) GetPipelineStages() []string {
+	return c.PipelineStages
+}
+
+func (c *CollectionState) SetAggDocs(docs []primitive.M) {
+	c.aggDocs = make([]primitive.M, len(docs))
+	copy(c.aggDocs, docs)
+}
+
+func (c *CollectionState) GetAggDocs() []primitive.M {
+	docsCopy := make([]primitive.M, len(c.aggDocs))
+	for i, doc := range c.aggDocs {
+		docsCopy[i] = util.DeepCopy(doc)
+	}
+	return docsCopy
 }
 
 // StateMap persevere states when hopping between diffrent mongodb servers

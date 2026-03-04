@@ -317,17 +317,17 @@ var (
 	aggregationPipelineOperators = []MongoKeyword{
 		{
 			Display:     "$addFields",
-			InsertText:  "$addFields: {<$0>}",
+			InsertText:  "$addFields: { <$0> }",
 			Description: "Adds new fields to the documents in the pipeline.",
 		},
 		{
 			Display:     "$bucket",
-			InsertText:  "$bucket: {<$0>}",
+			InsertText:  "$bucket: { <$0> }",
 			Description: "Groups documents into buckets based on a specified expression.",
 		},
 		{
 			Display:     "$bucketAuto",
-			InsertText:  "$bucketAuto: {<$0>}",
+			InsertText:  "$bucketAuto: { <$0> }",
 			Description: "Groups documents into buckets based on a specified expression, with automatic bucket size calculation.",
 		},
 		{
@@ -342,22 +342,22 @@ var (
 		},
 		{
 			Display:     "$facet",
-			InsertText:  "$facet: {<$0>}",
+			InsertText:  "$facet: { <$0> }",
 			Description: "Groups documents into buckets based on a specified expression, with automatic bucket size calculation.",
 		},
 		{
 			Display:     "$geoNear",
-			InsertText:  "$geoNear: {<$0>}",
+			InsertText:  "$geoNear: { <$0> }",
 			Description: "Finds the nearest documents to a specified point.",
 		},
 		{
 			Display:     "$graphLookup",
-			InsertText:  "$graphLookup: {<$0>}",
+			InsertText:  "$graphLookup: { <$0> }",
 			Description: "Performs a recursive graph lookup on a collection.",
 		},
 		{
 			Display:     "$group",
-			InsertText:  "$group: {<$0>}",
+			InsertText:  "$group: { <$0> }",
 			Description: "Groups documents by a specified expression.",
 		},
 		{
@@ -382,17 +382,17 @@ var (
 		},
 		{
 			Display:     "$lookup",
-			InsertText:  "$lookup: {<$0>}",
+			InsertText:  "$lookup: { <$0> }",
 			Description: "Joins two collections based on a specified local field and a specified foreign field.",
 		},
 		{
 			Display:     "$match",
-			InsertText:  "$match: {<$0>}",
+			InsertText:  "$match: { <$0> }",
 			Description: "Filters documents based on a specified expression.",
 		},
 		{
 			Display:     "$merge",
-			InsertText:  "$merge: {<$0>}",
+			InsertText:  "$merge: { <$0> }",
 			Description: "Merges two collections based on a specified local field and a specified foreign field.",
 		},
 		{
@@ -407,22 +407,22 @@ var (
 		},
 		{
 			Display:     "$project",
-			InsertText:  "$project: {<$0>}",
+			InsertText:  "$project: { <$0> }",
 			Description: "Selects fields to include in the output.",
 		},
 		{
 			Display:     "$redact",
-			InsertText:  "$redact: {<$0>}",
+			InsertText:  "$redact: { <$0> }",
 			Description: "Redacts fields from the output based on a specified expression.",
 		},
 		{
 			Display:     "$replaceRoot",
-			InsertText:  "$replaceRoot: {<$0>}",
+			InsertText:  "$replaceRoot: { <$0> }",
 			Description: "Replaces the root field of the output with a specified expression.",
 		},
 		{
 			Display:     "$replaceWith",
-			InsertText:  "$replaceWith: {<$0>}",
+			InsertText:  "$replaceWith: { <$0> }",
 			Description: "Replaces the root field of the output with a specified expression.",
 		},
 		{
@@ -432,7 +432,7 @@ var (
 		},
 		{
 			Display:     "$set",
-			InsertText:  "$set: {<$0>}",
+			InsertText:  "$set: { <$0> }",
 			Description: "Sets the value of a specified field in the output.",
 		},
 		{
@@ -442,22 +442,22 @@ var (
 		},
 		{
 			Display:     "$sort",
-			InsertText:  "$sort: {<$0>}",
+			InsertText:  "$sort: { <$0> }",
 			Description: "Sorts the output based on a specified expression.",
 		},
 		{
 			Display:     "$sortByCount",
-			InsertText:  "$sortByCount: {<$0>}",
+			InsertText:  "$sortByCount: { <$0> }",
 			Description: "Sorts the output based on the count of documents in each group.",
 		},
 		{
 			Display:     "$unset",
-			InsertText:  "$unset: {<$0>}",
+			InsertText:  "$unset: { <$0> }",
 			Description: "Removes a specified field from the output.",
 		},
 		{
 			Display:     "$unwind",
-			InsertText:  "$unwind: {<$0>}",
+			InsertText:  "$unwind: { <$0> }",
 			Description: "Unwraps an array field in the output.",
 		},
 	}
@@ -561,6 +561,11 @@ func (m *MongoAutocomplete) GetOperatorByDisplay(display string) *MongoKeyword {
 	return nil
 }
 
+// GetAggregationPipelineOperators returns the list of aggregation pipeline stage operators.
+func GetAggregationPipelineOperators() []MongoKeyword {
+	return aggregationPipelineOperators
+}
+
 // getMongoOperators returns list of all mongo operators
 func getMongoOperators() []MongoKeyword {
 	operators := []MongoKeyword{}
@@ -577,8 +582,6 @@ func getMongoOperators() []MongoKeyword {
 	operators = append(operators, projectionOperators...)
 	operators = append(operators, miscellaneousOperators...)
 	operators = append(operators, queryModifiers...)
-	// for now we don't need aggregation pipeline operators as there is no aggregation in this app
-	// operators = append(operators, aggregationPipelineOperators...)
 	operators = append(operators, updateOperators...)
 
 	return operators
