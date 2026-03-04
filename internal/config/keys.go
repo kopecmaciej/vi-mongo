@@ -227,7 +227,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Show server info",
 		},
 		ShowAIQuery: Key{
-			Keys:        []string{"Alt+a"},
+			Keys:        []string{"Alt+A"},
 			Description: "Show AI prompt",
 		},
 	}
@@ -238,27 +238,27 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Focus filter bar",
 		},
 		ClearFilter: Key{
-			Keys:        []string{"Ctrl+U"},
+			Keys:        []string{"Ctrl+D"},
 			Description: "Clear filter",
 		},
 		ExpandAll: Key{
-			Runes:       []string{"E"},
+			Runes:       []string{"e"},
 			Description: "Expand all",
 		},
 		CollapseAll: Key{
-			Runes:       []string{"W"},
+			Runes:       []string{"w"},
 			Description: "Collapse all",
 		},
 		AddCollection: Key{
-			Runes:       []string{"A"},
+			Runes:       []string{"a"},
 			Description: "Add collection",
 		},
 		DeleteCollection: Key{
-			Runes:       []string{"D"},
+			Runes:       []string{"d"},
 			Description: "Delete collection",
 		},
 		RenameCollection: Key{
-			Runes:       []string{"R"},
+			Runes:       []string{"r"},
 			Description: "Rename collection",
 		},
 	}
@@ -269,7 +269,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Close filter bar",
 		},
 		ClearFilter: Key{
-			Keys:        []string{"Ctrl+U"},
+			Keys:        []string{"Ctrl+D"},
 			Description: "Clear filter",
 		},
 	}
@@ -306,7 +306,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 		DuplicateDocumentNoConfirm: Key{
 			Keys:        []string{"Alt+D"},
-			Description: "Duplicate without confirmation",
+			Description: "Duplicate no confirm",
 		},
 		DeleteDocument: Key{
 			Runes:       []string{"d"},
@@ -314,7 +314,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 		DeleteDocumentNoConfirm: Key{
 			Keys:        []string{"Alt+d"},
-			Description: "Delete without confirmation",
+			Description: "Delete no confirm",
 		},
 		MultipleSelect: Key{
 			Runes:       []string{"V"},

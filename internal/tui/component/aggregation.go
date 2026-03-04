@@ -11,6 +11,7 @@ import (
 	int_mongo "github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/view"
 )
 
 const (
@@ -266,7 +267,6 @@ func (a *Aggregation) renderResultsView() {
 	a.resultsTable.Clear()
 
 	docs := a.state.GetAggDocs()
-	a.resultsHeader.SetText(fmt.Sprintf(" RESULTS  %d docs ", len(docs)))
 
 	resultsHeaderFlex := core.NewFlex()
 	resultsHeaderFlex.SetDirection(tview.FlexRow)
@@ -274,15 +274,10 @@ func (a *Aggregation) renderResultsView() {
 	resultsHeaderFlex.SetTitle(fmt.Sprintf(" RESULTS  %d docs ", len(docs)))
 	resultsHeaderFlex.SetTitleAlign(tview.AlignLeft)
 
-	for row, doc := range docs {
-		jsoned, err := int_mongo.ParseBsonDocument(doc)
-		if err != nil {
-			continue
-		}
-		cell := tview.NewTableCell(jsoned).
-			SetAlign(tview.AlignLeft).
-			SetSelectable(true)
-		a.resultsTable.SetCell(row, 0, cell)
+	tableJson := view.NewTableJson()
+	tableJson.SeparatorColor = a.App.GetStyles().Others.SeparatorColor.Color()
+	if err := tableJson.Render(a.resultsTable, 0, docs); err != nil {
+		modal.ShowError(a.App.Pages, "Error rendering results", err)
 	}
 
 	resultsHeaderFlex.AddItem(a.resultsTable, 0, 1, false)

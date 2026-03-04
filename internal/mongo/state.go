@@ -21,9 +21,8 @@ type CollectionState struct {
 	Filter         string
 	Projection     string
 	PipelineStages []string
-	// docs are only one private as they cannot be changed in uncontrolled way
-	docs    []primitive.M
-	aggDocs []primitive.M
+	docs           []primitive.M
+	aggDocs        []primitive.M
 }
 
 func (c *CollectionState) GetAllDocs() []primitive.M {
