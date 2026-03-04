@@ -212,7 +212,7 @@ func (c *Connection) renderForm() *core.Form {
 	keys := c.App.GetKeys()
 	c.form.AddInputField("Name", "", 40, nil, nil)
 	c.form.AddTextArea("Uri", "mongodb://", 40, 3, 0, nil)
-	c.form.AddTextView("Example", "mongodb://username:password@host:port/db", 40, 1, true, false)
+	c.form.AddTextView("Example", "mongodb://user:pass@host:port/db or $ENV", 40, 1, true, false)
 	paste := fmt.Sprintf("Type Uri (paste - %s) or fill below", keys.QueryBar.Paste.String())
 	c.form.AddTextView("Info", paste, 40, 1, true, false)
 	c.form.AddTextView(" ", "-- ----------------------------------------", 40, 1, true, false)
@@ -242,8 +242,13 @@ func (c *Connection) renderList() {
 	c.list.Clear()
 
 	for _, conn := range c.App.GetConfig().Connections {
-		uri := "uri: " + conn.GetSafeUri()
-		c.list.AddItem(conn.Name, uri, 0, func() {
+		var uriDisplay string
+		if strings.HasPrefix(strings.TrimSpace(conn.Uri), "$") {
+			uriDisplay = "uri: " + conn.Uri
+		} else {
+			uriDisplay = "uri: " + conn.GetSafeUri()
+		}
+		c.list.AddItem(conn.Name, uriDisplay, 0, func() {
 			c.setConnections()
 		})
 	}
@@ -363,7 +368,15 @@ func (c *Connection) saveButtonFunc() {
 			Timeout: intTimeout,
 		}
 
-		if c.isEditMode {
+		// If the URI is an env var reference (e.g. $MONGODB_URI), store it
+		// as-is — parsing would fail on the unexpanded value.
+		if strings.HasPrefix(strings.TrimSpace(uri), "$") {
+			if c.isEditMode {
+				saveErr = c.App.GetConfig().UpdateConnection(c.editingConnName, mongoConfig)
+			} else {
+				saveErr = c.App.GetConfig().AddConnection(mongoConfig)
+			}
+		} else if c.isEditMode {
 			saveErr = c.App.GetConfig().UpdateConnectionFromUri(c.editingConnName, mongoConfig)
 		} else {
 			saveErr = c.App.GetConfig().AddConnectionFromUri(mongoConfig)

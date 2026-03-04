@@ -8,6 +8,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 )
 
 const (
@@ -74,9 +75,19 @@ func (h *Header) setStyle() {
 
 // SetBaseInfo sets the basic information about the database connection
 func (h *Header) SetBaseInfo() BaseInfo {
+	host := h.Dao.Config.Host
+	port := fmt.Sprintf("%d", h.Dao.Config.Port)
+
+	if host == "" && h.Dao.Config.Uri != "" {
+		if parsed, err := util.ParseMongoUri(h.Dao.Config.GetUri()); err == nil {
+			host = parsed.Host
+			port = parsed.Port
+		}
+	}
+
 	h.baseInfo = BaseInfo{
-		0: {"host", h.Dao.Config.Host},
-		1: {"port", fmt.Sprintf("%d", h.Dao.Config.Port)},
+		0: {"host", host},
+		1: {"port", port},
 	}
 	return h.baseInfo
 }

@@ -411,9 +411,15 @@ func (c *Config) LoadEncryptionKey() error {
 	return nil
 }
 
-// GetUri returns the raw URI from config without any decryption
+// GetUri returns the URI from config. If the URI value is an environment
+// variable reference (e.g. $MONGODB_URI or ${MONGODB_URI}), it is expanded
+// before returning. Plain URIs are returned as-is to avoid mangling passwords
+// that contain '$'.
 func (m *MongoConfig) GetUri() string {
 	if m.Uri != "" {
+		if strings.HasPrefix(strings.TrimSpace(m.Uri), "$") {
+			return os.ExpandEnv(m.Uri)
+		}
 		return m.Uri
 	}
 
