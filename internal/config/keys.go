@@ -191,7 +191,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Toggle style change modal",
 		},
 		ToggleHeader: Key{
-			Keys:        []string{"Ctrl+K"},
+			Keys:        []string{"t"},
 			Description: "Expand/collapse header",
 		},
 	}
