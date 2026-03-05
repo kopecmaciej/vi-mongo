@@ -100,6 +100,15 @@ func (i *Index) handleEvents() {
 
 func (i *Index) setKeybindings() {
 	k := i.App.GetKeys()
+	i.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch {
+		case k.Contains(k.Index.MoveUp, event.Name()):
+			return tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
+		case k.Contains(k.Index.MoveDown, event.Name()):
+			return tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
+		}
+		return event
+	})
 	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
 		case k.Contains(k.Index.ExitAddIndex, event.Name()):
