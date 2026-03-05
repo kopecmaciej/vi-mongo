@@ -119,7 +119,6 @@ type (
 	}
 
 	ConnectionKeys struct {
-		ToggleFocus    Key                `json:"toggleFocus"`
 		ConnectionForm ConnectionFormKeys `json:"connectionForm"`
 		ConnectionList ConnectionListKeys `json:"connectionList"`
 	}
@@ -172,15 +171,15 @@ type (
 	}
 
 	AggregationKeys struct {
-		ToggleStageBar Key `json:"toggleStageBar"`
-		EditStage      Key `json:"editStage"`
-		DeleteStage    Key `json:"deleteStage"`
-		RunPipeline    Key `json:"runPipeline"`
-		ClearPipeline  Key `json:"clearPipeline"`
-		MoveStageDown  Key `json:"moveStageDown"`
-		MoveStageUp    Key `json:"moveStageUp"`
-		FocusResults   Key `json:"focusResults"`
-		ToggleHistory  Key `json:"toggleHistory"`
+		AddStage      Key `json:"addStage"`
+		EditStage     Key `json:"editStage"`
+		DeleteStage   Key `json:"deleteStage"`
+		RunPipeline   Key `json:"runPipeline"`
+		ClearPipeline Key `json:"clearPipeline"`
+		MoveStageDown Key `json:"moveStageDown"`
+		MoveStageUp   Key `json:"moveStageUp"`
+		ToggleFocus   Key `json:"toggleFocus"`
+		ToggleHistory Key `json:"toggleHistory"`
 	}
 )
 
@@ -242,23 +241,23 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Clear filter",
 		},
 		ExpandAll: Key{
-			Runes:       []string{"e"},
+			Runes:       []string{"E"},
 			Description: "Expand all",
 		},
 		CollapseAll: Key{
-			Runes:       []string{"w"},
+			Runes:       []string{"W"},
 			Description: "Collapse all",
 		},
 		AddCollection: Key{
-			Runes:       []string{"a"},
+			Runes:       []string{"A"},
 			Description: "Add collection",
 		},
 		DeleteCollection: Key{
-			Runes:       []string{"d"},
+			Runes:       []string{"D"},
 			Description: "Delete collection",
 		},
 		RenameCollection: Key{
-			Runes:       []string{"r"},
+			Runes:       []string{"R"},
 			Description: "Rename collection",
 		},
 	}
@@ -280,12 +279,12 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Change view",
 		},
 		PeekDocument: Key{
-			Runes:       []string{"p"},
+			Runes:       []string{"o"},
 			Keys:        []string{"Enter"},
 			Description: "Peek",
 		},
 		FullPagePeek: Key{
-			Runes:       []string{"P"},
+			Runes:       []string{"O"},
 			Description: "Full peek",
 		},
 		AddDocument: Key{
@@ -403,12 +402,6 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Paste from clipboard",
 		},
 	}
-
-	k.Connection.ToggleFocus = Key{
-		Keys:        []string{"Tab", "Backtab"},
-		Description: "Toggle focus",
-	}
-
 	k.Connection.ConnectionForm = ConnectionFormKeys{
 		SaveConnection: Key{
 			Keys:        []string{"Ctrl+S"},
@@ -520,26 +513,26 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Exit AI query",
 		},
 		ClearPrompt: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+U"},
 			Description: "Clear prompt",
 		},
 	}
 
 	k.Aggregation = AggregationKeys{
-		ToggleStageBar: Key{
-			Runes:       []string{"/"},
+		AddStage: Key{
+			Runes:       []string{"A"},
 			Description: "Add new stage",
 		},
 		EditStage: Key{
-			Runes:       []string{"e"},
+			Runes:       []string{"E"},
 			Description: "Edit selected stage",
 		},
 		DeleteStage: Key{
-			Runes:       []string{"d"},
+			Runes:       []string{"D"},
 			Description: "Delete selected stage",
 		},
 		RunPipeline: Key{
-			Runes:       []string{"r"},
+			Runes:       []string{"R"},
 			Description: "Run pipeline",
 		},
 		ClearPipeline: Key{
@@ -554,7 +547,7 @@ func (k *KeyBindings) loadDefaults() {
 			Runes:       []string{"K"},
 			Description: "Move stage up",
 		},
-		FocusResults: Key{
+		ToggleFocus: Key{
 			Keys:        []string{"Ctrl+J"},
 			Description: "Focus results",
 		},

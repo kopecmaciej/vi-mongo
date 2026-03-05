@@ -12,6 +12,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/view"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 const (
@@ -39,6 +40,7 @@ type Aggregation struct {
 
 	editingIdx     int // -1 = adding new, >=0 = editing existing
 	focusOnResults bool
+	isPreview      bool
 }
 
 func NewAggregation() *Aggregation {
@@ -134,7 +136,7 @@ func (a *Aggregation) setKeybindings() {
 
 	a.stagesTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Aggregation.ToggleStageBar, event.Name()):
+		case k.Contains(k.Aggregation.AddStage, event.Name()):
 			a.handleToggleStage(-1)
 			return nil
 		case k.Contains(k.Aggregation.EditStage, event.Name()):
@@ -148,7 +150,7 @@ func (a *Aggregation) setKeybindings() {
 			return nil
 		case k.Contains(k.Aggregation.RunPipeline, event.Name()):
 			ctx := context.Background()
-			a.runPipeline(ctx)
+			a.runPipeline(ctx, false)
 			return nil
 		case k.Contains(k.Aggregation.ClearPipeline, event.Name()):
 			a.clearPipeline()
@@ -159,7 +161,7 @@ func (a *Aggregation) setKeybindings() {
 		case k.Contains(k.Aggregation.MoveStageUp, event.Name()):
 			a.moveStage(-1)
 			return nil
-		case k.Contains(k.Aggregation.FocusResults, event.Name()):
+		case k.Contains(k.Aggregation.ToggleFocus, event.Name()):
 			a.focusOnResults = true
 			a.App.SetFocus(a.resultsTable)
 			return nil
@@ -169,7 +171,7 @@ func (a *Aggregation) setKeybindings() {
 
 	a.resultsTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Aggregation.FocusResults, event.Name()):
+		case k.Contains(k.Aggregation.ToggleFocus, event.Name()):
 			a.focusOnResults = false
 			a.App.SetFocus(a.stagesTable)
 			return nil
@@ -269,7 +271,11 @@ func (a *Aggregation) renderResultsView() {
 	resultsHeaderFlex := core.NewFlex()
 	resultsHeaderFlex.SetDirection(tview.FlexRow)
 	resultsHeaderFlex.SetBorder(true)
-	resultsHeaderFlex.SetTitle(fmt.Sprintf(" RESULTS  %d docs ", len(docs)))
+	title := fmt.Sprintf(" RESULTS  %d docs ", len(docs))
+	if a.isPreview {
+		title = fmt.Sprintf(" RESULTS  %d docs (preview) ", len(docs))
+	}
+	resultsHeaderFlex.SetTitle(title)
 	resultsHeaderFlex.SetTitleAlign(tview.AlignLeft)
 
 	tableJson := view.NewTableJson()
@@ -342,6 +348,7 @@ func (a *Aggregation) applyStage(text string) {
 	a.state.SetPipelineStages(stages)
 
 	a.closeStageBar()
+	a.runPipeline(context.Background(), true)
 }
 
 func (a *Aggregation) showDeleteStageModal() {
@@ -404,7 +411,7 @@ func (a *Aggregation) IsStageBarVisible() bool {
 	return a.stageBar.IsEnabled()
 }
 
-func (a *Aggregation) runPipeline(ctx context.Context) {
+func (a *Aggregation) runPipeline(ctx context.Context, preview bool) {
 	stages := a.state.GetPipelineStages()
 	if len(stages) == 0 {
 		modal.ShowError(a.App.Pages, "No stages", fmt.Errorf("add at least one stage before running"))
@@ -417,12 +424,17 @@ func (a *Aggregation) runPipeline(ctx context.Context) {
 		return
 	}
 
+	if preview {
+		pipeline = append(pipeline, bson.D{{Key: "$limit", Value: 5}})
+	}
+
 	docs, err := a.Dao.AggregateDocuments(ctx, a.currentDB, a.currentColl, pipeline)
 	if err != nil {
 		modal.ShowError(a.App.Pages, "Aggregation error", err)
 		return
 	}
 
+	a.isPreview = preview
 	a.state.SetAggDocs(docs)
 	a.Render()
 }
