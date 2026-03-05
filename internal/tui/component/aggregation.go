@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
@@ -17,6 +18,7 @@ import (
 
 const (
 	AggregationId            = "Aggregation"
+	AggregationResultsId     = "AggregationResults"
 	AggregationStageBarId    = "AggregationStageBar"
 	AggregationDeleteModalId = "AggregationDeleteModal"
 )
@@ -32,6 +34,9 @@ type Aggregation struct {
 	resultsHeader *core.TextView
 	resultsTable  *core.Table
 	deleteModal   *modal.Confirm
+	peeker        *Peeker
+	tableJson     *view.TableJson
+	tableColumns  *view.TableColumns
 
 	state       *mongo.CollectionState
 	stateMap    *mongo.StateMap
@@ -41,6 +46,7 @@ type Aggregation struct {
 	editingIdx     int // -1 = adding new, >=0 = editing existing
 	focusOnResults bool
 	isPreview      bool
+	currentView    ViewType
 }
 
 func NewAggregation() *Aggregation {
@@ -53,9 +59,12 @@ func NewAggregation() *Aggregation {
 		resultsHeader: core.NewTextView(),
 		resultsTable:  core.NewTable(),
 		deleteModal:   modal.NewConfirm(AggregationDeleteModalId),
+		peeker:        NewPeeker(),
+		tableJson:     view.NewTableJson(),
 		state:         &mongo.CollectionState{},
 		stateMap:      mongo.NewStateMap(),
 		editingIdx:    -1,
+		currentView:   JsonView,
 	}
 
 	a.SetIdentifier(AggregationId)
@@ -73,6 +82,9 @@ func (a *Aggregation) init() error {
 		return err
 	}
 	if err := a.stageBar.Init(a.App); err != nil {
+		return err
+	}
+	if err := a.peeker.Init(a.App); err != nil {
 		return err
 	}
 
@@ -97,6 +109,8 @@ func (a *Aggregation) setLayout() {
 	a.stagesTable.SetSelectable(true, false)
 	a.stagesTable.SetFixed(1, 0)
 
+	a.resultsTable.SetIdentifier(AggregationResultsId)
+
 	a.resultsView.SetDirection(tview.FlexRow)
 	a.resultsHeader.SetDynamicColors(true)
 
@@ -115,6 +129,8 @@ func (a *Aggregation) setStyle() {
 	a.resultsTable.SetSeparator(styles.Others.SeparatorSymbol.Rune())
 	a.resultsTable.SetBordersColor(styles.Others.SeparatorColor.Color())
 	a.resultsHeader.SetTextColor(styles.Content.StatusTextColor.Color())
+
+	a.tableColumns = view.NewTableColumns(&styles.Content)
 }
 
 func (a *Aggregation) handleEvents() {
@@ -136,32 +152,32 @@ func (a *Aggregation) setKeybindings() {
 
 	a.stagesTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Aggregation.AddStage, event.Name()):
+		case k.Contains(k.Aggregation.Stages.AddStage, event.Name()):
 			a.handleToggleStage(-1)
 			return nil
-		case k.Contains(k.Aggregation.EditStage, event.Name()):
+		case k.Contains(k.Aggregation.Stages.EditStage, event.Name()):
 			row, _ := a.stagesTable.GetSelection()
 			if row >= 1 {
 				a.handleToggleStage(row - 1)
 			}
 			return nil
-		case k.Contains(k.Aggregation.DeleteStage, event.Name()):
+		case k.Contains(k.Aggregation.Stages.DeleteStage, event.Name()):
 			a.showDeleteStageModal()
 			return nil
-		case k.Contains(k.Aggregation.RunPipeline, event.Name()):
+		case k.Contains(k.Aggregation.Stages.RunPipeline, event.Name()):
 			ctx := context.Background()
 			a.runPipeline(ctx, false)
 			return nil
-		case k.Contains(k.Aggregation.ClearPipeline, event.Name()):
+		case k.Contains(k.Aggregation.Stages.ClearPipeline, event.Name()):
 			a.clearPipeline()
 			return nil
-		case k.Contains(k.Aggregation.MoveStageDown, event.Name()):
+		case k.Contains(k.Aggregation.Stages.MoveStageDown, event.Name()):
 			a.moveStage(1)
 			return nil
-		case k.Contains(k.Aggregation.MoveStageUp, event.Name()):
+		case k.Contains(k.Aggregation.Stages.MoveStageUp, event.Name()):
 			a.moveStage(-1)
 			return nil
-		case k.Contains(k.Aggregation.ToggleFocus, event.Name()):
+		case k.Contains(k.Aggregation.Stages.FocusResults, event.Name()):
 			a.focusOnResults = true
 			a.App.SetFocus(a.resultsTable)
 			return nil
@@ -171,9 +187,26 @@ func (a *Aggregation) setKeybindings() {
 
 	a.resultsTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Aggregation.ToggleFocus, event.Name()):
+		case k.Contains(k.Aggregation.Results.FocusStages, event.Name()):
 			a.focusOnResults = false
 			a.App.SetFocus(a.stagesTable)
+			return nil
+		case k.Contains(k.Aggregation.Results.ChangeView, event.Name()):
+			a.toggleResultsView()
+			return nil
+		case k.Contains(k.Aggregation.Results.PeekDocument, event.Name()):
+			a.handlePeekDocument(false)
+			return nil
+		case k.Contains(k.Aggregation.Results.FullPagePeek, event.Name()):
+			a.handlePeekDocument(true)
+			return nil
+		case k.Contains(k.Aggregation.Results.CopyHighlight, event.Name()):
+			row, col := a.resultsTable.GetSelection()
+			a.handleCopyLine(row, col)
+			return nil
+		case k.Contains(k.Aggregation.Results.CopyDocument, event.Name()):
+			row, col := a.resultsTable.GetSelection()
+			a.handleCopyDocument(row, col)
 			return nil
 		}
 		return event
@@ -278,9 +311,14 @@ func (a *Aggregation) renderResultsView() {
 	resultsHeaderFlex.SetTitle(title)
 	resultsHeaderFlex.SetTitleAlign(tview.AlignLeft)
 
-	tableJson := view.NewTableJson()
-	if err := tableJson.Render(a.resultsTable, 0, docs); err != nil {
-		modal.ShowError(a.App.Pages, "Error rendering results", err)
+	a.resultsTable.SetSelectable(true, a.currentView == TableView)
+	switch a.currentView {
+	case TableView:
+		a.tableColumns.Render(a.resultsTable, 0, docs)
+	case JsonView:
+		if err := a.tableJson.Render(a.resultsTable, 0, docs); err != nil {
+			modal.ShowError(a.App.Pages, "Error rendering results", err)
+		}
 	}
 
 	resultsHeaderFlex.AddItem(a.resultsTable, 0, 1, false)
@@ -409,6 +447,68 @@ func (a *Aggregation) moveStage(direction int) {
 
 func (a *Aggregation) IsStageBarVisible() bool {
 	return a.stageBar.IsEnabled()
+}
+
+func (a *Aggregation) toggleResultsView() {
+	if a.currentView == JsonView {
+		a.currentView = TableView
+	} else {
+		a.currentView = JsonView
+	}
+	a.renderResultsView()
+}
+
+func (a *Aggregation) getAggDocId(row, col int) any {
+	switch a.currentView {
+	case JsonView:
+		cell := a.resultsTable.GetCellAboveThatMatch(row, col, func(c *tview.TableCell) bool {
+			return c.GetReference() != nil
+		})
+		if cell == nil {
+			return nil
+		}
+		return cell.GetReference()
+	case TableView:
+		return a.resultsTable.GetCell(row, 0).GetReference()
+	}
+	return nil
+}
+
+func (a *Aggregation) handleCopyLine(row, col int) {
+	cell := a.resultsTable.GetCell(row, col)
+	if cell == nil {
+		return
+	}
+	if err := clipboard.WriteAll(strings.TrimSpace(cell.Text)); err != nil {
+		modal.ShowError(a.App.Pages, "Error copying cell", err)
+	}
+}
+
+func (a *Aggregation) handleCopyDocument(row, col int) {
+	_id := a.getAggDocId(row, col)
+	if _id == nil {
+		return
+	}
+	doc, err := a.state.GetJsonDocById(_id)
+	if err != nil {
+		modal.ShowError(a.App.Pages, "Error copying document", err)
+		return
+	}
+	if err := clipboard.WriteAll(doc); err != nil {
+		modal.ShowError(a.App.Pages, "Error copying document", err)
+	}
+}
+
+func (a *Aggregation) handlePeekDocument(fullScreen bool) {
+	row, col := a.resultsTable.GetSelection()
+	_id := a.getAggDocId(row, col)
+	if _id == nil {
+		return
+	}
+	a.peeker.SetFullScreen(fullScreen)
+	if err := a.peeker.Render(context.Background(), a.state, _id); err != nil {
+		modal.ShowError(a.App.Pages, "Error peeking document", err)
+	}
 }
 
 func (a *Aggregation) runPipeline(ctx context.Context, preview bool) {

@@ -46,6 +46,15 @@ func (c *CollectionState) GetDocById(id any) primitive.M {
 
 func (c *CollectionState) GetJsonDocById(id any) (string, error) {
 	doc := c.GetDocById(id)
+	if doc == nil {
+		// fallback: search aggDocs (for aggregation results peeker)
+		for _, aggDoc := range c.aggDocs {
+			if reflect.DeepEqual(aggDoc["_id"], id) {
+				doc = util.DeepCopy(aggDoc)
+				break
+			}
+		}
+	}
 	jsoned, err := ParseBsonDocument(doc)
 	if err != nil {
 		return "", err

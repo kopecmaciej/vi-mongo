@@ -171,6 +171,11 @@ type (
 	}
 
 	AggregationKeys struct {
+		Stages  AggregationStageKeys  `json:"stages"`
+		Results AggregationResultKeys `json:"results"`
+	}
+
+	AggregationStageKeys struct {
 		AddStage      Key `json:"addStage"`
 		EditStage     Key `json:"editStage"`
 		DeleteStage   Key `json:"deleteStage"`
@@ -178,8 +183,17 @@ type (
 		ClearPipeline Key `json:"clearPipeline"`
 		MoveStageDown Key `json:"moveStageDown"`
 		MoveStageUp   Key `json:"moveStageUp"`
-		ToggleFocus   Key `json:"toggleFocus"`
+		FocusResults  Key `json:"focusResults"`
 		ToggleHistory Key `json:"toggleHistory"`
+	}
+
+	AggregationResultKeys struct {
+		FocusStages   Key `json:"focusStages"`
+		ChangeView    Key `json:"changeView"`
+		PeekDocument  Key `json:"peekDocument"`
+		FullPagePeek  Key `json:"fullPagePeek"`
+		CopyHighlight Key `json:"copyHighlight"`
+		CopyDocument  Key `json:"copyDocument"`
 	}
 )
 
@@ -237,7 +251,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Focus filter bar",
 		},
 		ClearFilter: Key{
-			Keys:        []string{"Ctrl+U"},
+			Keys:        []string{"Ctrl+D"},
 			Description: "Clear filter",
 		},
 		ExpandAll: Key{
@@ -324,11 +338,11 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Clear selection",
 		},
 		CopyHighlight: Key{
-			Runes:       []string{"y"},
+			Runes:       []string{"c"},
 			Description: "Copy highlighted",
 		},
 		CopyDocument: Key{
-			Runes:       []string{"Y"},
+			Runes:       []string{"C"},
 			Description: "Copy document",
 		},
 		Refresh: Key{
@@ -519,41 +533,70 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Aggregation = AggregationKeys{
-		AddStage: Key{
-			Runes:       []string{"A"},
-			Description: "Add new stage",
+		Stages: AggregationStageKeys{
+			AddStage: Key{
+				Runes:       []string{"a"},
+				Description: "Add new stage",
+			},
+			EditStage: Key{
+				Runes:       []string{"e"},
+				Description: "Edit selected stage",
+			},
+			DeleteStage: Key{
+				Runes:       []string{"d"},
+				Description: "Delete selected stage",
+			},
+			RunPipeline: Key{
+				Runes:       []string{"R"},
+				Description: "Run pipeline",
+			},
+			ClearPipeline: Key{
+				Runes:       []string{"C"},
+				Description: "Clear all stages",
+			},
+			MoveStageDown: Key{
+				Runes:       []string{"J"},
+				Description: "Move stage down",
+			},
+			MoveStageUp: Key{
+				Runes:       []string{"K"},
+				Description: "Move stage up",
+			},
+			FocusResults: Key{
+				Keys:        []string{"Ctrl+J"},
+				Description: "Focus results",
+			},
+			ToggleHistory: Key{
+				Keys:        []string{"Ctrl+Y"},
+				Description: "Toggle history",
+			},
 		},
-		EditStage: Key{
-			Runes:       []string{"E"},
-			Description: "Edit selected stage",
-		},
-		DeleteStage: Key{
-			Runes:       []string{"D"},
-			Description: "Delete selected stage",
-		},
-		RunPipeline: Key{
-			Runes:       []string{"R"},
-			Description: "Run pipeline",
-		},
-		ClearPipeline: Key{
-			Runes:       []string{"C"},
-			Description: "Clear all stages",
-		},
-		MoveStageDown: Key{
-			Runes:       []string{"J"},
-			Description: "Move stage down",
-		},
-		MoveStageUp: Key{
-			Runes:       []string{"K"},
-			Description: "Move stage up",
-		},
-		ToggleFocus: Key{
-			Keys:        []string{"Ctrl+J"},
-			Description: "Focus results",
-		},
-		ToggleHistory: Key{
-			Keys:        []string{"Ctrl+Y"},
-			Description: "Toggle pipeline history",
+		Results: AggregationResultKeys{
+			FocusStages: Key{
+				Keys:        []string{"Ctrl+J"},
+				Description: "Focus stages",
+			},
+			ChangeView: Key{
+				Runes:       []string{"v"},
+				Description: "Switch view",
+			},
+			PeekDocument: Key{
+				Runes:       []string{"o"},
+				Keys:        []string{"Enter"},
+				Description: "Peek document",
+			},
+			FullPagePeek: Key{
+				Runes:       []string{"O"},
+				Description: "Full page peek",
+			},
+			CopyHighlight: Key{
+				Runes:       []string{"c"},
+				Description: "Copy cell",
+			},
+			CopyDocument: Key{
+				Runes:       []string{"C"},
+				Description: "Copy document",
+			},
 		},
 	}
 }
@@ -614,17 +657,26 @@ func (kb KeyBindings) GetAvaliableKeys() []OrderedKeys {
 	return keys
 }
 
-// GetKeysForElement returns keys for element
+// GetKeysForElement returns keys for element.
+// elementId supports dot-notation to reach nested structs, e.g. "Aggregation.Stages".
 func (kb KeyBindings) GetKeysForElement(elementId string) ([]OrderedKeys, error) {
 	if elementId == "" {
 		return nil, fmt.Errorf("element is empty")
 	}
 
 	v := reflect.ValueOf(kb)
-	field := v.FieldByName(elementId)
+	parts := strings.SplitN(elementId, ".", 2)
+	field := v.FieldByName(parts[0])
 
 	if !field.IsValid() || field.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("field %s not found", elementId)
+	}
+
+	if len(parts) == 2 {
+		field = field.FieldByName(parts[1])
+		if !field.IsValid() || field.Kind() != reflect.Struct {
+			return nil, fmt.Errorf("field %s not found", elementId)
+		}
 	}
 
 	keys := []OrderedKeys{{
