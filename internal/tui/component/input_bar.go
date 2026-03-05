@@ -25,6 +25,7 @@ type InputBar struct {
 	autocompleteOn bool
 	docKeys        []string
 	defaultText    string
+	pasteFunc      func() string
 }
 
 func NewInputBar(barId tview.Identifier, label string) *InputBar {
@@ -48,7 +49,9 @@ func (i *InputBar) init() error {
 	i.setKeybindings()
 	i.setLayout()
 
-	i.SetClipboard(util.GetClipboard())
+	cpFunc, pasteFunc := util.GetClipboard()
+	i.pasteFunc = pasteFunc
+	i.SetClipboard(cpFunc, pasteFunc)
 
 	i.handleEvents()
 
@@ -83,9 +86,27 @@ func (i *InputBar) setStyle() {
 	i.SetAutocompleteStyles(background, main, selected, second, true)
 }
 
+func (i *InputBar) isInitialState() bool {
+	trimmed := strings.TrimSpace(i.GetText())
+	if trimmed == "" {
+		return true
+	}
+	noSpaces := strings.ReplaceAll(trimmed, " ", "")
+	return noSpaces == "{}" || noSpaces == "[]"
+}
+
 func (i *InputBar) setKeybindings() {
 	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		k := i.App.GetKeys()
+
+		if event.Key() == tcell.KeyCtrlV && i.pasteFunc != nil && i.isInitialState() {
+			clipText := strings.TrimSpace(i.pasteFunc())
+			if clipText != "" && strings.HasPrefix(clipText, "{") && strings.HasSuffix(clipText, "}") {
+				i.SetText(clipText)
+				return nil
+			}
+		}
+
 		switch event.Rune() {
 		case '{':
 			if i.GetWordAtCursor() == "" {

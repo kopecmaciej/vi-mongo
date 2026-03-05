@@ -403,7 +403,7 @@ func (a *Aggregation) showDeleteStageModal() {
 	operator := mongo.ExtractStageOperator(stages[idx])
 	a.deleteModal.SetText(fmt.Sprintf("Delete stage [%d] %s?", idx, operator))
 	a.deleteModal.SetDoneFunc(func(buttonIndex int, _ string) {
-		defer a.App.Pages.RemovePage(AggregationDeleteModalId)
+		a.App.Pages.RemovePage(AggregationDeleteModalId)
 		if buttonIndex == 0 {
 			a.deleteStage(idx)
 		}
