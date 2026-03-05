@@ -223,16 +223,21 @@ func stringToBool(s string) (bool, error) {
 
 // ParsePipeline parses a slice of stage JSON strings into a mongo.Pipeline.
 // Each stage should be a full stage document like {$match: {status: "active"}}.
+// Key order within each stage is preserved by unmarshalling directly into bson.D.
 func ParsePipeline(stages []string) (mongo.Pipeline, error) {
 	pipeline := make(mongo.Pipeline, 0, len(stages))
 	for idx, stage := range stages {
-		parsed, err := ParseStringQuery(stage)
+		normalized := util.QuoteUnquotedKeys(stage)
+		var err error
+		normalized, err = util.TransformMongoshSyntax(normalized)
 		if err != nil {
 			return nil, fmt.Errorf("stage %d: %w", idx, err)
 		}
-		bsonStage := bson.D{}
-		for k, v := range parsed {
-			bsonStage = append(bsonStage, bson.E{Key: k, Value: v})
+		normalized = strings.ReplaceAll(normalized, "'", "\"")
+
+		var bsonStage bson.D
+		if err := bson.UnmarshalExtJSON([]byte(normalized), false, &bsonStage); err != nil {
+			return nil, fmt.Errorf("stage %d: %w", idx, err)
 		}
 		pipeline = append(pipeline, bsonStage)
 	}

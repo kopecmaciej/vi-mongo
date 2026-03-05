@@ -184,7 +184,6 @@ type (
 		MoveStageDown Key `json:"moveStageDown"`
 		MoveStageUp   Key `json:"moveStageUp"`
 		FocusResults  Key `json:"focusResults"`
-		ToggleHistory Key `json:"toggleHistory"`
 	}
 
 	AggregationResultKeys struct {
@@ -251,7 +250,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Focus filter bar",
 		},
 		ClearFilter: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+U"},
 			Description: "Clear filter",
 		},
 		ExpandAll: Key{
@@ -307,7 +306,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 		EditDocument: Key{
 			Runes:       []string{"E"},
-			Description: "Edit",
+			Description: "Full Edit",
 		},
 		InlineEdit: Key{
 			Runes:       []string{"e"},
@@ -565,10 +564,6 @@ func (k *KeyBindings) loadDefaults() {
 			FocusResults: Key{
 				Keys:        []string{"Ctrl+J"},
 				Description: "Focus results",
-			},
-			ToggleHistory: Key{
-				Keys:        []string{"Ctrl+Y"},
-				Description: "Toggle history",
 			},
 		},
 		Results: AggregationResultKeys{
