@@ -61,7 +61,6 @@ func (a *App) Run() error {
 
 func (a *App) setKeybindings() {
 	a.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		log.Info().Msgf("EVENT: %s, %v", event.Name(), event.Key())
 		if a.shouldHandleRune(event) {
 			return event
 		}

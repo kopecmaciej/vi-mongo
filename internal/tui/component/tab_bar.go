@@ -99,7 +99,7 @@ func (t *TabBar) Render() {
 	styles := t.App.GetStyles()
 	t.Clear()
 	for i, tab := range t.tabs {
-		cell := tview.NewTableCell(" " + tab.id + " ")
+		cell := tview.NewTableCell(" " + tab.id)
 		if i == t.active {
 			cell.SetTextColor(styles.TabBar.ActiveTextColor.Color())
 			cell.SetAttributes(tcell.AttrBold)

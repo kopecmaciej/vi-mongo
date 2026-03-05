@@ -11,11 +11,11 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
-	int_mongo "github.com/kopecmaciej/vi-mongo/internal/mongo"
+	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	mongoDriver "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -31,7 +31,7 @@ type Index struct {
 
 	table            *core.Table
 	addForm          *core.Form
-	indexes          []int_mongo.IndexInfo
+	indexes          []mongo.IndexInfo
 	deleteModal      *modal.Confirm
 	currentDB        string
 	currentColl      string
@@ -289,7 +289,7 @@ func (i *Index) handleAddIndex() {
 		options.SetExpireAfterSeconds(int32(ttl))
 	}
 
-	indexModel := mongo.IndexModel{
+	indexModel := mongoDriver.IndexModel{
 		Keys:    keys,
 		Options: options,
 	}

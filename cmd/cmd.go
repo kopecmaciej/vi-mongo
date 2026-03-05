@@ -153,6 +153,12 @@ func runApp(cmd *cobra.Command, args []string) {
 
 	logFile := logging(cfg.Log.Path, logLevel, cfg.Log.PrettyPrint)
 	defer func() {
+		err := logFile.Close()
+		if err != nil {
+			fmt.Printf("\nError closing log file %s, error: %s", cfg.Log.Path, err)
+		}
+	}()
+	defer func() {
 		if r := recover(); r != nil {
 			log.Error().
 				Interface("panic", r).
@@ -162,12 +168,6 @@ func runApp(cmd *cobra.Command, args []string) {
 			fmt.Fprintf(os.Stderr, "\nERROR: Application crashed unexpectedly\n")
 			fmt.Fprintf(os.Stderr, "Details have been logged to: %s\n", cfg.Log.Path)
 			os.Exit(1)
-		}
-	}()
-	defer func() {
-		err := logFile.Close()
-		if err != nil {
-			fmt.Printf("\nError closing log file %s, error: %s", cfg.Log.Path, err)
 		}
 	}()
 

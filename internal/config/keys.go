@@ -19,20 +19,21 @@ type (
 	// There are views that have only keybindings and some have
 	// nested keybindings of their children views
 	KeyBindings struct {
-		Global     GlobalKeys     `json:"global"`
-		Help       HelpKeys       `json:"help"`
-		Welcome    WelcomeKeys    `json:"welcome"`
-		Connection ConnectionKeys `json:"connection"`
-		Main       MainKeys       `json:"main"`
-		Database   DatabaseKeys   `json:"databases"`
-		FilterBar  FilterBarKeys  `json:"filterBar"`
-		Content    ContentKeys    `json:"content"`
-		Peeker     PeekerKeys     `json:"peeker"`
-		QueryBar   QueryBar       `json:"queryBar"`
-		SortBar    SortBar        `json:"sortBar"`
-		Index      IndexKeys      `json:"index"`
-		AIQuery    AIQuery        `json:"aiPrompt"`
-		History    HistoryKeys    `json:"history"`
+		Global      GlobalKeys      `json:"global"`
+		Help        HelpKeys        `json:"help"`
+		Welcome     WelcomeKeys     `json:"welcome"`
+		Connection  ConnectionKeys  `json:"connection"`
+		Main        MainKeys        `json:"main"`
+		Database    DatabaseKeys    `json:"databases"`
+		FilterBar   FilterBarKeys   `json:"filterBar"`
+		Content     ContentKeys     `json:"content"`
+		Peeker      PeekerKeys      `json:"peeker"`
+		QueryBar    QueryBar        `json:"queryBar"`
+		SortBar     SortBar         `json:"sortBar"`
+		Index       IndexKeys       `json:"index"`
+		AIQuery     AIQuery         `json:"aiPrompt"`
+		History     HistoryKeys     `json:"history"`
+		Aggregation AggregationKeys `json:"aggregation"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -58,7 +59,7 @@ type (
 	MainKeys struct {
 		FocusNext      Key `json:"focusNext"`
 		FocusPrevious  Key `json:"focusPrevious"`
-		HideDatabase   Key `json:"hideDatabases"`
+		HideDatabases  Key `json:"hideDatabases"`
 		ShowAIQuery    Key `json:"showAIQuery"`
 		ShowServerInfo Key `json:"showServerInfo"`
 	}
@@ -118,7 +119,6 @@ type (
 	}
 
 	ConnectionKeys struct {
-		ToggleFocus    Key                `json:"toggleFocus"`
 		ConnectionForm ConnectionFormKeys `json:"connectionForm"`
 		ConnectionList ConnectionListKeys `json:"connectionList"`
 	}
@@ -169,6 +169,31 @@ type (
 		ExitAIQuery Key `json:"exitAIQuery"`
 		ClearPrompt Key `json:"clearPrompt"`
 	}
+
+	AggregationKeys struct {
+		Stages  AggregationStageKeys  `json:"stages"`
+		Results AggregationResultKeys `json:"results"`
+	}
+
+	AggregationStageKeys struct {
+		AddStage      Key `json:"addStage"`
+		EditStage     Key `json:"editStage"`
+		DeleteStage   Key `json:"deleteStage"`
+		RunPipeline   Key `json:"runPipeline"`
+		ClearPipeline Key `json:"clearPipeline"`
+		MoveStageDown Key `json:"moveStageDown"`
+		MoveStageUp   Key `json:"moveStageUp"`
+		FocusResults  Key `json:"focusResults"`
+	}
+
+	AggregationResultKeys struct {
+		FocusStages   Key `json:"focusStages"`
+		ChangeView    Key `json:"changeView"`
+		PeekDocument  Key `json:"peekDocument"`
+		FullPagePeek  Key `json:"fullPagePeek"`
+		CopyHighlight Key `json:"copyHighlight"`
+		CopyDocument  Key `json:"copyDocument"`
+	}
 )
 
 func (k *KeyBindings) loadDefaults() {
@@ -191,7 +216,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Toggle style change modal",
 		},
 		ToggleHeader: Key{
-			Keys:        []string{"t"},
+			Runes:       []string{"t"},
 			Description: "Expand/collapse header",
 		},
 	}
@@ -205,7 +230,7 @@ func (k *KeyBindings) loadDefaults() {
 			Keys:        []string{"Ctrl+H", "Backtab"},
 			Description: "Focus previous component",
 		},
-		HideDatabase: Key{
+		HideDatabases: Key{
 			Keys:        []string{"Ctrl+N"},
 			Description: "Hide databases",
 		},
@@ -241,7 +266,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Add collection",
 		},
 		DeleteCollection: Key{
-			Runes:       []string{"D"},
+			Keys:        []string{"Ctrl+D"},
 			Description: "Delete collection",
 		},
 		RenameCollection: Key{
@@ -263,17 +288,17 @@ func (k *KeyBindings) loadDefaults() {
 
 	k.Content = ContentKeys{
 		ChangeView: Key{
-			Runes:       []string{"f"},
+			Runes:       []string{"v"},
 			Description: "Change view",
 		},
 		PeekDocument: Key{
-			Runes:       []string{"p"},
+			Runes:       []string{"o"},
 			Keys:        []string{"Enter"},
-			Description: "Quick peek",
+			Description: "Peek",
 		},
 		FullPagePeek: Key{
-			Runes:       []string{"P"},
-			Description: "Full page peek",
+			Runes:       []string{"O"},
+			Description: "Full peek",
 		},
 		AddDocument: Key{
 			Runes:       []string{"A"},
@@ -281,11 +306,11 @@ func (k *KeyBindings) loadDefaults() {
 		},
 		EditDocument: Key{
 			Runes:       []string{"E"},
-			Description: "Edit",
+			Description: "Full Edit",
 		},
 		InlineEdit: Key{
 			Runes:       []string{"e"},
-			Description: "Inline edit cell",
+			Description: "Inline edit",
 		},
 		DuplicateDocument: Key{
 			Runes:       []string{"D"},
@@ -293,15 +318,15 @@ func (k *KeyBindings) loadDefaults() {
 		},
 		DuplicateDocumentNoConfirm: Key{
 			Keys:        []string{"Alt+D"},
-			Description: "Duplicate without confirmation",
+			Description: "Duplicate no confirm",
 		},
 		DeleteDocument: Key{
-			Runes:       []string{"d"},
+			Keys:        []string{"Ctrl+D"},
 			Description: "Delete",
 		},
 		DeleteDocumentNoConfirm: Key{
 			Keys:        []string{"Alt+d"},
-			Description: "Delete without confirmation",
+			Description: "Delete no confirm",
 		},
 		MultipleSelect: Key{
 			Runes:       []string{"V"},
@@ -320,24 +345,24 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Copy document",
 		},
 		Refresh: Key{
-			Runes:       []string{"R"},
+			Keys:        []string{"Ctrl+R"},
 			Description: "Refresh",
 		},
 		ToggleQueryBar: Key{
 			Runes:       []string{"/"},
-			Description: "Toggle query bar",
+			Description: "Query bar",
 		},
 		ToggleSortBar: Key{
 			Runes:       []string{"s"},
-			Description: "Toggle sort bar",
+			Description: "Sort bar",
 		},
 		SortByColumn: Key{
 			Runes:       []string{"S"},
-			Description: "Sort by current column",
+			Description: "Sort by column",
 		},
 		HideColumn: Key{
 			Runes:       []string{"H"},
-			Description: "Hide current column",
+			Description: "Hide column",
 		},
 		ResetHiddenColumns: Key{
 			Keys:        []string{"Ctrl+R"},
@@ -371,7 +396,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Show history",
 		},
 		ClearInput: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+U"},
 			Description: "Clear input",
 		},
 		Paste: Key{
@@ -382,7 +407,7 @@ func (k *KeyBindings) loadDefaults() {
 
 	k.SortBar = SortBar{
 		ClearInput: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+U"},
 			Description: "Clear input",
 		},
 		Paste: Key{
@@ -390,12 +415,6 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Paste from clipboard",
 		},
 	}
-
-	k.Connection.ToggleFocus = Key{
-		Keys:        []string{"Tab", "Backtab"},
-		Description: "Toggle focus",
-	}
-
 	k.Connection.ConnectionForm = ConnectionFormKeys{
 		SaveConnection: Key{
 			Keys:        []string{"Ctrl+S"},
@@ -413,7 +432,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Move focus to form",
 		},
 		DeleteConnection: Key{
-			Runes:       []string{"D"},
+			Keys:        []string{"Ctrl+D"},
 			Description: "Delete selected connection",
 		},
 		EditConnection: Key{
@@ -496,7 +515,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Add index",
 		},
 		DeleteIndex: Key{
-			Runes:       []string{"D"},
+			Keys:        []string{"Ctrl+D"},
 			Description: "Delete index",
 		},
 	}
@@ -507,8 +526,72 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Exit AI query",
 		},
 		ClearPrompt: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+U"},
 			Description: "Clear prompt",
+		},
+	}
+
+	k.Aggregation = AggregationKeys{
+		Stages: AggregationStageKeys{
+			AddStage: Key{
+				Runes:       []string{"a"},
+				Description: "Add new stage",
+			},
+			EditStage: Key{
+				Runes:       []string{"e"},
+				Description: "Edit selected stage",
+			},
+			DeleteStage: Key{
+				Keys:        []string{"Ctrl+D"},
+				Description: "Delete selected stage",
+			},
+			RunPipeline: Key{
+				Runes:       []string{"R"},
+				Description: "Run pipeline",
+			},
+			ClearPipeline: Key{
+				Runes:       []string{"C"},
+				Description: "Clear all stages",
+			},
+			MoveStageDown: Key{
+				Runes:       []string{"J"},
+				Description: "Move stage down",
+			},
+			MoveStageUp: Key{
+				Runes:       []string{"K"},
+				Description: "Move stage up",
+			},
+			FocusResults: Key{
+				Keys:        []string{"Ctrl+J"},
+				Description: "Focus results",
+			},
+		},
+		Results: AggregationResultKeys{
+			FocusStages: Key{
+				Keys:        []string{"Ctrl+J"},
+				Description: "Focus stages",
+			},
+			ChangeView: Key{
+				Runes:       []string{"v"},
+				Description: "Switch view",
+			},
+			PeekDocument: Key{
+				Runes:       []string{"o"},
+				Keys:        []string{"Enter"},
+				Description: "Peek document",
+			},
+			FullPagePeek: Key{
+				Runes:       []string{"O"},
+				Description: "Full page peek",
+			},
+			CopyHighlight: Key{
+				Runes:       []string{"c"},
+				Description: "Copy cell",
+			},
+			CopyDocument: Key{
+				Runes:       []string{"C"},
+				Description: "Copy document",
+			},
 		},
 	}
 }
@@ -569,17 +652,26 @@ func (kb KeyBindings) GetAvaliableKeys() []OrderedKeys {
 	return keys
 }
 
-// GetKeysForElement returns keys for element
+// GetKeysForElement returns keys for element.
+// elementId supports dot-notation to reach nested structs, e.g. "Aggregation.Stages".
 func (kb KeyBindings) GetKeysForElement(elementId string) ([]OrderedKeys, error) {
 	if elementId == "" {
 		return nil, fmt.Errorf("element is empty")
 	}
 
 	v := reflect.ValueOf(kb)
-	field := v.FieldByName(elementId)
+	parts := strings.SplitN(elementId, ".", 2)
+	field := v.FieldByName(parts[0])
 
 	if !field.IsValid() || field.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("field %s not found", elementId)
+	}
+
+	if len(parts) == 2 {
+		field = field.FieldByName(parts[1])
+		if !field.IsValid() || field.Kind() != reflect.Struct {
+			return nil, fmt.Errorf("field %s not found", elementId)
+		}
 	}
 
 	keys := []OrderedKeys{{

@@ -3,8 +3,6 @@ package component
 import (
 	"context"
 	"fmt"
-	"regexp"
-	"slices"
 	"strings"
 
 	"github.com/atotto/clipboard"
@@ -15,6 +13,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/view"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -32,7 +31,6 @@ type ViewType int
 const (
 	TableView ViewType = iota
 	JsonView
-	SingleLineView
 )
 
 // Content is a view that displays documents in a table
@@ -53,7 +51,10 @@ type Content struct {
 	docModifier       *DocModifier
 	state             *mongo.CollectionState
 	stateMap          *mongo.StateMap
-	currentView       ViewType
+
+	currentView  ViewType
+	tableColumns *view.TableColumns
+	tableJson    *view.TableJson
 }
 
 func NewContent() *Content {
@@ -74,6 +75,8 @@ func NewContent() *Content {
 		state:             &mongo.CollectionState{},
 		stateMap:          mongo.NewStateMap(),
 		currentView:       TableView,
+
+		tableJson: view.NewTableJson(),
 	}
 
 	c.SetIdentifier(ContentId)
@@ -189,6 +192,8 @@ func (c *Content) setStyle() {
 		Background(c.style.MultiSelectedRowColor.Color()).
 		Foreground(tcell.ColorWhite)
 	c.table.SetMultiSelectedStyle(multiSelectedStyle)
+
+	c.tableColumns = view.NewTableColumns(c.style)
 }
 
 func (c *Content) setLayout() {
@@ -320,93 +325,6 @@ func (c *Content) Render() {
 	c.App.SetFocus(focusPrimitive)
 }
 
-func (c *Content) renderTableView(startRow int, documents []primitive.M) {
-	c.table.SetFixed(1, 0)
-	allHeaderKeys := util.GetSortedKeysWithTypes(documents, c.style.ColumnTypeColor.Color().String())
-
-	// Filter out hidden columns
-	var sortedHeaderKeys []string
-	hiddenCols := c.stateMap.GetHiddenColumns(c.state.Db, c.state.Coll)
-	for _, key := range allHeaderKeys {
-		columnName := strings.Split(key, " ")[0]
-		if !slices.Contains(hiddenCols, columnName) {
-			sortedHeaderKeys = append(sortedHeaderKeys, key)
-		}
-	}
-
-	// Set the header row
-	for col, key := range sortedHeaderKeys {
-		c.table.SetCell(startRow, col, tview.NewTableCell(key).
-			SetTextColor(c.style.ColumnKeyColor.Color()).
-			SetSelectable(false).
-			SetBackgroundColor(c.style.HeaderRowBackgroundColor.Color()).
-			SetAlign(tview.AlignCenter))
-	}
-	startRow++
-
-	// Populate the table with document values
-	for row, doc := range documents {
-		for col, key := range sortedHeaderKeys {
-			var cellText string
-			if val, ok := doc[strings.Split(key, " ")[0]]; ok {
-				cellText = util.StringifyMongoValueByType(val)
-			} else {
-				cellText = ""
-			}
-			if len(cellText) > 30 {
-				cellText = cellText[0:30] + "..."
-			}
-
-			cell := tview.NewTableCell(cellText).
-				SetAlign(tview.AlignLeft).
-				SetMaxWidth(30)
-
-			// we'll set reference to _id for first column to not repeat the same _id in whole row
-			if col == 0 {
-				cell.SetReference(doc["_id"])
-			}
-			c.table.SetCell(startRow+row, col, cell)
-		}
-	}
-	c.table.Select(1, 0)
-}
-
-func (c *Content) renderJsonView(startRow int, documents []primitive.M) {
-	c.table.SetFixed(0, 0)
-	row := startRow
-	for _, doc := range documents {
-		_id := doc["_id"]
-		jsoned, err := mongo.ParseBsonDocument(doc)
-		if err != nil {
-			modal.ShowError(c.App.Pages, "Error stringifying document", err)
-			return
-		}
-		c.jsonViewDocument(jsoned, &row, _id)
-	}
-
-	c.table.ScrollToBeginning()
-	c.table.Select(1, 0)
-}
-
-func (c *Content) renderSingleRowView(startRow int, documents []primitive.M) {
-	row := startRow
-	for _, d := range documents {
-		_id := d["_id"]
-		jsoned, err := mongo.ParseBsonDocument(d)
-		if err != nil {
-			modal.ShowError(c.App.Pages, "Error stringifying document", err)
-			return
-		}
-		dataCell := tview.NewTableCell(jsoned).
-			SetAlign(tview.AlignLeft).
-			SetReference(_id)
-
-		c.table.SetCell(row, 0, dataCell)
-		row++
-	}
-	c.table.Select(0, 0)
-}
-
 func (c *Content) listDocuments(ctx context.Context) ([]primitive.M, error) {
 	filter, err := mongo.ParseStringQuery(c.state.Filter)
 	if err != nil {
@@ -524,63 +442,15 @@ func (c *Content) updateContent(ctx context.Context, useState bool) error {
 
 func (c *Content) renderView(documents []primitive.M) {
 	c.table.SetSelectable(true, c.currentView == TableView)
-	startRow := 0
 	switch c.currentView {
 	case TableView:
-		c.renderTableView(startRow, documents)
+		c.tableColumns.HiddenCols = c.stateMap.GetHiddenColumns(c.state.Db, c.state.Coll)
+		c.tableColumns.Render(c.table, 0, documents)
 	case JsonView:
-		c.renderJsonView(startRow, documents)
-	case SingleLineView:
-		c.renderSingleRowView(startRow, documents)
-	}
-}
-
-func (c *Content) jsonViewDocument(doc string, row *int, _id any) {
-	indentedJson, err := mongo.IndentJson(doc)
-	if err != nil {
-		return
-	}
-	keyRegexWithIndent := regexp.MustCompile(`(?m)^\s{2}"([^"]+)":`)
-	lines := strings.Split(indentedJson.String(), "\n")
-
-	// we'll set reference of _id to first row of document, to not repeat the same _id in whole row
-	c.table.SetCell(*row, 0, tview.
-		NewTableCell(lines[0]).
-		SetAlign(tview.AlignLeft).
-		SetTextColor(tcell.ColorGreen).
-		SetSelectable(false).
-		SetReference(_id))
-
-	*row++
-
-	currLine := ""
-	for i := 1; i < len(lines)-1; i++ {
-		line := lines[i]
-		if keyRegexWithIndent.MatchString(line) {
-			if currLine != "" {
-				c.table.SetCell(*row, 0, tview.NewTableCell(currLine).SetAlign(tview.AlignLeft))
-				*row++
-			}
-			currLine = line
-		} else {
-			line = util.TrimMultipleSpaces(line)
-			currLine += line
+		if err := c.tableJson.Render(c.table, 0, documents); err != nil {
+			modal.ShowError(c.App.Pages, "Error rendering JSON view", err)
 		}
 	}
-
-	if currLine != "" {
-		c.table.SetCell(*row, 0, tview.NewTableCell(currLine).SetAlign(tview.AlignLeft))
-		*row++
-	}
-
-	c.table.SetCell(*row, 0, tview.
-		NewTableCell(lines[len(lines)-1]).
-		SetAlign(tview.AlignLeft).
-		SetTextColor(tcell.ColorGreen).
-		SetSelectable(false).
-		SetReference(_id))
-
-	*row++
 }
 
 func (c *Content) buildHeaderInfo() string {
@@ -682,12 +552,10 @@ func (c *Content) getDocumentId(row, col int) any {
 	switch c.currentView {
 	case JsonView:
 		forWithReference := c.table.GetCellAboveThatMatch(row, col, func(cell *tview.TableCell) bool {
-			return strings.HasPrefix(cell.Text, `{`)
+			return cell.GetReference() != nil
 		})
 		return forWithReference.GetReference()
 	case TableView:
-		return c.table.GetCell(row, 0).GetReference()
-	case SingleLineView:
 		return c.table.GetCell(row, 0).GetReference()
 	default:
 		return nil
@@ -704,12 +572,9 @@ func (c *Content) handleScrolling(row int) {
 }
 
 func (c *Content) handleSwitchView(ctx context.Context) *tcell.EventKey {
-	switch c.currentView {
-	case TableView:
+	if c.currentView == TableView {
 		c.currentView = JsonView
-	case JsonView:
-		c.currentView = SingleLineView
-	case SingleLineView:
+	} else {
 		c.currentView = TableView
 	}
 	c.updateContent(ctx, true)
@@ -931,21 +796,13 @@ func (c *Content) handleDeleteDocumentNoConfirm(ctx context.Context, row, col in
 }
 
 func (c *Content) handleToggleQuery() *tcell.EventKey {
-	if c.state.Filter != "" {
-		c.queryBar.Toggle(c.state.Filter)
-	} else {
-		c.queryBar.Toggle("")
-	}
+	c.queryBar.Toggle(c.state.Filter)
 	c.Render()
 	return nil
 }
 
 func (c *Content) handleToggleSort() *tcell.EventKey {
-	if c.state.Sort != "" {
-		c.sortBar.Toggle(c.state.Sort)
-	} else {
-		c.sortBar.Toggle("")
-	}
+	c.sortBar.Toggle(c.state.Sort)
 	c.Render()
 	return nil
 }
