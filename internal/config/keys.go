@@ -59,7 +59,7 @@ type (
 	MainKeys struct {
 		FocusNext      Key `json:"focusNext"`
 		FocusPrevious  Key `json:"focusPrevious"`
-		HideDatabase   Key `json:"hideDatabases"`
+		HideDatabases  Key `json:"hideDatabases"`
 		ShowAIQuery    Key `json:"showAIQuery"`
 		ShowServerInfo Key `json:"showServerInfo"`
 	}
@@ -230,7 +230,7 @@ func (k *KeyBindings) loadDefaults() {
 			Keys:        []string{"Ctrl+H", "Backtab"},
 			Description: "Focus previous component",
 		},
-		HideDatabase: Key{
+		HideDatabases: Key{
 			Keys:        []string{"Ctrl+N"},
 			Description: "Hide databases",
 		},
@@ -239,7 +239,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Show server info",
 		},
 		ShowAIQuery: Key{
-			Keys:        []string{"Alt+A"},
+			Keys:        []string{"Alt+a"},
 			Description: "Show AI prompt",
 		},
 	}
@@ -266,7 +266,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Add collection",
 		},
 		DeleteCollection: Key{
-			Runes:       []string{"D"},
+			Keys:        []string{"Ctrl+D"},
 			Description: "Delete collection",
 		},
 		RenameCollection: Key{
@@ -321,7 +321,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Duplicate no confirm",
 		},
 		DeleteDocument: Key{
-			Runes:       []string{"d"},
+			Keys:        []string{"Ctrl+D"},
 			Description: "Delete",
 		},
 		DeleteDocumentNoConfirm: Key{
@@ -345,7 +345,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Copy document",
 		},
 		Refresh: Key{
-			Runes:       []string{"R"},
+			Keys:        []string{"Ctrl+R"},
 			Description: "Refresh",
 		},
 		ToggleQueryBar: Key{
@@ -432,7 +432,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Move focus to form",
 		},
 		DeleteConnection: Key{
-			Runes:       []string{"D"},
+			Keys:        []string{"Ctrl+D"},
 			Description: "Delete selected connection",
 		},
 		EditConnection: Key{
@@ -473,11 +473,11 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Move to bottom",
 		},
 		CopyHighlight: Key{
-			Runes:       []string{"y"},
+			Runes:       []string{"c"},
 			Description: "Copy highlighted",
 		},
 		CopyValue: Key{
-			Runes:       []string{"Y"},
+			Runes:       []string{"C"},
 			Description: "Copy only value",
 		},
 		ToggleFullScreen: Key{
@@ -515,7 +515,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Add index",
 		},
 		DeleteIndex: Key{
-			Runes:       []string{"D"},
+			Keys:        []string{"Ctrl+D"},
 			Description: "Delete index",
 		},
 	}
@@ -542,7 +542,7 @@ func (k *KeyBindings) loadDefaults() {
 				Description: "Edit selected stage",
 			},
 			DeleteStage: Key{
-				Runes:       []string{"d"},
+				Keys:        []string{"Ctrl+D"},
 				Description: "Delete selected stage",
 			},
 			RunPipeline: Key{

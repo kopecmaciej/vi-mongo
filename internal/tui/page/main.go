@@ -229,7 +229,7 @@ func (m *Main) setKeybindings() {
 				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			}
 			return nil
-		case k.Contains(k.Main.HideDatabase, event.Name()):
+		case k.Contains(k.Main.HideDatabases, event.Name()):
 			if _, ok := m.GetItem(0).(*component.Database); ok {
 				m.RemoveItem(m.databases)
 				m.App.SetFocus(m.tabBar.GetActiveComponent())
