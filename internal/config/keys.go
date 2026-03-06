@@ -199,7 +199,7 @@ type (
 func (k *KeyBindings) loadDefaults() {
 	k.Global = GlobalKeys{
 		CloseApp: Key{
-			Keys:        []string{"Ctrl+C"},
+			Keys:        []string{"Ctrl+c"},
 			Runes:       []string{"q"},
 			Description: "Close application",
 		},
@@ -208,11 +208,11 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Toggle full screen help",
 		},
 		OpenConnection: Key{
-			Keys:        []string{"Ctrl+O"},
+			Keys:        []string{"Ctrl+o"},
 			Description: "Open connection page",
 		},
 		ShowStyleModal: Key{
-			Keys:        []string{"Ctrl+T"},
+			Keys:        []string{"Ctrl+t"},
 			Description: "Toggle style change modal",
 		},
 		ToggleHeader: Key{
@@ -223,19 +223,19 @@ func (k *KeyBindings) loadDefaults() {
 
 	k.Main = MainKeys{
 		FocusNext: Key{
-			Keys:        []string{"Ctrl+L", "Tab"},
+			Keys:        []string{"Ctrl+l", "Tab"},
 			Description: "Focus next component",
 		},
 		FocusPrevious: Key{
-			Keys:        []string{"Ctrl+H", "Backtab"},
+			Keys:        []string{"Ctrl+h", "Backtab"},
 			Description: "Focus previous component",
 		},
 		HideDatabases: Key{
-			Keys:        []string{"Ctrl+N"},
+			Keys:        []string{"Ctrl+n"},
 			Description: "Hide databases",
 		},
 		ShowServerInfo: Key{
-			Keys:        []string{"Ctrl+S"},
+			Keys:        []string{"Ctrl+s"},
 			Description: "Show server info",
 		},
 		ShowAIQuery: Key{
@@ -250,7 +250,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Focus filter bar",
 		},
 		ClearFilter: Key{
-			Keys:        []string{"Ctrl+U"},
+			Keys:        []string{"Ctrl+u"},
 			Description: "Clear filter",
 		},
 		ExpandAll: Key{
@@ -266,7 +266,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Add collection",
 		},
 		DeleteCollection: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+d"},
 			Description: "Delete collection",
 		},
 		RenameCollection: Key{
@@ -281,7 +281,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Close filter bar",
 		},
 		ClearFilter: Key{
-			Keys:        []string{"Ctrl+U"},
+			Keys:        []string{"Ctrl+u"},
 			Description: "Clear filter",
 		},
 	}
@@ -321,7 +321,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Duplicate no confirm",
 		},
 		DeleteDocument: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+d"},
 			Description: "Delete",
 		},
 		DeleteDocumentNoConfirm: Key{
@@ -345,7 +345,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Copy document",
 		},
 		Refresh: Key{
-			Keys:        []string{"Ctrl+R"},
+			Keys:        []string{"Ctrl+r"},
 			Description: "Refresh",
 		},
 		ToggleQueryBar: Key{
@@ -365,7 +365,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Hide column",
 		},
 		ResetHiddenColumns: Key{
-			Keys:        []string{"Ctrl+R"},
+			Keys:        []string{"Ctrl+r"},
 			Description: "Reset hidden columns",
 		},
 		NextDocument: Key{
@@ -392,47 +392,47 @@ func (k *KeyBindings) loadDefaults() {
 
 	k.QueryBar = QueryBar{
 		ShowHistory: Key{
-			Keys:        []string{"Ctrl+Y"},
+			Keys:        []string{"Ctrl+y"},
 			Description: "Show history",
 		},
 		ClearInput: Key{
-			Keys:        []string{"Ctrl+U"},
+			Keys:        []string{"Ctrl+u"},
 			Description: "Clear input",
 		},
 		Paste: Key{
-			Keys:        []string{"Ctrl+V"},
+			Keys:        []string{"Ctrl+v"},
 			Description: "Paste from clipboard",
 		},
 	}
 
 	k.SortBar = SortBar{
 		ClearInput: Key{
-			Keys:        []string{"Ctrl+U"},
+			Keys:        []string{"Ctrl+u"},
 			Description: "Clear input",
 		},
 		Paste: Key{
-			Keys:        []string{"Ctrl+V"},
+			Keys:        []string{"Ctrl+v"},
 			Description: "Paste from clipboard",
 		},
 	}
 	k.Connection.ConnectionForm = ConnectionFormKeys{
 		SaveConnection: Key{
-			Keys:        []string{"Ctrl+S"},
+			Keys:        []string{"Ctrl+s"},
 			Description: "Save connection",
 		},
 		FocusList: Key{
-			Keys:        []string{"Ctrl+H", "Ctrl+Left"},
+			Keys:        []string{"Ctrl+h", "Ctrl+Left"},
 			Description: "Focus Connection List",
 		},
 	}
 
 	k.Connection.ConnectionList = ConnectionListKeys{
 		FocusForm: Key{
-			Keys:        []string{"Ctrl+L", "Ctrl+Right"},
+			Keys:        []string{"Ctrl+l", "Ctrl+Right"},
 			Description: "Move focus to form",
 		},
 		DeleteConnection: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+d"},
 			Description: "Delete selected connection",
 		},
 		EditConnection: Key{
@@ -500,7 +500,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Accept entry",
 		},
 		CloseHistory: Key{
-			Keys:        []string{"Esc", "Ctrl+Y"},
+			Keys:        []string{"Esc", "Ctrl+y"},
 			Description: "Close history",
 		},
 	}
@@ -515,7 +515,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Add index",
 		},
 		DeleteIndex: Key{
-			Keys:        []string{"Ctrl+D"},
+			Keys:        []string{"Ctrl+d"},
 			Description: "Delete index",
 		},
 	}
@@ -526,7 +526,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Exit AI query",
 		},
 		ClearPrompt: Key{
-			Keys:        []string{"Ctrl+U"},
+			Keys:        []string{"Ctrl+u"},
 			Description: "Clear prompt",
 		},
 	}
@@ -542,7 +542,7 @@ func (k *KeyBindings) loadDefaults() {
 				Description: "Edit selected stage",
 			},
 			DeleteStage: Key{
-				Keys:        []string{"Ctrl+D"},
+				Keys:        []string{"Ctrl+d"},
 				Description: "Delete selected stage",
 			},
 			RunPipeline: Key{
@@ -562,13 +562,13 @@ func (k *KeyBindings) loadDefaults() {
 				Description: "Move stage up",
 			},
 			FocusResults: Key{
-				Keys:        []string{"Ctrl+J"},
+				Keys:        []string{"Ctrl+j"},
 				Description: "Focus results",
 			},
 		},
 		Results: AggregationResultKeys{
 			FocusStages: Key{
-				Keys:        []string{"Ctrl+J"},
+				Keys:        []string{"Ctrl+j"},
 				Description: "Focus stages",
 			},
 			ChangeView: Key{
@@ -702,6 +702,11 @@ func (kb *KeyBindings) Contains(configKey Key, namedKey string) bool {
 	if namedKey == "Backspace" {
 		namedKey = "Ctrl+H"
 	}
+	// Normalize Ctrl+letter to uppercase since tcell always reports uppercase,
+	// allowing config to use lowercase (e.g. "Ctrl+l") for user clarity
+	if strings.HasPrefix(namedKey, "Ctrl+") && len(namedKey) == 6 {
+		namedKey = "Ctrl+" + strings.ToUpper(string(namedKey[5]))
+	}
 	// Handle Alt+Rune combinations
 	if strings.HasPrefix(namedKey, "Alt+Rune[") && len(namedKey) >= 10 {
 		runeChar := namedKey[9:10]
@@ -725,6 +730,10 @@ func (kb *KeyBindings) Contains(configKey Key, namedKey string) bool {
 	}
 
 	for _, k := range configKey.Keys {
+		// Normalize Ctrl+letter to uppercase to match tcell's key naming
+		if strings.HasPrefix(k, "Ctrl+") && len(k) == 6 {
+			k = "Ctrl+" + strings.ToUpper(string(k[5]))
+		}
 		if k == namedKey {
 			return true
 		}
