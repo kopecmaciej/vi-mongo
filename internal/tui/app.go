@@ -15,6 +15,29 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var changelog = []modal.ChangelogEntry{
+	{
+		Breaking: true,
+		Title:    "Keybindings format changed from JSON to YAML",
+		Changes: []string{
+			"keybindings.json is no longer supported.",
+			"Your file will be migrated to keybindings.yaml automatically.",
+			"A backup is saved as keybindings.json.bak.",
+		},
+		MigrationFn: config.RunKeybindingsMigration,
+	},
+}
+
+func getPendingChangelog(lastAcknowledgedVersion string) []modal.ChangelogEntry {
+	var pending []modal.ChangelogEntry
+	for _, entry := range changelog {
+		if util.SemverGreater(entry.Version, lastAcknowledgedVersion) {
+			pending = append(pending, entry)
+		}
+	}
+	return pending
+}
+
 type (
 	// App extends the core.App struct
 	App struct {
@@ -137,6 +160,12 @@ func (a *App) connectToMongo() error {
 // Render is the main render function
 // it renders the page based on the config
 func (a *App) Render() {
+	pending := getPendingChangelog(a.App.GetConfig().Version)
+	if len(pending) > 0 {
+		a.showChangelogModal(pending)
+		return
+	}
+
 	switch {
 	case a.App.GetConfig().ShowWelcomePage:
 		a.renderWelcome()
@@ -147,6 +176,41 @@ func (a *App) Render() {
 		// as it depends on the dao
 		a.initAndRenderMain()
 	}
+}
+
+func (a *App) showChangelogModal(entries []modal.ChangelogEntry) {
+	m := modal.NewChangelog(entries)
+	if err := m.Init(a.App); err != nil {
+		log.Error().Err(err).Msg("Failed to init changelog modal")
+		return
+	}
+
+	m.SetOnProceed(func() {
+		for _, e := range entries {
+			if e.MigrationFn != nil {
+				if err := e.MigrationFn(); err != nil {
+					log.Error().Err(err).Msgf("Migration for v%s failed", e.Version)
+					modal.ShowError(a.Pages, "Migration failed", err)
+					return
+				}
+			}
+		}
+		a.App.ReloadKeybindings()
+
+		cfg := a.App.GetConfig()
+		if err := cfg.UpdateConfig(); err != nil {
+			log.Error().Err(err).Msg("Failed to save config after migration")
+		}
+
+		a.Pages.RemovePage(modal.ChangelogModalId)
+		a.Render()
+	})
+
+	m.SetOnQuit(func() {
+		os.Exit(0)
+	})
+
+	m.Render()
 }
 
 // initAndRenderMain initializes and renders the main page

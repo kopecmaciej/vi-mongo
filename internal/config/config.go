@@ -62,25 +62,25 @@ type UIConfig struct {
 }
 
 type Config struct {
-	Version            string        `yaml:"version"`
-	Log                LogConfig     `yaml:"log"`
-	Editor             EditorConfig  `yaml:"editor"`
-	UI                 UIConfig      `yaml:"ui"`
-	ShowConnectionPage bool          `yaml:"showConnectionPage"`
-	ShowWelcomePage    bool          `yaml:"showWelcomePage"`
-	CurrentConnection  string        `yaml:"currentConnection"`
-	Connections        []MongoConfig `yaml:"connections"`
-	Styles             StylesConfig  `yaml:"styles"`
-	EncryptionKeyPath  *string       `yaml:"encryptionKeyPath,omitempty"`
-	JumpInto           string        `yaml:"-"`
-	ConfigPath         string        `yaml:"-"`
+	Version                 string        `yaml:"version"`
+	Log                     LogConfig     `yaml:"log"`
+	Editor                  EditorConfig  `yaml:"editor"`
+	UI                      UIConfig      `yaml:"ui"`
+	ShowConnectionPage       bool          `yaml:"showConnectionPage"`
+	ShowWelcomePage          bool          `yaml:"showWelcomePage"`
+	CurrentConnection        string        `yaml:"currentConnection"`
+	Connections              []MongoConfig `yaml:"connections"`
+	Styles                  StylesConfig  `yaml:"styles"`
+	EncryptionKeyPath        *string       `yaml:"encryptionKeyPath,omitempty"`
+	JumpInto                string        `yaml:"-"`
+	ConfigPath              string        `yaml:"-"`
 }
 
 // LoadConfig loads the config file
 // If the file does not exist, it will be created
 // with the default settings
 func LoadConfig() (*Config, error) {
-	return LoadConfigWithVersion("1.0.0", "")
+	return LoadConfigWithVersion("2.0.0", "")
 }
 
 func LoadConfigWithVersion(version string, customPath string) (*Config, error) {
@@ -107,13 +107,6 @@ func LoadConfigWithVersion(version string, customPath string) (*Config, error) {
 	}
 
 	cfg.ConfigPath = configPath
-
-	if cfg.Version != version {
-		cfg.Version = version
-		if err := cfg.UpdateConfig(); err != nil {
-			log.Error().Err(err).Msg("Failed to update config with new version")
-		}
-	}
 
 	return cfg, nil
 }
