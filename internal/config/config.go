@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kopecmaciej/vi-mongo/internal/build"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
@@ -80,7 +81,7 @@ type Config struct {
 // If the file does not exist, it will be created
 // with the default settings
 func LoadConfig() (*Config, error) {
-	return LoadConfigWithVersion("2.0.0", "")
+	return LoadConfigWithVersion(build.Version, "")
 }
 
 func LoadConfigWithVersion(version string, customPath string) (*Config, error) {
@@ -187,8 +188,6 @@ func (c *Config) GetEditorCmd() (string, error) {
 
 // SetCurrentConnection sets the current connection in the config file
 func (c *Config) SetCurrentConnection(name string) error {
-	// If the user has set the alwaysShowConnectionPage setting to true,
-	// we don't want to save the current connection
 	c.CurrentConnection = name
 
 	updatedConfig, err := yaml.Marshal(c)
@@ -285,7 +284,6 @@ func (c *Config) DeleteConnection(name string) error {
 	log.Info().Msgf("Deleting connection: %s", name)
 	for i, connection := range c.Connections {
 		if connection.Name == name {
-			connection = MongoConfig{}
 			c.Connections = slices.Delete(c.Connections, i, i+1)
 		}
 	}

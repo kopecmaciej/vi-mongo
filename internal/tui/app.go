@@ -6,6 +6,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/build"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
@@ -15,22 +16,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var changelog = []modal.ChangelogEntry{
-	{
-		Breaking: true,
-		Title:    "Keybindings format changed from JSON to YAML",
-		Changes: []string{
-			"keybindings.json is no longer supported.",
-			"Your file will be migrated to keybindings.yaml automatically.",
-			"A backup is saved as keybindings.json.bak.",
-		},
-		MigrationFn: config.RunKeybindingsMigration,
-	},
-}
-
 func getPendingChangelog(lastAcknowledgedVersion string) []modal.ChangelogEntry {
 	var pending []modal.ChangelogEntry
-	for _, entry := range changelog {
+	for _, entry := range loadChangelog() {
 		if util.SemverGreater(entry.Version, lastAcknowledgedVersion) {
 			pending = append(pending, entry)
 		}
@@ -198,6 +186,7 @@ func (a *App) showChangelogModal(entries []modal.ChangelogEntry) {
 		a.App.ReloadKeybindings()
 
 		cfg := a.App.GetConfig()
+		cfg.Version = build.Version
 		if err := cfg.UpdateConfig(); err != nil {
 			log.Error().Err(err).Msg("Failed to save config after migration")
 		}
@@ -257,9 +246,6 @@ func (a *App) renderConnection() {
 	a.connection.Render()
 }
 
-// renderWelcome renders the welcome page
-// it's initialized inside render function
-// as it's probalby won't be used very often
 func (a *App) renderWelcome() {
 	welcome := page.NewWelcome()
 	if err := welcome.Init(a.App); err != nil {

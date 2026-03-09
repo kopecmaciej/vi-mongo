@@ -25,7 +25,7 @@ type Main struct {
 	innerFlex    *core.Flex
 	header       *component.Header
 	tabBar       *component.TabBar
-	databases    *component.Database
+	databases    *component.Databases
 	content      *component.Content
 	index        *component.Index
 	aggregation  *component.Aggregation
@@ -40,7 +40,7 @@ func NewMain() *Main {
 		innerFlex:   core.NewFlex(),
 		header:      component.NewHeader(),
 		tabBar:      component.NewTabBar(),
-		databases:   component.NewDatabase(),
+		databases:   component.NewDatabases(),
 		content:     component.NewContent(),
 		index:       component.NewIndex(),
 		aggregation: component.NewAggregation(),
@@ -230,7 +230,7 @@ func (m *Main) setKeybindings() {
 			}
 			return nil
 		case k.Contains(k.Main.HideDatabases, event.Name()):
-			if _, ok := m.GetItem(0).(*component.Database); ok {
+			if _, ok := m.GetItem(0).(*component.Databases); ok {
 				m.RemoveItem(m.databases)
 				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			} else {

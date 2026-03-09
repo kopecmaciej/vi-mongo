@@ -16,12 +16,12 @@ import (
 )
 
 const (
-	DatabaseId  = "Database"
+	DatabaseId  = "Databases"
 	FilterBarId = "FilterBar"
 )
 
-// Database is flex container for DatabaseTree and InputBar
-type Database struct {
+// Databases is flex container for DatabaseTree and InputBar
+type Databases struct {
 	*core.BaseElement
 	*core.Flex
 
@@ -31,8 +31,8 @@ type Database struct {
 	dbsWithColls []mongo.DBsWithCollections
 }
 
-func NewDatabase() *Database {
-	d := &Database{
+func NewDatabases() *Databases {
+	d := &Databases{
 		BaseElement: core.NewBaseElement(),
 		Flex:        core.NewFlex(),
 		DbTree:      NewDatabaseTree(),
@@ -46,7 +46,7 @@ func NewDatabase() *Database {
 	return d
 }
 
-func (d *Database) init() error {
+func (d *Databases) init() error {
 	ctx := context.Background()
 	d.setStyle()
 	d.setKeybindings()
@@ -65,22 +65,22 @@ func (d *Database) init() error {
 	return nil
 }
 
-func (d *Database) setStyle() {
+func (d *Databases) setStyle() {
 	d.Flex.SetStyle(d.App.GetStyles())
 	d.DbTree.SetStyle(d.App.GetStyles())
 	d.filterBar.SetStyle(d.App.GetStyles())
 	d.Flex.SetDirection(tview.FlexRow)
 }
 
-func (d *Database) setKeybindings() {
+func (d *Databases) setKeybindings() {
 	keys := d.App.GetKeys()
 	d.Flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case keys.Contains(keys.Database.FilterBar, event.Name()):
+		case keys.Contains(keys.Databases.FilterBar, event.Name()):
 			d.filterBar.Enable()
 			d.renderLayout()
 			return nil
-		case keys.Contains(keys.Database.ClearFilter, event.Name()):
+		case keys.Contains(keys.Databases.ClearFilter, event.Name()):
 			d.clearFilter()
 			return nil
 		}
@@ -88,7 +88,7 @@ func (d *Database) setKeybindings() {
 	})
 }
 
-func (d *Database) handleEvents() {
+func (d *Databases) handleEvents() {
 	go d.HandleEvents(DatabaseId, func(event manager.EventMsg) {
 		switch event.Message.Type {
 		case manager.StyleChanged:
@@ -98,7 +98,7 @@ func (d *Database) handleEvents() {
 	})
 }
 
-func (d *Database) Render() {
+func (d *Databases) Render() {
 	ctx := context.Background()
 
 	if err := d.listDbsAndCollections(ctx); err != nil {
@@ -113,7 +113,7 @@ func (d *Database) Render() {
 }
 
 // renderLayout rebuilds the flex layout without re-fetching data.
-func (d *Database) renderLayout() {
+func (d *Databases) renderLayout() {
 	d.Flex.Clear()
 
 	var primitive tview.Primitive
@@ -128,12 +128,12 @@ func (d *Database) renderLayout() {
 	d.Flex.AddItem(d.DbTree, 0, 1, true)
 }
 
-func (d *Database) IsFocused() bool {
+func (d *Databases) IsFocused() bool {
 	return d.App.GetFocus().GetIdentifier() == d.GetIdentifier() ||
 		d.App.GetFocus().GetIdentifier() == d.DbTree.GetIdentifier()
 }
 
-func (d *Database) filterBarHandler(ctx context.Context) {
+func (d *Databases) filterBarHandler(ctx context.Context) {
 	accceptFunc := func(text string) {
 		d.filter(ctx, text)
 	}
@@ -143,14 +143,14 @@ func (d *Database) filterBarHandler(ctx context.Context) {
 	d.filterBar.DoneFuncHandler(accceptFunc, rejectFunc)
 }
 
-func (d *Database) clearFilter() {
+func (d *Databases) clearFilter() {
 	ctx := context.Background()
 	d.filterBar.SetText("")
 	d.DbTree.Render(ctx, d.dbsWithColls, false)
 	d.renderLayout()
 }
 
-func (d *Database) filter(ctx context.Context, text string) {
+func (d *Databases) filter(ctx context.Context, text string) {
 	dbsWitColls := d.dbsWithColls
 	expand := true
 	filtered := []mongo.DBsWithCollections{}
@@ -187,7 +187,7 @@ func (d *Database) filter(ctx context.Context, text string) {
 	d.renderLayout()
 }
 
-func (d *Database) listDbsAndCollections(ctx context.Context) error {
+func (d *Databases) listDbsAndCollections(ctx context.Context) error {
 	dbsWitColls, err := d.Dao.ListDbsWithCollections(ctx, "")
 	if err != nil {
 		return err
@@ -197,11 +197,11 @@ func (d *Database) listDbsAndCollections(ctx context.Context) error {
 	return nil
 }
 
-func (d *Database) SetSelectFunc(f func(ctx context.Context, db string, coll string) error) {
+func (d *Databases) SetSelectFunc(f func(ctx context.Context, db string, coll string) error) {
 	d.DbTree.SetSelectFunc(f)
 }
 
-func (d *Database) JumpToCollection(ctx context.Context, dbName, collectionName string) error {
+func (d *Databases) JumpToCollection(ctx context.Context, dbName, collectionName string) error {
 	if err := d.listDbsAndCollections(ctx); err != nil {
 		return err
 	}
@@ -216,7 +216,7 @@ func (d *Database) JumpToCollection(ctx context.Context, dbName, collectionName 
 	return d.DbTree.JumpToCollection(ctx, dbName, collectionName)
 }
 
-func (d *Database) checkIfDbAndCollectionExist(dbName, collectionName string) (bool, bool) {
+func (d *Databases) checkIfDbAndCollectionExist(dbName, collectionName string) (bool, bool) {
 	dbExists := false
 	collectionExists := false
 

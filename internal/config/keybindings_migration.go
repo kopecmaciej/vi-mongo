@@ -12,6 +12,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
+	"strings"
 
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
@@ -53,14 +55,17 @@ func migrateJSONKeybindingsToYAML(jsonPath, yamlPath string) error {
 		return fmt.Errorf("read %s: %w", jsonPath, err)
 	}
 
-	// Parse as a raw map to preserve all key names without relying on struct tags.
-	var raw map[string]interface{}
-	if err := json.Unmarshal(data, &raw); err != nil {
+	// Decode into the typed struct so yaml.Node.Encode preserves field
+	// declaration order (Global, Help, Welcome, …) instead of Go map
+	// iteration order (alphabetical).
+	var kb KeyBindings
+	if err := json.Unmarshal(data, &kb); err != nil {
 		return fmt.Errorf("parse JSON: %w", err)
 	}
+	normalizeCtrlKeys(reflect.ValueOf(&kb).Elem())
 
 	var node yaml.Node
-	if err := node.Encode(raw); err != nil {
+	if err := node.Encode(&kb); err != nil {
 		return fmt.Errorf("encode YAML node: %w", err)
 	}
 	setSequencesFlowStyle(&node)
@@ -72,7 +77,8 @@ func migrateJSONKeybindingsToYAML(jsonPath, yamlPath string) error {
 		return fmt.Errorf("marshal YAML: %w", err)
 	}
 
-	if err := os.WriteFile(yamlPath, buf.Bytes(), 0600); err != nil {
+	content := append([]byte(keybindingsFileHeader), buf.Bytes()...)
+	if err := os.WriteFile(yamlPath, content, 0600); err != nil {
 		return fmt.Errorf("write %s: %w", yamlPath, err)
 	}
 
@@ -81,6 +87,24 @@ func migrateJSONKeybindingsToYAML(jsonPath, yamlPath string) error {
 	}
 
 	return nil
+}
+
+// normalizeCtrlKeys lowercases the letter in Ctrl+X combos stored in Key.Keys
+// so the config reflects what physically works on the keyboard.
+func normalizeCtrlKeys(val reflect.Value) {
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		if field.Type() == reflect.TypeOf(Key{}) {
+			key := field.Addr().Interface().(*Key)
+			for j, k := range key.Keys {
+				if strings.HasPrefix(k, "Ctrl+") && len(k) == 6 {
+					key.Keys[j] = "Ctrl+" + strings.ToLower(string(k[5]))
+				}
+			}
+		} else if field.Kind() == reflect.Struct {
+			normalizeCtrlKeys(field)
+		}
+	}
 }
 
 func setSequencesFlowStyle(node *yaml.Node) {

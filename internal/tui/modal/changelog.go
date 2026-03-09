@@ -57,6 +57,7 @@ func (c *Changelog) setLayout() {
 	c.SetTitle(" Release Notes ")
 	c.SetBorder(true)
 	c.SetBorderPadding(0, 0, 1, 1)
+	c.Modal.SetWidthPercent(66)
 }
 
 func (c *Changelog) setContent() {

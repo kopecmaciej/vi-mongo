@@ -8,7 +8,7 @@ VERSION ?= $(shell git describe --tags --always --dirty)
 all: build run
 
 build:
-	go build -ldflags="-s -w -X $(REPOSITORY)/cmd.version=$(VERSION)" -o $(BUILD_DIR)/$(SVC_NAME) .
+	go build -ldflags="-s -w -X $(REPOSITORY)/internal/build.Version=$(VERSION)" -o $(BUILD_DIR)/$(SVC_NAME) .
 
 run:
 	env $$(cat .env) $(BUILD_DIR)/$(SVC_NAME)
@@ -23,7 +23,7 @@ debug:
 	if [ -f /proc/sys/kernel/yama/ptrace_scope ]; then \
 		sudo sysctl kernel.yama.ptrace_scope=0; \
 	fi
-	go build -gcflags="all=-N -l" -o $(BUILD_DIR)/$(SVC_NAME) .
+	go build -gcflags="all=-N -l" -ldflags="-X $(REPOSITORY)/internal/build.Version=$(VERSION)" -o $(BUILD_DIR)/$(SVC_NAME) .
 	$(BUILD_DIR)/$(SVC_NAME)
 
 lint:

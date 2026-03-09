@@ -25,7 +25,7 @@ type (
 		Welcome     WelcomeKeys     `yaml:"welcome"`
 		Connection  ConnectionKeys  `yaml:"connection"`
 		Main        MainKeys        `yaml:"main"`
-		Database    DatabaseKeys    `yaml:"databases"`
+		Databases   DatabasesKeys   `yaml:"databases"`
 		FilterBar   FilterBarKeys   `yaml:"filterBar"`
 		Content     ContentKeys     `yaml:"content"`
 		Peeker      PeekerKeys      `yaml:"peeker"`
@@ -65,7 +65,7 @@ type (
 		ShowServerInfo Key `yaml:"showServerInfo"`
 	}
 
-	DatabaseKeys struct {
+	DatabasesKeys struct {
 		FilterBar        Key `yaml:"filterBar"`
 		ClearFilter      Key `yaml:"clearFilter"`
 		ExpandAll        Key `yaml:"expandAll"`
@@ -281,7 +281,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 	}
 
-	k.Database = DatabaseKeys{
+	k.Databases = DatabasesKeys{
 		FilterBar: Key{
 			Runes:       []string{"/"},
 			Description: "Focus filter bar",
@@ -633,6 +633,13 @@ func (k *KeyBindings) loadDefaults() {
 	}
 }
 
+const keybindingsFileHeader = `# runes: literal characters, case-sensitive (e.g. [a], [A])
+# keys:  named/combo keys (e.g. [Enter], [Escape], [Tab], [Space])
+#        Ctrl+<letter>: case-insensitive in config, but no Ctrl+Shift — in config Ctrl+L is the same as Ctrl+l
+#        Alt+<char>:    case-sensitive, both upper and lower work (e.g. Alt+a, Alt+A)
+
+`
+
 // LoadKeybindings loads keybindings from the config file.
 // If the file does not exist it creates a new one with default keybindings.
 func LoadKeybindings() (*KeyBindings, error) {
@@ -648,7 +655,23 @@ func LoadKeybindings() (*KeyBindings, error) {
 		return nil, err
 	}
 
+	if _, err := os.Stat(keybindingsPath); os.IsNotExist(err) {
+		if err := writeKeybindingsWithHeader(defaultKeybindings, keybindingsPath); err != nil {
+			return nil, err
+		}
+		return defaultKeybindings, nil
+	}
+
 	return util.LoadConfigFile(defaultKeybindings, keybindingsPath)
+}
+
+func writeKeybindingsWithHeader(kb *KeyBindings, path string) error {
+	data, err := yaml.Marshal(kb)
+	if err != nil {
+		return fmt.Errorf("failed to marshal keybindings: %w", err)
+	}
+	content := append([]byte(keybindingsFileHeader), data...)
+	return os.WriteFile(path, content, FileMode)
 }
 
 // extractKeysFromStruct extracts all Key structs from a reflect.Value
