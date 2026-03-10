@@ -81,7 +81,7 @@ type (
 	}
 
 	ContentKeys struct {
-		ChangeView                 Key `yaml:"switchView"`
+		SwitchView                 Key `yaml:"switchView"`
 		PeekDocument               Key `yaml:"peekDocument"`
 		FullPagePeek               Key `yaml:"fullPagePeek"`
 		AddDocument                Key `yaml:"addDocument"`
@@ -324,7 +324,7 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Content = ContentKeys{
-		ChangeView: Key{
+		SwitchView: Key{
 			Runes:       []string{"v"},
 			Description: "Change view",
 		},

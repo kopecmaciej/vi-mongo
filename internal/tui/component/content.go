@@ -216,7 +216,7 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		row, col := c.table.GetSelection()
 		c.handleScrolling(row)
 		switch {
-		case k.Contains(k.Content.ChangeView, event.Name()):
+		case k.Contains(k.Content.SwitchView, event.Name()):
 			return c.handleSwitchView(ctx)
 		case k.Contains(k.Content.InlineEdit, event.Name()):
 			return c.handleInlineEdit(ctx, row, col)

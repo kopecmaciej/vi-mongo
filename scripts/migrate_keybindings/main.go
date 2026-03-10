@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/adrg/xdg"
 	"gopkg.in/yaml.v3"
 )
 
@@ -68,9 +69,9 @@ func main() {
 }
 
 func defaultJSONPath() string {
-	configDir, err := os.UserConfigDir()
+	configDir, err := xdg.ConfigFile("vi-mongo")
 	if err != nil {
 		return "keybindings.json"
 	}
-	return filepath.Join(configDir, "vi-mongo", "keybindings.json")
+	return filepath.Join(configDir, "keybindings.json")
 }

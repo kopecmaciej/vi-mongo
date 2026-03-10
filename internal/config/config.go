@@ -108,7 +108,6 @@ func LoadConfigWithVersion(version string, customPath string) (*Config, error) {
 	}
 
 	cfg.ConfigPath = configPath
-	cfg.Version = version
 
 	return cfg, nil
 }
