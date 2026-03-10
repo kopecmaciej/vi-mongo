@@ -41,8 +41,8 @@ type (
 	// It holds the keys and runes that are used to trigger the action
 	// and a description of the action that will be displayed in the help
 	Key struct {
-		Keys        []string `yaml:"keys,omitempty"`
-		Runes       []string `yaml:"runes,omitempty"`
+		Keys        []string `yaml:"keys,omitempty,flow"`
+		Runes       []string `yaml:"runes,omitempty,flow"`
 		Description string   `yaml:"description,omitempty"`
 	}
 
@@ -196,42 +196,6 @@ type (
 		CopyDocument  Key `yaml:"copyDocument"`
 	}
 )
-
-// MarshalYAML produces compact flow-style arrays for keys and runes, e.g.:
-//
-//	keys: [Ctrl+H, Ctrl+Left]
-func (k Key) MarshalYAML() (interface{}, error) {
-	node := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
-
-	if len(k.Keys) > 0 {
-		node.Content = append(node.Content,
-			&yaml.Node{Kind: yaml.ScalarNode, Value: "keys"},
-			flowStringSeq(k.Keys),
-		)
-	}
-	if len(k.Runes) > 0 {
-		node.Content = append(node.Content,
-			&yaml.Node{Kind: yaml.ScalarNode, Value: "runes"},
-			flowStringSeq(k.Runes),
-		)
-	}
-	if k.Description != "" {
-		node.Content = append(node.Content,
-			&yaml.Node{Kind: yaml.ScalarNode, Value: "description"},
-			&yaml.Node{Kind: yaml.ScalarNode, Value: k.Description},
-		)
-	}
-
-	return node, nil
-}
-
-func flowStringSeq(items []string) *yaml.Node {
-	seq := &yaml.Node{Kind: yaml.SequenceNode, Style: yaml.FlowStyle, Tag: "!!seq"}
-	for _, item := range items {
-		seq.Content = append(seq.Content, &yaml.Node{Kind: yaml.ScalarNode, Value: item})
-	}
-	return seq
-}
 
 func (k *KeyBindings) loadDefaults() {
 	k.Global = GlobalKeys{
@@ -402,7 +366,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Hide column",
 		},
 		ResetHiddenColumns: Key{
-			Keys:        []string{"Ctrl+r"},
+			Runes:       []string{"r"},
 			Description: "Reset hidden columns",
 		},
 		NextDocument: Key{
@@ -522,14 +486,14 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Toggle full screen",
 		},
 		Exit: Key{
-			Runes:       []string{"p", "P"},
+			Runes:       []string{"o", "O"},
 			Description: "Exit",
 		},
 	}
 
 	k.History = HistoryKeys{
 		ClearHistory: Key{
-			Runes:       []string{"C"},
+			Keys:        []string{"Ctrl+d"},
 			Description: "Clear history",
 		},
 		AcceptEntry: Key{
