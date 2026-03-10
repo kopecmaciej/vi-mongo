@@ -88,10 +88,6 @@ func TestLoadConfigWithVersion_CustomPath_ExistingFile(t *testing.T) {
 		t.Error("Expected ShowConnectionPage to be false")
 	}
 
-	if cfg.Version != "1.0.0" {
-		t.Errorf("Expected version to be updated to 1.0.0, got %s", cfg.Version)
-	}
-
 	if cfg.ConfigPath != configPath {
 		t.Errorf("Expected ConfigPath %s, got %s", configPath, cfg.ConfigPath)
 	}

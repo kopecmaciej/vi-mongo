@@ -32,7 +32,7 @@ type (
 		QueryBar    QueryBar        `yaml:"queryBar"`
 		SortBar     SortBar         `yaml:"sortBar"`
 		Index       IndexKeys       `yaml:"index"`
-		AIQuery     AIQuery         `yaml:"aiPrompt"`
+		AIQuery     AIQueryKeys     `yaml:"aiQuery"`
 		History     HistoryKeys     `yaml:"history"`
 		Aggregation AggregationKeys `yaml:"aggregation"`
 	}
@@ -166,7 +166,7 @@ type (
 		DeleteIndex  Key `yaml:"deleteIndex"`
 	}
 
-	AIQuery struct {
+	AIQueryKeys struct {
 		ExitAIQuery Key `yaml:"exitAIQuery"`
 		ClearPrompt Key `yaml:"clearPrompt"`
 	}
@@ -557,7 +557,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 	}
 
-	k.AIQuery = AIQuery{
+	k.AIQuery = AIQueryKeys{
 		ExitAIQuery: Key{
 			Keys:        []string{"Esc"},
 			Description: "Exit AI query",

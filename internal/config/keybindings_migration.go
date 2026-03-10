@@ -52,10 +52,12 @@ func migrateJSONKeybindingsToYAML(jsonPath, yamlPath string) error {
 	// declaration order (Global, Help, Welcome, …) instead of Go map
 	// iteration order (alphabetical).
 	var kb KeyBindings
+	kb.loadDefaults()
 	if err := json.Unmarshal(data, &kb); err != nil {
 		return fmt.Errorf("parse JSON: %w", err)
 	}
 	normalizeCtrlKeys(reflect.ValueOf(&kb).Elem())
+	fixToggleHeaderKeys(&kb)
 
 	var node yaml.Node
 	if err := node.Encode(&kb); err != nil {
@@ -98,6 +100,32 @@ func normalizeCtrlKeys(val reflect.Value) {
 			normalizeCtrlKeys(field)
 		}
 	}
+}
+
+// fixToggleHeaderKeys corrects a v0.1.35 bug where the toggleHeader binding
+// was written with keys: ["t"] instead of runes: ["t"].
+func fixToggleHeaderKeys(kb *KeyBindings) {
+	th := &kb.Global.ToggleHeader
+	var remaining []string
+	for _, k := range th.Keys {
+		if k == "t" {
+			if !containsString(th.Runes, "t") {
+				th.Runes = append(th.Runes, "t")
+			}
+		} else {
+			remaining = append(remaining, k)
+		}
+	}
+	th.Keys = remaining
+}
+
+func containsString(slice []string, s string) bool {
+	for _, v := range slice {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }
 
 func setSequencesFlowStyle(node *yaml.Node) {
