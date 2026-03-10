@@ -1,9 +1,5 @@
 // MIGRATION: JSON → YAML keybindings (introduced v2.0.0)
 // TODO: Remove this file after v2.x once adoption is sufficient.
-//
-// This file is intentionally isolated so it can be deleted as a unit.
-// The migration is triggered by the changelog prompt shown on first startup
-// after upgrading.
 
 package config
 
@@ -34,9 +30,6 @@ func RunKeybindingsMigration() error {
 	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {
 		return nil // nothing to migrate
 	}
-	// Check if migration already ran by looking for the backup file.
-	// We cannot rely on keybindings.yaml existing because LoadKeybindings()
-	// creates it eagerly with defaults before the changelog prompt is shown.
 	if _, err := os.Stat(jsonPath + ".bak"); err == nil {
 		return nil // already migrated
 	}

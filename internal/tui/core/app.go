@@ -48,7 +48,6 @@ func NewApp(appConfig *config.Config) *App {
 	return app
 }
 
-// ReloadKeybindings reloads keybindings from disk, e.g. after a migration.
 func (a *App) ReloadKeybindings() {
 	keys, err := config.LoadKeybindings()
 	if err != nil {
