@@ -8,6 +8,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -19,182 +20,218 @@ type (
 	// There are views that have only keybindings and some have
 	// nested keybindings of their children views
 	KeyBindings struct {
-		Global      GlobalKeys      `json:"global"`
-		Help        HelpKeys        `json:"help"`
-		Welcome     WelcomeKeys     `json:"welcome"`
-		Connection  ConnectionKeys  `json:"connection"`
-		Main        MainKeys        `json:"main"`
-		Database    DatabaseKeys    `json:"databases"`
-		FilterBar   FilterBarKeys   `json:"filterBar"`
-		Content     ContentKeys     `json:"content"`
-		Peeker      PeekerKeys      `json:"peeker"`
-		QueryBar    QueryBar        `json:"queryBar"`
-		SortBar     SortBar         `json:"sortBar"`
-		Index       IndexKeys       `json:"index"`
-		AIQuery     AIQuery         `json:"aiPrompt"`
-		History     HistoryKeys     `json:"history"`
-		Aggregation AggregationKeys `json:"aggregation"`
+		Global      GlobalKeys      `yaml:"global"`
+		Help        HelpKeys        `yaml:"help"`
+		Welcome     WelcomeKeys     `yaml:"welcome"`
+		Connection  ConnectionKeys  `yaml:"connection"`
+		Main        MainKeys        `yaml:"main"`
+		Databases   DatabasesKeys   `yaml:"databases"`
+		FilterBar   FilterBarKeys   `yaml:"filterBar"`
+		Content     ContentKeys     `yaml:"content"`
+		Peeker      PeekerKeys      `yaml:"peeker"`
+		QueryBar    QueryBar        `yaml:"queryBar"`
+		SortBar     SortBar         `yaml:"sortBar"`
+		Index       IndexKeys       `yaml:"index"`
+		AIQuery     AIQuery         `yaml:"aiPrompt"`
+		History     HistoryKeys     `yaml:"history"`
+		Aggregation AggregationKeys `yaml:"aggregation"`
 	}
 
 	// Key is a lowest level of keybindings
 	// It holds the keys and runes that are used to trigger the action
 	// and a description of the action that will be displayed in the help
 	Key struct {
-		Keys        []string `json:"keys,omitempty"`
-		Runes       []string `json:"runes,omitempty"`
-		Description string   `json:"description"`
+		Keys        []string `yaml:"keys,omitempty"`
+		Runes       []string `yaml:"runes,omitempty"`
+		Description string   `yaml:"description,omitempty"`
 	}
 
 	// GlobalKeys is a struct that holds the global keybindings
 	// for the application, they can be triggered from any view
 	// as keys are passed from top to bottom
 	GlobalKeys struct {
-		CloseApp             Key `json:"closeApp"`
-		ToggleFullScreenHelp Key `json:"toggleFullScreenHelp"`
-		OpenConnection       Key `json:"openConnection"`
-		ShowStyleModal       Key `json:"showStyleModal"`
-		ToggleHeader         Key `json:"toggleHeader"`
+		CloseApp             Key `yaml:"closeApp"`
+		ToggleFullScreenHelp Key `yaml:"toggleFullScreenHelp"`
+		OpenConnection       Key `yaml:"openConnection"`
+		ShowStyleModal       Key `yaml:"showStyleModal"`
+		ToggleHeader         Key `yaml:"toggleHeader"`
 	}
 
 	MainKeys struct {
-		FocusNext      Key `json:"focusNext"`
-		FocusPrevious  Key `json:"focusPrevious"`
-		HideDatabases  Key `json:"hideDatabases"`
-		ShowAIQuery    Key `json:"showAIQuery"`
-		ShowServerInfo Key `json:"showServerInfo"`
+		FocusNext      Key `yaml:"focusNext"`
+		FocusPrevious  Key `yaml:"focusPrevious"`
+		HideDatabases  Key `yaml:"hideDatabases"`
+		ShowAIQuery    Key `yaml:"showAIQuery"`
+		ShowServerInfo Key `yaml:"showServerInfo"`
 	}
 
-	DatabaseKeys struct {
-		FilterBar        Key `json:"filterBar"`
-		ClearFilter      Key `json:"clearFilter"`
-		ExpandAll        Key `json:"expandAll"`
-		CollapseAll      Key `json:"collapseAll"`
-		AddCollection    Key `json:"addCollection"`
-		DeleteCollection Key `json:"deleteCollection"`
-		RenameCollection Key `json:"renameCollection"`
+	DatabasesKeys struct {
+		FilterBar        Key `yaml:"filterBar"`
+		ClearFilter      Key `yaml:"clearFilter"`
+		ExpandAll        Key `yaml:"expandAll"`
+		CollapseAll      Key `yaml:"collapseAll"`
+		AddCollection    Key `yaml:"addCollection"`
+		DeleteCollection Key `yaml:"deleteCollection"`
+		RenameCollection Key `yaml:"renameCollection"`
 	}
 
 	FilterBarKeys struct {
-		CloseFilter Key `json:"closeFilter"`
-		ClearFilter Key `json:"clearFilter"`
+		CloseFilter Key `yaml:"closeFilter"`
+		ClearFilter Key `yaml:"clearFilter"`
 	}
 
 	ContentKeys struct {
-		ChangeView                 Key `json:"switchView"`
-		PeekDocument               Key `json:"peekDocument"`
-		FullPagePeek               Key `json:"fullPagePeek"`
-		AddDocument                Key `json:"addDocument"`
-		EditDocument               Key `json:"editDocument"`
-		InlineEdit                 Key `json:"inlineEdit"`
-		DuplicateDocument          Key `json:"duplicateDocument"`
-		DuplicateDocumentNoConfirm Key `json:"duplicateDocumentNoConfirm"`
-		DeleteDocument             Key `json:"deleteDocument"`
-		DeleteDocumentNoConfirm    Key `json:"deleteDocumentNoConfirm"`
-		CopyHighlight              Key `json:"copyValue"`
-		CopyDocument               Key `json:"copyDocument"`
-		Refresh                    Key `json:"refresh"`
-		ToggleQueryBar             Key `json:"toggleQueryBar"`
-		NextDocument               Key `json:"nextDocument"`
-		PreviousDocument           Key `json:"previousDocument"`
-		NextPage                   Key `json:"nextPage"`
-		PreviousPage               Key `json:"previousPage"`
-		ToggleSortBar              Key `json:"toggleSortBar"`
-		SortByColumn               Key `json:"sortByColumn"`
-		HideColumn                 Key `json:"hideColumn"`
-		ResetHiddenColumns         Key `json:"resetHiddenColumns"`
-		ToggleQueryOptions         Key `json:"toggleQueryOptions"`
-		MultipleSelect             Key `json:"multipleSelect"`
-		ClearSelection             Key `json:"clearSelection"`
+		ChangeView                 Key `yaml:"switchView"`
+		PeekDocument               Key `yaml:"peekDocument"`
+		FullPagePeek               Key `yaml:"fullPagePeek"`
+		AddDocument                Key `yaml:"addDocument"`
+		EditDocument               Key `yaml:"editDocument"`
+		InlineEdit                 Key `yaml:"inlineEdit"`
+		DuplicateDocument          Key `yaml:"duplicateDocument"`
+		DuplicateDocumentNoConfirm Key `yaml:"duplicateDocumentNoConfirm"`
+		DeleteDocument             Key `yaml:"deleteDocument"`
+		DeleteDocumentNoConfirm    Key `yaml:"deleteDocumentNoConfirm"`
+		CopyHighlight              Key `yaml:"copyValue"`
+		CopyDocument               Key `yaml:"copyDocument"`
+		Refresh                    Key `yaml:"refresh"`
+		ToggleQueryBar             Key `yaml:"toggleQueryBar"`
+		NextDocument               Key `yaml:"nextDocument"`
+		PreviousDocument           Key `yaml:"previousDocument"`
+		NextPage                   Key `yaml:"nextPage"`
+		PreviousPage               Key `yaml:"previousPage"`
+		ToggleSortBar              Key `yaml:"toggleSortBar"`
+		SortByColumn               Key `yaml:"sortByColumn"`
+		HideColumn                 Key `yaml:"hideColumn"`
+		ResetHiddenColumns         Key `yaml:"resetHiddenColumns"`
+		ToggleQueryOptions         Key `yaml:"toggleQueryOptions"`
+		MultipleSelect             Key `yaml:"multipleSelect"`
+		ClearSelection             Key `yaml:"clearSelection"`
 	}
 
 	QueryBar struct {
-		ShowHistory Key `json:"showHistory"`
-		ClearInput  Key `json:"clearInput"`
-		Paste       Key `json:"paste"`
+		ShowHistory Key `yaml:"showHistory"`
+		ClearInput  Key `yaml:"clearInput"`
+		Paste       Key `yaml:"paste"`
 	}
 
 	SortBar struct {
-		ClearInput Key `json:"clearInput"`
-		Paste      Key `json:"paste"`
+		ClearInput Key `yaml:"clearInput"`
+		Paste      Key `yaml:"paste"`
 	}
 
 	ConnectionKeys struct {
-		ConnectionForm ConnectionFormKeys `json:"connectionForm"`
-		ConnectionList ConnectionListKeys `json:"connectionList"`
+		ConnectionForm ConnectionFormKeys `yaml:"connectionForm"`
+		ConnectionList ConnectionListKeys `yaml:"connectionList"`
 	}
 
 	ConnectionFormKeys struct {
-		SaveConnection Key `json:"saveConnection"`
-		FocusList      Key `json:"focusList"`
+		SaveConnection Key `yaml:"saveConnection"`
+		FocusList      Key `yaml:"focusList"`
 	}
 
 	ConnectionListKeys struct {
-		FocusForm        Key `json:"focusForm"`
-		DeleteConnection Key `json:"deleteConnection"`
-		EditConnection   Key `json:"editConnection"`
-		SetConnection    Key `json:"setConnection"`
+		FocusForm        Key `yaml:"focusForm"`
+		DeleteConnection Key `yaml:"deleteConnection"`
+		EditConnection   Key `yaml:"editConnection"`
+		SetConnection    Key `yaml:"setConnection"`
 	}
 
 	WelcomeKeys struct {
-		MoveFocusUp   Key `json:"moveFocusUp"`
-		MoveFocusDown Key `json:"moveFocusDown"`
+		MoveFocusUp   Key `yaml:"moveFocusUp"`
+		MoveFocusDown Key `yaml:"moveFocusDown"`
 	}
 
 	HelpKeys struct {
-		Close Key `json:"close"`
+		Close Key `yaml:"close"`
 	}
 
 	PeekerKeys struct {
-		MoveToTop        Key `json:"moveToTop"`
-		MoveToBottom     Key `json:"moveToBottom"`
-		CopyHighlight    Key `json:"copyHighlight"`
-		CopyValue        Key `json:"copyValue"`
-		ToggleFullScreen Key `json:"toggleFullScreen"`
-		Exit             Key `json:"exit"`
+		MoveToTop        Key `yaml:"moveToTop"`
+		MoveToBottom     Key `yaml:"moveToBottom"`
+		CopyHighlight    Key `yaml:"copyHighlight"`
+		CopyValue        Key `yaml:"copyValue"`
+		ToggleFullScreen Key `yaml:"toggleFullScreen"`
+		Exit             Key `yaml:"exit"`
 	}
 
 	HistoryKeys struct {
-		ClearHistory Key `json:"clearHistory"`
-		AcceptEntry  Key `json:"acceptEntry"`
-		CloseHistory Key `json:"closeHistory"`
+		ClearHistory Key `yaml:"clearHistory"`
+		AcceptEntry  Key `yaml:"acceptEntry"`
+		CloseHistory Key `yaml:"closeHistory"`
 	}
 
 	IndexKeys struct {
-		ExitAddIndex Key `json:"exitModal"`
-		AddIndex     Key `json:"addIndex"`
-		DeleteIndex  Key `json:"deleteIndex"`
+		ExitAddIndex Key `yaml:"exitModal"`
+		AddIndex     Key `yaml:"addIndex"`
+		DeleteIndex  Key `yaml:"deleteIndex"`
 	}
 
 	AIQuery struct {
-		ExitAIQuery Key `json:"exitAIQuery"`
-		ClearPrompt Key `json:"clearPrompt"`
+		ExitAIQuery Key `yaml:"exitAIQuery"`
+		ClearPrompt Key `yaml:"clearPrompt"`
 	}
 
 	AggregationKeys struct {
-		Stages  AggregationStageKeys  `json:"stages"`
-		Results AggregationResultKeys `json:"results"`
+		Stages  AggregationStageKeys  `yaml:"stages"`
+		Results AggregationResultKeys `yaml:"results"`
 	}
 
 	AggregationStageKeys struct {
-		AddStage      Key `json:"addStage"`
-		EditStage     Key `json:"editStage"`
-		DeleteStage   Key `json:"deleteStage"`
-		RunPipeline   Key `json:"runPipeline"`
-		ClearPipeline Key `json:"clearPipeline"`
-		MoveStageDown Key `json:"moveStageDown"`
-		MoveStageUp   Key `json:"moveStageUp"`
-		FocusResults  Key `json:"focusResults"`
+		AddStage      Key `yaml:"addStage"`
+		EditStage     Key `yaml:"editStage"`
+		DeleteStage   Key `yaml:"deleteStage"`
+		RunPipeline   Key `yaml:"runPipeline"`
+		ClearPipeline Key `yaml:"clearPipeline"`
+		MoveStageDown Key `yaml:"moveStageDown"`
+		MoveStageUp   Key `yaml:"moveStageUp"`
+		FocusResults  Key `yaml:"focusResults"`
 	}
 
 	AggregationResultKeys struct {
-		FocusStages   Key `json:"focusStages"`
-		ChangeView    Key `json:"changeView"`
-		PeekDocument  Key `json:"peekDocument"`
-		FullPagePeek  Key `json:"fullPagePeek"`
-		CopyHighlight Key `json:"copyHighlight"`
-		CopyDocument  Key `json:"copyDocument"`
+		FocusStages   Key `yaml:"focusStages"`
+		ChangeView    Key `yaml:"changeView"`
+		PeekDocument  Key `yaml:"peekDocument"`
+		FullPagePeek  Key `yaml:"fullPagePeek"`
+		CopyHighlight Key `yaml:"copyHighlight"`
+		CopyDocument  Key `yaml:"copyDocument"`
 	}
 )
+
+// MarshalYAML produces compact flow-style arrays for keys and runes, e.g.:
+//
+//	keys: [Ctrl+H, Ctrl+Left]
+func (k Key) MarshalYAML() (interface{}, error) {
+	node := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
+
+	if len(k.Keys) > 0 {
+		node.Content = append(node.Content,
+			&yaml.Node{Kind: yaml.ScalarNode, Value: "keys"},
+			flowStringSeq(k.Keys),
+		)
+	}
+	if len(k.Runes) > 0 {
+		node.Content = append(node.Content,
+			&yaml.Node{Kind: yaml.ScalarNode, Value: "runes"},
+			flowStringSeq(k.Runes),
+		)
+	}
+	if k.Description != "" {
+		node.Content = append(node.Content,
+			&yaml.Node{Kind: yaml.ScalarNode, Value: "description"},
+			&yaml.Node{Kind: yaml.ScalarNode, Value: k.Description},
+		)
+	}
+
+	return node, nil
+}
+
+func flowStringSeq(items []string) *yaml.Node {
+	seq := &yaml.Node{Kind: yaml.SequenceNode, Style: yaml.FlowStyle, Tag: "!!seq"}
+	for _, item := range items {
+		seq.Content = append(seq.Content, &yaml.Node{Kind: yaml.ScalarNode, Value: item})
+	}
+	return seq
+}
 
 func (k *KeyBindings) loadDefaults() {
 	k.Global = GlobalKeys{
@@ -244,7 +281,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 	}
 
-	k.Database = DatabaseKeys{
+	k.Databases = DatabasesKeys{
 		FilterBar: Key{
 			Runes:       []string{"/"},
 			Description: "Focus filter bar",
@@ -596,8 +633,15 @@ func (k *KeyBindings) loadDefaults() {
 	}
 }
 
-// LoadKeybindings loads keybindings from the config file
-// if the file does not exist it creates a new one with default keybindings
+const keybindingsFileHeader = `# runes: literal characters, case-sensitive (e.g. [a], [A])
+# keys:  named/combo keys (e.g. [Enter], [Escape], [Tab], [Space])
+#        Ctrl+<letter>: case-insensitive in config, but no Ctrl+Shift — in config Ctrl+L is the same as Ctrl+l
+#        Alt+<char>:    case-sensitive, both upper and lower work (e.g. Alt+a, Alt+A)
+
+`
+
+// LoadKeybindings loads keybindings from the config file.
+// If the file does not exist it creates a new one with default keybindings.
 func LoadKeybindings() (*KeyBindings, error) {
 	defaultKeybindings := &KeyBindings{}
 	defaultKeybindings.loadDefaults()
@@ -611,7 +655,23 @@ func LoadKeybindings() (*KeyBindings, error) {
 		return nil, err
 	}
 
+	if _, err := os.Stat(keybindingsPath); os.IsNotExist(err) {
+		if err := writeKeybindingsWithHeader(defaultKeybindings, keybindingsPath); err != nil {
+			return nil, err
+		}
+		return defaultKeybindings, nil
+	}
+
 	return util.LoadConfigFile(defaultKeybindings, keybindingsPath)
+}
+
+func writeKeybindingsWithHeader(kb *KeyBindings, path string) error {
+	data, err := yaml.Marshal(kb)
+	if err != nil {
+		return fmt.Errorf("failed to marshal keybindings: %w", err)
+	}
+	content := append([]byte(keybindingsFileHeader), data...)
+	return os.WriteFile(path, content, FileMode)
 }
 
 // extractKeysFromStruct extracts all Key structs from a reflect.Value
@@ -767,5 +827,5 @@ func getKeybindingsPath() (string, error) {
 		return "", err
 	}
 
-	return configDir + "/keybindings.json", nil
+	return configDir + "/keybindings.yaml", nil
 }

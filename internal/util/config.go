@@ -64,19 +64,13 @@ func mergeConfigsRecursive(loaded, defaultValue reflect.Value) {
 	}
 }
 
-// isEmptyKey checks if a Key struct is completely empty
+// isEmptyKey checks if a Key struct has no keys or runes defined.
+// Description is intentionally ignored — only bindings matter.
 func isEmptyKey(keyValue reflect.Value) bool {
 	for i := 0; i < keyValue.NumField(); i++ {
 		field := keyValue.Field(i)
-		switch field.Kind() {
-		case reflect.String:
-			if field.String() != "" {
-				return false
-			}
-		case reflect.Slice:
-			if field.Len() > 0 {
-				return false
-			}
+		if field.Kind() == reflect.Slice && field.Len() > 0 {
+			return false
 		}
 	}
 	return true

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/build"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
@@ -14,6 +15,16 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
 )
+
+func getPendingChangelog(lastAcknowledgedVersion string) []modal.ChangelogEntry {
+	var pending []modal.ChangelogEntry
+	for _, entry := range loadChangelog() {
+		if util.SemverGreater(entry.Version, lastAcknowledgedVersion) {
+			pending = append(pending, entry)
+		}
+	}
+	return pending
+}
 
 type (
 	// App extends the core.App struct
@@ -137,6 +148,12 @@ func (a *App) connectToMongo() error {
 // Render is the main render function
 // it renders the page based on the config
 func (a *App) Render() {
+	pending := getPendingChangelog(a.App.GetConfig().Version)
+	if len(pending) > 0 {
+		a.showChangelogModal(pending)
+		return
+	}
+
 	switch {
 	case a.App.GetConfig().ShowWelcomePage:
 		a.renderWelcome()
@@ -147,6 +164,42 @@ func (a *App) Render() {
 		// as it depends on the dao
 		a.initAndRenderMain()
 	}
+}
+
+func (a *App) showChangelogModal(entries []modal.ChangelogEntry) {
+	m := modal.NewChangelog(entries)
+	if err := m.Init(a.App); err != nil {
+		log.Error().Err(err).Msg("Failed to init changelog modal")
+		return
+	}
+
+	m.SetOnProceed(func() {
+		for _, e := range entries {
+			if e.MigrationFn != nil {
+				if err := e.MigrationFn(); err != nil {
+					log.Error().Err(err).Msgf("Migration for v%s failed", e.Version)
+					modal.ShowError(a.Pages, "Migration failed", err)
+					return
+				}
+			}
+		}
+		a.App.ReloadKeybindings()
+
+		cfg := a.App.GetConfig()
+		cfg.Version = build.Version
+		if err := cfg.UpdateConfig(); err != nil {
+			log.Error().Err(err).Msg("Failed to save config after migration")
+		}
+
+		a.Pages.RemovePage(modal.ChangelogModalId)
+		a.Render()
+	})
+
+	m.SetOnQuit(func() {
+		os.Exit(0)
+	})
+
+	m.Render()
 }
 
 // initAndRenderMain initializes and renders the main page
@@ -193,9 +246,6 @@ func (a *App) renderConnection() {
 	a.connection.Render()
 }
 
-// renderWelcome renders the welcome page
-// it's initialized inside render function
-// as it's probalby won't be used very often
 func (a *App) renderWelcome() {
 	welcome := page.NewWelcome()
 	if err := welcome.Init(a.App); err != nil {

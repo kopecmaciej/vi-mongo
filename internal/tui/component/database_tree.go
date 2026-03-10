@@ -94,19 +94,19 @@ func (t *DatabaseTree) setKeybindings(ctx context.Context) {
 	k := t.App.GetKeys()
 	t.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Database.ExpandAll, event.Name()):
+		case k.Contains(k.Databases.ExpandAll, event.Name()):
 			t.expandAllNodes(closedNodeSymbol, openNodeSymbol)
 			return nil
-		case k.Contains(k.Database.CollapseAll, event.Name()):
+		case k.Contains(k.Databases.CollapseAll, event.Name()):
 			t.collapseAllNodes(openNodeSymbol, closedNodeSymbol)
 			return nil
-		case k.Contains(k.Database.AddCollection, event.Name()):
+		case k.Contains(k.Databases.AddCollection, event.Name()):
 			t.showAddCollectionModal(ctx)
 			return nil
-		case k.Contains(k.Database.DeleteCollection, event.Name()):
+		case k.Contains(k.Databases.DeleteCollection, event.Name()):
 			t.showDeleteCollectionModal(ctx)
 			return nil
-		case k.Contains(k.Database.RenameCollection, event.Name()):
+		case k.Contains(k.Databases.RenameCollection, event.Name()):
 			t.showRenameCollectionModal(ctx)
 			return nil
 		}
