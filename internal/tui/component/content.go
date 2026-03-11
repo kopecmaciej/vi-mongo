@@ -395,15 +395,7 @@ func (c *Content) loadAutocompleteKeys(documents []primitive.M) {
 
 	for _, doc := range documents {
 		for key, value := range doc {
-			if obj, ok := value.(primitive.M); ok {
-				addKeys(key, obj)
-				for k, v := range obj {
-					fullKey := key + "." + k
-					addKeys(fullKey, v)
-				}
-			} else {
-				addKeys(key, value)
-			}
+			addKeys(key, value)
 		}
 	}
 
@@ -478,33 +470,28 @@ func (c *Content) buildHeaderInfo() string {
 	return headerInfo
 }
 
-func (c *Content) applyQuery(ctx context.Context, query string) error {
-	c.state.SetFilter(query)
-	err := c.updateContent(ctx, false)
-	if err != nil {
-		c.state.SetFilter("")
+func (c *Content) applyStateChange(ctx context.Context, setValue func(), clearValue func()) error {
+	setValue()
+	if err := c.updateContent(ctx, false); err != nil {
+		clearValue()
 		return err
-	}
-	if query != "" && strings.ReplaceAll(query, " ", "") != "{}" {
-		err = c.queryBar.historyModal.SaveToHistory(query)
-		if err != nil {
-			return err
-		}
 	}
 	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
 	return nil
 }
 
-func (c *Content) applySort(ctx context.Context, sort string) error {
-	c.state.SetSort(sort)
-	err := c.updateContent(ctx, false)
-	if err != nil {
-		c.state.SetSort("")
+func (c *Content) applyQuery(ctx context.Context, query string) error {
+	if err := c.applyStateChange(ctx, func() { c.state.SetFilter(query) }, func() { c.state.SetFilter("") }); err != nil {
 		return err
 	}
-
-	c.stateMap.Set(c.stateMap.Key(c.state.Db, c.state.Coll), c.state)
+	if query != "" && strings.ReplaceAll(query, " ", "") != "{}" {
+		return c.queryBar.historyModal.SaveToHistory(query)
+	}
 	return nil
+}
+
+func (c *Content) applySort(ctx context.Context, sort string) error {
+	return c.applyStateChange(ctx, func() { c.state.SetSort(sort) }, func() { c.state.SetSort("") })
 }
 
 func (c *Content) queryBarHandler(ctx context.Context) {
@@ -609,19 +596,26 @@ func (c *Content) handleFullPagePeek(ctx context.Context, row, col int) *tcell.E
 	return nil
 }
 
+func (c *Content) appendNewDocument(ctx context.Context, id primitive.ObjectID, row, col int) error {
+	doc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, id)
+	if err != nil {
+		return err
+	}
+	c.state.AppendDoc(doc)
+	c.updateContentBasedOnState(ctx)
+	c.table.Select(row, col)
+	return nil
+}
+
 func (c *Content) handleAddDocument(ctx context.Context) *tcell.EventKey {
 	id, err := c.docModifier.Insert(ctx, c.state.Db, c.state.Coll)
 	if err != nil {
 		modal.ShowError(c.App.Pages, "Error adding document", err)
 		return nil
 	}
-	insertedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, id)
-	if err != nil {
+	if err := c.appendNewDocument(ctx, id, 1, 0); err != nil {
 		modal.ShowError(c.App.Pages, "Error getting inserted document", err)
-		return nil
 	}
-	c.state.AppendDoc(insertedDoc)
-	c.updateContentBasedOnState(ctx)
 	return nil
 }
 
@@ -672,15 +666,9 @@ func (c *Content) handleDuplicateDocument(ctx context.Context, row, col int) *tc
 				modal.ShowError(c.App.Pages, "Error duplicating document", err)
 				return
 			}
-			duplicatedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, id)
-			if err != nil {
+			if err := c.appendNewDocument(ctx, id, row, col); err != nil {
 				modal.ShowError(c.App.Pages, "Error getting inserted document", err)
-				return
 			}
-			c.state.AppendDoc(duplicatedDoc)
-			c.updateContentBasedOnState(ctx)
-
-			c.table.Select(row, col)
 		}
 	})
 
@@ -700,16 +688,9 @@ func (c *Content) handleDuplicateDocumentNoConfirm(ctx context.Context, row, col
 		modal.ShowError(c.App.Pages, "Error duplicating document", err)
 		return nil
 	}
-	duplicatedDoc, err := c.Dao.GetDocument(ctx, c.state.Db, c.state.Coll, id)
-	if err != nil {
+	if err := c.appendNewDocument(ctx, id, row, col); err != nil {
 		modal.ShowError(c.App.Pages, "Error getting inserted document", err)
-		return nil
 	}
-	c.state.AppendDoc(duplicatedDoc)
-	c.updateContentBasedOnState(ctx)
-
-	c.table.Select(row, col)
-
 	return nil
 }
 
@@ -729,8 +710,8 @@ func (c *Content) handleDeleteDocument(ctx context.Context, row, col int) *tcell
 				modal.ShowError(c.App.Pages, "Error parsing document", err)
 			}
 			idsToDelete = append(idsToDelete, objectId)
-			c.confirmModal.SetText(fmt.Sprintf("%s%d[-] documents?", msg, len(idsToDelete)))
 		}
+		c.confirmModal.SetText(fmt.Sprintf("%s%d[-] documents?", msg, len(idsToDelete)))
 
 	} else {
 		doc, err := c.getDocumentBasedOnView(row, col)

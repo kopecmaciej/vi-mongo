@@ -200,10 +200,10 @@ func (m *Main) ToggleHeader() {
 func (m *Main) setKeybindings() {
 	k := m.App.GetKeys()
 	m.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		_, isInputBar := m.App.GetFocus().(*component.InputBar)
 		switch {
 		case k.Contains(k.Main.FocusNext, event.Name()):
-			// TODO: figure out how to handle key priorities
-			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIQueryFocused() || m.aggregation.IsStageBarVisible() {
+			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIQueryFocused() || isInputBar {
 				return event
 			}
 			if m.databases.IsFocused() {
@@ -217,7 +217,7 @@ func (m *Main) setKeybindings() {
 			}
 			return nil
 		case k.Contains(k.Main.FocusPrevious, event.Name()):
-			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIQueryFocused() || m.aggregation.IsStageBarVisible() {
+			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIQueryFocused() || isInputBar {
 				return event
 			}
 			if m.tabBar.GetActiveTabIndex() == 0 {

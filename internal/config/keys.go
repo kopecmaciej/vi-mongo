@@ -120,6 +120,7 @@ type (
 		ShowHistory Key `yaml:"showHistory"`
 		ClearInput  Key `yaml:"clearInput"`
 		Paste       Key `yaml:"paste"`
+		NextMarker  Key `yaml:"nextMarker"`
 	}
 
 	SortBar struct {
@@ -321,7 +322,7 @@ func (k *KeyBindings) loadDefaults() {
 		PeekDocument: Key{
 			Runes:       []string{"o"},
 			Keys:        []string{"Enter"},
-			Description: "Peek",
+			Description: "Open peek",
 		},
 		FullPagePeek: Key{
 			Runes:       []string{"O"},
@@ -429,6 +430,10 @@ func (k *KeyBindings) loadDefaults() {
 		Paste: Key{
 			Keys:        []string{"Ctrl+v"},
 			Description: "Paste from clipboard",
+		},
+		NextMarker: Key{
+			Keys:        []string{"Ctrl+l"},
+			Description: "Next marker",
 		},
 	}
 
