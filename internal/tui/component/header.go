@@ -305,10 +305,10 @@ func (h *Header) UpdateKeys() ([]config.Key, error) {
 		return nil, nil
 	}
 
-	// hack for DatabaseTree, as it's child of Databases
+	// hack for DatabaseTree, as it's child of Database
 	// TODO: think of better solution for this
 	if h.currentFocus == "DatabaseTree" {
-		h.currentFocus = "Databases"
+		h.currentFocus = "Database"
 	}
 	// AggregationStageBar shares the same keybindings as QueryBar
 	if h.currentFocus == "AggregationStageBar" {
