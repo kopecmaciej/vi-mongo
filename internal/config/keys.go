@@ -20,6 +20,7 @@ type (
 	// nested keybindings of their children views
 	KeyBindings struct {
 		Global     GlobalKeys     `json:"global"`
+		Navigation NavigationKeys `json:"navigation"`
 		Help       HelpKeys       `json:"help"`
 		Welcome    WelcomeKeys    `json:"welcome"`
 		Connection ConnectionKeys `json:"connection"`
@@ -33,6 +34,14 @@ type (
 		Index      IndexKeys      `json:"index"`
 		AIQuery    AIQuery        `json:"aiPrompt"`
 		History    HistoryKeys    `json:"history"`
+	}
+
+	// NavigationKeys holds shared navigation keybindings used across all components
+	NavigationKeys struct {
+		MoveUp    Key `json:"moveUp"`
+		MoveDown  Key `json:"moveDown"`
+		MoveLeft  Key `json:"moveLeft"`
+		MoveRight Key `json:"moveRight"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -64,8 +73,6 @@ type (
 	}
 
 	DatabaseKeys struct {
-		MoveUp           Key `json:"moveUp"`
-		MoveDown         Key `json:"moveDown"`
 		FilterBar        Key `json:"filterBar"`
 		ClearFilter      Key `json:"clearFilter"`
 		ExpandAll        Key `json:"expandAll"`
@@ -81,10 +88,6 @@ type (
 	}
 
 	ContentKeys struct {
-		MoveUp                     Key `json:"moveUp"`
-		MoveDown                   Key `json:"moveDown"`
-		MoveLeft                   Key `json:"moveLeft"`
-		MoveRight                  Key `json:"moveRight"`
 		ChangeView                 Key `json:"switchView"`
 		PeekDocument               Key `json:"peekDocument"`
 		FullPagePeek               Key `json:"fullPagePeek"`
@@ -135,8 +138,6 @@ type (
 	}
 
 	ConnectionListKeys struct {
-		MoveUp           Key `json:"moveUp"`
-		MoveDown         Key `json:"moveDown"`
 		FocusForm        Key `json:"focusForm"`
 		DeleteConnection Key `json:"deleteConnection"`
 		EditConnection   Key `json:"editConnection"`
@@ -149,14 +150,10 @@ type (
 	}
 
 	HelpKeys struct {
-		MoveUp Key `json:"moveUp"`
-		MoveDown Key `json:"moveDown"`
 		Close Key `json:"close"`
 	}
 
 	PeekerKeys struct {
-		MoveUp           Key `json:"moveUp"`
-		MoveDown         Key `json:"moveDown"`
 		MoveToTop        Key `json:"moveToTop"`
 		MoveToBottom     Key `json:"moveToBottom"`
 		CopyHighlight    Key `json:"copyHighlight"`
@@ -172,8 +169,6 @@ type (
 	}
 
 	IndexKeys struct {
-		MoveUp       Key `json:"moveUp"`
-		MoveDown     Key `json:"moveDown"`
 		ExitAddIndex Key `json:"exitModal"`
 		AddIndex     Key `json:"addIndex"`
 		DeleteIndex  Key `json:"deleteIndex"`
@@ -233,7 +228,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 	}
 
-	k.Database = DatabaseKeys{
+	k.Navigation = NavigationKeys{
 		MoveUp: Key{
 			Keys:        []string{"Up"},
 			Runes:       []string{"k"},
@@ -244,6 +239,19 @@ func (k *KeyBindings) loadDefaults() {
 			Runes:       []string{"j"},
 			Description: "Move down",
 		},
+		MoveLeft: Key{
+			Keys:        []string{"Left"},
+			Runes:       []string{"h"},
+			Description: "Move left",
+		},
+		MoveRight: Key{
+			Keys:        []string{"Right"},
+			Runes:       []string{"l"},
+			Description: "Move right",
+		},
+	}
+
+	k.Database = DatabaseKeys{
 		FilterBar: Key{
 			Runes:       []string{"/"},
 			Description: "Focus filter bar",
@@ -286,26 +294,6 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Content = ContentKeys{
-		MoveUp: Key{
-			Keys:        []string{"Up"},
-			Runes:       []string{"k"},
-			Description: "Move up",
-		},
-		MoveDown: Key{
-			Keys:        []string{"Down"},
-			Runes:       []string{"j"},
-			Description: "Move down",
-		},
-		MoveLeft: Key{
-			Keys:        []string{"Left"},
-			Runes:       []string{"h"},
-			Description: "Move left",
-		},
-		MoveRight: Key{
-			Keys:        []string{"Right"},
-			Runes:       []string{"l"},
-			Description: "Move right",
-		},
 		ChangeView: Key{
 			Runes:       []string{"f"},
 			Description: "Change view",
@@ -452,16 +440,6 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Connection.ConnectionList = ConnectionListKeys{
-		MoveUp: Key{
-			Keys:        []string{"Up"},
-			Runes:       []string{"k"},
-			Description: "Move up",
-		},
-		MoveDown: Key{
-			Keys:        []string{"Down"},
-			Runes:       []string{"j"},
-			Description: "Move down",
-		},
 		FocusForm: Key{
 			Keys:        []string{"Ctrl+L", "Ctrl+Right"},
 			Description: "Move focus to form",
@@ -492,16 +470,6 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Help = HelpKeys{
-		MoveUp: Key{
-			Keys:        []string{"Up"},
-			Runes:       []string{"k"},
-			Description: "Move up",
-		},
-		MoveDown: Key{
-			Keys:        []string{"Down"},
-			Runes:       []string{"j"},
-			Description: "Move down",
-		},
 		Close: Key{
 			Keys:        []string{"Esc"},
 			Description: "Close help",
@@ -509,16 +477,6 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Peeker = PeekerKeys{
-		MoveUp: Key{
-			Keys:        []string{"Up"},
-			Runes:       []string{"k"},
-			Description: "Move up",
-		},
-		MoveDown: Key{
-			Keys:        []string{"Down"},
-			Runes:       []string{"j"},
-			Description: "Move down",
-		},
 		MoveToTop: Key{
 			Runes:       []string{"g"},
 			Description: "Move to top",
@@ -561,16 +519,6 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Index = IndexKeys{
-		MoveUp: Key{
-			Keys:        []string{"Up"},
-			Runes:       []string{"k"},
-			Description: "Move up",
-		},
-		MoveDown: Key{
-			Keys:        []string{"Down"},
-			Runes:       []string{"j"},
-			Description: "Move down",
-		},
 		ExitAddIndex: Key{
 			Keys:        []string{"Esc"},
 			Description: "Exit modal",

@@ -93,10 +93,10 @@ func (p *Peeker) setKeybindings() {
 	// so these work through the keybindings config system
 	p.ViewModal.SetKeyHandler(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Peeker.MoveUp, event.Name()):
+		case k.Contains(k.Navigation.MoveUp, event.Name()):
 			p.ViewModal.MoveUp()
 			return nil
-		case k.Contains(k.Peeker.MoveDown, event.Name()):
+		case k.Contains(k.Navigation.MoveDown, event.Name()):
 			p.ViewModal.MoveDown()
 			return nil
 		}
