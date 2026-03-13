@@ -11,11 +11,11 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
-	int_mongo "github.com/kopecmaciej/vi-mongo/internal/mongo"
+	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
+	mongoDriver "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -31,7 +31,7 @@ type Index struct {
 
 	table            *core.Table
 	addForm          *core.Form
-	indexes          []int_mongo.IndexInfo
+	indexes          []mongo.IndexInfo
 	deleteModal      *modal.Confirm
 	currentDB        string
 	currentColl      string
@@ -160,11 +160,16 @@ func (i *Index) Render() {
 }
 
 func (i *Index) renderIndexTable() {
+	styles := i.App.GetStyles()
+	i.table.SetFixed(1, 0)
+
 	headers := []string{"Name", "Definition", "Type", "Size", "Usage", "Properties"}
 	for col, header := range headers {
-		cell := tview.NewTableCell(" " + header + " ").SetSelectable(false).SetAlign(tview.AlignCenter)
-		cell.SetTextColor(i.App.GetStyles().Content.ColumnKeyColor.Color())
-		cell.SetBackgroundColor(i.App.GetStyles().Content.HeaderRowBackgroundColor.Color())
+		cell := tview.NewTableCell(" " + header + " ").
+			SetSelectable(false).
+			SetAlign(tview.AlignCenter).
+			SetTextColor(styles.Content.ColumnKeyColor.Color()).
+			SetBackgroundColor(styles.Content.HeaderRowBackgroundColor.Color())
 		i.table.SetCell(0, col, cell)
 	}
 
@@ -173,12 +178,15 @@ func (i *Index) renderIndexTable() {
 		for key, value := range index.Definition {
 			definition += fmt.Sprintf("%s: %v ", key, value)
 		}
-		i.table.SetCell(row+1, 0, tview.NewTableCell(index.Name))
-		i.table.SetCell(row+1, 1, tview.NewTableCell(definition))
-		i.table.SetCell(row+1, 2, tview.NewTableCell(index.Type))
-		i.table.SetCell(row+1, 3, tview.NewTableCell(index.Size))
-		i.table.SetCell(row+1, 4, tview.NewTableCell(index.Usage))
-		i.table.SetCell(row+1, 5, tview.NewTableCell(strings.Join(index.Properties, ", ")))
+		definition = strings.TrimSpace(definition)
+
+		i.table.SetCell(row+1, 0, tview.NewTableCell(" "+index.Name+" ").
+			SetReference(index.Name))
+		i.table.SetCell(row+1, 1, tview.NewTableCell(" "+definition+" "))
+		i.table.SetCell(row+1, 2, tview.NewTableCell(" "+index.Type+" "))
+		i.table.SetCell(row+1, 3, tview.NewTableCell(" "+index.Size+" "))
+		i.table.SetCell(row+1, 4, tview.NewTableCell(" "+index.Usage+" "))
+		i.table.SetCell(row+1, 5, tview.NewTableCell(" "+strings.Join(index.Properties, ", ")+" "))
 	}
 }
 
@@ -290,7 +298,7 @@ func (i *Index) handleAddIndex() {
 		options.SetExpireAfterSeconds(int32(ttl))
 	}
 
-	indexModel := mongo.IndexModel{
+	indexModel := mongoDriver.IndexModel{
 		Keys:    keys,
 		Options: options,
 	}
@@ -329,11 +337,15 @@ func (i *Index) closeAddForm() {
 }
 
 func (i *Index) showDeleteIndexModal() {
-	if i.table.GetCell(i.table.GetSelection()).Text == "" {
+	row, _ := i.table.GetSelection()
+	if row < 1 {
 		return
 	}
-	row, _ := i.table.GetSelection()
-	indexName := i.table.GetCell(row, 0).Text
+	cell := i.table.GetCell(row, 0)
+	indexName, _ := cell.GetReference().(string)
+	if indexName == "" {
+		return
+	}
 
 	i.deleteModal.SetText(fmt.Sprintf("Are you sure you want to delete index [%s]%s[-:-:-]?", i.App.GetStyles().Content.ColumnKeyColor.Color(), indexName))
 	i.deleteModal.SetDoneFunc(i.createDeleteIndexDoneFunc(indexName, row))

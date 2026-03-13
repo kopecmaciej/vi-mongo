@@ -25,9 +25,10 @@ type Main struct {
 	innerFlex    *core.Flex
 	header       *component.Header
 	tabBar       *component.TabBar
-	databases    *component.Database
+	databases    *component.Databases
 	content      *component.Content
 	index        *component.Index
+	aggregation  *component.Aggregation
 	aiPrompt     *component.AIQuery
 	headerHeight int
 }
@@ -39,9 +40,10 @@ func NewMain() *Main {
 		innerFlex:   core.NewFlex(),
 		header:      component.NewHeader(),
 		tabBar:      component.NewTabBar(),
-		databases:   component.NewDatabase(),
+		databases:   component.NewDatabases(),
 		content:     component.NewContent(),
 		index:       component.NewIndex(),
+		aggregation: component.NewAggregation(),
 		aiPrompt:    component.NewAIQuery(),
 	}
 
@@ -103,11 +105,16 @@ func (m *Main) initComponents() error {
 		return err
 	}
 
+	if err := m.aggregation.Init(m.App); err != nil {
+		return err
+	}
+
 	if err := m.aiPrompt.Init(m.App); err != nil {
 		return err
 	}
 
 	m.tabBar.AddTab("Content", m.content, true)
+	m.tabBar.AddTab("Aggregation", m.aggregation, false)
 	m.tabBar.AddTab("Indexes", m.index, false)
 
 	return nil
@@ -124,6 +131,7 @@ func (m *Main) Render() {
 			return err
 		}
 		m.index.HandleDatabaseSelection(ctx, db, coll)
+		m.aggregation.HandleDatabaseSelection(ctx, db, coll)
 		m.App.SetFocus(m.tabBar.GetActiveComponent())
 		return nil
 	})
@@ -137,6 +145,7 @@ func (m *Main) UpdateDao(dao *mongo.Dao) {
 	m.header.UpdateDao(dao)
 	m.content.UpdateDao(dao)
 	m.index.UpdateDao(dao)
+	m.aggregation.UpdateDao(dao)
 }
 
 func (m *Main) JumpToCollection(dbName, collectionName string) error {
@@ -152,6 +161,7 @@ func (m *Main) JumpToCollection(dbName, collectionName string) error {
 	}
 
 	m.index.HandleDatabaseSelection(ctx, dbName, collectionName)
+	m.aggregation.HandleDatabaseSelection(ctx, dbName, collectionName)
 
 	m.App.SetFocus(m.tabBar.GetActiveComponent())
 
@@ -193,7 +203,7 @@ func (m *Main) setKeybindings() {
 		switch {
 		case k.Contains(k.Main.FocusNext, event.Name()):
 			// TODO: figure out how to handle key priorities
-			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIQueryFocused() {
+			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIQueryFocused() || m.aggregation.IsStageBarVisible() {
 				return event
 			}
 			if m.databases.IsFocused() {
@@ -207,7 +217,7 @@ func (m *Main) setKeybindings() {
 			}
 			return nil
 		case k.Contains(k.Main.FocusPrevious, event.Name()):
-			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIQueryFocused() {
+			if m.index.IsAddFormFocused() || m.aiPrompt.IsAIQueryFocused() || m.aggregation.IsStageBarVisible() {
 				return event
 			}
 			if m.tabBar.GetActiveTabIndex() == 0 {
@@ -219,8 +229,8 @@ func (m *Main) setKeybindings() {
 				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			}
 			return nil
-		case k.Contains(k.Main.HideDatabase, event.Name()):
-			if _, ok := m.GetItem(0).(*component.Database); ok {
+		case k.Contains(k.Main.HideDatabases, event.Name()):
+			if _, ok := m.GetItem(0).(*component.Databases); ok {
 				m.RemoveItem(m.databases)
 				m.App.SetFocus(m.tabBar.GetActiveComponent())
 			} else {

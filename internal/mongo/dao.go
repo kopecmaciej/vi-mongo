@@ -431,6 +431,25 @@ func (d *Dao) CreateIndex(ctx context.Context, db, coll string, indexDef mongo.I
 	return nil
 }
 
+func (d *Dao) AggregateDocuments(ctx context.Context, db, collection string, pipeline mongo.Pipeline) ([]primitive.M, error) {
+	cursor, err := d.client.Database(db).Collection(collection).Aggregate(ctx, pipeline)
+	if err != nil {
+		log.Error().Err(err).Str("db", db).Str("collection", collection).Msg("Error running aggregation")
+		return nil, fmt.Errorf("aggregation error: %w", err)
+	}
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			log.Error().Err(err).Msg("Failed to close aggregation cursor")
+		}
+	}()
+
+	var results []primitive.M
+	if err := cursor.All(ctx, &results); err != nil {
+		return nil, fmt.Errorf("error reading aggregation results: %w", err)
+	}
+	return results, nil
+}
+
 func (d *Dao) DropIndex(ctx context.Context, db, coll, indexName string) error {
 	_, err := d.client.Database(db).Collection(coll).Indexes().DropOne(ctx, indexName)
 	if err != nil {

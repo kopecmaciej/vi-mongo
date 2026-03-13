@@ -8,6 +8,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 )
 
 const (
@@ -37,8 +38,6 @@ type (
 		onHeightChange func()
 	}
 )
-
-
 
 // NewHeader creates a new header view
 func NewHeader() *Header {
@@ -76,9 +75,19 @@ func (h *Header) setStyle() {
 
 // SetBaseInfo sets the basic information about the database connection
 func (h *Header) SetBaseInfo() BaseInfo {
+	host := h.Dao.Config.Host
+	port := fmt.Sprintf("%d", h.Dao.Config.Port)
+
+	if host == "" && h.Dao.Config.Uri != "" {
+		if parsed, err := util.ParseMongoUri(h.Dao.Config.GetUri()); err == nil {
+			host = parsed.Host
+			port = parsed.Port
+		}
+	}
+
 	h.baseInfo = BaseInfo{
-		0: {"Status", h.style.ActiveSymbol.String()},
-		1: {"Host", h.Dao.Config.Host},
+		0: {"host", host},
+		1: {"port", port},
 	}
 	return h.baseInfo
 }
@@ -174,7 +183,7 @@ func (h *Header) renderExpanded() {
 		h.Table.SetCell(row, col, h.keyCell(p.label))
 		h.Table.SetCell(row, col+1, h.valueCell(p.value))
 		if group < numGroups-1 {
-			h.Table.SetCell(row, col+2, tview.NewTableCell(" "))
+			h.Table.SetCell(row, col+2, tview.NewTableCell(""))
 		}
 	}
 }
@@ -203,8 +212,8 @@ func (h *Header) Render() {
 		currRow++
 	}
 
-	h.Table.SetCell(0, 2, tview.NewTableCell(" "))
-	h.Table.SetCell(1, 2, tview.NewTableCell(" "))
+	h.Table.SetCell(0, 2, tview.NewTableCell(""))
+	h.Table.SetCell(1, 2, tview.NewTableCell(""))
 	currCol++
 
 	k, err := h.UpdateKeys()
@@ -245,7 +254,7 @@ func (h *Header) Render() {
 
 func (h *Header) setInactiveBaseInfo(err error) {
 	h.baseInfo = make(BaseInfo)
-	h.baseInfo[0] = info{"Status", h.style.InactiveSymbol.String()}
+	h.baseInfo[0] = info{"host", h.Dao.Config.Host}
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
 			h.baseInfo[1] = info{"Error", "Unauthorized, please check your credentials or your privileges"}
@@ -277,7 +286,7 @@ func (h *Header) handleEvents() {
 }
 
 func (h *Header) keyCell(text string) *tview.TableCell {
-	cell := tview.NewTableCell(text + " ")
+	cell := tview.NewTableCell(text)
 	cell.SetTextColor(h.style.KeyColor.Color())
 
 	return cell
@@ -296,10 +305,21 @@ func (h *Header) UpdateKeys() ([]config.Key, error) {
 		return nil, nil
 	}
 
-	// hack for DatabaseTree, as it's child of Database
+	// hack for DatabaseTree, as it's child of Databases
 	// TODO: think of better solution for this
 	if h.currentFocus == "DatabaseTree" {
-		h.currentFocus = "Database"
+		h.currentFocus = "Databases"
+	}
+	// AggregationStageBar shares the same keybindings as QueryBar
+	if h.currentFocus == "AggregationStageBar" {
+		h.currentFocus = "QueryBar"
+	}
+	// Show only the relevant sub-panel keys for each aggregation panel
+	if h.currentFocus == "Aggregation" {
+		h.currentFocus = "Aggregation.Stages"
+	}
+	if h.currentFocus == "AggregationResults" {
+		h.currentFocus = "Aggregation.Results"
 	}
 
 	orderedKeys, err := h.App.GetKeys().GetKeysForElement(string(h.currentFocus))

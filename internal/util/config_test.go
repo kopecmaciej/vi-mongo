@@ -298,7 +298,7 @@ func TestValidateConfigPath(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	tmpFile := tmpDir + "/test-config.yaml"
-	if err := os.WriteFile(tmpFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte("test"), 0600); err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
 

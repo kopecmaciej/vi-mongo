@@ -14,7 +14,7 @@ alike.
 
 Visit [vi-mongo.com](https://vi-mongo.com) for more information.
 
-![autocomplete](./assets/autocomplete.webp)
+![aggregations](./assets/aggregations.webp)
 
 ## Installation
 
@@ -29,18 +29,28 @@ If you are using [Neovim](https://neovim.io/) you can install the plugin from [n
 - **Fast switching between databases**: Vi Mongo allows you to fast switch
   between databases.
 - **Managing Documents**: Vi Mongo allows you to view, create, update, duplicate
-  and delete documents in your databases with ease.
+  and delete documents in your databases with ease. Supports both inline editing
+  and full document editing in your preferred external editor.
 - **Managing Collections**: Vi Mongo provides a simple way to manage your
-  collections, including the ability to create, delete collections.
+  collections, including the ability to create, delete, and rename collections.
+- **Aggregation Pipelines**: Built-in aggregation pipeline builder with
+  stage management (add, edit, delete, reorder), pipeline execution, and results
+  displayed in table or JSON view.
 - **Autocomplete**: Vi Mongo offers an autocomplete feature that suggests
-  collection names, database names, and MongoDB commands as you type.
+  collection names, database names, MongoDB commands, and aggregation pipeline
+  operators as you type.
 - **Query History**: Vi Mongo keeps track of your query history, allowing you to
   easily access and reuse previous queries.
 - **Mongosh Syntax Support**: Vi Mongo supports standard MongoDB Shell
   (mongosh) syntax, including regex literals (`/pattern/flags`), `ISODate()`,
   `NumberInt()`, `NumberLong()`, and `NumberDecimal()` helper functions.
+- **YAML Keybindings**: Fully customizable keybindings via `keybindings.yaml`,
+  with automatic migration from older JSON format.
 - **Multiple Styles**: Vi Mongo supports multiple color schemes, they can be
   selected in config file or add/modify easily.
+- **Environment Variable URIs**: Connection URLs can reference environment
+  variables (e.g. `$MONGODB_URI`), making it safe to commit config files to
+  version control.
 
 ## List of features to be implemented
 

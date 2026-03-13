@@ -1,0 +1,13 @@
+entries:
+  - version: "0.2.0"
+    breaking: true
+    title: "Aggregation pipeline builder & keybindings format migration"
+    changes:
+      - "New: Aggregation pipeline builder — a dedicated tab for building and running MongoDB aggregation pipelines."
+      - "New: Pipeline stages can be previewed live (limited to 5 docs) before running the full pipeline."
+      - "New: Stages are preserved when switching collections within the same session."
+      - "New: In-app changelog modal shown on first startup after an upgrade."
+      - "Fix: Ctrl+<lowercase letter> key bindings now resolved correctly across all components."
+      - "Breaking: keybindings.json is no longer supported — your file will be migrated to keybindings.yaml automatically."
+      - "A backup of the original file is saved as keybindings.json.bak."
+    migration: "keybindings_json_to_yaml"

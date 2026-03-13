@@ -67,7 +67,7 @@ func TestLoadConfigWithVersion_CustomPath_ExistingFile(t *testing.T) {
 		t.Fatalf("Failed to marshal config: %v", err)
 	}
 
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
+	if err := os.WriteFile(configPath, data, 0600); err != nil {
 		t.Fatalf("Failed to write config file: %v", err)
 	}
 
@@ -86,10 +86,6 @@ func TestLoadConfigWithVersion_CustomPath_ExistingFile(t *testing.T) {
 
 	if cfg.ShowConnectionPage != false {
 		t.Error("Expected ShowConnectionPage to be false")
-	}
-
-	if cfg.Version != "1.0.0" {
-		t.Errorf("Expected version to be updated to 1.0.0, got %s", cfg.Version)
 	}
 
 	if cfg.ConfigPath != configPath {

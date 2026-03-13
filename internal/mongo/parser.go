@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // ParseBsonDocument converts a map to a JSON string
@@ -218,6 +219,41 @@ func stringToFloat(s string) (float64, error) {
 
 func stringToBool(s string) (bool, error) {
 	return strconv.ParseBool(s)
+}
+
+// ParsePipeline parses a slice of stage JSON strings into a mongo.Pipeline.
+// Each stage should be a full stage document like {$match: {status: "active"}}.
+// Key order within each stage is preserved by unmarshalling directly into bson.D.
+func ParsePipeline(stages []string) (mongo.Pipeline, error) {
+	pipeline := make(mongo.Pipeline, 0, len(stages))
+	for idx, stage := range stages {
+		normalized := util.QuoteUnquotedKeys(stage)
+		var err error
+		normalized, err = util.TransformMongoshSyntax(normalized)
+		if err != nil {
+			return nil, fmt.Errorf("stage %d: %w", idx, err)
+		}
+		normalized = strings.ReplaceAll(normalized, "'", "\"")
+
+		var bsonStage bson.D
+		if err := bson.UnmarshalExtJSON([]byte(normalized), false, &bsonStage); err != nil {
+			return nil, fmt.Errorf("stage %d: %w", idx, err)
+		}
+		pipeline = append(pipeline, bsonStage)
+	}
+	return pipeline, nil
+}
+
+// ExtractStageOperator returns the top-level key from a stage JSON string (e.g. "$match").
+func ExtractStageOperator(stage string) string {
+	parsed, err := ParseStringQuery(stage)
+	if err != nil || len(parsed) == 0 {
+		return stage
+	}
+	for k := range parsed {
+		return k
+	}
+	return stage
 }
 
 func ParseJsonArray(value string) (any, error) {

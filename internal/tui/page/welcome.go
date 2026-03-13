@@ -118,6 +118,7 @@ func (w *Welcome) renderForm() {
 	w.form.Clear(false)
 
 	cfg := w.App.GetConfig()
+	gKeys := w.App.GetKeys().Global
 
 	configFile, err := cfg.GetCurrentConfigPath()
 	if err != nil {
@@ -142,7 +143,7 @@ func (w *Welcome) renderForm() {
 	w.form.AddTextView("Show on start", "Set pages to show on every start", 60, 1, true, false)
 	w.form.AddCheckbox("Connection page", cfg.ShowConnectionPage, nil)
 	w.form.AddCheckbox("Welcome page", cfg.ShowWelcomePage, nil)
-	w.form.AddTextView("Show help", fmt.Sprintf("Press %s to show key help", w.App.GetKeys().Global.ToggleFullScreenHelp.String()), 60, 1, true, false)
+	w.form.AddTextView("Help", fmt.Sprintf("'%s' for full page, '%s' to expand keys in header", gKeys.ToggleFullScreenHelp.String(), gKeys.ToggleHeader.String()), 60, 1, true, false)
 	w.form.AddTextView("Motions", "Use basic vim motions or normal arrow keys to move around", 60, 2, true, false)
 }
 

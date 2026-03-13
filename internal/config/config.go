@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/kopecmaciej/vi-mongo/internal/build"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
@@ -15,6 +16,7 @@ import (
 const (
 	ConfigFile = "config.yaml"
 	LogPath    = "/tmp/vi-mongo.log"
+	FileMode   = 0600
 )
 
 var (
@@ -61,25 +63,25 @@ type UIConfig struct {
 }
 
 type Config struct {
-	Version            string        `yaml:"version"`
-	Log                LogConfig     `yaml:"log"`
-	Editor             EditorConfig  `yaml:"editor"`
-	UI                 UIConfig      `yaml:"ui"`
-	ShowConnectionPage bool          `yaml:"showConnectionPage"`
-	ShowWelcomePage    bool          `yaml:"showWelcomePage"`
-	CurrentConnection  string        `yaml:"currentConnection"`
-	Connections        []MongoConfig `yaml:"connections"`
-	Styles             StylesConfig  `yaml:"styles"`
-	EncryptionKeyPath  *string       `yaml:"encryptionKeyPath,omitempty"`
-	JumpInto           string        `yaml:"-"`
-	ConfigPath         string        `yaml:"-"`
+	Version                 string        `yaml:"version"`
+	Log                     LogConfig     `yaml:"log"`
+	Editor                  EditorConfig  `yaml:"editor"`
+	UI                      UIConfig      `yaml:"ui"`
+	ShowConnectionPage       bool          `yaml:"showConnectionPage"`
+	ShowWelcomePage          bool          `yaml:"showWelcomePage"`
+	CurrentConnection        string        `yaml:"currentConnection"`
+	Connections              []MongoConfig `yaml:"connections"`
+	Styles                  StylesConfig  `yaml:"styles"`
+	EncryptionKeyPath        *string       `yaml:"encryptionKeyPath,omitempty"`
+	JumpInto                string        `yaml:"-"`
+	ConfigPath              string        `yaml:"-"`
 }
 
 // LoadConfig loads the config file
 // If the file does not exist, it will be created
 // with the default settings
 func LoadConfig() (*Config, error) {
-	return LoadConfigWithVersion("1.0.0", "")
+	return LoadConfigWithVersion(build.Version, "")
 }
 
 func LoadConfigWithVersion(version string, customPath string) (*Config, error) {
@@ -106,13 +108,6 @@ func LoadConfigWithVersion(version string, customPath string) (*Config, error) {
 	}
 
 	cfg.ConfigPath = configPath
-
-	if cfg.Version != version {
-		cfg.Version = version
-		if err := cfg.UpdateConfig(); err != nil {
-			log.Error().Err(err).Msg("Failed to update config with new version")
-		}
-	}
 
 	return cfg, nil
 }
@@ -171,7 +166,7 @@ func (c *Config) UpdateConfig() error {
 		return err
 	}
 
-	if err := os.WriteFile(configPath, updatedConfig, 0644); err != nil {
+	if err := os.WriteFile(configPath, updatedConfig, FileMode); err != nil {
 		log.Error().Err(err).Msg("Failed to write config file")
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
@@ -193,8 +188,6 @@ func (c *Config) GetEditorCmd() (string, error) {
 
 // SetCurrentConnection sets the current connection in the config file
 func (c *Config) SetCurrentConnection(name string) error {
-	// If the user has set the alwaysShowConnectionPage setting to true,
-	// we don't want to save the current connection
 	c.CurrentConnection = name
 
 	updatedConfig, err := yaml.Marshal(c)
@@ -208,7 +201,7 @@ func (c *Config) SetCurrentConnection(name string) error {
 		return err
 	}
 
-	if err := os.WriteFile(configPath, updatedConfig, 0644); err != nil {
+	if err := os.WriteFile(configPath, updatedConfig, FileMode); err != nil {
 		log.Error().Err(err).Msg("Failed to write config file")
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
@@ -260,7 +253,7 @@ func (c *Config) AddConnection(mongoConfig *MongoConfig) error {
 		return err
 	}
 
-	return os.WriteFile(configPath, updatedConfig, 0644)
+	return os.WriteFile(configPath, updatedConfig, FileMode)
 }
 
 // AddConnectionFromUri adds a MongoDB connection to the config file
@@ -291,7 +284,6 @@ func (c *Config) DeleteConnection(name string) error {
 	log.Info().Msgf("Deleting connection: %s", name)
 	for i, connection := range c.Connections {
 		if connection.Name == name {
-			connection = MongoConfig{}
 			c.Connections = slices.Delete(c.Connections, i, i+1)
 		}
 	}
@@ -306,7 +298,7 @@ func (c *Config) DeleteConnection(name string) error {
 		return err
 	}
 
-	return os.WriteFile(configPath, updatedConfig, 0644)
+	return os.WriteFile(configPath, updatedConfig, FileMode)
 }
 
 // UpdateConnection updates an existing MongoDB connection in the config file
@@ -334,6 +326,10 @@ func (c *Config) UpdateConnection(originalName string, mongoConfig *MongoConfig)
 		return fmt.Errorf("connection '%s' not found", originalName)
 	}
 
+	if c.CurrentConnection == originalName {
+		c.CurrentConnection = mongoConfig.Name
+	}
+
 	updatedConfig, err := yaml.Marshal(c)
 	if err != nil {
 		return err
@@ -344,7 +340,7 @@ func (c *Config) UpdateConnection(originalName string, mongoConfig *MongoConfig)
 		return err
 	}
 
-	return os.WriteFile(configPath, updatedConfig, 0644)
+	return os.WriteFile(configPath, updatedConfig, FileMode)
 }
 
 // UpdateConnectionFromUri updates an existing MongoDB connection using a URI
@@ -406,9 +402,15 @@ func (c *Config) LoadEncryptionKey() error {
 	return nil
 }
 
-// GetUri returns the raw URI from config without any decryption
+// GetUri returns the URI from config. If the URI value is an environment
+// variable reference (e.g. $MONGODB_URI or ${MONGODB_URI}), it is expanded
+// before returning. Plain URIs are returned as-is to avoid mangling passwords
+// that contain '$'.
 func (m *MongoConfig) GetUri() string {
 	if m.Uri != "" {
+		if strings.HasPrefix(strings.TrimSpace(m.Uri), "$") {
+			return os.ExpandEnv(m.Uri)
+		}
 		return m.Uri
 	}
 

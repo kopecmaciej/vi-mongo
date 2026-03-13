@@ -7,6 +7,7 @@ import (
 
 	"fmt"
 
+	"github.com/kopecmaciej/vi-mongo/internal/build"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/tui"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
@@ -33,7 +34,6 @@ var (
 		Run:   runApp,
 	}
 
-	version = "v0.0.0"
 )
 
 func Execute() error {
@@ -72,7 +72,7 @@ func runApp(cmd *cobra.Command, args []string) {
                                    __/ |     
                                   |___/      
 `)
-		fmt.Printf("Version %s%s\n", version, resetColor)
+		fmt.Printf("Version %s%s\n", build.Version, resetColor)
 		os.Exit(0)
 	}
 
@@ -80,19 +80,13 @@ func runApp(cmd *cobra.Command, args []string) {
 		fatalf("%v", err)
 	}
 
-	cfg, err := config.LoadConfigWithVersion(version, cfgFile)
+	cfg, err := config.LoadConfigWithVersion(build.Version, cfgFile)
 	if err != nil {
 		fatalf("loading config: %v", err)
 	}
 
-	debug := false
-
 	cmd.Flags().Visit(func(f *pflag.Flag) {
 		switch f.Name {
-		case "version":
-			showVersion = true
-		case "debug":
-			debug = true
 		case "welcome-page":
 			cfg.ShowWelcomePage = welcomePage
 		case "connection-page":
@@ -153,6 +147,12 @@ func runApp(cmd *cobra.Command, args []string) {
 
 	logFile := logging(cfg.Log.Path, logLevel, cfg.Log.PrettyPrint)
 	defer func() {
+		err := logFile.Close()
+		if err != nil {
+			fmt.Printf("\nError closing log file %s, error: %s", cfg.Log.Path, err)
+		}
+	}()
+	defer func() {
 		if r := recover(); r != nil {
 			log.Error().
 				Interface("panic", r).
@@ -162,12 +162,6 @@ func runApp(cmd *cobra.Command, args []string) {
 			fmt.Fprintf(os.Stderr, "\nERROR: Application crashed unexpectedly\n")
 			fmt.Fprintf(os.Stderr, "Details have been logged to: %s\n", cfg.Log.Path)
 			os.Exit(1)
-		}
-	}()
-	defer func() {
-		err := logFile.Close()
-		if err != nil {
-			fmt.Printf("\nError closing log file %s, error: %s", cfg.Log.Path, err)
 		}
 	}()
 
