@@ -29,10 +29,11 @@ type Index struct {
 	*core.BaseElement
 	*core.Flex
 
-	table            *core.Table
-	addForm          *core.Form
-	indexes          []mongo.IndexInfo
-	deleteModal      *modal.Confirm
+	table       *core.Table
+	addForm     *core.Form
+	indexes     []mongo.IndexInfo
+	deleteModal *modal.Confirm
+
 	currentDB        string
 	currentColl      string
 	docKeys          []string
@@ -50,6 +51,7 @@ func NewIndex() *Index {
 	}
 
 	i.SetIdentifier(IndexId)
+	i.addForm.SetIdentifier(IndexAddFormId)
 	i.SetAfterInitFunc(i.init)
 
 	return i
@@ -111,19 +113,31 @@ func (i *Index) setKeybindings() {
 	})
 	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch {
-		case k.Contains(k.Index.ExitAddIndex, event.Name()):
-			if i.isAddFormVisible {
-				i.closeAddForm()
-				return nil
-			}
 		case k.Contains(k.Index.AddIndex, event.Name()):
 			if !i.isAddFormVisible {
 				i.addIndexForm()
 				return nil
 			}
 		case k.Contains(k.Index.DeleteIndex, event.Name()):
-			i.showDeleteIndexModal()
-			return nil
+			if !i.isAddFormVisible {
+				i.showDeleteIndexModal()
+				return nil
+			}
+		case k.Contains(k.IndexAddForm.ExitForm, event.Name()):
+			if i.isAddFormVisible {
+				i.closeAddForm()
+				return nil
+			}
+		case k.Contains(k.IndexAddForm.AddColumn, event.Name()):
+			if i.isAddFormVisible {
+				i.addIndexField()
+				return nil
+			}
+		case k.Contains(k.IndexAddForm.CreateIndex, event.Name()):
+			if i.isAddFormVisible {
+				i.handleAddIndex()
+				return nil
+			}
 		}
 		return event
 	})
@@ -231,9 +245,7 @@ func (i *Index) addIndexField() {
 	ttl := i.addForm.GetFormItemByLabel("TTL (seconds)")
 	ttl.SetDisabled(true)
 
-	i.addForm.AddButton("+", i.addIndexField)
-	i.addForm.AddButton("Create", i.handleAddIndex)
-	i.addForm.AddButton("Cancel", i.closeAddForm)
+	i.addForm.SetFocus(optionalsIndex)
 	i.App.SetFocus(i.addForm)
 }
 
@@ -331,7 +343,6 @@ func (i *Index) addIndexForm() {
 func (i *Index) closeAddForm() {
 	i.addForm.Clear(true)
 	i.isAddFormVisible = false
-
 	i.Render()
 	i.App.SetFocus(i)
 }
@@ -347,7 +358,8 @@ func (i *Index) showDeleteIndexModal() {
 		return
 	}
 
-	i.deleteModal.SetText(fmt.Sprintf("Are you sure you want to delete index [%s]%s[-:-:-]?", i.App.GetStyles().Content.ColumnKeyColor.Color(), indexName))
+	i.deleteModal.SetConfirmButtonLabel("Drop")
+	i.deleteModal.SetText(fmt.Sprintf("Drop index [%s]%s[-:-:-]?", i.App.GetStyles().Content.ColumnKeyColor.Color(), indexName))
 	i.deleteModal.SetDoneFunc(i.createDeleteIndexDoneFunc(indexName, row))
 	i.App.Pages.AddPage(IndexDeleteModalId, i.deleteModal, true, true)
 }
@@ -356,18 +368,14 @@ func (i *Index) createDeleteIndexDoneFunc(indexName string, row int) func(int, s
 	return func(buttonIndex int, buttonLabel string) {
 		defer i.App.Pages.RemovePage(IndexDeleteModalId)
 		if buttonIndex == 0 {
-			i.handleDeleteIndex(indexName)
+			err := i.Dao.DropIndex(context.Background(), i.currentDB, i.currentColl, indexName)
+			if err != nil {
+				modal.ShowError(i.App.Pages, "Error dropping index", err)
+				return
+			}
+			i.table.RemoveRow(row)
+			i.table.Select(row-1, 0)
 		}
-		i.table.RemoveRow(row)
-		i.table.Select(row-1, 0)
-	}
-}
-
-func (i *Index) handleDeleteIndex(indexName string) {
-	ctx := context.Background()
-	if err := i.Dao.DropIndex(ctx, i.currentDB, i.currentColl, indexName); err != nil {
-		modal.ShowError(i.App.Pages, "Error deleting index", err)
-		return
 	}
 }
 
