@@ -61,6 +61,10 @@ type ViewModal struct {
 
 	// Whether the view is in full-screen mode
 	isFullScreen bool
+
+	// Optional key handler injected by the parent component to handle
+	// navigation keys via the keybindings config system
+	keyHandler func(event *tcell.EventKey) *tcell.EventKey
 }
 
 // NewViewModal returns a new modal message window.
@@ -483,22 +487,19 @@ func (m *ViewModal) MouseHandler() func(action tview.MouseAction, event *tcell.E
 	})
 }
 
+// SetKeyHandler sets a callback that handles key events for navigation.
+// The handler should return nil if the event was consumed, or the event
+// itself if it should be passed through to the default handling.
+func (m *ViewModal) SetKeyHandler(handler func(event *tcell.EventKey) *tcell.EventKey) {
+	m.keyHandler = handler
+}
+
 // InputHandler returns the handler for this primitive.
 func (m *ViewModal) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return m.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-		key := event.Key()
-
-		switch key {
-		case tcell.KeyDown:
-			m.MoveDown()
-		case tcell.KeyUp:
-			m.MoveUp()
-		case tcell.KeyRune:
-			switch event.Rune() {
-			case 'j':
-				m.MoveDown()
-			case 'k':
-				m.MoveUp()
+		if m.keyHandler != nil {
+			if m.keyHandler(event) == nil {
+				return
 			}
 		}
 

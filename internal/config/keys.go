@@ -21,6 +21,7 @@ type (
 	// nested keybindings of their children views
 	KeyBindings struct {
 		Global      GlobalKeys      `yaml:"global"`
+		Navigation  NavigationKeys  `yaml:"navigation"`
 		Help        HelpKeys        `yaml:"help"`
 		Welcome     WelcomeKeys     `yaml:"welcome"`
 		Connection  ConnectionKeys  `yaml:"connection"`
@@ -35,6 +36,14 @@ type (
 		AIQuery     AIQueryKeys     `yaml:"aiQuery"`
 		History     HistoryKeys     `yaml:"history"`
 		Aggregation AggregationKeys `yaml:"aggregation"`
+	}
+
+	// NavigationKeys holds shared navigation keybindings used across all components
+	NavigationKeys struct {
+		MoveUp    Key `yaml:"moveUp"`
+		MoveDown  Key `yaml:"moveDown"`
+		MoveLeft  Key `yaml:"moveLeft"`
+		MoveRight Key `yaml:"moveRight"`
 	}
 
 	// Key is a lowest level of keybindings
@@ -242,6 +251,29 @@ func (k *KeyBindings) loadDefaults() {
 		ShowAIQuery: Key{
 			Keys:        []string{"Alt+a"},
 			Description: "Show AI prompt",
+		},
+	}
+
+	k.Navigation = NavigationKeys{
+		MoveUp: Key{
+			Keys:        []string{"Up"},
+			Runes:       []string{"k"},
+			Description: "Move up",
+		},
+		MoveDown: Key{
+			Keys:        []string{"Down"},
+			Runes:       []string{"j"},
+			Description: "Move down",
+		},
+		MoveLeft: Key{
+			Keys:        []string{"Left"},
+			Runes:       []string{"h"},
+			Description: "Move left",
+		},
+		MoveRight: Key{
+			Keys:        []string{"Right"},
+			Runes:       []string{"l"},
+			Description: "Move right",
 		},
 	}
 

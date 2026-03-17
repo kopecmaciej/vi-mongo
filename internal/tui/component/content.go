@@ -216,6 +216,14 @@ func (c *Content) setKeybindings(ctx context.Context) {
 		row, col := c.table.GetSelection()
 		c.handleScrolling(row)
 		switch {
+		case k.Contains(k.Navigation.MoveUp, event.Name()):
+			return tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
+		case k.Contains(k.Navigation.MoveDown, event.Name()):
+			return tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
+		case k.Contains(k.Navigation.MoveLeft, event.Name()):
+			return tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
+		case k.Contains(k.Navigation.MoveRight, event.Name()):
+			return tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone)
 		case k.Contains(k.Content.SwitchView, event.Name()):
 			return c.handleSwitchView(ctx)
 		case k.Contains(k.Content.InlineEdit, event.Name()):
