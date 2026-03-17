@@ -73,7 +73,7 @@ func (h *Help) Render() {
 	row := 0
 	col := 0
 	for _, viewKeys := range allKeys {
-		if viewKeys.Element == "Global" || viewKeys.Element == "Help" {
+		if viewKeys.Element == "Global" || viewKeys.Element == "Help" || viewKeys.Element == "Navigation" {
 			thirdRowElements = append(thirdRowElements, viewKeys)
 		} else if viewKeys.Element == "Welcome" || viewKeys.Element == "Connection" {
 			secondRowElements = append(secondRowElements, viewKeys)

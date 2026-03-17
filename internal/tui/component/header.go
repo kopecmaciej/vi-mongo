@@ -328,10 +328,6 @@ func (h *Header) UpdateKeys() ([]config.Key, error) {
 	}
 	keys := orderedKeys[0].Keys
 
-	// Append shared navigation keys so they always appear in the header
-	navKeys := h.App.GetKeys().Navigation
-	keys = append(keys, navKeys.MoveUp, navKeys.MoveDown, navKeys.MoveLeft, navKeys.MoveRight)
-
 	if len(keys) > 0 {
 		h.keys = keys
 	} else {

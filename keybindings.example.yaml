@@ -1,0 +1,23 @@
+global:
+    closeApp:
+        keys: [Ctrl+c]
+        runes: [q]
+        description: Close application
+    toggleFullScreenHelp:
+        runes: ['?']
+        description: Toggle full screen help
+        description: Toggle style change modal
+    toggleHeader:
+        runes: [t]
+        description: Expand/collapse header
+help:
+    close:
+        keys: [Esc]
+        description: Close help
+welcome:
+    moveFocusUp:
+        keys: [Backtab]
+        description: Move focus up
+    moveFocusDown:
+        keys: [Tab]
+        description: Move focus down
