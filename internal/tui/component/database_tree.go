@@ -377,25 +377,34 @@ func (t *DatabaseTree) updateCurrentNode(parent *tview.TreeNode, childCount []*t
 	}
 }
 
+func extractName(text string) string {
+	const resetTag = "[-:-:-]"
+	idx := strings.LastIndex(text, resetTag)
+	if idx == -1 {
+		return strings.TrimSpace(text)
+	}
+	return strings.TrimSpace(text[idx+len(resetTag):])
+}
+
 func (t *DatabaseTree) updateNodeSymbol(node *tview.TreeNode) {
 	node.SetColor(t.style.NodeTextColor.Color())
 	openNodeSymbol := config.SymbolWithColor(t.style.OpenNodeSymbol, t.style.NodeSymbolColor)
 	closedNodeSymbol := config.SymbolWithColor(t.style.ClosedNodeSymbol, t.style.NodeSymbolColor)
-	currText := strings.Split(node.GetText(), " ")
-	if len(currText) < 2 {
+	name := extractName(node.GetText())
+	if name == "" {
 		return
 	}
 	if node.IsExpanded() {
-		node.SetText(fmt.Sprintf("%s %s", openNodeSymbol, currText[1]))
+		node.SetText(fmt.Sprintf("%s %s", openNodeSymbol, name))
 	} else {
-		node.SetText(fmt.Sprintf("%s %s", closedNodeSymbol, currText[1]))
+		node.SetText(fmt.Sprintf("%s %s", closedNodeSymbol, name))
 	}
 
 	node.SetSelectedFunc(func() {
 		if node.IsExpanded() {
-			node.SetText(fmt.Sprintf("%s %s", closedNodeSymbol, currText[1]))
+			node.SetText(fmt.Sprintf("%s %s", closedNodeSymbol, name))
 		} else {
-			node.SetText(fmt.Sprintf("%s %s", openNodeSymbol, currText[1]))
+			node.SetText(fmt.Sprintf("%s %s", openNodeSymbol, name))
 		}
 		node.SetExpanded(!node.IsExpanded())
 	})
@@ -404,11 +413,11 @@ func (t *DatabaseTree) updateNodeSymbol(node *tview.TreeNode) {
 func (t *DatabaseTree) updateLeafSymbol(node *tview.TreeNode) {
 	node.SetColor(t.style.LeafTextColor.Color())
 	leafSymbol := config.SymbolWithColor(t.style.LeafSymbol, t.style.LeafSymbolColor)
-	currText := strings.Split(node.GetText(), " ")
-	if len(currText) < 2 {
+	name := extractName(node.GetText())
+	if name == "" {
 		return
 	}
-	node.SetText(fmt.Sprintf("%s %s", leafSymbol, currText[1]))
+	node.SetText(fmt.Sprintf("%s %s", leafSymbol, name))
 }
 
 func (t *DatabaseTree) showRenameCollectionModal(ctx context.Context) error {

@@ -29,6 +29,7 @@ type Aggregation struct {
 	*core.Flex
 
 	stagesTable   *core.Table
+	stagesFlex    *core.Flex
 	stageBar      *InputBar
 	resultsView   *core.Flex
 	resultsHeader *core.TextView
@@ -54,6 +55,7 @@ func NewAggregation() *Aggregation {
 		BaseElement:   core.NewBaseElement(),
 		Flex:          core.NewFlex(),
 		stagesTable:   core.NewTable(),
+		stagesFlex:    core.NewFlex(),
 		stageBar:      NewInputBar(AggregationStageBarId, "Stage"),
 		resultsView:   core.NewFlex(),
 		resultsHeader: core.NewTextView(),
@@ -109,6 +111,10 @@ func (a *Aggregation) setLayout() {
 	a.stagesTable.SetSelectable(true, false)
 	a.stagesTable.SetFixed(1, 0)
 
+	a.stagesFlex.SetDirection(tview.FlexRow)
+	a.stagesFlex.SetBorder(true)
+	a.stagesFlex.SetTitleAlign(tview.AlignLeft)
+
 	a.resultsTable.SetIdentifier(AggregationResultsId)
 
 	a.resultsView.SetDirection(tview.FlexRow)
@@ -121,6 +127,7 @@ func (a *Aggregation) setStyle() {
 	styles := a.App.GetStyles()
 	a.SetStyle(styles)
 	a.stagesTable.SetStyle(styles)
+	a.stagesFlex.SetStyle(styles)
 	a.resultsTable.SetStyle(styles)
 	a.resultsView.SetStyle(styles)
 
@@ -138,7 +145,7 @@ func (a *Aggregation) handleEvents() {
 		switch event.Message.Type {
 		case manager.StyleChanged:
 			a.setStyle()
-			a.Render()
+			a.renderLayout()
 		case manager.UpdateAutocompleteKeys:
 			if keys, ok := event.Message.Data.([]string); ok {
 				a.stageBar.LoadAutocomleteKeys(keys)
@@ -231,18 +238,19 @@ func (a *Aggregation) HandleDatabaseSelection(ctx context.Context, db, coll stri
 }
 
 func (a *Aggregation) Render() {
+	a.renderLayout()
+	a.restoreFocus()
+}
+
+func (a *Aggregation) renderLayout() {
 	a.Flex.Clear()
+	a.stagesFlex.Clear()
 
 	a.renderStagesTable()
 
-	stagesFlex := core.NewFlex()
-	stagesFlex.SetDirection(tview.FlexRow)
-	stagesFlex.SetBorder(true)
-	stagesFlex.SetTitle(fmt.Sprintf(" PIPELINE STAGES  %d stgs ", len(a.state.GetPipelineStages())))
-	stagesFlex.SetTitleAlign(tview.AlignLeft)
-	stagesFlex.AddItem(a.stagesTable, 0, 1, true)
-
-	a.Flex.AddItem(stagesFlex, 0, 1, true)
+	a.stagesFlex.SetTitle(fmt.Sprintf(" PIPELINE STAGES  %d stgs ", len(a.state.GetPipelineStages())))
+	a.stagesFlex.AddItem(a.stagesTable, 0, 1, true)
+	a.Flex.AddItem(a.stagesFlex, 0, 1, true)
 
 	if a.stageBar.IsEnabled() {
 		a.Flex.AddItem(a.stageBar, 3, 0, false)
@@ -250,7 +258,9 @@ func (a *Aggregation) Render() {
 
 	a.renderResultsView()
 	a.Flex.AddItem(a.resultsView, 0, 2, false)
+}
 
+func (a *Aggregation) restoreFocus() {
 	if a.stageBar.IsEnabled() {
 		a.App.SetFocus(a.stageBar)
 	} else if a.focusOnResults {
