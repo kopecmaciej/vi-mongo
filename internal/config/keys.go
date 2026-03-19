@@ -20,21 +20,22 @@ type (
 	// There are views that have only keybindings and some have
 	// nested keybindings of their children views
 	KeyBindings struct {
-		Global      GlobalKeys      `yaml:"global"`
-		Navigation  NavigationKeys  `yaml:"navigation"`
-		Help        HelpKeys        `yaml:"help"`
-		Connection  ConnectionKeys  `yaml:"connection"`
-		Main        MainKeys        `yaml:"main"`
-		Databases   DatabasesKeys   `yaml:"databases"`
-		FilterBar   FilterBarKeys   `yaml:"filterBar"`
-		Content     ContentKeys     `yaml:"content"`
-		Peeker      PeekerKeys      `yaml:"peeker"`
-		QueryBar    QueryBar        `yaml:"queryBar"`
-		SortBar     SortBar         `yaml:"sortBar"`
-		Index       IndexKeys       `yaml:"index"`
-		AIQuery     AIQueryKeys     `yaml:"aiQuery"`
-		History     HistoryKeys     `yaml:"history"`
-		Aggregation AggregationKeys `yaml:"aggregation"`
+		Global       GlobalKeys       `yaml:"global"`
+		Navigation   NavigationKeys   `yaml:"navigation"`
+		Help         HelpKeys         `yaml:"help"`
+		Connection   ConnectionKeys   `yaml:"connection"`
+		Main         MainKeys         `yaml:"main"`
+		Databases    DatabasesKeys    `yaml:"databases"`
+		FilterBar    FilterBarKeys    `yaml:"filterBar"`
+		Content      ContentKeys      `yaml:"content"`
+		Peeker       PeekerKeys       `yaml:"peeker"`
+		QueryBar     QueryBar         `yaml:"queryBar"`
+		SortBar      SortBar          `yaml:"sortBar"`
+		Index        IndexKeys        `yaml:"index"`
+		IndexAddForm IndexAddFormKeys `yaml:"indexAddForm"`
+		AIQuery      AIQueryKeys      `yaml:"aiQuery"`
+		History      HistoryKeys      `yaml:"history"`
+		Aggregation  AggregationKeys  `yaml:"aggregation"`
 	}
 
 	// NavigationKeys holds shared navigation keybindings used across all components
@@ -120,6 +121,7 @@ type (
 		ShowHistory Key `yaml:"showHistory"`
 		ClearInput  Key `yaml:"clearInput"`
 		Paste       Key `yaml:"paste"`
+		NextMarker  Key `yaml:"nextMarker"`
 	}
 
 	SortBar struct {
@@ -164,9 +166,14 @@ type (
 	}
 
 	IndexKeys struct {
-		ExitAddIndex Key `yaml:"exitModal"`
-		AddIndex     Key `yaml:"addIndex"`
-		DeleteIndex  Key `yaml:"deleteIndex"`
+		AddIndex    Key `yaml:"addIndex"`
+		DeleteIndex Key `yaml:"deleteIndex"`
+	}
+
+	IndexAddFormKeys struct {
+		ExitForm    Key `yaml:"exitForm"`
+		AddColumn   Key `yaml:"addColumn"`
+		CreateIndex Key `yaml:"createIndex"`
 	}
 
 	AIQueryKeys struct {
@@ -239,7 +246,7 @@ func (k *KeyBindings) loadDefaults() {
 			Description: "Hide databases",
 		},
 		ShowServerInfo: Key{
-			Keys:        []string{"Ctrl+s"},
+			Keys:        []string{"Alt+s"},
 			Description: "Show server info",
 		},
 		ShowAIQuery: Key{
@@ -321,7 +328,7 @@ func (k *KeyBindings) loadDefaults() {
 		PeekDocument: Key{
 			Runes:       []string{"o"},
 			Keys:        []string{"Enter"},
-			Description: "Peek",
+			Description: "Open peek",
 		},
 		FullPagePeek: Key{
 			Runes:       []string{"O"},
@@ -430,6 +437,10 @@ func (k *KeyBindings) loadDefaults() {
 			Keys:        []string{"Ctrl+v"},
 			Description: "Paste from clipboard",
 		},
+		NextMarker: Key{
+			Keys:        []string{"Ctrl+l"},
+			Description: "Next marker",
+		},
 	}
 
 	k.SortBar = SortBar{
@@ -456,19 +467,19 @@ func (k *KeyBindings) loadDefaults() {
 	k.Connection.ConnectionList = ConnectionListKeys{
 		FocusForm: Key{
 			Keys:        []string{"Ctrl+l", "Ctrl+Right"},
-			Description: "Move focus to form",
+			Description: "Focus form",
 		},
 		DeleteConnection: Key{
 			Keys:        []string{"Ctrl+d"},
-			Description: "Delete selected connection",
+			Description: "Delete connection",
 		},
 		EditConnection: Key{
 			Runes:       []string{"E"},
-			Description: "Edit selected connection",
+			Description: "Edit connection",
 		},
 		SetConnection: Key{
 			Keys:        []string{"Enter", "Space"},
-			Description: "Set selected connection",
+			Description: "Set connection",
 		},
 	}
 
@@ -522,10 +533,6 @@ func (k *KeyBindings) loadDefaults() {
 	}
 
 	k.Index = IndexKeys{
-		ExitAddIndex: Key{
-			Keys:        []string{"Esc"},
-			Description: "Exit modal",
-		},
 		AddIndex: Key{
 			Runes:       []string{"A"},
 			Description: "Add index",
@@ -533,6 +540,21 @@ func (k *KeyBindings) loadDefaults() {
 		DeleteIndex: Key{
 			Keys:        []string{"Ctrl+d"},
 			Description: "Delete index",
+		},
+	}
+
+	k.IndexAddForm = IndexAddFormKeys{
+		ExitForm: Key{
+			Keys:        []string{"Esc"},
+			Description: "Exit form",
+		},
+		AddColumn: Key{
+			Keys:        []string{"Ctrl+a"},
+			Description: "Add column",
+		},
+		CreateIndex: Key{
+			Keys:        []string{"Ctrl+s"},
+			Description: "Create index",
 		},
 	}
 

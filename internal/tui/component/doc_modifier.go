@@ -163,6 +163,7 @@ func (d *DocModifier) updateDocument(ctx context.Context, db, coll string, _id a
 
 	delete(parsedDoc, "_id")
 	delete(parsedOriginalDoc, "_id")
+	parsedDoc = mongo.ReconcileDocumentTypes(parsedOriginalDoc, parsedDoc)
 	err = d.Dao.UpdateDocument(ctx, db, coll, _id, parsedOriginalDoc, parsedDoc)
 	if err != nil {
 		log.Error().Msgf("error updating document: %v", err)

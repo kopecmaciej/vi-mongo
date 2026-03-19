@@ -13,6 +13,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/view"
+	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -66,7 +67,7 @@ func NewAggregation() *Aggregation {
 		state:         &mongo.CollectionState{},
 		stateMap:      mongo.NewStateMap(),
 		editingIdx:    -1,
-		currentView:   JsonView,
+		currentView:   TableView,
 	}
 
 	a.SetIdentifier(AggregationId)
@@ -455,9 +456,6 @@ func (a *Aggregation) moveStage(direction int) {
 	a.stagesTable.Select(newIdx+1, 0)
 }
 
-func (a *Aggregation) IsStageBarVisible() bool {
-	return a.stageBar.IsEnabled()
-}
 
 func (a *Aggregation) toggleResultsView() {
 	if a.currentView == JsonView {
@@ -485,11 +483,33 @@ func (a *Aggregation) getAggDocId(row, col int) any {
 }
 
 func (a *Aggregation) handleCopyLine(row, col int) {
-	cell := a.resultsTable.GetCell(row, col)
-	if cell == nil {
-		return
+	var textToCopy string
+
+	if a.currentView == TableView {
+		headerCell := a.resultsTable.GetCell(0, col)
+		if headerCell == nil {
+			return
+		}
+		column := strings.Split(headerCell.Text, " ")[0]
+		id := a.getAggDocId(row, col)
+		if id == nil {
+			return
+		}
+		value, err := a.state.GetValueByIdAndColumn(id, column)
+		if err != nil {
+			modal.ShowError(a.App.Pages, "Error getting field value", err)
+			return
+		}
+		textToCopy = value
+	} else {
+		cell := a.resultsTable.GetCell(row, col)
+		if cell == nil {
+			return
+		}
+		textToCopy = util.CleanJsonWhitespaces(cell.Text)
 	}
-	if err := clipboard.WriteAll(strings.TrimSpace(cell.Text)); err != nil {
+
+	if err := clipboard.WriteAll(textToCopy); err != nil {
 		modal.ShowError(a.App.Pages, "Error copying cell", err)
 	}
 }

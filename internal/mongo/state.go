@@ -70,6 +70,14 @@ func (c *CollectionState) GetJsonDocById(id any) (string, error) {
 func (c *CollectionState) GetValueByIdAndColumn(id any, column string) (string, error) {
 	doc := c.GetDocById(id)
 	if doc == nil {
+		for _, aggDoc := range c.aggDocs {
+			if reflect.DeepEqual(aggDoc["_id"], id) {
+				doc = util.DeepCopy(aggDoc)
+				break
+			}
+		}
+	}
+	if doc == nil {
 		return "", nil
 	}
 

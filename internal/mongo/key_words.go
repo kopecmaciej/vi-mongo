@@ -152,7 +152,7 @@ var (
 		},
 		{
 			Display:     "$regexWithOptions",
-			InsertText:  "$regex: \"<$0>\", $options: \"\"",
+			InsertText:  "$regex: \"<$0>\", $options: \"<$1>\"",
 			Description: "Matches values that match a specified regular expression with options.",
 		},
 		{
@@ -322,7 +322,7 @@ var (
 		},
 		{
 			Display:     "$bucket",
-			InsertText:  "$bucket: { groupBy: \"$<$0>\", boundaries: [], default: \"Other\", output: {} }",
+			InsertText:  "$bucket: { groupBy: \"$<$0>\", boundaries: [<$1>], default: \"Other\", output: { <$2> } }",
 			Description: "Groups documents into buckets based on a specified expression.",
 		},
 		{
@@ -342,17 +342,17 @@ var (
 		},
 		{
 			Display:     "$facet",
-			InsertText:  "$facet: { <$0>: [] }",
+			InsertText:  "$facet: { <$0>: [<$1>] }",
 			Description: "Processes multiple aggregation pipelines within a single stage.",
 		},
 		{
 			Display:     "$geoNear",
-			InsertText:  "$geoNear: { near: { type: \"Point\", coordinates: [<$0>] }, distanceField: \"\", spherical: true }",
+			InsertText:  "$geoNear: { near: { type: \"Point\", coordinates: [<$0>] }, distanceField: \"<$1>\", spherical: true }",
 			Description: "Finds the nearest documents to a specified point.",
 		},
 		{
 			Display:     "$graphLookup",
-			InsertText:  "$graphLookup: { from: \"<$0>\", startWith: \"$\", connectFromField: \"\", connectToField: \"\", as: \"\" }",
+			InsertText:  "$graphLookup: { from: \"<$0>\", startWith: \"<$1>\", connectFromField: \"<$2>\", connectToField: \"<$3>\", as: \"<$4>\" }",
 			Description: "Performs a recursive graph lookup on a collection.",
 		},
 		{
@@ -382,12 +382,12 @@ var (
 		},
 		{
 			Display:     "$lookup",
-			InsertText:  "$lookup: { from: \"<$0>\", localField: \"\", foreignField: \"\", as: \"\" }",
+			InsertText:  "$lookup: { from: \"<$0>\", localField: \"<$1>\", foreignField: \"<$2>\", as: \"<$3>\" }",
 			Description: "Joins two collections on a local and foreign field.",
 		},
 		{
 			Display:     "$lookupPipeline",
-			InsertText:  "$lookup: { from: \"<$0>\", let: {}, pipeline: [], as: \"\" }",
+			InsertText:  "$lookup: { from: \"<$0>\", let: {}, pipeline: [<$1>], as: \"<$2>\" }",
 			Description: "Joins a collection using a sub-pipeline (uncorrelated or let-based).",
 		},
 		{

@@ -34,7 +34,7 @@ func (f *Form) InsertFormItem(pos int, item tview.FormItem) *Form {
 		existingItems[i] = f.GetFormItem(i)
 	}
 
-	f.Clear(true)
+	f.Clear(false)
 	for i := 0; i < pos; i++ {
 		f.AddFormItem(existingItems[i])
 	}

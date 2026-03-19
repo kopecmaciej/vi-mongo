@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -266,4 +267,99 @@ func ParseJsonArray(value string) (any, error) {
 	copy(bsonArray, jsonArray)
 
 	return bsonArray, nil
+}
+
+// ReconcileDocumentTypes walks updatedDoc and, for each field that also exists
+// in origDoc, coerces the updated value back to the original BSON type when it
+// can be represented losslessly. This prevents silent type changes (e.g. double
+// → int32) when editing documents in an external editor.
+// To explicitly change a type, use Extended JSON notation (e.g. {"$numberInt":"8"}).
+func ReconcileDocumentTypes(origDoc, updatedDoc primitive.M) primitive.M {
+	result := make(primitive.M, len(updatedDoc))
+	for key, updatedVal := range updatedDoc {
+		if origVal, exists := origDoc[key]; exists {
+			result[key] = reconcileFieldType(origVal, updatedVal)
+		} else {
+			result[key] = updatedVal
+		}
+	}
+	return result
+}
+
+func reconcileFieldType(origVal, updatedVal any) any {
+	if origVal == nil || updatedVal == nil {
+		return updatedVal
+	}
+
+	if origMap, ok := origVal.(primitive.M); ok {
+		if updatedMap, ok := updatedVal.(primitive.M); ok {
+			return ReconcileDocumentTypes(origMap, updatedMap)
+		}
+		return updatedVal
+	}
+
+	if origArr, ok := toAnySlice(origVal); ok {
+		if updatedArr, ok := toAnySlice(updatedVal); ok {
+			result := make(primitive.A, len(updatedArr))
+			for i, updatedElem := range updatedArr {
+				if i < len(origArr) {
+					result[i] = reconcileFieldType(origArr[i], updatedElem)
+				} else {
+					result[i] = updatedElem
+				}
+			}
+			return result
+		}
+		return updatedVal
+	}
+
+	return coerceNumericType(origVal, updatedVal)
+}
+
+// coerceNumericType tries to represent updatedVal in the same numeric type as
+// origVal, but only when it can be done losslessly (no fractional part lost).
+func coerceNumericType(origVal, updatedVal any) any {
+	updatedF, ok := anyToFloat64(updatedVal)
+	if !ok {
+		return updatedVal
+	}
+	switch origVal.(type) {
+	case int32:
+		if updatedF == math.Trunc(updatedF) {
+			return int32(updatedF)
+		}
+	case int64:
+		if updatedF == math.Trunc(updatedF) {
+			return int64(updatedF)
+		}
+	case float32:
+		return float32(updatedF)
+	case float64:
+		return updatedF
+	}
+	return updatedVal
+}
+
+func anyToFloat64(v any) (float64, bool) {
+	switch val := v.(type) {
+	case int32:
+		return float64(val), true
+	case int64:
+		return float64(val), true
+	case float32:
+		return float64(val), true
+	case float64:
+		return val, true
+	}
+	return 0, false
+}
+
+func toAnySlice(v any) ([]any, bool) {
+	switch val := v.(type) {
+	case primitive.A:
+		return []any(val), true
+	case []any:
+		return val, true
+	}
+	return nil, false
 }

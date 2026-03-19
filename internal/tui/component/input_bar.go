@@ -96,9 +96,9 @@ func (i *InputBar) isInitialState() bool {
 }
 
 func (i *InputBar) setKeybindings() {
-	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		k := i.App.GetKeys()
 
+	k := i.App.GetKeys()
+	i.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyCtrlV && i.pasteFunc != nil && i.isInitialState() {
 			clipText := strings.TrimSpace(i.pasteFunc())
 			if clipText != "" && strings.HasPrefix(clipText, "{") && strings.HasSuffix(clipText, "}") {
@@ -121,6 +121,9 @@ func (i *InputBar) setKeybindings() {
 		}
 
 		switch {
+		case k.Contains(k.QueryBar.NextMarker, event.Name()):
+			i.InputField.MoveToNextMarker()
+			return nil
 		case k.Contains(k.QueryBar.ShowHistory, event.Name()):
 			if i.historyModal != nil {
 				i.historyModal.Render()
