@@ -70,6 +70,8 @@ help:
   descriptionColor: "#F8F8F2"
   scrollBarThumbColor: "#BD93F9"
   scrollBarTrackColor: "#44475A"
+  selectedTextColor: "#FFFFFF"
+  selectedBackgroundColor: "#BD93F9"
 others:
   buttonsTextColor: "#FFFFFF"
   buttonsBackgroundColor: "#BD93F9"
