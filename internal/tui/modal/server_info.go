@@ -14,7 +14,7 @@ const ServerInfoModalId = "ServerInfoModal"
 
 type ServerInfoModal struct {
 	*core.BaseElement
-	*primitives.ViewModal
+	*core.ViewModal
 
 	dao *mongo.Dao
 }
@@ -22,7 +22,7 @@ type ServerInfoModal struct {
 func NewServerInfoModal(dao *mongo.Dao) *ServerInfoModal {
 	s := &ServerInfoModal{
 		BaseElement: core.NewBaseElement(),
-		ViewModal:   primitives.NewViewModal(),
+		ViewModal:   core.NewViewModal(),
 		dao:         dao,
 	}
 
@@ -34,6 +34,7 @@ func NewServerInfoModal(dao *mongo.Dao) *ServerInfoModal {
 func (s *ServerInfoModal) Init(app *core.App) {
 	s.App = app
 	s.setStyle()
+	s.ViewModal.SetNavigationKeys(s.App.GetKeys())
 }
 
 func (s *ServerInfoModal) setStyle() {

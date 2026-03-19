@@ -10,6 +10,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
+	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 )
 
@@ -62,9 +63,9 @@ type ViewModal struct {
 	// Whether the view is in full-screen mode
 	isFullScreen bool
 
-	// Optional key handler injected by the parent component to handle
-	// navigation keys via the keybindings config system
-	keyHandler func(event *tcell.EventKey) *tcell.EventKey
+	// Keybindings used to resolve configurable navigation keys (MoveUp/MoveDown).
+	// When nil, falls back to hardcoded arrow keys and j/k.
+	kb *config.KeyBindings
 }
 
 // NewViewModal returns a new modal message window.
@@ -487,19 +488,43 @@ func (m *ViewModal) MouseHandler() func(action tview.MouseAction, event *tcell.E
 	})
 }
 
-// SetKeyHandler sets a callback that handles key events for navigation.
-// The handler should return nil if the event was consumed, or the event
-// itself if it should be passed through to the default handling.
-func (m *ViewModal) SetKeyHandler(handler func(event *tcell.EventKey) *tcell.EventKey) {
-	m.keyHandler = handler
+// SetNavigationKeys sets the keybindings used to resolve configurable navigation.
+// All ViewModal instances that have access to app keybindings should call this
+// so that users can remap move-up/move-down from the keybindings config file.
+func (m *ViewModal) SetNavigationKeys(kb *config.KeyBindings) *ViewModal {
+	m.kb = kb
+	return m
 }
 
 // InputHandler returns the handler for this primitive.
 func (m *ViewModal) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return m.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-		if m.keyHandler != nil {
-			if m.keyHandler(event) == nil {
+		if m.kb != nil {
+			switch {
+			case m.kb.Contains(m.kb.Navigation.MoveUp, event.Name()):
+				m.MoveUp()
 				return
+			case m.kb.Contains(m.kb.Navigation.MoveDown, event.Name()):
+				m.MoveDown()
+				return
+			}
+		} else {
+			switch event.Key() {
+			case tcell.KeyUp:
+				m.MoveUp()
+				return
+			case tcell.KeyDown:
+				m.MoveDown()
+				return
+			case tcell.KeyRune:
+				switch event.Rune() {
+				case 'k':
+					m.MoveUp()
+					return
+				case 'j':
+					m.MoveDown()
+					return
+				}
 			}
 		}
 

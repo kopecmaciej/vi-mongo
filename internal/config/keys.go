@@ -23,7 +23,6 @@ type (
 		Global      GlobalKeys      `yaml:"global"`
 		Navigation  NavigationKeys  `yaml:"navigation"`
 		Help        HelpKeys        `yaml:"help"`
-		Welcome     WelcomeKeys     `yaml:"welcome"`
 		Connection  ConnectionKeys  `yaml:"connection"`
 		Main        MainKeys        `yaml:"main"`
 		Databases   DatabasesKeys   `yaml:"databases"`
@@ -143,11 +142,6 @@ type (
 		DeleteConnection Key `yaml:"deleteConnection"`
 		EditConnection   Key `yaml:"editConnection"`
 		SetConnection    Key `yaml:"setConnection"`
-	}
-
-	WelcomeKeys struct {
-		MoveFocusUp   Key `yaml:"moveFocusUp"`
-		MoveFocusDown Key `yaml:"moveFocusDown"`
 	}
 
 	HelpKeys struct {
@@ -475,17 +469,6 @@ func (k *KeyBindings) loadDefaults() {
 		SetConnection: Key{
 			Keys:        []string{"Enter", "Space"},
 			Description: "Set selected connection",
-		},
-	}
-
-	k.Welcome = WelcomeKeys{
-		MoveFocusUp: Key{
-			Keys:        []string{"Backtab"},
-			Description: "Move focus up",
-		},
-		MoveFocusDown: Key{
-			Keys:        []string{"Tab"},
-			Description: "Move focus down",
 		},
 	}
 
