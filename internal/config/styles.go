@@ -135,11 +135,13 @@ type (
 	}
 
 	HelpStyle struct {
-		HeaderColor         Style `yaml:"headerColor"`
-		KeyColor            Style `yaml:"keyColor"`
-		DescriptionColor    Style `yaml:"descriptionColor"`
-		ScrollBarThumbColor Style `yaml:"scrollBarThumbColor"`
-		ScrollBarTrackColor Style `yaml:"scrollBarTrackColor"`
+		HeaderColor             Style `yaml:"headerColor"`
+		KeyColor                Style `yaml:"keyColor"`
+		DescriptionColor        Style `yaml:"descriptionColor"`
+		ScrollBarThumbColor     Style `yaml:"scrollBarThumbColor"`
+		ScrollBarTrackColor     Style `yaml:"scrollBarTrackColor"`
+		SelectedTextColor       Style `yaml:"selectedTextColor"`
+		SelectedBackgroundColor Style `yaml:"selectedBackgroundColor"`
 	}
 
 	// OthersStyle is a struct that contains all the styles shared across components
@@ -257,11 +259,13 @@ func (s *Styles) loadDefaults() {
 	}
 
 	s.Help = HelpStyle{
-		HeaderColor:         "#387D44",
-		KeyColor:            "#FDE68A",
-		DescriptionColor:    "#E2E8F0",
-		ScrollBarThumbColor: "#FDE68A",
-		ScrollBarTrackColor: "#4A5568",
+		HeaderColor:             "#387D44",
+		KeyColor:                "#FDE68A",
+		DescriptionColor:        "#E2E8F0",
+		ScrollBarThumbColor:     "#FDE68A",
+		ScrollBarTrackColor:     "#4A5568",
+		SelectedTextColor:       "#0F172A",
+		SelectedBackgroundColor: "#387D44",
 	}
 
 	s.Others = OthersStyle{
@@ -411,27 +415,14 @@ func ExtractStyles() error {
 	stylesDir := fmt.Sprintf("%s/styles", configDir)
 
 	// Check if styles directory exists
-	if info, err := os.Stat(stylesDir); err == nil && info.IsDir() {
-		// Check if any style files exist
-		entries, err := os.ReadDir(stylesDir)
-		if err != nil {
-			return err
-		}
-		if len(entries) > 0 {
-			// Styles already exist, return early
-			return nil
-		}
-	} else if os.IsNotExist(err) {
+	if _, err := os.Stat(stylesDir); os.IsNotExist(err) {
 		// Create styles directory if it doesn't exist
 		if err := os.MkdirAll(stylesDir, 0755); err != nil {
 			return err
 		}
-	} else {
-		// Return any other error
-		return err
 	}
 
-	// Populate styles directory
+	// Always overwrite embedded style files so new fields propagate to existing installs
 	entries, err := stylesFS.ReadDir("styles")
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to read embedded styles directory")

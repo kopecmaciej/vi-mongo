@@ -147,7 +147,9 @@ type (
 	}
 
 	HelpKeys struct {
-		Close Key `yaml:"close"`
+		Close   Key `yaml:"close"`
+		Search  Key `yaml:"search"`
+		EditKey Key `yaml:"editKey"`
 	}
 
 	PeekerKeys struct {
@@ -239,7 +241,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 		FocusPrevious: Key{
 			Keys:        []string{"Ctrl+h", "Backtab"},
-			Description: "Focus previous component",
+			Description: "Focus prev component",
 		},
 		HideDatabases: Key{
 			Keys:        []string{"Ctrl+n"},
@@ -487,6 +489,14 @@ func (k *KeyBindings) loadDefaults() {
 		Close: Key{
 			Keys:        []string{"Esc"},
 			Description: "Close help",
+		},
+		Search: Key{
+			Runes:       []string{"/"},
+			Description: "Search keybindings",
+		},
+		EditKey: Key{
+			Runes:       []string{"e"},
+			Description: "Edit keybinding",
 		},
 	}
 
@@ -829,4 +839,48 @@ func getKeybindingsPath() (string, error) {
 	}
 
 	return configDir + "/keybindings.yaml", nil
+}
+
+// SaveKeybindings writes the current keybindings to the config file.
+func (kb *KeyBindings) SaveKeybindings() error {
+	path, err := getKeybindingsPath()
+	if err != nil {
+		return err
+	}
+	return writeKeybindingsWithHeader(kb, path)
+}
+
+// SetKeyAt updates the key at keyIndex within the named element's Key fields.
+// The index matches the order returned by GetAvaliableKeys / extractKeysFromStruct.
+func (kb *KeyBindings) SetKeyAt(element string, keyIndex int, newKey Key) error {
+	v := reflect.ValueOf(kb).Elem()
+	t := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		if t.Field(i).Name == element {
+			idx := 0
+			if setKeyAtIndex(v.Field(i), keyIndex, &idx, newKey) {
+				return nil
+			}
+			return fmt.Errorf("key index %d not found in element %s", keyIndex, element)
+		}
+	}
+	return fmt.Errorf("element %s not found", element)
+}
+
+func setKeyAtIndex(val reflect.Value, targetIdx int, currentIdx *int, newKey Key) bool {
+	for i := 0; i < val.NumField(); i++ {
+		field := val.Field(i)
+		if field.Type() == reflect.TypeOf(Key{}) {
+			if *currentIdx == targetIdx {
+				field.Set(reflect.ValueOf(newKey))
+				return true
+			}
+			*currentIdx++
+		} else if field.Kind() == reflect.Struct {
+			if setKeyAtIndex(field, targetIdx, currentIdx, newKey) {
+				return true
+			}
+		}
+	}
+	return false
 }
