@@ -241,7 +241,7 @@ func (k *KeyBindings) loadDefaults() {
 		},
 		FocusPrevious: Key{
 			Keys:        []string{"Ctrl+h", "Backtab"},
-			Description: "Focus previous component",
+			Description: "Focus prev component",
 		},
 		HideDatabases: Key{
 			Keys:        []string{"Ctrl+n"},

@@ -415,27 +415,14 @@ func ExtractStyles() error {
 	stylesDir := fmt.Sprintf("%s/styles", configDir)
 
 	// Check if styles directory exists
-	if info, err := os.Stat(stylesDir); err == nil && info.IsDir() {
-		// Check if any style files exist
-		entries, err := os.ReadDir(stylesDir)
-		if err != nil {
-			return err
-		}
-		if len(entries) > 0 {
-			// Styles already exist, return early
-			return nil
-		}
-	} else if os.IsNotExist(err) {
+	if _, err := os.Stat(stylesDir); os.IsNotExist(err) {
 		// Create styles directory if it doesn't exist
 		if err := os.MkdirAll(stylesDir, 0755); err != nil {
 			return err
 		}
-	} else {
-		// Return any other error
-		return err
 	}
 
-	// Populate styles directory
+	// Always overwrite embedded style files so new fields propagate to existing installs
 	entries, err := stylesFS.ReadDir("styles")
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to read embedded styles directory")

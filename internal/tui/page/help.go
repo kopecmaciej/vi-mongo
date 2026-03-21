@@ -126,7 +126,6 @@ func (h *Help) setLayout() {
 	h.editFlex.AddItem(editExamples, 1, 0, false)
 	h.editFlex.AddItem(h.keysInput, 1, 0, true)
 	h.editFlex.AddItem(h.runesInput, 1, 0, false)
-	// height 5 = 2 border rows + 1 examples + 1 keysInput + 1 runesInput
 
 	h.hintView.SetTextAlign(tview.AlignCenter)
 	h.hintView.SetDynamicColors(true)
@@ -156,10 +155,12 @@ func (h *Help) setStyle() {
 	h.runesInput.SetStyle(h.App.GetStyles())
 
 	textColor := h.App.GetStyles().Global.TextColor.Color()
+	globalBg := h.App.GetStyles().Global.BackgroundColor.Color()
 	selectedFg := h.style.SelectedTextColor.Color()
 	selectedBg := h.style.SelectedBackgroundColor.Color()
-
-	h.sectionList.SetMainTextColor(textColor)
+	h.sectionList.SetMainTextStyle(tcell.StyleDefault.
+		Foreground(textColor).
+		Background(globalBg))
 	h.sectionList.SetSelectedStyle(tcell.StyleDefault.
 		Foreground(selectedFg).
 		Background(selectedBg))

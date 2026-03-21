@@ -111,6 +111,18 @@ func LoadConfigFile[T any](defaultConfig *T, configPath string) (*T, error) {
 	}
 
 	MergeConfigs(config, defaultConfig)
+
+	// Write merged config back so new/missing keys appear in the file
+	merged, err := marshalConfig(config, configPath)
+	if err != nil {
+		log.Error().Err(err).Str("path", configPath).Msg("Failed to marshal merged config")
+		return nil, fmt.Errorf("failed to marshal merged config: %w", err)
+	}
+	if err := os.WriteFile(configPath, merged, FileMode); err != nil {
+		log.Error().Err(err).Str("path", configPath).Msg("Failed to write merged config file")
+		return nil, fmt.Errorf("failed to write merged config file: %w", err)
+	}
+
 	return config, nil
 }
 
