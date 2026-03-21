@@ -118,6 +118,7 @@ func (h *Help) setLayout() {
 
 	editExamples := tview.NewTextView()
 	editExamples.SetDynamicColors(true)
+	editExamples.SetTextColor(h.App.GetStyles().Help.KeyColor.Color())
 	editExamples.SetText(" [::d]Keys: Ctrl+l, Ctrl+h, Alt+a, Esc, Enter, Tab, Backtab, Space  │  Runes: a, A, /[-:-:-]")
 
 	h.editFlex.SetBorder(true)
