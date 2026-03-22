@@ -6,7 +6,6 @@ global:
     toggleFullScreenHelp:
         runes: ['?']
         description: Toggle full screen help
-        description: Toggle style change modal
     toggleHeader:
         runes: [t]
         description: Expand/collapse header

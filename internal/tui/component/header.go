@@ -2,7 +2,6 @@ package component
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
@@ -249,18 +248,6 @@ func (h *Header) Render() {
 		h.Table.SetCell(currRow, currCol, h.keyCell(keyString))
 		h.Table.SetCell(currRow, currCol+1, h.valueCell(key.Description))
 		currRow++
-	}
-}
-
-func (h *Header) setInactiveBaseInfo(err error) {
-	h.baseInfo = make(BaseInfo)
-	h.baseInfo[0] = info{"host", h.Dao.Config.Host}
-	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "unauthorized") {
-			h.baseInfo[1] = info{"Error", "Unauthorized, please check your credentials or your privileges"}
-		} else {
-			h.baseInfo[1] = info{"Error", err.Error()}
-		}
 	}
 }
 

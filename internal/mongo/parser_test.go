@@ -397,6 +397,281 @@ func TestSortDocumentKeys(t *testing.T) {
 	}
 }
 
+func TestReconcileDocumentTypes(t *testing.T) {
+	cases := []struct {
+		name     string
+		origDoc  primitive.M
+		updated  primitive.M
+		expected primitive.M
+	}{
+		// --- Numeric type preservation (the core purpose of this function) ---
+		// JSON round-trips everything numeric as float64; we should restore original BSON types.
+		{
+			name:     "int32 preserved when updated with whole-number float64",
+			origDoc:  primitive.M{"count": int32(42)},
+			updated:  primitive.M{"count": float64(42)},
+			expected: primitive.M{"count": int32(42)},
+		},
+		{
+			name:     "int64 preserved when updated with whole-number float64",
+			origDoc:  primitive.M{"ts": int64(9_999_999_999)},
+			updated:  primitive.M{"ts": float64(9_999_999_999)},
+			expected: primitive.M{"ts": int64(9_999_999_999)},
+		},
+		{
+			name:     "float64 stays float64",
+			origDoc:  primitive.M{"price": float64(3.14)},
+			updated:  primitive.M{"price": float64(3.14)},
+			expected: primitive.M{"price": float64(3.14)},
+		},
+		{
+			name:     "float32 coerced from float64",
+			origDoc:  primitive.M{"ratio": float32(1.5)},
+			updated:  primitive.M{"ratio": float64(1.5)},
+			expected: primitive.M{"ratio": float32(1.5)},
+		},
+		// --- Lossy coercion must NOT happen ---
+		{
+			name:    "int32 field updated with fractional value — keep as float64",
+			origDoc: primitive.M{"count": int32(1)},
+			updated: primitive.M{"count": float64(1.7)},
+			// 1.7 cannot be represented as int32 without loss → keep updated value
+			expected: primitive.M{"count": float64(1.7)},
+		},
+		{
+			name:     "int64 field updated with fractional value — keep as float64",
+			origDoc:  primitive.M{"count": int64(0)},
+			updated:  primitive.M{"count": float64(0.5)},
+			expected: primitive.M{"count": float64(0.5)},
+		},
+		{
+			name:     "string field updated — value changes, type stays string",
+			origDoc:  primitive.M{"name": "Alice"},
+			updated:  primitive.M{"name": "Bob"},
+			expected: primitive.M{"name": "Bob"},
+		},
+		{
+			name:     "bool field updated — value changes, type stays bool",
+			origDoc:  primitive.M{"active": true},
+			updated:  primitive.M{"active": false},
+			expected: primitive.M{"active": false},
+		},
+		{
+			name:     "new field in updated doc not in orig — kept as-is",
+			origDoc:  primitive.M{"a": int32(1)},
+			updated:  primitive.M{"a": float64(1), "b": "new"},
+			expected: primitive.M{"a": int32(1), "b": "new"},
+		},
+		{
+			name:     "field removed by user — not present in result",
+			origDoc:  primitive.M{"a": int32(1), "b": "removed"},
+			updated:  primitive.M{"a": float64(1)},
+			expected: primitive.M{"a": int32(1)},
+		},
+		{
+			name:     "nil original value — updated value kept as-is",
+			origDoc:  primitive.M{"x": nil},
+			updated:  primitive.M{"x": float64(5)},
+			expected: primitive.M{"x": float64(5)},
+		},
+		{
+			name:     "nil updated value — nil kept",
+			origDoc:  primitive.M{"x": int32(3)},
+			updated:  primitive.M{"x": nil},
+			expected: primitive.M{"x": nil},
+		},
+		{
+			name: "nested document preserves int32 in nested field",
+			origDoc: primitive.M{
+				"meta": primitive.M{"views": int32(100)},
+			},
+			updated: primitive.M{
+				"meta": primitive.M{"views": float64(100)},
+			},
+			expected: primitive.M{
+				"meta": primitive.M{"views": int32(100)},
+			},
+		},
+		{
+			name: "array elements reconciled by position",
+			origDoc: primitive.M{
+				"scores": primitive.A{int32(1), int32(2), int32(3)},
+			},
+			updated: primitive.M{
+				"scores": primitive.A{float64(1), float64(2), float64(3)},
+			},
+			expected: primitive.M{
+				"scores": primitive.A{int32(1), int32(2), int32(3)},
+			},
+		},
+		{
+			name: "array with new element beyond original length — new element kept as-is",
+			origDoc: primitive.M{
+				"scores": primitive.A{int32(1)},
+			},
+			updated: primitive.M{
+				"scores": primitive.A{float64(1), float64(99)},
+			},
+			expected: primitive.M{
+				"scores": primitive.A{int32(1), float64(99)},
+			},
+		},
+		{
+			name: "array shortened by user — result has fewer elements",
+			origDoc: primitive.M{
+				"scores": primitive.A{int32(1), int32(2), int32(3)},
+			},
+			updated: primitive.M{
+				"scores": primitive.A{float64(1)},
+			},
+			expected: primitive.M{
+				"scores": primitive.A{int32(1)},
+			},
+		},
+		// --- User explicitly changes type via Extended JSON ---
+		{
+			// If user writes {"$numberInt": "8"} it parses to int32(8).
+			// The coercion of int32 → int32 is a no-op, result is still int32.
+			name:     "explicit extended JSON int32 stays int32",
+			origDoc:  primitive.M{"val": int32(5)},
+			updated:  primitive.M{"val": int32(8)},
+			expected: primitive.M{"val": int32(8)},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := ReconcileDocumentTypes(tc.origDoc, tc.updated)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+func TestParsePipeline(t *testing.T) {
+	cases := []struct {
+		name     string
+		stages   []string
+		wantLen  int
+		hasError bool
+	}{
+		{
+			name:     "empty slice returns empty pipeline",
+			stages:   []string{},
+			wantLen:  0,
+			hasError: false,
+		},
+		{
+			name:     "single $match stage with quoted keys",
+			stages:   []string{`{"$match": {"status": "active"}}`},
+			wantLen:  1,
+			hasError: false,
+		},
+		{
+			name:     "single $match stage with unquoted keys (mongosh style)",
+			stages:   []string{`{$match: {status: "active"}}`},
+			wantLen:  1,
+			hasError: false,
+		},
+		{
+			name: "multiple stages",
+			stages: []string{
+				`{$match: {active: true}}`,
+				`{$group: {_id: "$status", count: {$sum: 1}}}`,
+				`{$sort: {count: -1}}`,
+			},
+			wantLen:  3,
+			hasError: false,
+		},
+		{
+			name:     "invalid JSON returns error",
+			stages:   []string{`{notjson`},
+			hasError: true,
+		},
+		{
+			name:     "invalid stage in middle returns error with stage index",
+			stages:   []string{`{$match: {}}`, `{notjson`, `{$sort: {}}`},
+			hasError: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := ParsePipeline(tc.stages)
+			if tc.hasError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Len(t, result, tc.wantLen)
+			}
+		})
+	}
+}
+
+func TestParsePipelinePreservesStageOperator(t *testing.T) {
+	stages := []string{
+		`{$match: {status: "active"}}`,
+		`{$sort: {createdAt: -1}}`,
+	}
+
+	pipeline, err := ParsePipeline(stages)
+	assert.NoError(t, err)
+	assert.Len(t, pipeline, 2)
+
+	assert.Equal(t, "$match", pipeline[0][0].Key)
+	assert.Equal(t, "$sort", pipeline[1][0].Key)
+}
+
+func TestExtractStageOperator(t *testing.T) {
+	cases := []struct {
+		name     string
+		stage    string
+		expected string
+	}{
+		{
+			name:     "$match stage",
+			stage:    `{$match: {status: "active"}}`,
+			expected: "$match",
+		},
+		{
+			name:     "$group stage",
+			stage:    `{$group: {_id: "$field", count: {$sum: 1}}}`,
+			expected: "$group",
+		},
+		{
+			name:     "$sort stage",
+			stage:    `{$sort: {createdAt: -1}}`,
+			expected: "$sort",
+		},
+		{
+			name:     "$limit stage",
+			stage:    `{$limit: 10}`,
+			expected: "$limit",
+		},
+		{
+			name:     "invalid JSON returns input unchanged",
+			stage:    `{notvalid`,
+			expected: `{notvalid`,
+		},
+		{
+			name:     "empty object returns input unchanged",
+			stage:    `{}`,
+			expected: `{}`,
+		},
+		{
+			name:     "quoted key style also works",
+			stage:    `{"$project": {"name": 1}}`,
+			expected: "$project",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := ExtractStageOperator(tc.stage)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
 func TestParseValueByType(t *testing.T) {
 	cases := []struct {
 		name          string
