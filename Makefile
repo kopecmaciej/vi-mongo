@@ -1,7 +1,7 @@
 BUILD_DIR := .build
 SVC_NAME := vi-mongo
 REPOSITORY := github.com/kopecmaciej/vi-mongo
-VERSION ?= $(shell git describe --tags --always --dirty)
+VERSION ?= $(shell git describe --tags --exact-match 2>/dev/null || git describe --tags --abbrev=0 | awk -F. '{OFS="."; $$NF+=1; print $$0}')
 
 .PHONY: build run
 

@@ -219,7 +219,7 @@ func (c *Connection) renderForm() *core.Form {
 	c.form.AddTextView("Example", "mongodb://user:pass@host:port/db or $ENV", 40, 1, true, false)
 	paste := fmt.Sprintf("Type Uri (paste - %s) or fill below", keys.QueryBar.Paste.String())
 	c.form.AddTextView("Info", paste, 40, 1, true, false)
-	c.form.AddTextView(" ", "-- ----------------------------------------", 40, 1, true, false)
+	c.form.AddTextView(" ", strings.Repeat("─", 48), 0, 1, false, false)
 	c.form.AddInputField("Host", "", 40, nil, nil)
 	c.form.AddInputField("Port", "", 10, nil, nil)
 	c.form.AddInputField("Username", "", 40, nil, nil)
