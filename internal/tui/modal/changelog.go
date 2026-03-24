@@ -216,32 +216,18 @@ func (c *Changelog) activateButton() {
 
 func (c *Changelog) InputHandler() func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 	return c.Box.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
-		switch event.Key() {
-		case tcell.KeyEnter:
+		k := c.App.GetKeys()
+		switch {
+		case event.Key() == tcell.KeyEnter:
 			c.activateButton()
-		case tcell.KeyUp, tcell.KeyDown, tcell.KeyPgUp, tcell.KeyPgDn:
-			c.textView.InputHandler()(event, setFocus)
-		case tcell.KeyTab:
-			c.form.InputHandler()(tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone), setFocus)
-		case tcell.KeyBacktab:
+		case k.Contains(k.Navigation.MoveDown, event.Name()):
+			c.textView.InputHandler()(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone), setFocus)
+		case k.Contains(k.Navigation.MoveUp, event.Name()):
+			c.textView.InputHandler()(tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone), setFocus)
+		case k.Contains(k.Navigation.MoveLeft, event.Name()):
 			c.form.InputHandler()(tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone), setFocus)
-		case tcell.KeyRune:
-			switch event.Rune() {
-			case 'j':
-				c.textView.InputHandler()(tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone), setFocus)
-			case 'k':
-				c.textView.InputHandler()(tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone), setFocus)
-			case 'g':
-				c.textView.ScrollToBeginning()
-			case 'G':
-				c.textView.ScrollToEnd()
-			case 'h':
-				c.form.InputHandler()(tcell.NewEventKey(tcell.KeyBacktab, 0, tcell.ModNone), setFocus)
-			case 'l':
-				c.form.InputHandler()(tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone), setFocus)
-			default:
-				c.form.InputHandler()(event, setFocus)
-			}
+		case k.Contains(k.Navigation.MoveRight, event.Name()):
+			c.form.InputHandler()(tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone), setFocus)
 		default:
 			c.form.InputHandler()(event, setFocus)
 		}
