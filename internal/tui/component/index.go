@@ -222,7 +222,7 @@ func (i *Index) renderAddIndexForm() {
 	i.addForm.SetTitle("Add Index")
 	i.InsertPairedFields(0)
 
-	i.addForm.AddTextView("Optionals", "----------------", 40, 1, false, false)
+	i.addForm.AddTextView("Optionals", strings.Repeat("─", 48), 0, 1, false, false)
 	i.addForm.AddInputField("Index Name", "", 30, nil, nil)
 	i.addForm.AddCheckbox("Unique", false, nil)
 	i.addForm.AddInputField("TTL (seconds)", "", 20, nil, nil)

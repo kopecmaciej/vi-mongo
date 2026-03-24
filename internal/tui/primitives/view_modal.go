@@ -55,7 +55,7 @@ type ViewModal struct {
 	highlightColor tcell.Color
 
 	// The colors for document elements.
-	keyColor, valueColor, bracketColor, arrayColor tcell.Color
+	keyColor, valueColor, bracketColor tcell.Color
 
 	// The margin of the modal (only top and bottom)
 	marginTop, marginBottom int
@@ -254,7 +254,6 @@ func (m *ViewModal) Draw(screen tcell.Screen) {
 	} else {
 		width = screenWidth / 2
 		x = (screenWidth - width) / 2
-		y = (screenHeight - (screenHeight - m.marginTop - m.marginBottom)) / 2
 	}
 
 	// Reset the text and find out how wide it is
@@ -263,8 +262,19 @@ func (m *ViewModal) Draw(screen tcell.Screen) {
 
 	maxLines := len(lines)
 	if !m.isFullScreen {
-		if maxLines > screenHeight-m.marginTop-m.marginBottom {
-			maxLines = screenHeight - m.marginTop - m.marginBottom
+		// Cap content so the modal leaves marginBottom space both above (marginTop) and below.
+		cap := screenHeight - m.marginTop - 2*m.marginBottom
+		if cap < 1 {
+			cap = 1
+		}
+		if maxLines > cap {
+			maxLines = cap
+		}
+		// Center the modal vertically; never start above marginTop.
+		height := maxLines + m.marginBottom
+		y = (screenHeight - height) / 2
+		if y < m.marginTop {
+			y = m.marginTop
 		}
 	} else {
 		if maxLines > screenHeight {
