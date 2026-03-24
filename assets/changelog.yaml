@@ -1,4 +1,18 @@
 entries:
+  - version: "0.2.1"
+    breaking: false
+    title: "In-app keybinding editor, arrow key navigation & editor enhancements"
+    changes:
+      - "New: Keybindings can now be edited directly inside the app — press the edit key on any binding in the help page to remap it without touching keybindings.yaml."
+      - "New: Arrow key (up/down/left/right) keybindings now supported across all components via a unified navigation key set."
+      - "New: Jump to next marker in editor — cursor moves to the next placeholder when composing template-based documents."
+      - "New: Type security in editor mode — BSON types are preserved when editing documents instead of being coerced to strings."
+      - "New: Configurable keybindings for adding indexes, now shown in the help page."
+      - "Improvement: Help page redesigned with per-component grouping, improved layout and styling."
+      - "Improvement: Changelog modal navigation now respects configured navigation keys."
+      - "Fix: Style inconsistencies in aggregation builder and database tree components."
+      - "Fix: Help page edit hint message."
+
   - version: "0.2.0"
     breaking: true
     title: "Aggregation pipeline builder & keybindings format migration"
