@@ -31,14 +31,14 @@ type Help struct {
 	style     *config.HelpStyle
 	leftFlex  *core.Flex
 	rightFlex *core.Flex
-	editFlex  *core.Flex
 
-	sectionList *core.List
-	keysTable   *core.Table
-	hintView    *core.TextView
-	searchInput *core.InputField
-	keysInput   *core.InputField
-	runesInput  *core.InputField
+	sectionList    *core.List
+	keysTable      *core.Table
+	hintView       *core.TextView
+	searchInput    *core.InputField
+	capturePanel   *tview.Flex
+	captureDisplay *tview.TextView
+	capturedKey    config.Key
 
 	allSections      []config.OrderedKeys
 	filteredSections []config.OrderedKeys
@@ -50,17 +50,16 @@ type Help struct {
 
 func NewHelp() *Help {
 	h := &Help{
-		BaseElement: core.NewBaseElement(),
-		Flex:        core.NewFlex(),
-		leftFlex:    core.NewFlex(),
-		rightFlex:   core.NewFlex(),
-		editFlex:    core.NewFlex(),
-		sectionList: core.NewList(),
-		keysTable:   core.NewTable(),
-		hintView:    core.NewTextView(),
-		searchInput: core.NewInputField(),
-		keysInput:   core.NewInputField(),
-		runesInput:  core.NewInputField(),
+		BaseElement:    core.NewBaseElement(),
+		Flex:           core.NewFlex(),
+		leftFlex:       core.NewFlex(),
+		rightFlex:      core.NewFlex(),
+		sectionList:    core.NewList(),
+		keysTable:      core.NewTable(),
+		hintView:       core.NewTextView(),
+		searchInput:    core.NewInputField(),
+		capturePanel:   tview.NewFlex(),
+		captureDisplay: tview.NewTextView(),
 	}
 
 	h.SetIdentifier(HelpPageId)
@@ -113,20 +112,17 @@ func (h *Help) setLayout() {
 	h.searchInput.SetLabel(" / ")
 	h.searchInput.SetBorder(true)
 
-	h.keysInput.SetLabel(" Keys: ")
-	h.runesInput.SetLabel(" Runes: ")
+	captureHint := tview.NewTextView()
+	captureHint.SetDynamicColors(true)
+	captureHint.SetText(" [::d]any key=add  Enter=save  Esc=cancel  Backspace=clear[-:-:-]")
 
-	editExamples := tview.NewTextView()
-	editExamples.SetDynamicColors(true)
-	editExamples.SetTextColor(h.App.GetStyles().Help.KeyColor.Color())
-	editExamples.SetText(" [::d]Keys: Ctrl+l, Ctrl+h, Alt+a, Esc, Enter, Tab, Backtab, Space  │  Runes: a, A, /[-:-:-]")
+	h.captureDisplay.SetDynamicColors(true)
+	h.captureDisplay.SetText(" [::d]Press a key combination to bind...[-:-:-]")
 
-	h.editFlex.SetBorder(true)
-	h.editFlex.SetTitle(" Edit Keybinding (Enter to save, Esc to cancel) ")
-	h.editFlex.SetDirection(tview.FlexRow)
-	h.editFlex.AddItem(editExamples, 1, 0, false)
-	h.editFlex.AddItem(h.keysInput, 1, 0, true)
-	h.editFlex.AddItem(h.runesInput, 1, 0, false)
+	h.capturePanel.SetBorder(true)
+	h.capturePanel.SetDirection(tview.FlexRow)
+	h.capturePanel.AddItem(h.captureDisplay, 1, 0, true)
+	h.capturePanel.AddItem(captureHint, 1, 0, false)
 
 	h.hintView.SetTextAlign(tview.AlignCenter)
 	h.hintView.SetDynamicColors(true)
@@ -147,13 +143,17 @@ func (h *Help) setStyle() {
 	h.SetStyle(h.App.GetStyles())
 	h.leftFlex.SetStyle(h.App.GetStyles())
 	h.rightFlex.SetStyle(h.App.GetStyles())
-	h.editFlex.SetStyle(h.App.GetStyles())
 	h.sectionList.SetStyle(h.App.GetStyles())
 	h.keysTable.SetStyle(h.App.GetStyles())
 	h.hintView.SetStyle(h.App.GetStyles())
 	h.searchInput.SetStyle(h.App.GetStyles())
-	h.keysInput.SetStyle(h.App.GetStyles())
-	h.runesInput.SetStyle(h.App.GetStyles())
+
+	s := h.App.GetStyles()
+	h.capturePanel.SetBackgroundColor(s.Global.BackgroundColor.Color())
+	h.capturePanel.SetBorderColor(s.Global.BorderColor.Color())
+	h.capturePanel.SetTitleColor(s.Global.TitleColor.Color())
+	h.captureDisplay.SetBackgroundColor(s.Global.BackgroundColor.Color())
+	h.captureDisplay.SetTextColor(s.Global.TextColor.Color())
 
 	textColor := h.App.GetStyles().Global.TextColor.Color()
 	globalBg := h.App.GetStyles().Global.BackgroundColor.Color()
@@ -242,24 +242,24 @@ func (h *Help) setKeybindings() {
 		h.filterSections(text)
 	})
 
-	h.keysInput.SetDoneFunc(func(key tcell.Key) {
-		switch key {
-		case tcell.KeyEsc:
-			h.exitEditMode()
-		case tcell.KeyEnter, tcell.KeyTab:
-			h.App.SetFocusInternal(h.runesInput)
-		}
-	})
-
-	h.runesInput.SetDoneFunc(func(key tcell.Key) {
-		switch key {
+	h.captureDisplay.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
 		case tcell.KeyEsc:
 			h.exitEditMode()
 		case tcell.KeyEnter:
 			h.saveEdit()
-		case tcell.KeyBacktab:
-			h.App.SetFocusInternal(h.keysInput)
+		case tcell.KeyBackspace, tcell.KeyBackspace2, tcell.KeyDelete:
+			h.capturedKey = config.Key{}
+			h.updateCaptureDisplay()
+		default:
+			captured := eventKeyToConfigKey(event)
+			if captured.Keys != nil || captured.Runes != nil {
+				h.capturedKey.Keys = append(h.capturedKey.Keys, captured.Keys...)
+				h.capturedKey.Runes = append(h.capturedKey.Runes, captured.Runes...)
+				h.updateCaptureDisplay()
+			}
 		}
+		return nil
 	})
 }
 
@@ -293,25 +293,29 @@ func (h *Help) enterEditMode(row int) {
 	h.editMode = true
 	h.editSectionIdx = sectionIdx
 	h.editKeyIdx = row
+	h.capturedKey = config.Key{}
 
-	key := section.Keys[row]
-	h.keysInput.SetText(strings.Join(key.Keys, ", "))
-	h.runesInput.SetText(strings.Join(key.Runes, ", "))
+	desc := section.Keys[row].Description
+	h.capturePanel.SetTitle(fmt.Sprintf(" Editing: %s ", desc))
+	h.updateCaptureDisplay()
 
-	// Insert editFlex at the top by removing keysTable, adding editFlex, then keysTable back.
 	h.rightFlex.RemoveItem(h.keysTable)
-	h.rightFlex.AddItem(h.editFlex, 5, 0, false)
+	h.rightFlex.AddItem(h.capturePanel, 4, 0, false)
 	h.rightFlex.AddItem(h.keysTable, 0, 1, false)
-	h.App.SetFocusInternal(h.keysInput)
+	h.App.SetFocusInternal(h.captureDisplay)
 }
 
 func (h *Help) exitEditMode() {
 	h.editMode = false
-	h.rightFlex.RemoveItem(h.editFlex)
+	h.rightFlex.RemoveItem(h.capturePanel)
 	h.App.SetFocusInternal(h.keysTable)
 }
 
 func (h *Help) saveEdit() {
+	if h.capturedKey.Keys == nil && h.capturedKey.Runes == nil {
+		h.exitEditMode()
+		return
+	}
 	if h.editSectionIdx >= len(h.filteredSections) {
 		h.exitEditMode()
 		return
@@ -322,11 +326,10 @@ func (h *Help) saveEdit() {
 		return
 	}
 
-	oldKey := section.Keys[h.editKeyIdx]
 	newKey := config.Key{
-		Keys:        parseCommaSeparated(h.keysInput.GetText()),
-		Runes:       parseCommaSeparated(h.runesInput.GetText()),
-		Description: oldKey.Description,
+		Keys:        h.capturedKey.Keys,
+		Runes:       h.capturedKey.Runes,
+		Description: section.Keys[h.editKeyIdx].Description,
 	}
 
 	kb := h.App.GetKeys()
@@ -339,24 +342,48 @@ func (h *Help) saveEdit() {
 		return
 	}
 
+	row := h.editKeyIdx
 	h.exitEditMode()
-	h.Render()
+
+	h.keysTable.SetCell(row, 0,
+		tview.NewTableCell(formatHelpKeyString(newKey)).SetTextColor(h.style.KeyColor.Color()))
+	h.keysTable.Select(row, 0)
 }
 
-func parseCommaSeparated(s string) []string {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return nil
+func (h *Help) updateCaptureDisplay() {
+	var parts []string
+	parts = append(parts, h.capturedKey.Keys...)
+	parts = append(parts, h.capturedKey.Runes...)
+	if len(parts) == 0 {
+		h.captureDisplay.SetText(" [::d]Press a key combination to bind...[-:-:-]")
+	} else {
+		h.captureDisplay.SetText(fmt.Sprintf(" [::b]► %s[-:-:-]", strings.Join(parts, ", ")))
 	}
-	parts := strings.Split(s, ",")
-	var result []string
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			result = append(result, p)
+}
+
+// eventKeyToConfigKey converts a tcell key event to a config.Key entry.
+func eventKeyToConfigKey(event *tcell.EventKey) config.Key {
+	var key config.Key
+
+	if event.Key() == tcell.KeyRune {
+		if event.Modifiers()&tcell.ModAlt != 0 {
+			key.Keys = []string{"Alt+" + string(event.Rune())}
+		} else {
+			key.Runes = []string{string(event.Rune())}
 		}
+		return key
 	}
-	return result
+
+	name, ok := tcell.KeyNames[event.Key()]
+	if !ok || name == "" {
+		return key
+	}
+	// tcell uses "Ctrl-L" (uppercase); config convention is "Ctrl+l" (lowercase)
+	if strings.HasPrefix(name, "Ctrl-") && len(name) == 6 {
+		name = "Ctrl+" + strings.ToLower(string(name[5]))
+	}
+	key.Keys = []string{name}
+	return key
 }
 
 func (h *Help) filterSections(query string) {
