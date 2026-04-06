@@ -340,6 +340,18 @@ func (s *Styles) LoadMainStyles() {
 	tview.Styles.FocusColor = s.loadColor(s.Global.FocusColor)
 	tview.Styles.TitleColor = s.loadColor(s.Global.TitleColor)
 	tview.Styles.GraphicsColor = s.loadColor(s.Global.GraphicsColor)
+
+	tview.Borders.TopLeft = tview.BoxDrawingsLightArcDownAndRight
+	tview.Borders.TopRight = tview.BoxDrawingsLightArcDownAndLeft
+	tview.Borders.BottomLeft = tview.BoxDrawingsLightArcUpAndRight
+	tview.Borders.BottomRight = tview.BoxDrawingsLightArcUpAndLeft
+
+	tview.Borders.HorizontalFocus = tview.BoxDrawingsLightHorizontal
+	tview.Borders.VerticalFocus = tview.BoxDrawingsLightVertical
+	tview.Borders.TopLeftFocus = tview.BoxDrawingsLightArcDownAndRight
+	tview.Borders.TopRightFocus = tview.BoxDrawingsLightArcDownAndLeft
+	tview.Borders.BottomLeftFocus = tview.BoxDrawingsLightArcUpAndRight
+	tview.Borders.BottomRightFocus = tview.BoxDrawingsLightArcUpAndLeft
 }
 
 // LoadColor loads a color from a string

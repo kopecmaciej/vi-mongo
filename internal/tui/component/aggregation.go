@@ -12,7 +12,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
-	"github.com/kopecmaciej/vi-mongo/internal/tui/view"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/widget"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -37,8 +37,8 @@ type Aggregation struct {
 	resultsTable  *core.Table
 	deleteModal   *modal.Confirm
 	peeker        *Peeker
-	tableJson     *view.TableJson
-	tableColumns  *view.TableColumns
+	tableJson     *widget.TableJson
+	tableColumns  *widget.TableColumns
 
 	state       *mongo.CollectionState
 	stateMap    *mongo.StateMap
@@ -63,7 +63,7 @@ func NewAggregation() *Aggregation {
 		resultsTable:  core.NewTable(),
 		deleteModal:   modal.NewConfirm(AggregationDeleteModalId),
 		peeker:        NewPeeker(),
-		tableJson:     view.NewTableJson(),
+		tableJson:     widget.NewTableJson(),
 		state:         &mongo.CollectionState{},
 		stateMap:      mongo.NewStateMap(),
 		editingIdx:    -1,
@@ -138,7 +138,7 @@ func (a *Aggregation) setStyle() {
 	a.resultsTable.SetBordersColor(styles.Others.SeparatorColor.Color())
 	a.resultsHeader.SetTextColor(styles.Content.StatusTextColor.Color())
 
-	a.tableColumns = view.NewTableColumns(&styles.Content)
+	a.tableColumns = widget.NewTableColumns(&styles.Content)
 }
 
 func (a *Aggregation) handleEvents() {
@@ -455,7 +455,6 @@ func (a *Aggregation) moveStage(direction int) {
 	// Re-select the moved item
 	a.stagesTable.Select(newIdx+1, 0)
 }
-
 
 func (a *Aggregation) toggleResultsView() {
 	if a.currentView == JsonView {

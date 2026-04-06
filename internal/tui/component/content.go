@@ -13,7 +13,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/mongo"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
-	"github.com/kopecmaciej/vi-mongo/internal/tui/view"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/widget"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -53,8 +53,8 @@ type Content struct {
 	stateMap          *mongo.StateMap
 
 	currentView  ViewType
-	tableColumns *view.TableColumns
-	tableJson    *view.TableJson
+	tableColumns *widget.TableColumns
+	tableJson    *widget.TableJson
 }
 
 func NewContent() *Content {
@@ -76,7 +76,7 @@ func NewContent() *Content {
 		stateMap:          mongo.NewStateMap(),
 		currentView:       TableView,
 
-		tableJson: view.NewTableJson(),
+		tableJson: widget.NewTableJson(),
 	}
 
 	c.SetIdentifier(ContentId)
@@ -193,7 +193,7 @@ func (c *Content) setStyle() {
 		Foreground(tcell.ColorWhite)
 	c.table.SetMultiSelectedStyle(multiSelectedStyle)
 
-	c.tableColumns = view.NewTableColumns(c.style)
+	c.tableColumns = widget.NewTableColumns(c.style)
 }
 
 func (c *Content) setLayout() {

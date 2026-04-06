@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/config"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/core"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
+	"github.com/kopecmaciej/vi-mongo/internal/tui/widget"
 )
 
 const (
@@ -19,12 +21,11 @@ type Welcome struct {
 	*core.BaseElement
 	*core.Flex
 
-	// Form
-	form *core.Form
+	form    *core.Form
+	hintBar *widget.HintBar
 
 	style *config.WelcomeStyle
 
-	// Callbacks
 	onSubmit func()
 }
 
@@ -33,6 +34,7 @@ func NewWelcome() *Welcome {
 		BaseElement: core.NewBaseElement(),
 		Flex:        core.NewFlex(),
 		form:        core.NewForm(),
+		hintBar:     widget.NewHintBar(),
 	}
 
 	w.SetIdentifier(WelcomePageId)
@@ -57,7 +59,7 @@ func (w *Welcome) setLayout() {
 	w.form.SetTitleAlign(tview.AlignCenter)
 	w.form.SetButtonsAlign(tview.AlignCenter)
 
-	w.form.AddButton("Save and Connect", func() {
+	w.form.AddButton("Save", func() {
 		err := w.saveConfig()
 		if err != nil {
 			modal.ShowError(w.App.Pages, "Error while saving config", err)
@@ -71,12 +73,29 @@ func (w *Welcome) setLayout() {
 	w.form.AddButton("Exit", func() {
 		w.App.Stop()
 	})
+
+	w.form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		k := w.App.GetKeys()
+		if k.Contains(k.Connection.ConnectionForm.SaveConnection, event.Name()) {
+			err := w.saveConfig()
+			if err != nil {
+				modal.ShowError(w.App.Pages, "Error while saving config", err)
+				return nil
+			}
+			if w.onSubmit != nil {
+				w.onSubmit()
+			}
+			return nil
+		}
+		return event
+	})
 }
 
 func (w *Welcome) setStyle() {
 	w.style = &w.App.GetStyles().Welcome
 	w.Flex.SetStyle(w.App.GetStyles())
 	w.form.SetStyle(w.App.GetStyles())
+	w.hintBar.SetStyle(w.App.GetStyles())
 
 	w.form.SetFieldTextColor(w.style.FormInputColor.Color())
 	w.form.SetFieldBackgroundColor(w.style.FormInputBackgroundColor.Color())
@@ -96,18 +115,31 @@ func (w *Welcome) handleEvents() {
 }
 func (w *Welcome) Render() {
 	w.Clear()
+	w.SetDirection(tview.FlexRow)
 
-	// easy way to center the form
-	w.AddItem(tview.NewBox(), 0, 1, false)
-
+	centerFlex := tview.NewFlex()
+	centerFlex.AddItem(tview.NewBox(), 0, 1, false)
 	w.renderForm()
-	w.AddItem(w.form, 0, 3, true)
+	centerFlex.AddItem(w.form, 0, 3, true)
+	centerFlex.AddItem(tview.NewBox(), 0, 1, false)
 
-	w.AddItem(tview.NewBox(), 0, 1, false)
+	w.AddItem(centerFlex, 0, 1, true)
+	w.renderHints()
+	w.AddItem(w.hintBar, 1, 0, false)
+	w.AddItem(tview.NewBox(), 1, 0, false)
 
 	if page, _ := w.App.Pages.GetFrontPage(); page == WelcomePageId {
 		w.App.SetFocus(w)
 	}
+}
+
+func (w *Welcome) renderHints() {
+	k := w.App.GetKeys()
+	w.hintBar.SetHints([]widget.Hint{
+		{Key: "Tab", Desc: "form down"},
+		{Key: "Backtab", Desc: "form up"},
+		{Key: k.Connection.ConnectionForm.SaveConnection.String(), Desc: "save"},
+	})
 }
 
 func (w *Welcome) SetOnSubmitFunc(onSubmit func()) {
