@@ -1,6 +1,8 @@
 package util
 
 import (
+	"bytes"
+	"encoding/json"
 	"strings"
 	"unicode"
 )
@@ -40,6 +42,75 @@ func CleanJsonWhitespaces(s string) string {
 	}
 
 	return result.String()
+}
+
+// InlineJson formats JSON as a single line with spaces inside delimiters:
+// {"a":{"b":1}} → { "a": { "b": 1 } }
+func InlineJson(s string) (string, error) {
+	var compacted bytes.Buffer
+	if err := json.Compact(&compacted, []byte(s)); err != nil {
+		return "", err
+	}
+
+	src := compacted.Bytes()
+	var result strings.Builder
+	result.Grow(len(src) * 2)
+
+	inQuotes := false
+	escaped := false
+	var last byte
+
+	write := func(b byte) {
+		result.WriteByte(b)
+		last = b
+	}
+
+	for i := range src {
+		ch := src[i]
+
+		if escaped {
+			write(ch)
+			escaped = false
+			continue
+		}
+		if ch == '\\' && inQuotes {
+			write(ch)
+			escaped = true
+			continue
+		}
+		if ch == '"' {
+			inQuotes = !inQuotes
+			write(ch)
+			continue
+		}
+		if inQuotes {
+			write(ch)
+			continue
+		}
+
+		switch ch {
+		case '{', '[':
+			write(ch)
+			if i+1 < len(src) && src[i+1] != '}' && src[i+1] != ']' {
+				write(' ')
+			}
+		case '}', ']':
+			if last != '{' && last != '[' {
+				write(' ')
+			}
+			write(ch)
+		case ':':
+			write(ch)
+			write(' ')
+		case ',':
+			write(ch)
+			write(' ')
+		default:
+			write(ch)
+		}
+	}
+
+	return result.String(), nil
 }
 
 // CleanAllWhitespaces removes all whitespaces from a string

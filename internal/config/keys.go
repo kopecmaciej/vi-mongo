@@ -189,14 +189,15 @@ type (
 	}
 
 	AggregationStageKeys struct {
-		AddStage      Key `yaml:"addStage"`
-		EditStage     Key `yaml:"editStage"`
-		DeleteStage   Key `yaml:"deleteStage"`
-		RunPipeline   Key `yaml:"runPipeline"`
-		ClearPipeline Key `yaml:"clearPipeline"`
-		MoveStageDown Key `yaml:"moveStageDown"`
-		MoveStageUp   Key `yaml:"moveStageUp"`
-		FocusResults  Key `yaml:"focusResults"`
+		AddStage              Key `yaml:"addStage"`
+		EditStage             Key `yaml:"editStage"`
+		DeleteStage           Key `yaml:"deleteStage"`
+		RunPipeline           Key `yaml:"runPipeline"`
+		ClearPipeline         Key `yaml:"clearPipeline"`
+		MoveStageDown         Key `yaml:"moveStageDown"`
+		MoveStageUp           Key `yaml:"moveStageUp"`
+		FocusResults          Key `yaml:"focusResults"`
+		EditPipelineInEditor  Key `yaml:"editPipelineInEditor"`
 	}
 
 	AggregationResultKeys struct {
@@ -612,6 +613,10 @@ func (k *KeyBindings) loadDefaults() {
 			FocusResults: Key{
 				Keys:        []string{"Ctrl+j"},
 				Description: "Focus results",
+			},
+			EditPipelineInEditor: Key{
+				Keys:        []string{"Ctrl+e"},
+				Description: "Edit full pipeline in external editor",
 			},
 		},
 		Results: AggregationResultKeys{
