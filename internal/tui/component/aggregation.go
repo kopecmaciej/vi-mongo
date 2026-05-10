@@ -576,16 +576,32 @@ func (a *Aggregation) handleEditPipelineInEditor() {
 		modal.ShowError(a.App.Pages, "Error creating temp file", err)
 		return
 	}
-	defer os.Remove(tmpFile.Name())
+	tmpName := tmpFile.Name()
 
 	if _, err := tmpFile.Write(pipelineBytes); err != nil {
+		if cerr := tmpFile.Close(); cerr != nil {
+			log.Error().Err(cerr).Msg("error closing temp file")
+		}
+		if rerr := os.Remove(tmpName); rerr != nil {
+			log.Error().Err(rerr).Msg("error removing temp file")
+		}
 		modal.ShowError(a.App.Pages, "Error writing temp file", err)
 		return
 	}
-	tmpFile.Close()
+
+	if err := tmpFile.Close(); err != nil {
+		if rerr := os.Remove(tmpName); rerr != nil {
+			log.Error().Err(rerr).Msg("error removing temp file")
+		}
+		modal.ShowError(a.App.Pages, "Error closing temp file", err)
+		return
+	}
 
 	ed, err := a.App.GetConfig().GetEditorCmd()
 	if err != nil {
+		if rerr := os.Remove(tmpName); rerr != nil {
+			log.Error().Err(rerr).Msg("error removing temp file")
+		}
 		modal.ShowError(a.App.Pages, "Error getting editor command", err)
 		return
 	}
@@ -594,6 +610,9 @@ func (a *Aggregation) handleEditPipelineInEditor() {
 	if len(ed) > 0 {
 		argsIn, err := argv.Argv(ed, nil, nil)
 		if err != nil {
+			if rerr := os.Remove(tmpName); rerr != nil {
+				log.Error().Err(rerr).Msg("error removing temp file")
+			}
 			modal.ShowError(a.App.Pages, "Error parsing editor command", err)
 			return
 		}
@@ -603,11 +622,14 @@ func (a *Aggregation) handleEditPipelineInEditor() {
 
 	editor, err := exec.LookPath(ed)
 	if err != nil {
+		if rerr := os.Remove(tmpName); rerr != nil {
+			log.Error().Err(rerr).Msg("error removing temp file")
+		}
 		modal.ShowError(a.App.Pages, "Editor not found", err)
 		return
 	}
 
-	edArgs = append(edArgs, tmpFile.Name())
+	edArgs = append(edArgs, tmpName)
 
 	var updatedStages []string
 	var editorErr error
@@ -623,7 +645,7 @@ func (a *Aggregation) handleEditPipelineInEditor() {
 			return
 		}
 
-		edited, err := os.ReadFile(tmpFile.Name())
+		edited, err := os.ReadFile(tmpName)
 		if err != nil {
 			editorErr = err
 			return
@@ -645,6 +667,9 @@ func (a *Aggregation) handleEditPipelineInEditor() {
 			updatedStages[i] = inlined
 		}
 	})
+	if err := os.Remove(tmpName); err != nil {
+		log.Error().Err(err).Msg("error removing temp file")
+	}
 
 	if editorErr != nil {
 		modal.ShowError(a.App.Pages, "Editor error", editorErr)
