@@ -28,6 +28,63 @@ func TestIsJsonEmpty(t *testing.T) {
 	}
 }
 
+func TestInlineJson(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "Flat object",
+			input:    `{"$match":{"interval":60}}`,
+			expected: `{ "$match": { "interval": 60 } }`,
+		},
+		{
+			name:     "Already pretty printed",
+			input:    "{\n  \"$match\": {\n    \"interval\": 60\n  }\n}",
+			expected: `{ "$match": { "interval": 60 } }`,
+		},
+		{
+			name:     "Empty object",
+			input:    `{}`,
+			expected: `{}`,
+		},
+		{
+			name:     "Empty array",
+			input:    `[]`,
+			expected: `[]`,
+		},
+		{
+			name:     "Array of values",
+			input:    `[1,2,3]`,
+			expected: `[ 1, 2, 3 ]`,
+		},
+		{
+			name:     "Nested empty",
+			input:    `{"a":{}}`,
+			expected: `{ "a": {} }`,
+		},
+		{
+			name:     "Spaces in string values preserved",
+			input:    `{"key":"value with spaces"}`,
+			expected: `{ "key": "value with spaces" }`,
+		},
+		{
+			name:     "Escaped quotes in strings",
+			input:    `{"key":"say \"hi\""}`,
+			expected: `{ "key": "say \"hi\"" }`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := InlineJson(tc.input)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
 func TestCleanJsonWhitespaces(t *testing.T) {
 	testCases := []struct {
 		name     string

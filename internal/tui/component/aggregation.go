@@ -2,10 +2,14 @@ package component
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/atotto/clipboard"
+	"github.com/cosiner/argv"
 	"github.com/gdamore/tcell/v2"
 	"github.com/kopecmaciej/tview"
 	"github.com/kopecmaciej/vi-mongo/internal/manager"
@@ -14,6 +18,7 @@ import (
 	"github.com/kopecmaciej/vi-mongo/internal/tui/modal"
 	"github.com/kopecmaciej/vi-mongo/internal/tui/widget"
 	"github.com/kopecmaciej/vi-mongo/internal/util"
+	"github.com/rs/zerolog/log"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -188,6 +193,9 @@ func (a *Aggregation) setKeybindings() {
 		case k.Contains(k.Aggregation.Stages.FocusResults, event.Name()):
 			a.focusOnResults = true
 			a.App.SetFocus(a.resultsTable)
+			return nil
+		case k.Contains(k.Aggregation.Stages.EditPipelineInEditor, event.Name()):
+			a.handleEditPipelineInEditor()
 			return nil
 		}
 		return event
@@ -537,6 +545,150 @@ func (a *Aggregation) handlePeekDocument(fullScreen bool) {
 	a.peeker.SetFullScreen(fullScreen)
 	if err := a.peeker.Render(context.Background(), a.state, _id); err != nil {
 		modal.ShowError(a.App.Pages, "Error peeking document", err)
+	}
+}
+
+func (a *Aggregation) handleEditPipelineInEditor() {
+	stages := a.state.GetPipelineStages()
+
+	pipeline, err := mongo.ParsePipeline(stages)
+	if err != nil {
+		modal.ShowError(a.App.Pages, "Error parsing pipeline", err)
+		return
+	}
+	rawStages := make([]json.RawMessage, len(pipeline))
+	for i, stage := range pipeline {
+		stageBytes, err := bson.MarshalExtJSON(stage, false, false)
+		if err != nil {
+			modal.ShowError(a.App.Pages, "Error serializing stage", err)
+			return
+		}
+		rawStages[i] = stageBytes
+	}
+	pipelineBytes, err := json.MarshalIndent(rawStages, "", "  ")
+	if err != nil {
+		modal.ShowError(a.App.Pages, "Error serializing pipeline", err)
+		return
+	}
+
+	tmpFile, err := os.CreateTemp("", "pipeline-*.json")
+	if err != nil {
+		modal.ShowError(a.App.Pages, "Error creating temp file", err)
+		return
+	}
+	tmpName := tmpFile.Name()
+
+	if _, err := tmpFile.Write(pipelineBytes); err != nil {
+		if cerr := tmpFile.Close(); cerr != nil {
+			log.Error().Err(cerr).Msg("error closing temp file")
+		}
+		if rerr := os.Remove(tmpName); rerr != nil {
+			log.Error().Err(rerr).Msg("error removing temp file")
+		}
+		modal.ShowError(a.App.Pages, "Error writing temp file", err)
+		return
+	}
+
+	if err := tmpFile.Close(); err != nil {
+		if rerr := os.Remove(tmpName); rerr != nil {
+			log.Error().Err(rerr).Msg("error removing temp file")
+		}
+		modal.ShowError(a.App.Pages, "Error closing temp file", err)
+		return
+	}
+
+	ed, err := a.App.GetConfig().GetEditorCmd()
+	if err != nil {
+		if rerr := os.Remove(tmpName); rerr != nil {
+			log.Error().Err(rerr).Msg("error removing temp file")
+		}
+		modal.ShowError(a.App.Pages, "Error getting editor command", err)
+		return
+	}
+
+	edArgs := []string{}
+	if len(ed) > 0 {
+		argsIn, err := argv.Argv(ed, nil, nil)
+		if err != nil {
+			if rerr := os.Remove(tmpName); rerr != nil {
+				log.Error().Err(rerr).Msg("error removing temp file")
+			}
+			modal.ShowError(a.App.Pages, "Error parsing editor command", err)
+			return
+		}
+		ed = argsIn[0][0]
+		edArgs = argsIn[0][1:]
+	}
+
+	editor, err := exec.LookPath(ed)
+	if err != nil {
+		if rerr := os.Remove(tmpName); rerr != nil {
+			log.Error().Err(rerr).Msg("error removing temp file")
+		}
+		modal.ShowError(a.App.Pages, "Editor not found", err)
+		return
+	}
+
+	edArgs = append(edArgs, tmpName)
+
+	var updatedStages []string
+	var editorErr error
+
+	a.App.Suspend(func() {
+		cmd := exec.Command(editor, edArgs...)
+		cmd.Stdin = os.Stdin
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			log.Error().Err(err).Msg("error running editor")
+			editorErr = err
+			return
+		}
+
+		edited, err := os.ReadFile(tmpName)
+		if err != nil {
+			editorErr = err
+			return
+		}
+
+		var rawMessages []json.RawMessage
+		if err := json.Unmarshal(edited, &rawMessages); err != nil {
+			editorErr = fmt.Errorf("invalid JSON array: %w", err)
+			return
+		}
+
+		updatedStages = make([]string, len(rawMessages))
+		for i, raw := range rawMessages {
+			inlined, err := util.InlineJson(string(raw))
+			if err != nil {
+				editorErr = fmt.Errorf("stage %d: invalid JSON: %w", i, err)
+				return
+			}
+			updatedStages[i] = inlined
+		}
+	})
+	if err := os.Remove(tmpName); err != nil {
+		log.Error().Err(err).Msg("error removing temp file")
+	}
+
+	if editorErr != nil {
+		modal.ShowError(a.App.Pages, "Editor error", editorErr)
+		return
+	}
+
+	// Validate each stage before applying
+	for i, s := range updatedStages {
+		operator := mongo.ExtractStageOperator(s)
+		if !strings.HasPrefix(operator, "$") {
+			modal.ShowError(a.App.Pages, "Invalid stage", fmt.Errorf("stage %d: operator %q must start with '$'", i, operator))
+			return
+		}
+	}
+
+	a.state.SetPipelineStages(updatedStages)
+	a.Render()
+	if len(updatedStages) > 0 {
+		a.runPipeline(context.Background(), true)
 	}
 }
 
