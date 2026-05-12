@@ -54,10 +54,16 @@ func init() {
 	rootCmd.Flags().BoolVarP(&listConnections, "connection-list", "l", false, "List all available connections")
 	rootCmd.Flags().StringVar(&encryptionKeyPath, "key-path", "", "Path to the encryption key file")
 	rootCmd.Flags().Bool("gen-key", false, "Generate valid encryption key")
+	rootCmd.Flags().Bool("paths", false, "Show paths to config files and log")
 	rootCmd.Flags().StringVarP(&jumpInto, "jump", "j", "", "Jump directly to database/collection (format: db-name/collection-name)")
 }
 
 func runApp(cmd *cobra.Command, args []string) {
+	if ok, _ := cmd.Flags().GetBool("paths"); ok {
+		printPaths()
+		os.Exit(0)
+	}
+
 	if showVersion {
 		greenColor := "\033[32m"
 		resetColor := "\033[0m"
@@ -244,6 +250,17 @@ func logging(path string, logLevel zerolog.Level, pretty bool) *os.File {
 func fatalf(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, "ERROR: "+format+"\n", args...)
 	os.Exit(1)
+}
+
+func printPaths() {
+	configDir, err := util.GetConfigDir()
+	if err != nil {
+		fatalf("resolving config directory: %v", err)
+	}
+	fmt.Printf("Config:      %s/config.yaml\n", configDir)
+	fmt.Printf("Keybindings: %s/keybindings.yaml\n", configDir)
+	fmt.Printf("Styles:      %s/styles/\n", configDir)
+	fmt.Printf("Log:         %s\n", config.LogPath)
 }
 
 func validateDirectNavigateFormat(format string) error {
