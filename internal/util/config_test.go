@@ -3,6 +3,7 @@ package util
 import (
 	"os"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -356,4 +357,68 @@ func TestValidateConfigPath(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLoadConfigFilePermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("file permission bits are not enforced on Windows")
+	}
+
+	type yamlConfig struct {
+		Name string `yaml:"name"`
+	}
+
+	tests := []struct {
+		name string
+		mode os.FileMode
+	}{
+		{name: "Tightens world-readable file", mode: 0644},
+		{name: "Tightens executable file", mode: 0744},
+		{name: "Tightens world-writable file", mode: 0666},
+		{name: "Keeps already restricted file", mode: 0600},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			configPath := t.TempDir() + "/config.yaml"
+			if err := os.WriteFile(configPath, []byte("name: custom\n"), 0600); err != nil {
+				t.Fatalf("Failed to write config file: %v", err)
+			}
+			if err := os.Chmod(configPath, tt.mode); err != nil {
+				t.Fatalf("Failed to chmod config file: %v", err)
+			}
+
+			cfg, err := LoadConfigFile(&yamlConfig{Name: "default"}, configPath)
+			if err != nil {
+				t.Fatalf("LoadConfigFile() error = %v", err)
+			}
+			if cfg.Name != "custom" {
+				t.Errorf("LoadConfigFile() Name = %q, want %q", cfg.Name, "custom")
+			}
+
+			info, err := os.Stat(configPath)
+			if err != nil {
+				t.Fatalf("Failed to stat config file: %v", err)
+			}
+			if perm := info.Mode().Perm(); perm != FileMode {
+				t.Errorf("Expected file mode %04o, got %04o", os.FileMode(FileMode), perm)
+			}
+		})
+	}
+
+	t.Run("Creates new file with restricted mode", func(t *testing.T) {
+		configPath := t.TempDir() + "/config.yaml"
+
+		if _, err := LoadConfigFile(&yamlConfig{Name: "default"}, configPath); err != nil {
+			t.Fatalf("LoadConfigFile() error = %v", err)
+		}
+
+		info, err := os.Stat(configPath)
+		if err != nil {
+			t.Fatalf("Failed to stat config file: %v", err)
+		}
+		if perm := info.Mode().Perm(); perm != FileMode {
+			t.Errorf("Expected file mode %04o, got %04o", os.FileMode(FileMode), perm)
+		}
+	})
 }
