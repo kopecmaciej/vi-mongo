@@ -103,6 +103,10 @@ func LoadConfigFile[T any](defaultConfig *T, configPath string) (*T, error) {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
+	if err := ensureFileMode(configPath); err != nil {
+		log.Warn().Err(err).Str("path", configPath).Msg("Failed to tighten config file permissions")
+	}
+
 	config := new(T)
 	err = unmarshalConfig(bytes, configPath, config)
 	if err != nil {
@@ -124,6 +128,17 @@ func LoadConfigFile[T any](defaultConfig *T, configPath string) (*T, error) {
 	}
 
 	return config, nil
+}
+
+func ensureFileMode(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	if info.Mode().Perm() == FileMode {
+		return nil
+	}
+	return os.Chmod(path, FileMode)
 }
 
 // marshalConfig marshals the config based on the file extension
