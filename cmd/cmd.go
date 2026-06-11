@@ -33,7 +33,6 @@ var (
 		Long:  `A Terminal User Interface (TUI) client for MongoDB`,
 		Run:   runApp,
 	}
-
 )
 
 func Execute() error {

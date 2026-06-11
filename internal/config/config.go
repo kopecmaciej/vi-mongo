@@ -63,18 +63,18 @@ type UIConfig struct {
 }
 
 type Config struct {
-	Version                 string        `yaml:"version"`
-	Log                     LogConfig     `yaml:"log"`
-	Editor                  EditorConfig  `yaml:"editor"`
-	UI                      UIConfig      `yaml:"ui"`
-	ShowConnectionPage       bool          `yaml:"showConnectionPage"`
-	ShowWelcomePage          bool          `yaml:"showWelcomePage"`
-	CurrentConnection        string        `yaml:"currentConnection"`
-	Connections              []MongoConfig `yaml:"connections"`
-	Styles                  StylesConfig  `yaml:"styles"`
-	EncryptionKeyPath        *string       `yaml:"encryptionKeyPath,omitempty"`
-	JumpInto                string        `yaml:"-"`
-	ConfigPath              string        `yaml:"-"`
+	Version            string        `yaml:"version"`
+	Log                LogConfig     `yaml:"log"`
+	Editor             EditorConfig  `yaml:"editor"`
+	UI                 UIConfig      `yaml:"ui"`
+	ShowConnectionPage bool          `yaml:"showConnectionPage"`
+	ShowWelcomePage    bool          `yaml:"showWelcomePage"`
+	CurrentConnection  string        `yaml:"currentConnection"`
+	Connections        []MongoConfig `yaml:"connections"`
+	Styles             StylesConfig  `yaml:"styles"`
+	EncryptionKeyPath  *string       `yaml:"encryptionKeyPath,omitempty"`
+	JumpInto           string        `yaml:"-"`
+	ConfigPath         string        `yaml:"-"`
 }
 
 // LoadConfig loads the config file

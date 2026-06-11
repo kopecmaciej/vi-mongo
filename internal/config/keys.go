@@ -189,15 +189,15 @@ type (
 	}
 
 	AggregationStageKeys struct {
-		AddStage              Key `yaml:"addStage"`
-		EditStage             Key `yaml:"editStage"`
-		DeleteStage           Key `yaml:"deleteStage"`
-		RunPipeline           Key `yaml:"runPipeline"`
-		ClearPipeline         Key `yaml:"clearPipeline"`
-		MoveStageDown         Key `yaml:"moveStageDown"`
-		MoveStageUp           Key `yaml:"moveStageUp"`
-		FocusResults          Key `yaml:"focusResults"`
-		EditPipelineInEditor  Key `yaml:"editPipelineInEditor"`
+		AddStage             Key `yaml:"addStage"`
+		EditStage            Key `yaml:"editStage"`
+		DeleteStage          Key `yaml:"deleteStage"`
+		RunPipeline          Key `yaml:"runPipeline"`
+		ClearPipeline        Key `yaml:"clearPipeline"`
+		MoveStageDown        Key `yaml:"moveStageDown"`
+		MoveStageUp          Key `yaml:"moveStageUp"`
+		FocusResults         Key `yaml:"focusResults"`
+		EditPipelineInEditor Key `yaml:"editPipelineInEditor"`
 	}
 
 	AggregationResultKeys struct {
@@ -214,7 +214,6 @@ func (k *KeyBindings) loadDefaults() {
 	k.Global = GlobalKeys{
 		CloseApp: Key{
 			Keys:        []string{"Ctrl+c"},
-			Runes:       []string{"q"},
 			Description: "Close application",
 		},
 		ToggleFullScreenHelp: Key{

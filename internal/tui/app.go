@@ -54,7 +54,7 @@ func NewApp(appConfig *config.Config) *App {
 
 // Init initializes app
 func (a *App) Init() error {
-	a.SetRoot(a.Pages, true).EnableMouse(true)
+	a.SetRoot(a.Pages, true).EnableMouse(true).EnablePaste(true)
 
 	err := a.help.Init(a.App)
 	if err != nil {
