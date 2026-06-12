@@ -18,7 +18,13 @@ Visit [vi-mongo.com](https://vi-mongo.com) for more information.
 
 ## Installation
 
-To install Vi Mongo, follow the instructions on the [installation page](https://vi-mongo.com/docs/installation).
+To quickly install use:
+
+```sh
+curl -fsSL https://vi-mongo.com/install.sh | sh
+```
+
+To install Vi Mongo via brew, yay or from source follow the instructions on the [installation page](https://vi-mongo.com/docs/installation).
 
 If you are using [Neovim](https://neovim.io/) you can install the plugin from [nvim-plugin](https://github.com/kopecmaciej/vi-mongo.nvim)
 
