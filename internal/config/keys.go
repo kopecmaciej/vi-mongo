@@ -102,6 +102,7 @@ type (
 		DeleteDocumentNoConfirm    Key `yaml:"deleteDocumentNoConfirm"`
 		CopyHighlight              Key `yaml:"copyValue"`
 		CopyDocument               Key `yaml:"copyDocument"`
+		ExportJSON                 Key `yaml:"exportJSON"`
 		Refresh                    Key `yaml:"refresh"`
 		ToggleQueryBar             Key `yaml:"toggleQueryBar"`
 		NextDocument               Key `yaml:"nextDocument"`
@@ -379,6 +380,10 @@ func (k *KeyBindings) loadDefaults() {
 		CopyDocument: Key{
 			Runes:       []string{"C"},
 			Description: "Copy document",
+		},
+		ExportJSON: Key{
+			Runes:       []string{"X"},
+			Description: "Export JSON",
 		},
 		Refresh: Key{
 			Keys:        []string{"Ctrl+r"},

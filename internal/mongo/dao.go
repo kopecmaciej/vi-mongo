@@ -151,6 +151,58 @@ func (d *Dao) ListDocuments(ctx context.Context, state *CollectionState, filter 
 	return documents, nil
 }
 
+// ForEachMatchingDocument iterates over every document matching the active
+// collection filter, sort, and projection without applying page skip or limit.
+func (d *Dao) ForEachMatchingDocument(
+	ctx context.Context,
+	state *CollectionState,
+	consume func(primitive.M) error,
+) error {
+	filter, err := ParseStringQuery(state.Filter)
+	if err != nil {
+		return err
+	}
+	sortOptions, err := ParseSortOptions(state.Sort)
+	if err != nil {
+		return err
+	}
+	projection := primitive.M{}
+	if state.Projection != "" {
+		projection, err = ParseStringQuery(state.Projection)
+		if err != nil {
+			return err
+		}
+	}
+
+	findOptions := options.Find().SetSort(sortOptions)
+	if len(projection) > 0 {
+		findOptions.SetProjection(projection)
+	}
+	cursor, err := d.client.Database(state.Db).Collection(state.Coll).Find(ctx, filter, findOptions)
+	if err != nil {
+		return fmt.Errorf("failed to find documents for export: %w", err)
+	}
+	defer func() {
+		if err := cursor.Close(ctx); err != nil {
+			log.Error().Err(err).Msg("Failed to close export cursor")
+		}
+	}()
+
+	for cursor.Next(ctx) {
+		var document primitive.M
+		if err := cursor.Decode(&document); err != nil {
+			return fmt.Errorf("failed to decode export document: %w", err)
+		}
+		if err := consume(document); err != nil {
+			return err
+		}
+	}
+	if err := cursor.Err(); err != nil {
+		return fmt.Errorf("export cursor failed: %w", err)
+	}
+	return nil
+}
+
 func (d *Dao) GetDocument(ctx context.Context, db string, coll string, id primitive.ObjectID) (primitive.M, error) {
 	var document primitive.M
 	err := d.client.Database(db).Collection(coll).FindOne(ctx, primitive.M{"_id": id}).Decode(&document)

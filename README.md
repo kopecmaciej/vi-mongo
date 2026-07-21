@@ -37,6 +37,8 @@ If you are using [Neovim](https://neovim.io/) you can install the plugin from [n
 - **Managing Documents**: Vi Mongo allows you to view, create, update, duplicate
   and delete documents in your databases with ease. Supports both inline editing
   and full document editing in your preferred external editor.
+- **JSON Export**: Export the current page or every document matching the active
+  query as a JSON array while preserving MongoDB BSON types with Extended JSON.
 - **Managing Collections**: Vi Mongo provides a simple way to manage your
   collections, including the ability to create, delete, and rename collections.
 - **Aggregation Pipelines**: Built-in aggregation pipeline builder with
