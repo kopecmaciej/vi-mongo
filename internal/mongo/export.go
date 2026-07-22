@@ -19,11 +19,16 @@ var ErrExportFileExists = errors.New("export file already exists")
 type jsonArrayWriter struct {
 	writer *bufio.Writer
 	count  int
+	pretty bool
 }
 
-func newJSONArrayWriter(writer io.Writer) (*jsonArrayWriter, error) {
-	arrayWriter := &jsonArrayWriter{writer: bufio.NewWriter(writer)}
-	if _, err := arrayWriter.writer.WriteString("[\n"); err != nil {
+func newJSONArrayWriter(writer io.Writer, pretty bool) (*jsonArrayWriter, error) {
+	arrayWriter := &jsonArrayWriter{writer: bufio.NewWriter(writer), pretty: pretty}
+	start := "["
+	if pretty {
+		start += "\n"
+	}
+	if _, err := arrayWriter.writer.WriteString(start); err != nil {
 		return nil, fmt.Errorf("write JSON array start: %w", err)
 	}
 	return arrayWriter, nil
@@ -35,19 +40,28 @@ func (w *jsonArrayWriter) WriteDocument(document primitive.M) error {
 		return fmt.Errorf("marshal document %d: %w", w.count+1, err)
 	}
 
-	var indented bytes.Buffer
-	if err := json.Indent(&indented, data, "  ", "  "); err != nil {
-		return fmt.Errorf("indent document %d: %w", w.count+1, err)
+	if w.pretty {
+		var indented bytes.Buffer
+		if err := json.Indent(&indented, data, "  ", "  "); err != nil {
+			return fmt.Errorf("indent document %d: %w", w.count+1, err)
+		}
+		data = indented.Bytes()
 	}
 	if w.count > 0 {
-		if _, err := w.writer.WriteString(",\n"); err != nil {
+		separator := ","
+		if w.pretty {
+			separator += "\n"
+		}
+		if _, err := w.writer.WriteString(separator); err != nil {
 			return fmt.Errorf("write document separator: %w", err)
 		}
 	}
-	if _, err := w.writer.WriteString("  "); err != nil {
-		return fmt.Errorf("write document indentation: %w", err)
+	if w.pretty {
+		if _, err := w.writer.WriteString("  "); err != nil {
+			return fmt.Errorf("write document indentation: %w", err)
+		}
 	}
-	if _, err := w.writer.Write(indented.Bytes()); err != nil {
+	if _, err := w.writer.Write(data); err != nil {
 		return fmt.Errorf("write document %d: %w", w.count+1, err)
 	}
 	w.count++
@@ -55,7 +69,11 @@ func (w *jsonArrayWriter) WriteDocument(document primitive.M) error {
 }
 
 func (w *jsonArrayWriter) Close() error {
-	if _, err := w.writer.WriteString("\n]\n"); err != nil {
+	end := "]"
+	if w.pretty {
+		end = "\n]\n"
+	}
+	if _, err := w.writer.WriteString(end); err != nil {
 		return fmt.Errorf("write JSON array end: %w", err)
 	}
 	if err := w.writer.Flush(); err != nil {
@@ -65,8 +83,8 @@ func (w *jsonArrayWriter) Close() error {
 }
 
 // ExportDocuments writes documents as a relaxed MongoDB Extended JSON array.
-func ExportDocuments(writer io.Writer, documents []primitive.M) error {
-	arrayWriter, err := newJSONArrayWriter(writer)
+func ExportDocuments(writer io.Writer, documents []primitive.M, pretty bool) error {
+	arrayWriter, err := newJSONArrayWriter(writer, pretty)
 	if err != nil {
 		return err
 	}
@@ -80,8 +98,8 @@ func ExportDocuments(writer io.Writer, documents []primitive.M) error {
 
 // ExportDocumentsFile atomically replaces path after the complete export has
 // been written successfully. Existing files require overwrite to be true.
-func ExportDocumentsFile(path string, documents []primitive.M, overwrite bool) error {
-	_, err := exportDocumentsFile(path, overwrite, func(writeDocument func(primitive.M) error) error {
+func ExportDocumentsFile(path string, documents []primitive.M, overwrite, pretty bool) error {
+	_, err := exportDocumentsFile(path, overwrite, pretty, func(writeDocument func(primitive.M) error) error {
 		for _, document := range documents {
 			if err := writeDocument(document); err != nil {
 				return err
@@ -97,14 +115,16 @@ func ExportDocumentsFile(path string, documents []primitive.M, overwrite bool) e
 func ExportDocumentsFileFromIterator(
 	path string,
 	overwrite bool,
+	pretty bool,
 	iterate func(func(primitive.M) error) error,
 ) (int, error) {
-	return exportDocumentsFile(path, overwrite, iterate)
+	return exportDocumentsFile(path, overwrite, pretty, iterate)
 }
 
 func exportDocumentsFile(
 	path string,
 	overwrite bool,
+	pretty bool,
 	iterate func(func(primitive.M) error) error,
 ) (int, error) {
 	if path == "" {
@@ -129,7 +149,7 @@ func exportDocumentsFile(
 		_ = temporary.Close()
 		return 0, fmt.Errorf("set export permissions: %w", err)
 	}
-	arrayWriter, err := newJSONArrayWriter(temporary)
+	arrayWriter, err := newJSONArrayWriter(temporary, pretty)
 	if err != nil {
 		_ = temporary.Close()
 		return 0, err

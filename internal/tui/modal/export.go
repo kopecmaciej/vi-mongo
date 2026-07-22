@@ -21,8 +21,9 @@ const (
 )
 
 type ExportRequest struct {
-	Path  string
-	Scope ExportScope
+	Path        string
+	Scope       ExportScope
+	PrettyPrint bool
 }
 
 type ExportModal struct {
@@ -30,6 +31,7 @@ type ExportModal struct {
 	*core.FormModal
 
 	exportCallback func(ExportRequest)
+	exporting      bool
 }
 
 func NewExportModal() *ExportModal {
@@ -56,6 +58,9 @@ func (em *ExportModal) init() error {
 
 	em.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEsc {
+			if em.exporting {
+				return nil
+			}
 			em.Hide()
 			return nil
 		}
@@ -86,11 +91,13 @@ func (em *ExportModal) Render(defaultPath string) {
 		return !strings.HasSuffix(text, string(filepath.Separator))
 	})
 	em.Form.AddDropDown("Scope", scopeLabels, 0, nil)
+	em.Form.AddCheckbox("Pretty print", true, nil)
 	em.Form.AddButton("Export", func() {
 		path := expandHomePath(em.Form.GetFormItemByLabel("Path").(*tview.InputField).GetText())
 		scopeIndex, _ := em.Form.GetFormItemByLabel("Scope").(*tview.DropDown).GetCurrentOption()
+		prettyPrint := em.Form.GetFormItemByLabel("Pretty print").(*tview.Checkbox).IsChecked()
 		if em.exportCallback != nil {
-			em.exportCallback(ExportRequest{Path: path, Scope: scopes[scopeIndex]})
+			em.exportCallback(ExportRequest{Path: path, Scope: scopes[scopeIndex], PrettyPrint: prettyPrint})
 		}
 	})
 	em.Form.AddButton("Cancel", em.Hide)
@@ -99,7 +106,23 @@ func (em *ExportModal) Render(defaultPath string) {
 }
 
 func (em *ExportModal) Hide() {
+	em.SetExporting(false)
 	em.App.Pages.RemovePage(ExportModalId)
+}
+
+func (em *ExportModal) SetExporting(exporting bool) {
+	em.exporting = exporting
+	if exporting {
+		em.SetTitle(" Exporting, please wait... ")
+	} else {
+		em.SetTitle(" Export JSON ")
+	}
+	for index := 0; index < em.Form.GetFormItemCount(); index++ {
+		em.Form.GetFormItem(index).SetDisabled(exporting)
+	}
+	for index := 0; index < em.Form.GetButtonCount(); index++ {
+		em.Form.GetButton(index).SetDisabled(exporting)
+	}
 }
 
 func pathAutocompleteEntries(currentText string) []tview.AutocompleteItem {

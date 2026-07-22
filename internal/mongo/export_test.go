@@ -21,7 +21,7 @@ func TestExportDocumentsJSONArray(t *testing.T) {
 	}
 
 	var output bytes.Buffer
-	require.NoError(t, ExportDocuments(&output, documents))
+	require.NoError(t, ExportDocuments(&output, documents, true))
 	require.Contains(t, output.String(), `"$oid": "`+id.Hex()+`"`)
 	require.Contains(t, output.String(), `"$date": "1970-01-01T00:00:00Z"`)
 	require.Contains(t, output.String(), "},\n  {")
@@ -33,21 +33,35 @@ func TestExportDocumentsJSONArray(t *testing.T) {
 
 func TestExportDocumentsEmptyJSONArray(t *testing.T) {
 	var output bytes.Buffer
-	require.NoError(t, ExportDocuments(&output, nil))
+	require.NoError(t, ExportDocuments(&output, nil, true))
 	require.Equal(t, "[\n\n]\n", output.String())
+}
+
+func TestExportDocumentsCompactJSONArray(t *testing.T) {
+	documents := []primitive.M{{"name": "first"}, {"name": "second"}}
+
+	var output bytes.Buffer
+	require.NoError(t, ExportDocuments(&output, documents, false))
+	require.Equal(t, `[{"name":"first"},{"name":"second"}]`, output.String())
+}
+
+func TestExportDocumentsEmptyCompactJSONArray(t *testing.T) {
+	var output bytes.Buffer
+	require.NoError(t, ExportDocuments(&output, nil, false))
+	require.Equal(t, "[]", output.String())
 }
 
 func TestExportDocumentsFileRequiresOverwrite(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "export.json")
 	require.NoError(t, os.WriteFile(path, []byte("original"), 0o600))
 
-	err := ExportDocumentsFile(path, []primitive.M{{"name": "new"}}, false)
+	err := ExportDocumentsFile(path, []primitive.M{{"name": "new"}}, false, true)
 	require.True(t, errors.Is(err, ErrExportFileExists))
 	content, readErr := os.ReadFile(path)
 	require.NoError(t, readErr)
 	require.Equal(t, "original", string(content))
 
-	require.NoError(t, ExportDocumentsFile(path, []primitive.M{{"name": "new"}}, true))
+	require.NoError(t, ExportDocumentsFile(path, []primitive.M{{"name": "new"}}, true, true))
 	content, readErr = os.ReadFile(path)
 	require.NoError(t, readErr)
 	require.Contains(t, string(content), `"name": "new"`)
@@ -57,7 +71,7 @@ func TestExportDocumentsFileFromIterator(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "export.json")
 	documents := []primitive.M{{"page": 1}, {"page": 2}, {"page": 3}}
 
-	count, err := ExportDocumentsFileFromIterator(path, false, func(writeDocument func(primitive.M) error) error {
+	count, err := ExportDocumentsFileFromIterator(path, false, true, func(writeDocument func(primitive.M) error) error {
 		for _, document := range documents {
 			if err := writeDocument(document); err != nil {
 				return err
