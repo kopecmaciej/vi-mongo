@@ -75,6 +75,7 @@ type Config struct {
 	EncryptionKeyPath  *string       `yaml:"encryptionKeyPath,omitempty"`
 	JumpInto           string        `yaml:"-"`
 	ConfigPath         string        `yaml:"-"`
+	HistoryLimit       int           `yaml:"historyLimit,omitempty"`
 }
 
 // LoadConfig loads the config file
@@ -133,6 +134,7 @@ func (c *Config) loadDefaults(version string) {
 	}
 	c.ShowConnectionPage = true
 	c.ShowWelcomePage = true
+	c.HistoryLimit = 10
 }
 
 // GetConfigPath returns the path to the config file

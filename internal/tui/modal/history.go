@@ -15,8 +15,6 @@ import (
 const (
 	HistoryModalId = "History"
 	QueryBarId     = "QueryBar"
-
-	maxHistory = 10
 )
 
 // History is a modal with history of queries
@@ -24,7 +22,8 @@ type History struct {
 	*core.BaseElement
 	*primitives.ListModal
 
-	style *config.HistoryStyle
+	style        *config.HistoryStyle
+	historyLimit int
 }
 
 func NewHistoryModal() *History {
@@ -44,6 +43,8 @@ func (h *History) init() error {
 	h.SetLayout()
 	h.setStyle()
 	h.setKeybindings()
+
+	h.historyLimit = h.App.GetConfig().HistoryLimit
 
 	return nil
 }
@@ -136,7 +137,7 @@ func (h *History) SaveToHistory(text string) error {
 	for _, line := range history {
 		if line != text {
 			updatedHistory = append(updatedHistory, line)
-			if len(updatedHistory) >= maxHistory {
+			if len(updatedHistory) >= h.historyLimit {
 				updatedHistory = updatedHistory[1:]
 			}
 		}

@@ -105,6 +105,7 @@ func TestUpdateConfig_CustomPath(t *testing.T) {
 	cfg.ShowWelcomePage = false
 	cfg.ShowConnectionPage = false
 	cfg.Log.Level = "warn"
+	cfg.HistoryLimit = 20
 
 	if err := cfg.UpdateConfig(); err != nil {
 		t.Fatalf("UpdateConfig failed: %v", err)
@@ -126,6 +127,10 @@ func TestUpdateConfig_CustomPath(t *testing.T) {
 
 	if savedConfig.ShowConnectionPage != false {
 		t.Error("Expected ShowConnectionPage to be false in saved config")
+	}
+
+	if savedConfig.HistoryLimit != 20 {
+		t.Errorf("Expected HistoryLimit to be 20 in saved config, got %d", savedConfig.HistoryLimit)
 	}
 
 	if savedConfig.Log.Level != "warn" {
