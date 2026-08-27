@@ -115,11 +115,13 @@ func (h *History) Render() {
 		return
 	}
 
-	// load in reverse order
-	for i := len(history) - 1; i >= 0; i-- {
-		rune := 57 - i
-		entry := history[i]
-		h.AddItem(entry, "", int32(rune), nil)
+	// digit shortcuts 0-9 for the first ten entries
+	for pos, i := 0, len(history)-1; i >= 0; pos, i = pos+1, i-1 {
+		var shortcut rune
+		if pos < 10 {
+			shortcut = '0' + rune(pos)
+		}
+		h.AddItem(history[i], "", shortcut, nil)
 	}
 
 	h.App.Pages.AddPage(h.GetIdentifier(), h, true, true)
