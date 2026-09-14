@@ -25,6 +25,7 @@ var (
 
 type MongoOptions struct {
 	AlwaysConfirmActions  *bool  `yaml:"alwaysConfirmActions,omitempty"`
+	ReadOnly              *bool  `yaml:"readOnly,omitempty"`
 	AuthorizedDatabases   *bool  `yaml:"authorizedDatabases,omitempty"`
 	AuthorizedCollections *bool  `yaml:"authorizedCollections,omitempty"`
 	Limit                 *int64 `yaml:"limit,omitempty"`
@@ -450,10 +451,12 @@ func (m *MongoConfig) GetSafeUri() string {
 // if they are not set, it returns the default values
 func (c *MongoConfig) GetOptions() MongoOptions {
 	boolPtr := true
+	falsePtr := false
 	defaults := MongoOptions{
 		AuthorizedDatabases:   &boolPtr,
 		AuthorizedCollections: &boolPtr,
 		AlwaysConfirmActions:  &boolPtr,
+		ReadOnly:              &falsePtr,
 	}
 	if c.Options.AuthorizedDatabases == nil {
 		c.Options.AuthorizedDatabases = defaults.AuthorizedDatabases
@@ -463,6 +466,9 @@ func (c *MongoConfig) GetOptions() MongoOptions {
 	}
 	if c.Options.AlwaysConfirmActions == nil {
 		c.Options.AlwaysConfirmActions = defaults.AlwaysConfirmActions
+	}
+	if c.Options.ReadOnly == nil {
+		c.Options.ReadOnly = defaults.ReadOnly
 	}
 	return c.Options
 }

@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"slices"
@@ -28,6 +29,33 @@ func NewDao(client *mongo.Client, config *config.MongoConfig) *Dao {
 		client: client,
 		Config: config,
 	}
+}
+
+// ErrReadOnly is returned instead of performing a write when the connection has
+// the readOnly option enabled
+var ErrReadOnly = errors.New("connection is read-only")
+
+// writeStages are aggregation stages that persist results back to the database
+var writeStages = []string{"$out", "$merge"}
+
+// ensureWritable blocks every write path when the connection is read-only
+func (d *Dao) ensureWritable() error {
+	if *d.Config.GetOptions().ReadOnly {
+		return ErrReadOnly
+	}
+	return nil
+}
+
+// findWriteStage returns the first stage of the pipeline that writes to the database
+func findWriteStage(pipeline mongo.Pipeline) (string, bool) {
+	for _, stage := range pipeline {
+		for _, elem := range stage {
+			if slices.Contains(writeStages, elem.Key) {
+				return elem.Key, true
+			}
+		}
+	}
+	return "", false
 }
 
 func (d *Dao) Ping(ctx context.Context) error {
@@ -214,6 +242,10 @@ func (d *Dao) GetDocument(ctx context.Context, db string, coll string, id primit
 }
 
 func (d *Dao) InsetDocument(ctx context.Context, db string, coll string, document primitive.M) (any, error) {
+	if err := d.ensureWritable(); err != nil {
+		return nil, err
+	}
+
 	res, err := d.client.Database(db).Collection(coll).InsertOne(ctx, document)
 	if err != nil {
 		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Failed to insert document")
@@ -226,6 +258,10 @@ func (d *Dao) InsetDocument(ctx context.Context, db string, coll string, documen
 }
 
 func (d *Dao) UpdateDocument(ctx context.Context, db string, coll string, id any, originalDoc, document primitive.M) error {
+	if err := d.ensureWritable(); err != nil {
+		return err
+	}
+
 	setOps := bson.M{}
 	unsetOps := bson.M{}
 
@@ -270,6 +306,10 @@ func (d *Dao) UpdateDocument(ctx context.Context, db string, coll string, id any
 }
 
 func (d *Dao) DeleteDocument(ctx context.Context, db string, coll string, id any) error {
+	if err := d.ensureWritable(); err != nil {
+		return err
+	}
+
 	deleted, err := d.client.Database(db).Collection(coll).DeleteOne(ctx, primitive.M{"_id": id})
 	if err != nil {
 		log.Error().Err(err).Str("db", db).Str("collection", coll).Interface("id", id).Msg("Failed to delete document")
@@ -287,6 +327,10 @@ func (d *Dao) DeleteDocument(ctx context.Context, db string, coll string, id any
 }
 
 func (d *Dao) AddCollection(ctx context.Context, db string, coll string) error {
+	if err := d.ensureWritable(); err != nil {
+		return err
+	}
+
 	err := d.client.Database(db).CreateCollection(ctx, coll)
 	if err != nil {
 		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Failed to add collection")
@@ -299,6 +343,10 @@ func (d *Dao) AddCollection(ctx context.Context, db string, coll string) error {
 }
 
 func (d *Dao) DeleteCollection(ctx context.Context, db string, coll string) error {
+	if err := d.ensureWritable(); err != nil {
+		return err
+	}
+
 	err := d.client.Database(db).Collection(coll).Drop(ctx)
 	if err != nil {
 		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Failed to delete collection")
@@ -311,6 +359,10 @@ func (d *Dao) DeleteCollection(ctx context.Context, db string, coll string) erro
 }
 
 func (d *Dao) RenameCollection(ctx context.Context, db string, oldColl string, newColl string) error {
+	if err := d.ensureWritable(); err != nil {
+		return err
+	}
+
 	renameCmd := bson.D{
 		{Key: "renameCollection", Value: fmt.Sprintf("%s.%s", db, oldColl)},
 		{Key: "to", Value: fmt.Sprintf("%s.%s", db, newColl)},
@@ -475,6 +527,10 @@ func formatIndexUsage(ops int64, since time.Time) string {
 }
 
 func (d *Dao) CreateIndex(ctx context.Context, db, coll string, indexDef mongo.IndexModel) error {
+	if err := d.ensureWritable(); err != nil {
+		return err
+	}
+
 	_, err := d.client.Database(db).Collection(coll).Indexes().CreateOne(ctx, indexDef)
 	if err != nil {
 		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error creating index")
@@ -484,6 +540,12 @@ func (d *Dao) CreateIndex(ctx context.Context, db, coll string, indexDef mongo.I
 }
 
 func (d *Dao) AggregateDocuments(ctx context.Context, db, collection string, pipeline mongo.Pipeline) ([]primitive.M, error) {
+	if stage, ok := findWriteStage(pipeline); ok {
+		if err := d.ensureWritable(); err != nil {
+			return nil, fmt.Errorf("%s stage: %w", stage, err)
+		}
+	}
+
 	cursor, err := d.client.Database(db).Collection(collection).Aggregate(ctx, pipeline)
 	if err != nil {
 		log.Error().Err(err).Str("db", db).Str("collection", collection).Msg("Error running aggregation")
@@ -503,6 +565,10 @@ func (d *Dao) AggregateDocuments(ctx context.Context, db, collection string, pip
 }
 
 func (d *Dao) DropIndex(ctx context.Context, db, coll, indexName string) error {
+	if err := d.ensureWritable(); err != nil {
+		return err
+	}
+
 	_, err := d.client.Database(db).Collection(coll).Indexes().DropOne(ctx, indexName)
 	if err != nil {
 		log.Error().Err(err).Str("db", db).Str("collection", coll).Msg("Error droping index")

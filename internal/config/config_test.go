@@ -272,3 +272,32 @@ func TestUpdateConnection_CustomPath(t *testing.T) {
 		t.Errorf("Expected port 27018, got %d", savedConfig.Connections[0].Port)
 	}
 }
+
+func TestReadOnlyOptionRoundTrip(t *testing.T) {
+	readOnly := true
+	cfg := &Config{}
+	cfg.loadDefaults("1.0.0")
+
+	err := cfg.AddConnection(&MongoConfig{
+		Name:    "prod",
+		Host:    "localhost",
+		Port:    27017,
+		Options: MongoOptions{ReadOnly: &readOnly},
+	})
+	if err != nil {
+		t.Fatalf("AddConnection failed: %v", err)
+	}
+
+	conn, err := cfg.GetConnectionByName("prod")
+	if err != nil {
+		t.Fatalf("GetConnectionByName failed: %v", err)
+	}
+	if !*conn.GetOptions().ReadOnly {
+		t.Error("Expected read-only connection to stay read-only")
+	}
+
+	plain := &MongoConfig{Name: "dev"}
+	if *plain.GetOptions().ReadOnly {
+		t.Error("Expected connections without the option to be writable")
+	}
+}
