@@ -226,6 +226,7 @@ func (c *Connection) renderForm() *core.Form {
 	c.form.AddPasswordField("Password", "", 40, '*', nil)
 	c.form.AddInputField("Database", "", 40, nil, nil)
 	c.form.AddInputField("Timeout", "5", 10, nil, nil)
+	c.form.AddCheckbox("Read-only", false, nil)
 	key := fmt.Sprintf("%s to save, Esc to exit", keys.Connection.ConnectionForm.SaveConnection.String())
 	c.form.AddTextView("Keys: ", key, 30, 1, true, false)
 
@@ -347,6 +348,8 @@ func (c *Connection) populateFormWithConnection(conn *config.MongoConfig) {
 	if conn.Timeout > 0 {
 		c.form.GetFormItemByLabel("Timeout").(*tview.InputField).SetText(fmt.Sprintf("%d", conn.Timeout))
 	}
+
+	c.form.GetFormItemByLabel("Read-only").(*tview.Checkbox).SetChecked(*conn.GetOptions().ReadOnly)
 }
 
 // saveButtonFunc handles both saving new connections and updating existing ones
@@ -359,6 +362,7 @@ func (c *Connection) saveButtonFunc() {
 		modal.ShowError(c.App.Pages, "Timeout must be a number", err)
 		return
 	}
+	readOnly := c.form.GetFormItemByLabel("Read-only").(*tview.Checkbox).IsChecked()
 
 	var saveErr error
 
@@ -370,6 +374,10 @@ func (c *Connection) saveButtonFunc() {
 			Name:    name,
 			Uri:     uri,
 			Timeout: intTimeout,
+		}
+		// only persist the option when enabled, so untouched connections stay clean
+		if readOnly {
+			mongoConfig.Options.ReadOnly = &readOnly
 		}
 
 		// If the URI is an env var reference (e.g. $MONGODB_URI), store it
@@ -408,6 +416,9 @@ func (c *Connection) saveButtonFunc() {
 			Password: password,
 			Database: database,
 			Timeout:  intTimeout,
+		}
+		if readOnly {
+			mongoConfig.Options.ReadOnly = &readOnly
 		}
 
 		if c.isEditMode {

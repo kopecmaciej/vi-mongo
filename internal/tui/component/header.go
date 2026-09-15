@@ -12,6 +12,8 @@ import (
 
 const (
 	HeaderId = "Header"
+
+	headerTitle = " Basic Info "
 )
 
 type (
@@ -63,8 +65,17 @@ func (h *Header) init() error {
 
 func (h *Header) setLayout() {
 	h.Table.SetBorder(true)
-	h.Table.SetTitle(" Basic Info ")
+	h.Table.SetTitle(headerTitle)
 	h.Table.SetBorderPadding(0, 0, 1, 1)
+}
+
+// setTitle marks the header when the current connection is read-only
+func (h *Header) setTitle() {
+	if h.Dao != nil && *h.Dao.Config.GetOptions().ReadOnly {
+		h.Table.SetTitle(headerTitle + "| READ-ONLY ")
+		return
+	}
+	h.Table.SetTitle(headerTitle)
 }
 
 func (h *Header) setStyle() {
@@ -74,6 +85,7 @@ func (h *Header) setStyle() {
 
 // SetBaseInfo sets the basic information about the database connection
 func (h *Header) SetBaseInfo() BaseInfo {
+	h.setTitle()
 	host := h.Dao.Config.Host
 	port := fmt.Sprintf("%d", h.Dao.Config.Port)
 
