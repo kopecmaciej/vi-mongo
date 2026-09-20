@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"slices"
 	"strconv"
 	"strings"
@@ -15,9 +16,10 @@ import (
 
 const (
 	ConfigFile = "config.yaml"
-	LogPath    = "/tmp/vi-mongo.log"
 	FileMode   = 0600
 )
+
+var LogPath = filepath.Join(os.TempDir(), "vi-mongo.log")
 
 var (
 	EncryptionKey = ""
