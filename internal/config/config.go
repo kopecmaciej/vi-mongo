@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -34,15 +35,17 @@ type MongoOptions struct {
 }
 
 type MongoConfig struct {
-	Uri      string       `yaml:"url"`
-	Host     string       `yaml:"host"`
-	Port     int          `yaml:"port"`
-	Database string       `yaml:"database"`
-	Username string       `yaml:"username"`
-	Password string       `yaml:"password"`
-	Name     string       `yaml:"name"`
-	Timeout  int          `yaml:"timeout"`
-	Options  MongoOptions `yaml:"options"`
+	Uri      string `yaml:"url"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Database string `yaml:"database"`
+	// AuthSource overrides the auth DB, which otherwise defaults to Database
+	AuthSource string       `yaml:"authSource,omitempty"`
+	Username   string       `yaml:"username"`
+	Password   string       `yaml:"password"`
+	Name       string       `yaml:"name"`
+	Timeout    int          `yaml:"timeout"`
+	Options    MongoOptions `yaml:"options"`
 }
 
 type LogConfig struct {
@@ -424,7 +427,14 @@ func (m *MongoConfig) GetUri() string {
 		uri = fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", m.Username, m.Password, m.Host, m.Port, m.Database)
 	}
 
-	return uri
+	return uri + m.authSourceQuery()
+}
+
+func (m *MongoConfig) authSourceQuery() string {
+	if m.AuthSource == "" {
+		return ""
+	}
+	return "?authSource=" + url.QueryEscape(m.AuthSource)
 }
 
 // GetDecryptedUri returns the URI with decrypted password if encryption is enabled
@@ -440,7 +450,7 @@ func (m *MongoConfig) GetDecryptedUri() string {
 		return uri
 	}
 
-	return fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", m.Username, decryptedPass, m.Host, m.Port, m.Database)
+	return fmt.Sprintf("mongodb://%s:%s@%s:%d/%s", m.Username, decryptedPass, m.Host, m.Port, m.Database) + m.authSourceQuery()
 }
 
 // GetSafeUri returns the URI with the password replaced by asterisks

@@ -301,3 +301,10 @@ func TestReadOnlyOptionRoundTrip(t *testing.T) {
 		t.Error("Expected connections without the option to be writable")
 	}
 }
+
+func TestGetUri_AuthSource(t *testing.T) {
+	m := &MongoConfig{Host: "h", Port: 27017, Database: "testdb", Username: "u", Password: "p", AuthSource: "admin"}
+	if got, want := m.GetUri(), "mongodb://u:p@h:27017/testdb?authSource=admin"; got != want {
+		t.Errorf("GetUri() = %s, want %s", got, want)
+	}
+}

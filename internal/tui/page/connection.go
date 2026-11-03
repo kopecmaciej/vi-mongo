@@ -225,6 +225,7 @@ func (c *Connection) renderForm() *core.Form {
 	c.form.AddInputField("Username", "", 40, nil, nil)
 	c.form.AddPasswordField("Password", "", 40, '*', nil)
 	c.form.AddInputField("Database", "", 40, nil, nil)
+	c.form.AddInputField("Auth Source", "", 40, nil, nil)
 	c.form.AddInputField("Timeout", "5", 10, nil, nil)
 	c.form.AddCheckbox("Read-only", false, nil)
 	key := fmt.Sprintf("%s to save, Esc to exit", keys.Connection.ConnectionForm.SaveConnection.String())
@@ -236,6 +237,7 @@ func (c *Connection) renderForm() *core.Form {
 	c.form.GetFormItemByLabel("Username").(*tview.InputField).SetClipboard(util.GetClipboard())
 	c.form.GetFormItemByLabel("Password").(*tview.InputField).SetClipboard(util.GetClipboard())
 	c.form.GetFormItemByLabel("Database").(*tview.InputField).SetClipboard(util.GetClipboard())
+	c.form.GetFormItemByLabel("Auth Source").(*tview.InputField).SetClipboard(util.GetClipboard())
 
 	c.AddItem(c.form, 60, 0, true)
 
@@ -343,6 +345,7 @@ func (c *Connection) populateFormWithConnection(conn *config.MongoConfig) {
 		c.form.GetFormItemByLabel("Username").(*tview.InputField).SetText(conn.Username)
 		c.form.GetFormItemByLabel("Password").(*tview.InputField).SetText(conn.Password)
 		c.form.GetFormItemByLabel("Database").(*tview.InputField).SetText(conn.Database)
+		c.form.GetFormItemByLabel("Auth Source").(*tview.InputField).SetText(conn.AuthSource)
 	}
 
 	if conn.Timeout > 0 {
@@ -404,18 +407,20 @@ func (c *Connection) saveButtonFunc() {
 		username := c.form.GetFormItemByLabel("Username").(*tview.InputField).GetText()
 		password := c.form.GetFormItemByLabel("Password").(*tview.InputField).GetText()
 		database := c.form.GetFormItemByLabel("Database").(*tview.InputField).GetText()
+		authSource := c.form.GetFormItemByLabel("Auth Source").(*tview.InputField).GetText()
 
 		if name == "" {
 			name = host + ":" + port
 		}
 		mongoConfig := &config.MongoConfig{
-			Name:     name,
-			Host:     host,
-			Port:     intPort,
-			Username: username,
-			Password: password,
-			Database: database,
-			Timeout:  intTimeout,
+			Name:       name,
+			Host:       host,
+			Port:       intPort,
+			Username:   username,
+			Password:   password,
+			Database:   database,
+			AuthSource: authSource,
+			Timeout:    intTimeout,
 		}
 		if readOnly {
 			mongoConfig.Options.ReadOnly = &readOnly
